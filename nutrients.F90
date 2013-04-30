@@ -1,4 +1,5 @@
 #include "fabm_driver.h"
+#define IRON
 module pml_ersem_nutrients
 
    use fabm_types
@@ -55,7 +56,7 @@ contains
    call self%register_state_variable(self%id_N4n,'N4n','mmol N/m^3','Ammonium',  1._rk,minimum=0._rk)
    call self%register_state_variable(self%id_N5s,'N5s','mmol S/m^3','Silicate',  1._rk,minimum=0._rk)
 #ifdef IRON   
-   call self%register_state_variable(self%id_N7f,'P1f','umol F/m^3','Inorganic Iron', 5.e-6_rk, minimum=0._rk)
+   call self%register_state_variable(self%id_N7f,'N7f','umol F/m^3','Inorganic Iron', 1._rk, minimum=0._rk)
 #endif
 
    end function pml_ersem_nutrients_create

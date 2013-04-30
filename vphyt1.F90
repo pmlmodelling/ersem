@@ -1,4 +1,5 @@
 #include "fabm_driver.h"
+#define IRON
 module pml_ersem_vphyt1
 
    use fabm_types
@@ -21,9 +22,12 @@ module pml_ersem_vphyt1
    type,extends(type_base_model) :: type_pml_ersem_vphyt1
 !     Variable identifiers
       type (type_state_variable_id)      :: id_P1c,id_P1n,id_P1p,id_P1s,id_Chl1
-      type (type_state_variable_id)      :: id_O3c,id_O2o,id_N5s,id_N1p,id_N3n,id_N4n,id_R1c,id_R2c,id_R6c,id_R1p,id_R6p,id_R6n,id_R1n,id_R6s
+      type (type_state_variable_id)      :: id_O3c,id_O2o
+      type (type_state_variable_id)      :: id_N5s,id_N1p,id_N3n,id_N4n
+      type (type_state_variable_id)      :: id_R1c,id_R1p,id_R1n,id_R2c,id_R6c,id_R6p,id_R6n,id_R6s
 #ifdef IRON   
       type (type_state_variable_id)      :: id_P1f
+      type (type_state_variable_id)      :: id_N7f,id_R6f
 #endif
 
       type (type_dependency_id)          :: id_EIR,id_ETW
@@ -35,12 +39,16 @@ module pml_ersem_vphyt1
        real(rk) :: resp1mX,sdop1X
        real(rk) :: alphaP1X,betaP1X,phimP1X,phiP1HX
        real(rk) :: pEIR_eowX,ChlCmin,R1R2X,uB1c_O2X,urB1_O2X
+#ifdef IRON
+       real(rk) :: qflP1cX,qfRP1cX,qurP1fX
+#endif
        integer :: LimnutX
 
       contains
 
 !     Model procedures
       procedure :: do
+      procedure :: get_vertical_movement
 
       end type type_pml_ersem_vphyt1
 
@@ -69,30 +77,40 @@ contains
     real(rk) :: resp1mX,sdop1X
     real(rk) :: alphaP1X,betaP1X,phimP1X,phiP1HX
     real(rk) :: pEIR_eowX,ChlCmin,R1R2X,uB1c_O2X,urB1_O2X
+    real(rk) :: qflP1cX,qfRP1cX,qurP1fX
     integer :: LimnutX
     
-    character(len=64) :: O3c_variable,O2o_variable,N1p_variable,N3n_variable,N4n_variable,N5s_variable,R1c_variable,R2c_variable,R6c_variable,R1p_variable,R6p_variable,R1n_variable,R6n_variable,R6s_variable
+    character(len=64) :: O3c_variable,O2o_variable, &
+                         N1p_variable,N3n_variable,N4n_variable,N5s_variable,N7f_variable, &
+                         R1c_variable,R1p_variable,R1n_variable,R2c_variable,R6c_variable,R6p_variable,R6n_variable,R6s_variable,R6f_variable
 
    namelist /pml_ersem_vphyt1/ qnrpicX,qprpicX,sump1X, &
      q10p1X,srsp1X,pu_eap1X,pu_rap1X,chp1sX,qnlp1cX,qplp1cX,xqcp1pX, &
      xqcp1nX,xqnp1X,xqpp1X,qup1n3X,qup1n4X,qurp1pX,qsp1cX,esnip1X, &
      resp1mX,sdop1X,alphaP1X,betaP1X,phimP1X,phiP1HX, &
      pEIR_eowX,ChlCmin,LimnutX,R1R2X,uB1c_O2X,urB1_O2X, &
+     qflP1cX,qfRP1cX,qurP1fX, &
      O3c_variable,N5s_variable,R1c_variable,R2c_variable, &
-   R1p_variable,R6p_variable,R1n_variable,R6n_variable,R6s_variable
+   R1p_variable,R6p_variable,R1n_variable,R6n_variable,R6s_variable,R6f_variable
 !EOP
 !-----------------------------------------------------------------------
 !BOC
    allocate(self)
    call self%initialize(name,parent)
 
-   ! Initialize namelist parameters?
+   ! Initialize namelist parameters
+   pEIR_eowX = 0.5_rk
+   ChlCmin   = 0.0067_rk
+   uB1c_O2X  = 0.11_rk
+   urB1_O2X  = 0.1_rk
+   LimnutX   = 1
    O3c_variable = 'pml_ersem_gas_dynamics_O3c'
    O2o_variable = 'pml_ersem_gas_dynamics_O2o'
    N5s_variable = 'pml_ersem_nutrients_N5s'
    N1p_variable = 'pml_ersem_nutrients_N1p'
    N3n_variable = 'pml_ersem_nutrients_N3n'
    N4n_variable = 'pml_ersem_nutrients_N4n'
+   N7f_variable = 'pml_ersem_nutrients_N7f'
    R1c_variable = 'pml_ersem_dom_R1c'
    R1p_variable = 'pml_ersem_dom_R1p'
    R1n_variable = 'pml_ersem_dom_R1n'
@@ -101,11 +119,7 @@ contains
    R6p_variable = 'pml_ersem_pom_R6p'
    R6n_variable = 'pml_ersem_pom_R6n'
    R6s_variable = 'pml_ersem_pom_R6s'
-   pEIR_eowX = 0.5_rk
-   ChlCmin=0.0067
-   uB1c_O2X = 0.11_rk
-   urB1_O2X = 0.1_rk
-   LimnutX=1
+   R6f_variable = 'pml_ersem_pom_R6f'
 
    ! Read the namelist
    read(configunit,nml=pml_ersem_vphyt1)
@@ -144,15 +158,20 @@ contains
     self%R1R2X = R1R2X
     self%uB1c_O2X = uB1c_O2X
     self%urB1_O2X = urB1_O2X
+#ifdef IRON
+    self%qflP1cX = qflP1cX
+    self%qfRP1cX = qfRP1cX
+    self%qurP1fX = qurP1fX
+#endif
 
    ! Register state variables
-   call self%register_state_variable(self%id_P1c,'P1c','mg C/m^3',  'Diatoms C', 1.e-4_rk,    minimum=_ZERO_)
-   call self%register_state_variable(self%id_P1n,'P1n','mmol N/m^3','Diatoms N', 1.26e-6_rk,  minimum=_ZERO_)
-   call self%register_state_variable(self%id_P1p,'P1p','mmol P/m^3','Diatoms P', 4.288e-8_rk, minimum=_ZERO_)
-   call self%register_state_variable(self%id_P1s,'P1s','mmol S/m^3','Diatoms S', 1.e-6_rk,    minimum=_ZERO_)
-   call self%register_state_variable(self%id_Chl1,'Chl1','mg C/m^3','Diatoms Chlorophyll-a', 3.e-6_rk, minimum=_ZERO_)
+   call self%register_state_variable(self%id_P1c, 'P1c', 'mg C/m^3',  'Diatoms C', 1.e-4_rk,    minimum=_ZERO_)
+   call self%register_state_variable(self%id_P1n, 'P1n', 'mmol N/m^3','Diatoms N', 1.26e-6_rk,  minimum=_ZERO_)
+   call self%register_state_variable(self%id_P1p, 'P1p', 'mmol P/m^3','Diatoms P', 4.288e-8_rk, minimum=_ZERO_)
+   call self%register_state_variable(self%id_P1s, 'P1s', 'mmol S/m^3','Diatoms S', 1.e-6_rk,    minimum=_ZERO_)
+   call self%register_state_variable(self%id_Chl1,'Chl1','mg C/m^3',  'Diatoms Chlorophyll-a', 3.e-6_rk, minimum=_ZERO_)
 #ifdef IRON   
-   call self%register_state_variable(self%id_P1f,'P1f','mmol F/m^3','Diatoms F', 5.e-6_rk, minimum=_ZERO_)
+   call self%register_state_variable(self%id_P1f, 'P1f', 'umol F/m^3','Diatoms F', 5.e-6_rk, minimum=_ZERO_)
 #endif
 
 !# R4c --- mg C/m^3 --- Small size POC --- M
@@ -171,6 +190,9 @@ contains
    call self%register_state_dependency(self%id_N3n,N3n_variable)    
    call self%register_state_dependency(self%id_N4n,N4n_variable)    
    call self%register_state_dependency(self%id_N5s,N5s_variable)    
+#ifdef IRON   
+   call self%register_state_dependency(self%id_N7f,N7f_variable)    
+#endif
 
    ! Dissolved organic matter
    call self%register_state_dependency(self%id_R1c,R1c_variable)
@@ -185,6 +207,9 @@ contains
    call self%register_state_dependency(self%id_R6p,R6p_variable)    
    call self%register_state_dependency(self%id_R6n,R6n_variable)    
    call self%register_state_dependency(self%id_R6s,R6s_variable)    
+#ifdef IRON   
+   call self%register_state_dependency(self%id_R6f,R6f_variable)    
+#endif
 
    ! Total dissolved inorganic carbon, dissolved oxygen
    call self%register_state_dependency(self%id_O3c,O3c_variable)    
@@ -233,11 +258,13 @@ contains
 real(rk) :: sdoP1,sumP1,sugP1,seoP1,seaP1,sraP1,sunP1,runP1,rugP1,sP1R6
  real(rk) :: runP1p,misP1p,rumP1p
  real(rk) :: runP1n,misP1n,rumP1n,rumP1n3,rumP1n4
- real(rk) :: etP1,SDP1,pe_R6P1
+ real(rk) :: etP1,pe_R6P1
  real(rk) :: rho,Chl_inc,Chl_loss
  real(rk) :: phi,ChlCpp
 #ifdef IRON
+ real(rk) :: N7fP,P1f,P1fP,qfP1c
  real(rk) :: runP1f,rumP1f,misP1f
+ real(rk) :: fN7P1f,fP1R6f
 #endif
 #ifdef DOCDYN
  real(rk) :: fP1R1c,fP1R2c
@@ -250,8 +277,13 @@ real(rk) :: sdoP1,sumP1,sugP1,seoP1,seaP1,sraP1,sunP1,runP1,rugP1,sP1R6
       _GET_(self%id_P1p,P1p)
       _GET_(self%id_P1n,P1n)
       _GET_(self%id_P1s,P1s)
-      _GET_(self%id_N5s,N5s)
+#ifdef IRON      
+      _GET_(self%id_P1f,P1f)
+      _GET_SAFE_(self%id_P1f,P1fP)
+      _GET_SAFE_(self%id_N7f,N7fP)
+#endif
       _GET_(self%id_Chl1,chl1)
+      _GET_(self%id_N5s,N5s)
 
       _GET_SAFE_(self%id_P1c,P1cP)
       _GET_SAFE_(self%id_P1p,P1pP)
@@ -268,6 +300,9 @@ real(rk) :: sdoP1,sumP1,sugP1,seoP1,seaP1,sraP1,sunP1,runP1,rugP1,sP1R6
         qpP1c = P1p/P1c
         qnP1c = P1n/P1c
         qsP1c = P1s/P1c
+#ifdef IRON
+        qfP1c = P1f/P1c
+#endif
 
        iNP1p = MIN(1._rk,  &
                MAX(0._rk, (qpP1c-self%qplP1cX) / (self%xqcP1pX*self%qpRPIcX-self%qplP1cX) ))
@@ -276,7 +311,7 @@ real(rk) :: sdoP1,sumP1,sugP1,seoP1,seaP1,sraP1,sunP1,runP1,rugP1,sP1R6
        iNP1s = MIN(1._rk, N5s/(N5s+self%chP1sX))
 #ifdef IRON
       iNP1f = MIN(1._rk,  &
-     &         MAX(ZeroX, (qfP1c-self%qflP1cX) / (qfRP1cX-qflP1cX) ))
+     &         MAX(0._rk, (qfP1c-self%qflP1cX) / (self%qfRP1cX-self%qflP1cX) ))
 #endif
 
        select case (self%LimnutX)
@@ -469,30 +504,18 @@ real(rk) :: sdoP1,sumP1,sugP1,seoP1,seaP1,sraP1,sunP1,runP1,rugP1,sP1R6
 !  Because its high affinity with particles all the iron lost from phytoplankton by lysis is supposed to be 
 !  associated to organic particulate detritus. (luca)
 
-      fP1R6f = sdoP1 * P1fP(I)
+      fP1R6f = sdoP1 * P1fP
 
 !..net iron uptake
-      rumP1f = qurP1fX * N7fP(I) * P1c(I)
-      misP1f = qfRP1cX*P1cP(I) - P1fP(I)
-      runP1f = sunP1*P1c(I) * qfRP1cX - srsP1*P1fP(I)
-      fN7P1f(I) = MIN(rumP1f, runP1f+misP1f)
+      rumP1f = self%qurP1fX * N7fP * P1c
+      misP1f = self%qfRP1cX*P1cP - P1fP
+      runP1f = sunP1*P1c * self%qfRP1cX - srsP1*P1fP
+      fN7P1f = MIN(rumP1f, runP1f+misP1f)
 
 !..Source equations
-      SP1f(I) = SP1f(I)+fN7P1f(I)-fP1R6f
-      SN7f(I) = SN7f(I)-fN7P1f(I)
-      SR6f(I) = SR6f(I)+fP1R6f
-#endif
-
-!..sedimentation and resting stages.....................................
-
-      !SDP1 = resP1mX * MAX(0._rk, (esNIP1X - iNIP1) )
-      !SDP1c(I) = SDP1c(I) + SDP1
-      !SDP1p(I) = SDP1p(I) + SDP1
-      !SDP1n(I) = SDP1n(I) + SDP1
-      !SDP1s(I) = SDP1s(I) + SDP1
-      !SDChl1(I) = SDChl1(I) + SDP1
-#ifdef IRON
-      !SDP1f(I) = SDP1f(I) + SDP1
+      _SET_ODE_(self%id_P1f,(fN7P1f-fP1R6f)/secs_pr_day)
+      _SET_ODE_(self%id_N7f,-fN7P1f/secs_pr_day)
+      _SET_ODE_(self%id_R6f,fP1R6f/secs_pr_day)
 #endif
 
 !..add dia 
@@ -509,4 +532,49 @@ real(rk) :: sdoP1,sumP1,sugP1,seoP1,seaP1,sraP1,sunP1,runP1,rugP1,sP1R6
    _FABM_LOOP_END_
 
    END SUBROUTINE do
+
+   subroutine get_vertical_movement(self,_FABM_ARGS_GET_VERTICAL_MOVEMENT_)
+      class (type_pml_ersem_vphyt1),intent(in) :: self
+      _DECLARE_FABM_ARGS_GET_VERTICAL_MOVEMENT_
+      
+      real(rk) :: SDP1
+      real(rk) :: P1c,P1p,P1n,qpP1c,qnP1c,iNP1p,iNP1n,iNIP1
+
+   _FABM_LOOP_BEGIN_
+
+      _GET_(self%id_P1c,P1c)
+      _GET_(self%id_P1p,P1p)
+      _GET_(self%id_P1n,P1n)
+
+        qpP1c = P1p/P1c
+        qnP1c = P1n/P1c
+
+       iNP1p = MIN(1._rk,  &
+               MAX(0._rk, (qpP1c-self%qplP1cX) / (self%xqcP1pX*self%qpRPIcX-self%qplP1cX) ))
+       iNP1n = MIN(1._rk,  &
+               MAX(0._rk, (qnP1c-self%qnlP1cX) / (self%xqcP1nX*self%qnRPIcX-self%qnlP1cX) ))
+
+       select case (self%LimnutX)
+           case (0)
+                 iNIP1 = (iNP1p * iNP1n)**.5d0
+           case (1)
+                 iNIP1 = MIN(iNP1p, iNP1n)
+           case (2)
+                 iNIP1 = 2.0d0 / (1._rk/iNP1p + 1._rk/iNP1n)
+       END select
+
+!..sedimentation and resting stages.....................................
+      SDP1 = -self%resP1mX * MAX(0._rk, (self%esNIP1X - iNIP1))/secs_pr_day
+      _SET_VERTICAL_MOVEMENT_(self%id_P1c,SDP1)
+      _SET_VERTICAL_MOVEMENT_(self%id_P1p,SDP1)
+      _SET_VERTICAL_MOVEMENT_(self%id_P1n,SDP1)
+      _SET_VERTICAL_MOVEMENT_(self%id_P1s,SDP1)
+      _SET_VERTICAL_MOVEMENT_(self%id_Chl1,SDP1)
+#ifdef IRON
+      _SET_VERTICAL_MOVEMENT_(self%id_P1f,SDP1)
+#endif
+
+    _FABM_LOOP_END_
+
+   end subroutine get_vertical_movement
 end module

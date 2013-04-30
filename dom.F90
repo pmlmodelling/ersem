@@ -45,10 +45,10 @@ contains
    allocate(self)
    call self%initialize(name,parent)
 
-   call self%register_state_variable(self%id_R1c,'R1c','mg C/m^3','DOC', 1._rk,minimum=0._rk)
-   call self%register_state_variable(self%id_R1p,'R1p','mmol P/m^3','DOP',   1._rk,minimum=0._rk)
-   call self%register_state_variable(self%id_R1n,'R1n','mmol N/m^3','DON',  1._rk,minimum=0._rk)
-   call self%register_state_variable(self%id_R2c,'R2c','mg C/m^3','Semi-labile DOC',  1._rk,minimum=0._rk)
+   call self%register_state_variable(self%id_R1c,'R1c','mg C/m^3',  'DOC',            0._rk,minimum=0._rk)
+   call self%register_state_variable(self%id_R1p,'R1p','mmol P/m^3','DOP',            0._rk,minimum=0._rk)
+   call self%register_state_variable(self%id_R1n,'R1n','mmol N/m^3','DON',            0._rk,minimum=0._rk)
+   call self%register_state_variable(self%id_R2c,'R2c','mg C/m^3',  'Semi-labile DOC',0._rk,minimum=0._rk)
 
    end function pml_ersem_dom_create
 
