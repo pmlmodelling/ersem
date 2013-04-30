@@ -1,36 +1,24 @@
 #
-# Makefile to build the FABM-ERSEM interface
+# Makefile to build the passive tracer model
 #
 
 include ../../../Rules.make
 
-DOCSRC	=  ersem.F90
+DOCSRC	= nutrients.F90 dom.F90 pom.F90 gas_dynamics.F90 vphyt1.F90
 
-ERSEMDIR = /common/work/ERSEM/FABM
-ERSEMLIBDIR = $(LIBDIR)/
-ERSEMLIB=$(ERSEMLIBDIR)libersem.a
-ERSEMINCDIR = $(MODDIR)/
-PPERSEM = -DMASSTRACER
-OBJS    = ${LIBFABM}(ersem.o)
+OBJS    = ${LIBFABM}(nutrients.o) ${LIBFABM}(dom.o) ${LIBFABM}(pom.o) ${LIBFABM}(gas_dynamics.o) ${LIBFABM}(vphyt1.o)
 
 all: objs
 
-ifdef FABM_PMLERSEM
-objs: $(ERSEMLIB) ${OBJS}
-else
-objs: $(OBJS)
-endif
+objs: ${OBJS}
 	$(MOVE_MODULES_COMMAND)
 
 doc:    $(DOCSRC)
-	$(PROTEX) $(DOCSRC) > ../../../../doc/pml_ersem.tex
-
-$(ERSEMLIB):
-	$(MAKE) -C $(ERSEMDIR) incremental ERSEMLIB=$(ERSEMLIB) ERSEMLIBDIR=$(ERSEMLIBDIR) ERSEMINCDIR=$(ERSEMINCDIR) CPP=$(CPP) FC=$(FC) AC="$(AR) -r" ERSEMROOT=$(ERSEMDIR) PPDEFS=$(PPERSEM)
+	$(PROTEX) $(DOCSRC) > ../../../../doc/bb_passive.tex
 
 clean:
 	$(RM) *.o *~
 
 #-----------------------------------------------------------------------
-# Copyright (C) 2008 - Hans Burchard and Karsten Bolding (BBH)         !
+# Copyright (C) 2011 - Jorn Bruggeman (BB)                             !
 #-----------------------------------------------------------------------

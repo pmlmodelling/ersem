@@ -87,20 +87,20 @@ contains
    call self%initialize(name,parent)
 
    ! Initialize namelist parameters?
-   O3c_variable = 'gas_dynamics_O3c'
-   O2o_variable = 'gas_dynamics_O2o'
-   N5s_variable = 'nutrients_N5s'
-   N1p_variable = 'nutrients_N1p'
-   N3n_variable = 'nutrients_N3n'
-   N4n_variable = 'nutrients_N4n'
-   R1c_variable = 'dom_R1c'
-   R1p_variable = 'dom_R1p'
-   R1n_variable = 'dom_R1n'
-   R2c_variable = 'dom_R2c'
-   R6c_variable = 'pom_R6c'
-   R6p_variable = 'pom_R6p'
-   R6n_variable = 'pom_R6n'
-   R6s_variable = 'pom_R6s'
+   O3c_variable = 'pml_ersem_gas_dynamics_O3c'
+   O2o_variable = 'pml_ersem_gas_dynamics_O2o'
+   N5s_variable = 'pml_ersem_nutrients_N5s'
+   N1p_variable = 'pml_ersem_nutrients_N1p'
+   N3n_variable = 'pml_ersem_nutrients_N3n'
+   N4n_variable = 'pml_ersem_nutrients_N4n'
+   R1c_variable = 'pml_ersem_dom_R1c'
+   R1p_variable = 'pml_ersem_dom_R1p'
+   R1n_variable = 'pml_ersem_dom_R1n'
+   R2c_variable = 'pml_ersem_dom_R2c'
+   R6c_variable = 'pml_ersem_pom_R6c'
+   R6p_variable = 'pml_ersem_pom_R6p'
+   R6n_variable = 'pml_ersem_pom_R6n'
+   R6s_variable = 'pml_ersem_pom_R6s'
    pEIR_eowX = 0.5_rk
    ChlCmin=0.0067
    uB1c_O2X = 0.11_rk
@@ -108,7 +108,7 @@ contains
    LimnutX=1
 
    ! Read the namelist
-   read(configunit,nml=pml_ersem_vphyt1,err=99,end=100)
+   read(configunit,nml=pml_ersem_vphyt1)
 
    ! Store parameter values in our own derived type
    ! NB: all rates must be provided in values per day,
@@ -150,7 +150,7 @@ contains
    call self%register_state_variable(self%id_P1n,'P1n','mmol N/m^3','Diatoms N', 1.26e-6_rk,  minimum=_ZERO_)
    call self%register_state_variable(self%id_P1p,'P1p','mmol P/m^3','Diatoms P', 4.288e-8_rk, minimum=_ZERO_)
    call self%register_state_variable(self%id_P1s,'P1s','mmol S/m^3','Diatoms S', 1.e-6_rk,    minimum=_ZERO_)
-   call self%register_state_variable(self%id_Chl1,'Chl1','mg C/m^3',  'Diatoms Chlorophyll-a', 1.e-4_rk, minimum=_ZERO_)
+   call self%register_state_variable(self%id_Chl1,'Chl1','mg C/m^3','Diatoms Chlorophyll-a', 3.e-6_rk, minimum=_ZERO_)
 #ifdef IRON   
    call self%register_state_variable(self%id_P1f,'P1f','mmol F/m^3','Diatoms F', 5.e-6_rk, minimum=_ZERO_)
 #endif
@@ -380,19 +380,19 @@ real(rk) :: sdoP1,sumP1,sugP1,seoP1,seaP1,sraP1,sunP1,runP1,rugP1,sP1R6
       Chl_inc = rho*(sumP1-sraP1)*P1c
       Chl_loss = (sdoP1+srsP1)*Chl1P + (seoP1+seaP1)*Chl1
 
-      _SET_ODE_(self%id_P1c,fO3P1c-fP1O3c-fP1R6c-fP1RDc)
+      _SET_ODE_(self%id_P1c,(fO3P1c-fP1O3c-fP1R6c-fP1RDc)/secs_pr_day)
 #ifdef DOCDYN
-      _SET_ODE_(self%id_R1c,fP1R1c)
-      _SET_ODE_(self%id_R2c,fP1R2c)
+      _SET_ODE_(self%id_R1c,fP1R1c/secs_pr_day)
+      _SET_ODE_(self%id_R2c,fP1R2c/secs_pr_day)
 #else
-      _SET_ODE_(self%id_R1c,fP1RDc*self%R1R2X)
-      _SET_ODE_(self%id_R2c,fP1RDc*(1._rk-self%R1R2X))
+      _SET_ODE_(self%id_R1c,(fP1RDc*self%R1R2X)/secs_pr_day)
+      _SET_ODE_(self%id_R2c,fP1RDc*(1._rk-self%R1R2X)/secs_pr_day)
 #endif
-      _SET_ODE_(self%id_R6c,fP1R6c)
-      _SET_ODE_(self%id_Chl1,Chl_inc - Chl_loss)
+      _SET_ODE_(self%id_R6c,fP1R6c/secs_pr_day)
+      _SET_ODE_(self%id_Chl1,(Chl_inc - Chl_loss)/secs_pr_day)
 
-      _SET_ODE_(self%id_O3c,(fP1O3c - fO3P1c)/CMass)
-      _SET_ODE_(self%id_O2o,fO3P1c*self%uB1c_O2X - fP1O3c*self%urB1_O2X)
+      _SET_ODE_(self%id_O3c,(fP1O3c - fO3P1c)/CMass/secs_pr_day)
+      _SET_ODE_(self%id_O2o,(fO3P1c*self%uB1c_O2X - fP1O3c*self%urB1_O2X)/secs_pr_day)
       
 !..Phosphorus flux through P1...........................................
 
@@ -407,10 +407,10 @@ real(rk) :: sdoP1,sumP1,sugP1,seoP1,seaP1,sraP1,sunP1,runP1,rugP1,sP1R6
       fN1P1p = MIN(rumP1p, runP1p+misP1p)
 
 !..Source equations
-      _SET_ODE_(self%id_P1p,fN1P1p-fP1RDp-fP1R6p)
-      _SET_ODE_(self%id_N1p,-fN1P1p)
-      _SET_ODE_(self%id_R6p,fP1R6p)
-      _SET_ODE_(self%id_R1p,fP1RDp)
+      _SET_ODE_(self%id_P1p,(fN1P1p-fP1RDp-fP1R6p)/secs_pr_day)
+      _SET_ODE_(self%id_N1p,-fN1P1p/secs_pr_day)
+      _SET_ODE_(self%id_R6p,fP1R6p/secs_pr_day)
+      _SET_ODE_(self%id_R1p,fP1RDp/secs_pr_day)
 
 !..Nitrogen flux through P1.............................................
 
@@ -437,11 +437,11 @@ real(rk) :: sdoP1,sumP1,sugP1,seoP1,seaP1,sraP1,sunP1,runP1,rugP1,sP1R6
       ENDIF
 
 !..Source equations
-      _SET_ODE_(self%id_P1n,fN4P1n+fN3P1n-fP1RDn-fP1R6n)
-      _SET_ODE_(self%id_N3n,-fN3P1n)
-      _SET_ODE_(self%id_N4n,-fN4P1n)
-      _SET_ODE_(self%id_R6n,fP1R6n)
-      _SET_ODE_(self%id_R1n,fP1RDn)
+      _SET_ODE_(self%id_P1n,(fN4P1n+fN3P1n-fP1RDn-fP1R6n)/secs_pr_day)
+      _SET_ODE_(self%id_N3n,-fN3P1n/secs_pr_day)
+      _SET_ODE_(self%id_N4n,-fN4P1n/secs_pr_day)
+      _SET_ODE_(self%id_R6n,fP1R6n/secs_pr_day)
+      _SET_ODE_(self%id_R1n,fP1RDn/secs_pr_day)
 
 !..Silicate flux through P1.............................................
 
@@ -458,9 +458,9 @@ real(rk) :: sdoP1,sumP1,sugP1,seoP1,seaP1,sraP1,sunP1,runP1,rugP1,sP1R6
 #endif
 
 !..Source equations
-      _SET_ODE_(self%id_P1s,fN5P1s - fP1R6s)
-      _SET_ODE_(self%id_N5s,-fN5P1s)
-      _SET_ODE_(self%id_R6s, fP1R6s)
+      _SET_ODE_(self%id_P1s,(fN5P1s - fP1R6s)/secs_pr_day)
+      _SET_ODE_(self%id_N5s,-fN5P1s/secs_pr_day)
+      _SET_ODE_(self%id_R6s, fP1R6s/secs_pr_day)
 
 #ifdef IRON
 !..Iron flux through P1................................................
