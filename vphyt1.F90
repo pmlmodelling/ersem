@@ -33,16 +33,16 @@ module pml_ersem_vphyt1
       type (type_dependency_id)          :: id_EIR,id_ETW
       type (type_diagnostic_variable_id) :: id_netP1
 
-       real(rk) :: qnrpicX,qprpicX,sump1X
-       real(rk) :: q10p1X,srsp1X,pu_eap1X,pu_rap1X,chp1sX,qnlp1cX,qplp1cX,xqcp1pX
-       real(rk) :: xqcp1nX,xqnp1X,xqpp1X,qup1n3X,qup1n4X,qurp1pX,qsp1cX,esnip1X
-       real(rk) :: resp1mX,sdop1X
-       real(rk) :: alphaP1X,betaP1X,phimP1X,phiP1HX
-       real(rk) :: pEIR_eowX,ChlCmin,R1R2X,uB1c_O2X,urB1_O2X
+      real(rk) :: qnrpicX,qprpicX,sump1X
+      real(rk) :: q10p1X,srsp1X,pu_eap1X,pu_rap1X,chp1sX,qnlp1cX,qplp1cX,xqcp1pX
+      real(rk) :: xqcp1nX,xqnp1X,xqpp1X,qup1n3X,qup1n4X,qurp1pX,qsp1cX,esnip1X
+      real(rk) :: resp1mX,sdop1X
+      real(rk) :: alphaP1X,betaP1X,phimP1X,phiP1HX
+      real(rk) :: pEIR_eowX,ChlCmin,R1R2X,uB1c_O2X,urB1_O2X
 #ifdef IRON
-       real(rk) :: qflP1cX,qfRP1cX,qurP1fX
+      real(rk) :: qflP1cX,qfRP1cX,qurP1fX
 #endif
-       integer :: LimnutX
+      integer :: LimnutX
 
       contains
 
@@ -50,9 +50,9 @@ module pml_ersem_vphyt1
       procedure :: do
       procedure :: get_vertical_movement
 
-      end type type_pml_ersem_vphyt1
+   end type type_pml_ersem_vphyt1
 
-      real(rk) :: CMass = 12._rk
+   real(rk),parameter :: CMass = 12._rk
       
 contains
       
@@ -71,18 +71,18 @@ contains
 ! !REVISION HISTORY:
 !
 ! !LOCAL VARIABLES:
-    real(rk) :: qnrpicX,qprpicX,sump1X
-    real(rk) :: q10p1X,srsp1X,pu_eap1X,pu_rap1X,chp1sX,qnlp1cX,qplp1cX,xqcp1pX
-    real(rk) :: xqcp1nX,xqnp1X,xqpp1X,qup1n3X,qup1n4X,qurp1pX,qsp1cX,esnip1X
-    real(rk) :: resp1mX,sdop1X
-    real(rk) :: alphaP1X,betaP1X,phimP1X,phiP1HX
-    real(rk) :: pEIR_eowX,ChlCmin,R1R2X,uB1c_O2X,urB1_O2X
-    real(rk) :: qflP1cX,qfRP1cX,qurP1fX
-    integer :: LimnutX
+   real(rk) :: qnrpicX,qprpicX,sump1X
+   real(rk) :: q10p1X,srsp1X,pu_eap1X,pu_rap1X,chp1sX,qnlp1cX,qplp1cX,xqcp1pX
+   real(rk) :: xqcp1nX,xqnp1X,xqpp1X,qup1n3X,qup1n4X,qurp1pX,qsp1cX,esnip1X
+   real(rk) :: resp1mX,sdop1X
+   real(rk) :: alphaP1X,betaP1X,phimP1X,phiP1HX
+   real(rk) :: pEIR_eowX,ChlCmin,R1R2X,uB1c_O2X,urB1_O2X
+   real(rk) :: qflP1cX,qfRP1cX,qurP1fX
+   integer :: LimnutX
     
-    character(len=64) :: O3c_variable,O2o_variable, &
-                         N1p_variable,N3n_variable,N4n_variable,N5s_variable,N7f_variable, &
-                         R1c_variable,R1p_variable,R1n_variable,R2c_variable,R6c_variable,R6p_variable,R6n_variable,R6s_variable,R6f_variable
+   character(len=64) :: O3c_variable,O2o_variable, &
+                        N1p_variable,N3n_variable,N4n_variable,N5s_variable,N7f_variable, &
+                        R1c_variable,R1p_variable,R1n_variable,R2c_variable,R6c_variable,R6p_variable,R6n_variable,R6s_variable,R6f_variable
 
    namelist /pml_ersem_vphyt1/ qnrpicX,qprpicX,sump1X, &
      q10p1X,srsp1X,pu_eap1X,pu_rap1X,chp1sX,qnlp1cX,qplp1cX,xqcp1pX, &
@@ -91,7 +91,7 @@ contains
      pEIR_eowX,ChlCmin,LimnutX,R1R2X,uB1c_O2X,urB1_O2X, &
      qflP1cX,qfRP1cX,qurP1fX, &
      O3c_variable,N5s_variable,R1c_variable,R2c_variable, &
-   R1p_variable,R6p_variable,R1n_variable,R6n_variable,R6s_variable,R6f_variable
+    R1p_variable,R6p_variable,R1n_variable,R6n_variable,R6s_variable,R6f_variable
 !EOP
 !-----------------------------------------------------------------------
 !BOC
@@ -174,17 +174,6 @@ contains
    call self%register_state_variable(self%id_P1f, 'P1f', 'umol F/m^3','Diatoms F', 5.e-6_rk, minimum=_ZERO_)
 #endif
 
-!# R4c --- mg C/m^3 --- Small size POC --- M
-!# R4n --- mmol C/m^3 --- Small size PON --- o
-!# R4p --- mmol C/m^3 --- Small size POP --- o
-!# R8c --- mg C/m^3 --- Large size POC --- M
-!# R8n --- mmol C/m^3 --- Large size PON --- o
-!# R8p --- mmol C/m^3 --- Large size POP --- o
-!# R8s --- mmol C/m^3 --- Large size POS --- o
-!# R2c --- mg C/m^3 --- Semi-labile DOC --- M
-!# R4f --- umol/m^3 --- Small size POF --- M 
-!# R6f --- umol/m^3 --- Medium size POF --- M 
-
    ! Register link to external DIC pool, if DIC variable name is provided in namelist.
    call self%register_state_dependency(self%id_N1p,N1p_variable)    
    call self%register_state_dependency(self%id_N3n,N3n_variable)    
@@ -239,35 +228,35 @@ contains
    _DECLARE_FABM_ARGS_DO_RHS_
 
 ! !LOCAL VARIABLES:
- real(rk) :: ETW,EIR
- real(rk) :: P1c, P1p, P1n, P1s, Chl1
- real(rk) :: P1cP,P1pP,P1nP,P1sP,Chl1P
- real(rk) :: N5s,N1pP,N3nP,N4nP
- real(rk) :: iNP1n,iNP1p,iNP1s,iNP1f,iNIP1
- real(rk) :: qpP1c,qnP1c,qsP1c
- real(rk) :: parEIR
+   real(rk) :: ETW,EIR
+   real(rk) :: P1c, P1p, P1n, P1s, Chl1
+   real(rk) :: P1cP,P1pP,P1nP,P1sP,Chl1P
+   real(rk) :: N5s,N1pP,N3nP,N4nP
+   real(rk) :: iNP1n,iNP1p,iNP1s,iNP1f,iNIP1
+   real(rk) :: qpP1c,qnP1c,qsP1c
+   real(rk) :: parEIR
  
- real(rk) :: srsP1
- real(rk) :: fP1R6c,fP1RDc
- real(rk) :: fP1O3c,fO3P1c,netP1
- real(rk) :: fP1R6p,fP1RDp,fN1P1p
- real(rk) :: fP1R6n,fP1RDn
- real(rk) :: fNIP1n,fN3P1n,fN4P1n
- real(rk) :: fP1R6s,fP1N5s,fN5P1s
+   real(rk) :: srsP1
+   real(rk) :: fP1R6c,fP1RDc
+   real(rk) :: fP1O3c,fO3P1c,netP1
+   real(rk) :: fP1R6p,fP1RDp,fN1P1p
+   real(rk) :: fP1R6n,fP1RDn
+   real(rk) :: fNIP1n,fN3P1n,fN4P1n
+   real(rk) :: fP1R6s,fP1N5s,fN5P1s
 
-real(rk) :: sdoP1,sumP1,sugP1,seoP1,seaP1,sraP1,sunP1,runP1,rugP1,sP1R6
- real(rk) :: runP1p,misP1p,rumP1p
- real(rk) :: runP1n,misP1n,rumP1n,rumP1n3,rumP1n4
- real(rk) :: etP1,pe_R6P1
- real(rk) :: rho,Chl_inc,Chl_loss
- real(rk) :: phi,ChlCpp
+   real(rk) :: sdoP1,sumP1,sugP1,seoP1,seaP1,sraP1,sunP1,runP1,rugP1,sP1R6
+   real(rk) :: runP1p,misP1p,rumP1p
+   real(rk) :: runP1n,misP1n,rumP1n,rumP1n3,rumP1n4
+   real(rk) :: etP1,pe_R6P1
+   real(rk) :: rho,Chl_inc,Chl_loss
+   real(rk) :: phi,ChlCpp
 #ifdef IRON
- real(rk) :: N7fP,P1f,P1fP,qfP1c
- real(rk) :: runP1f,rumP1f,misP1f
- real(rk) :: fN7P1f,fP1R6f
+   real(rk) :: N7fP,P1f,P1fP,qfP1c
+   real(rk) :: runP1f,rumP1f,misP1f
+   real(rk) :: fN7P1f,fP1R6f
 #endif
 #ifdef DOCDYN
- real(rk) :: fP1R1c,fP1R2c
+   real(rk) :: fP1R1c,fP1R2c
 #endif
 
    ! Enter spatial loops (if any)
@@ -297,31 +286,31 @@ real(rk) :: sdoP1,sumP1,sugP1,seoP1,seaP1,sraP1,sunP1,runP1,rugP1,sP1R6
       _GET_(self%id_ETW,ETW)
       _GET_(self%id_EIR,EIR)
 
-        qpP1c = P1p/P1c
-        qnP1c = P1n/P1c
-        qsP1c = P1s/P1c
+      qpP1c = P1p/P1c
+      qnP1c = P1n/P1c
+      qsP1c = P1s/P1c
 #ifdef IRON
-        qfP1c = P1f/P1c
+      qfP1c = P1f/P1c
 #endif
 
-       iNP1p = MIN(1._rk,  &
-               MAX(0._rk, (qpP1c-self%qplP1cX) / (self%xqcP1pX*self%qpRPIcX-self%qplP1cX) ))
-       iNP1n = MIN(1._rk,  &
-               MAX(0._rk, (qnP1c-self%qnlP1cX) / (self%xqcP1nX*self%qnRPIcX-self%qnlP1cX) ))
-       iNP1s = MIN(1._rk, N5s/(N5s+self%chP1sX))
+      iNP1p = MIN(1._rk,  &
+              MAX(0._rk, (qpP1c-self%qplP1cX) / (self%xqcP1pX*self%qpRPIcX-self%qplP1cX) ))
+      iNP1n = MIN(1._rk,  &
+              MAX(0._rk, (qnP1c-self%qnlP1cX) / (self%xqcP1nX*self%qnRPIcX-self%qnlP1cX) ))
+      iNP1s = MIN(1._rk, N5s/(N5s+self%chP1sX))
 #ifdef IRON
       iNP1f = MIN(1._rk,  &
-     &         MAX(0._rk, (qfP1c-self%qflP1cX) / (self%qfRP1cX-self%qflP1cX) ))
+              MAX(0._rk, (qfP1c-self%qflP1cX) / (self%qfRP1cX-self%qflP1cX) ))
 #endif
 
-       select case (self%LimnutX)
-           case (0)
-                 iNIP1 = (iNP1p * iNP1n)**.5d0
-           case (1)
-                 iNIP1 = MIN(iNP1p, iNP1n)
-           case (2)
-                 iNIP1 = 2.0d0 / (1._rk/iNP1p + 1._rk/iNP1n)
-       END select
+      select case (self%LimnutX)
+         case (0)
+            iNIP1 = (iNP1p * iNP1n)**.5d0
+         case (1)
+            iNIP1 = MIN(iNP1p, iNP1n)
+         case (2)
+            iNIP1 = 2.0d0 / (1._rk/iNP1p + 1._rk/iNP1n)
+      end select
 
 !..Regulation factors...................................................
 
@@ -344,13 +333,13 @@ real(rk) :: sdoP1,sumP1,sugP1,seoP1,seaP1,sraP1,sunP1,runP1,rugP1,sP1R6
       phi = self%phiP1HX + (ChlCpp/self%phimP1X)*(self%phimP1X-self%phiP1HX)
      
       parEIR = self%pEIR_eowX*EIR
-      IF (parEIR.gt.0._rk) THEN
-        sumP1 = sumP1 * (1._rk-exp(-self%alphaP1X*parEIR*ChlCpp/sumP1)) * EXP(-self%betaP1X*parEIR*ChlCpp/sumP1)
-        rho = (phi - self%ChlCmin) * (sumP1/(self%alphaP1X*parEIR*ChlCpp)) + self%ChlCmin
-      ELSE
-        sumP1 = 0._rk
-        rho = self%ChlCmin
-      END IF
+      if (parEIR.gt.0._rk) THEN
+         sumP1 = sumP1 * (1._rk-exp(-self%alphaP1X*parEIR*ChlCpp/sumP1)) * EXP(-self%betaP1X*parEIR*ChlCpp/sumP1)
+         rho = (phi - self%ChlCmin) * (sumP1/(self%alphaP1X*parEIR*ChlCpp)) + self%ChlCmin
+      else
+         sumP1 = 0._rk
+         rho = self%ChlCmin
+      end if
 #ifdef CENH
 ! Enhancement factor (from MEECE D1.5) 379.48 = pco2a @ 2005
       cenh=1.+(pco2a3-379.48)*0.0005
@@ -540,41 +529,42 @@ real(rk) :: sdoP1,sumP1,sugP1,seoP1,seaP1,sraP1,sunP1,runP1,rugP1,sP1R6
       real(rk) :: SDP1
       real(rk) :: P1c,P1p,P1n,qpP1c,qnP1c,iNP1p,iNP1n,iNIP1
 
-   _FABM_LOOP_BEGIN_
+      _FABM_LOOP_BEGIN_
 
-      _GET_(self%id_P1c,P1c)
-      _GET_(self%id_P1p,P1p)
-      _GET_(self%id_P1n,P1n)
+         _GET_(self%id_P1c,P1c)
+         _GET_(self%id_P1p,P1p)
+         _GET_(self%id_P1n,P1n)
 
-        qpP1c = P1p/P1c
-        qnP1c = P1n/P1c
+         qpP1c = P1p/P1c
+         qnP1c = P1n/P1c
 
-       iNP1p = MIN(1._rk,  &
-               MAX(0._rk, (qpP1c-self%qplP1cX) / (self%xqcP1pX*self%qpRPIcX-self%qplP1cX) ))
-       iNP1n = MIN(1._rk,  &
-               MAX(0._rk, (qnP1c-self%qnlP1cX) / (self%xqcP1nX*self%qnRPIcX-self%qnlP1cX) ))
+         iNP1p = MIN(1._rk,  &
+                 MAX(0._rk, (qpP1c-self%qplP1cX) / (self%xqcP1pX*self%qpRPIcX-self%qplP1cX) ))
+         iNP1n = MIN(1._rk,  &
+                 MAX(0._rk, (qnP1c-self%qnlP1cX) / (self%xqcP1nX*self%qnRPIcX-self%qnlP1cX) ))
 
-       select case (self%LimnutX)
-           case (0)
-                 iNIP1 = (iNP1p * iNP1n)**.5d0
-           case (1)
-                 iNIP1 = MIN(iNP1p, iNP1n)
-           case (2)
-                 iNIP1 = 2.0d0 / (1._rk/iNP1p + 1._rk/iNP1n)
-       END select
+         select case (self%LimnutX)
+            case (0)
+               iNIP1 = (iNP1p * iNP1n)**.5d0
+            case (1)
+               iNIP1 = MIN(iNP1p, iNP1n)
+            case (2)
+               iNIP1 = 2.0d0 / (1._rk/iNP1p + 1._rk/iNP1n)
+         end select
 
 !..sedimentation and resting stages.....................................
-      SDP1 = -self%resP1mX * MAX(0._rk, (self%esNIP1X - iNIP1))/secs_pr_day
-      _SET_VERTICAL_MOVEMENT_(self%id_P1c,SDP1)
-      _SET_VERTICAL_MOVEMENT_(self%id_P1p,SDP1)
-      _SET_VERTICAL_MOVEMENT_(self%id_P1n,SDP1)
-      _SET_VERTICAL_MOVEMENT_(self%id_P1s,SDP1)
-      _SET_VERTICAL_MOVEMENT_(self%id_Chl1,SDP1)
+         SDP1 = -self%resP1mX * MAX(0._rk, (self%esNIP1X - iNIP1))/secs_pr_day
+         _SET_VERTICAL_MOVEMENT_(self%id_P1c,SDP1)
+         _SET_VERTICAL_MOVEMENT_(self%id_P1p,SDP1)
+         _SET_VERTICAL_MOVEMENT_(self%id_P1n,SDP1)
+         _SET_VERTICAL_MOVEMENT_(self%id_P1s,SDP1)
+         _SET_VERTICAL_MOVEMENT_(self%id_Chl1,SDP1)
 #ifdef IRON
-      _SET_VERTICAL_MOVEMENT_(self%id_P1f,SDP1)
+         _SET_VERTICAL_MOVEMENT_(self%id_P1f,SDP1)
 #endif
 
-    _FABM_LOOP_END_
+      _FABM_LOOP_END_
 
    end subroutine get_vertical_movement
+   
 end module
