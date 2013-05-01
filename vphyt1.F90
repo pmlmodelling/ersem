@@ -4,6 +4,7 @@ module pml_ersem_vphyt1
 
    use fabm_types
    use fabm_driver
+   use fabm_standard_variables,only: temperature,downwelling_shortwave_flux,mole_fraction_of_carbon_dioxide_in_air
 
    implicit none
 
@@ -207,15 +208,15 @@ contains
       call self%register_state_dependency(self%id_O3c,O3c_variable)    
       call self%register_state_dependency(self%id_O2o,O2o_variable)    
 #ifdef CENH   
-      call self%register_dependency(self%id_pco2a3,'mole_fraction_of_carbon_dioxide_in_air')    
+      call self%register_dependency(self%id_pco2a3,mole_fraction_of_carbon_dioxide_in_air)    
 #endif
 
       ! Register diagnostic variables
       call self%register_diagnostic_variable(self%id_netP1,'netP1','mg C/m^3/d','net primary production',time_treatment=time_treatment_averaged)
 
       ! Register environmental dependencies (temperature, shortwave radiation)
-      call self%register_dependency(self%id_EIR,varname_swr)
-      call self%register_dependency(self%id_ETW,varname_temp)
+      call self%register_dependency(self%id_EIR,downwelling_shortwave_flux)
+      call self%register_dependency(self%id_ETW,temperature)
 
       return
 
