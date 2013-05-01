@@ -211,7 +211,7 @@ contains
 #endif
 
       ! Register diagnostic variables
-      call self%register_diagnostic_variable(self%id_netP1,'netP1','mg/m**3/d','net primary production',time_treatment=time_treatment_step_integrated)
+      call self%register_diagnostic_variable(self%id_netP1,'netP1','mg C/m^3/d','net primary production',time_treatment=time_treatment_step_integrated)
 
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_EIR,varname_swr)
@@ -242,7 +242,7 @@ contains
     
       real(rk) :: srsP1
       real(rk) :: fP1R6c,fP1RDc
-      real(rk) :: fP1O3c,fO3P1c,netP1
+      real(rk) :: fP1O3c,fO3P1c
       real(rk) :: fP1R6p,fP1RDp,fN1P1p
       real(rk) :: fP1R6n,fP1RDn
       real(rk) :: fNIP1n,fN3P1n,fN4P1n
@@ -405,7 +405,7 @@ contains
          runP1 = sunP1*P1c-srsP1*P1cP       ! net production
 
    !..To save net production
-         netP1 = runP1
+         _SET_DIAGNOSTIC_(self%id_netP1,runP1)
 
    !..Carbon Source equations
         
