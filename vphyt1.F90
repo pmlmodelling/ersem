@@ -211,7 +211,7 @@ contains
 #endif
 
       ! Register diagnostic variables
-      call self%register_diagnostic_variable(self%id_netP1,'netP1','mg C/m^3/d','net primary production',time_treatment=time_treatment_step_integrated)
+      call self%register_diagnostic_variable(self%id_netP1,'netP1','mg C/m^3/d','net primary production',time_treatment=time_treatment_step_averaged)
 
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_EIR,varname_swr)
