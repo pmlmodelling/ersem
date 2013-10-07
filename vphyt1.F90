@@ -3,8 +3,6 @@
 module pml_ersem_vphyt1
 
    use fabm_types
-   use fabm_driver
-   use fabm_standard_variables,only: temperature,downwelling_shortwave_flux,mole_fraction_of_carbon_dioxide_in_air
 
    implicit none
 
@@ -123,44 +121,41 @@ contains
       ! Read the namelist
       read(configunit,nml=pml_ersem_vphyt1)
 
-      ! Store parameter values in our own derived type
-      ! NB: all rates must be provided in values per day,
-      ! and are converted here to values per second.
-       self%qnrpicX = qnrpicX
-       self%qprpicX = qprpicX
-       self%sump1X = sump1X
-       self%q10p1X = q10p1X
-       self%srsp1X = srsp1X
-       self%pu_eap1X = pu_eap1X
-       self%pu_rap1X = pu_rap1X
-       self%chp1sX = chp1sX
-       self%qnlp1cX = qnlp1cX
-       self%qplp1cX = qplp1cX
-       self%xqcp1pX = xqcp1pX
-       self%xqcp1nX = xqcp1nX
-       self%xqnp1X = xqnp1X
-       self%xqpp1X = xqpp1X
-       self%qup1n3X = qup1n3X
-       self%qup1n4X = qup1n4X
-       self%qurp1pX = qurp1pX
-       self%qsp1cX = qsp1cX
-       self%esnip1X = esnip1X
-       self%resp1mX = resp1mX
-       self%sdop1X = sdop1X
-       self%alphaP1X = alphaP1X
-       self%betaP1X = betaP1X
-       self%phimP1X = phimP1X
-       self%phiP1HX = phiP1HX
-       self%pEIR_eowX = pEIR_eowX
-       self%ChlCmin = ChlCmin
-       self%LimnutX = LimnutX
-       self%R1R2X = R1R2X
-       self%uB1c_O2X = uB1c_O2X
-       self%urB1_O2X = urB1_O2X
+      call self%get_parameter(self%qnrpicX,'qnrpicX',default=qnrpicX)
+      call self%get_parameter(self%qprpicX,'qprpicX',default=qprpicX) 
+      call self%get_parameter(self%sump1X,'sump1X',default=sump1X)
+      call self%get_parameter(self%q10p1X,'q10p1X',default=q10p1X)
+      call self%get_parameter(self%srsp1X,'srsp1X',default=srsp1X)
+      call self%get_parameter(self%pu_eap1X,'pu_eap1X',default=pu_eap1X)
+      call self%get_parameter(self%pu_rap1X,'pu_rap1X',default=pu_rap1X)
+      call self%get_parameter(self%chp1sX,'chp1sX',default=chp1sX)
+      call self%get_parameter(self%qnlp1cX,'qnlp1cX',default=qnlp1cX)
+      call self%get_parameter(self%qplp1cX,'qplp1cX',default=qplp1cX)
+      call self%get_parameter(self%xqcp1pX,'xqcp1pX',default=xqcp1pX)
+      call self%get_parameter(self%xqcp1nX,'xqcp1nX',default=xqcp1nX)
+      call self%get_parameter(self%xqnp1X,'xqnp1X',  default=xqnp1X)
+      call self%get_parameter(self%xqpp1X,'xqpp1X',default=xqpp1X)
+      call self%get_parameter(self%qup1n3X,'qup1n3X',default=qup1n3X)
+      call self%get_parameter(self%qup1n4X,'qup1n4X',default=qup1n4X)
+      call self%get_parameter(self%qurp1pX,'qurp1pX',default=qurp1pX)
+      call self%get_parameter(self%qsp1cX,'qsp1cX',default=qsp1cX)
+      call self%get_parameter(self%esnip1X,'esnip1X',default=esnip1X)
+      call self%get_parameter(self%resp1mX,'resp1mX',default=resp1mX)
+      call self%get_parameter(self%sdop1X,'sdop1X',default=sdop1X)
+      call self%get_parameter(self%alphaP1X,'alphaP1X',default=alphaP1X)
+      call self%get_parameter(self%betaP1X,'betaP1X',default=betaP1X)
+      call self%get_parameter(self%phimP1X,'phimP1X',default=phimP1X)
+      call self%get_parameter(self%phiP1HX,'phiP1HX',default=phiP1HX)
+      call self%get_parameter(self%pEIR_eowX,'pEIR_eowX',default=pEIR_eowX)
+      call self%get_parameter(self%ChlCmin,'ChlCmin',default=ChlCmin)
+      call self%get_parameter(self%LimnutX,'LimnutX',default=LimnutX)
+      call self%get_parameter(self%R1R2X,'R1R2X',default=R1R2X)
+      call self%get_parameter(self%uB1c_O2X,'uB1c_O2X',default=uB1c_O2X)
+      call self%get_parameter(self%urB1_O2X,'urB1_O2X',default=urB1_O2X)
 #ifdef IRON
-       self%qflP1cX = qflP1cX
-       self%qfRP1cX = qfRP1cX
-       self%qurP1fX = qurP1fX
+      call self%get_parameter(self%qflP1cX,'qflP1cX',default=qflP1cX)
+      call self%get_parameter(self%qfRP1cX,'qfRP1cX',default=qfRP1cX)
+      call self%get_parameter(self%qurP1fX,'qurP1fX',default=qurP1fX)
 #endif
 
       ! Register state variables
@@ -203,15 +198,15 @@ contains
       call self%register_state_dependency(self%id_O3c,O3c_variable)    
       call self%register_state_dependency(self%id_O2o,O2o_variable)    
 #ifdef CENH   
-      call self%register_dependency(self%id_pco2a3,mole_fraction_of_carbon_dioxide_in_air)    
+      call self%register_dependency(self%id_pco2a3,standard_variables%mole_fraction_of_carbon_dioxide_in_air)    
 #endif
 
       ! Register diagnostic variables
       call self%register_diagnostic_variable(self%id_netP1,'netP1','mg C/m^3/d','net primary production',time_treatment=time_treatment_averaged)
 
       ! Register environmental dependencies (temperature, shortwave radiation)
-      call self%register_dependency(self%id_EIR,downwelling_shortwave_flux)
-      call self%register_dependency(self%id_ETW,temperature)
+      call self%register_dependency(self%id_EIR,standard_variables%downwelling_shortwave_flux)
+      call self%register_dependency(self%id_ETW,standard_variables%temperature)
 
       return
 
@@ -263,7 +258,7 @@ contains
 #endif
 
       ! Enter spatial loops (if any)
-      _FABM_LOOP_BEGIN_
+      _LOOP_BEGIN_
 
          _GET_(self%id_P1c,P1c)
          _GET_(self%id_P1p,P1p)
@@ -312,11 +307,11 @@ contains
 
          select case (self%LimnutX)
             case (0)
-               iNIP1 = (iNP1p * iNP1n)**.5d0
+               iNIP1 = (iNP1p * iNP1n)**0.5_rk
             case (1)
                iNIP1 = MIN(iNP1p, iNP1n)
             case (2)
-               iNIP1 = 2.0d0 / (1._rk/iNP1p + 1._rk/iNP1n)
+               iNIP1 = 2.0_rk / (1._rk/iNP1p + 1._rk/iNP1n)
          end select
 
    !..Regulation factors...................................................
@@ -525,7 +520,7 @@ contains
 
 
       ! Leave spatial loops (if any)
-      _FABM_LOOP_END_
+      _LOOP_END_
 
    end subroutine do
 
@@ -552,11 +547,11 @@ contains
 
          select case (self%LimnutX)
             case (0)
-               iNIP1 = (iNP1p * iNP1n)**.5d0
+               iNIP1 = (iNP1p * iNP1n)**.5_rk
             case (1)
                iNIP1 = MIN(iNP1p, iNP1n)
             case (2)
-               iNIP1 = 2.0d0 / (1._rk/iNP1p + 1._rk/iNP1n)
+               iNIP1 = 2.0_rk / (1._rk/iNP1p + 1._rk/iNP1n)
          end select
 
 !..sedimentation and resting stages.....................................
