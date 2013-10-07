@@ -10,7 +10,7 @@ module pml_ersem_dom
    private
 !
 ! !PUBLIC MEMBER FUNCTIONS:
-   public pml_ersem_dom_create, type_pml_ersem_dom
+   public type_pml_ersem_dom
 !
 ! !REVISION HISTORY:!
 !  Original author(s): Jorn Bruggeman
@@ -24,17 +24,15 @@ module pml_ersem_dom
       
 contains
       
-   function pml_ersem_dom_create(configunit,name,parent) result(self)
+   subroutine initialize(self,configunit)
 !
 ! !DESCRIPTION:
 !  Here, the npzd namelist is read and the variables exported
 !  by the model are registered with FABM.
 !
 ! !INPUT PARAMETERS:
-   integer,                          intent(in)    :: configunit
-   character(len=*),                 intent(in)    :: name
-   class (type_base_model),target,   intent(inout) :: parent
-   class (type_pml_ersem_dom), pointer       :: self
+   class (type_pml_ersem_dom), intent(inout),target :: self
+   integer,                    intent(in)           :: configunit
 !
 ! !REVISION HISTORY:
 !
@@ -42,14 +40,11 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-   allocate(self)
-   call self%initialize(name,parent)
-
    call self%register_state_variable(self%id_R1c,'R1c','mg C/m^3',  'DOC',            0._rk,minimum=0._rk)
    call self%register_state_variable(self%id_R1p,'R1p','mmol P/m^3','DOP',            0._rk,minimum=0._rk)
    call self%register_state_variable(self%id_R1n,'R1n','mmol N/m^3','DON',            0._rk,minimum=0._rk)
    call self%register_state_variable(self%id_R2c,'R2c','mg C/m^3',  'Semi-labile DOC',0._rk,minimum=0._rk)
 
-   end function pml_ersem_dom_create
+   end subroutine
 
 end module

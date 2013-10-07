@@ -12,7 +12,7 @@ module pml_ersem_vphyt1
    private
 !
 ! !PUBLIC MEMBER FUNCTIONS:
-   public pml_ersem_vphyt1_create, type_pml_ersem_vphyt1
+   public type_pml_ersem_vphyt1
 !
 ! !PRIVATE DATA MEMBERS:
    real(rk), parameter :: secs_pr_day = 86400.0_rk
@@ -60,17 +60,15 @@ module pml_ersem_vphyt1
       
 contains
       
-   function pml_ersem_vphyt1_create(configunit,name,parent) result(self)
+   subroutine initialize(self,configunit)
 !
 ! !DESCRIPTION:
 !  Here, the npzd namelist is read and the variables exported
 !  by the model are registered with FABM.
 !
 ! !INPUT PARAMETERS:
-      integer,                          intent(in)    :: configunit
-      character(len=*),                 intent(in)    :: name
-      class (type_base_model),target,   intent(inout) :: parent
-      class (type_pml_ersem_vphyt1),    pointer       :: self
+      class (type_pml_ersem_vphyt1),    intent(inout),target :: self
+      integer,                          intent(in)           :: configunit
 !
 ! !REVISION HISTORY:
 !
@@ -99,9 +97,6 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      allocate(self)
-      call self%initialize(name,parent)
-
       ! Initialize namelist parameters
       pEIR_eowX = 0.5_rk
       ChlCmin   = 0.0067_rk
@@ -224,7 +219,7 @@ contains
 
 100   call fatal_error('pml_ersem_vphyt1_create','Namelist pml_ersem_vphyt1 was not found.')
 
-   end function pml_ersem_vphyt1_create
+   end subroutine
 
    
    subroutine do(self,_FABM_ARGS_DO_RHS_)

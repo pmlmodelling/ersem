@@ -11,7 +11,7 @@ module pml_ersem_nutrients
    private
 !
 ! !PUBLIC MEMBER FUNCTIONS:
-   public pml_ersem_nutrients_create, type_pml_ersem_nutrients
+   public type_pml_ersem_nutrients
 !
 ! !PRIVATE DATA MEMBERS:
    real(rk), parameter :: secs_pr_day = 86400.0_rk
@@ -30,17 +30,15 @@ module pml_ersem_nutrients
       
 contains
       
-   function pml_ersem_nutrients_create(configunit,name,parent) result(self)
+   subroutine initialize(self,configunit)
 !
 ! !DESCRIPTION:
 !  Here, the npzd namelist is read and the variables exported
 !  by the model are registered with FABM.
 !
 ! !INPUT PARAMETERS:
-   integer,                          intent(in)    :: configunit
-   character(len=*),                 intent(in)    :: name
-   class (type_base_model),target,   intent(inout) :: parent
-   class (type_pml_ersem_nutrients), pointer       :: self
+   class (type_pml_ersem_nutrients), intent(inout), target :: self
+   integer,                          intent(in)            :: configunit
 !
 ! !REVISION HISTORY:
 !
@@ -48,9 +46,6 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-   allocate(self)
-   call self%initialize(name,parent)
-
    call self%register_state_variable(self%id_N1p,'N1p','mmol P/m^3','Phosphate', 1._rk,minimum=0._rk)
    call self%register_state_variable(self%id_N3n,'N3n','mmol N/m^3','Nitrate',   1._rk,minimum=0._rk)
    call self%register_state_variable(self%id_N4n,'N4n','mmol N/m^3','Ammonium',  1._rk,minimum=0._rk)
@@ -59,6 +54,6 @@ contains
    call self%register_state_variable(self%id_N7f,'N7f','umol F/m^3','Inorganic Iron', 1._rk, minimum=0._rk)
 #endif
 
-   end function pml_ersem_nutrients_create
+   end subroutine
 
 end module

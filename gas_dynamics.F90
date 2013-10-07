@@ -10,7 +10,7 @@ module pml_ersem_gas_dynamics
    private
 !
 ! !PUBLIC MEMBER FUNCTIONS:
-   public pml_ersem_gas_dynamics_create, type_pml_ersem_gas_dynamics
+   public type_pml_ersem_gas_dynamics
 !
 ! !REVISION HISTORY:!
 !  Original author(s): Jorn Bruggeman
@@ -23,17 +23,15 @@ module pml_ersem_gas_dynamics
       
 contains
       
-   function pml_ersem_gas_dynamics_create(configunit,name,parent) result(self)
+   subroutine initialize(self,configunit)
 !
 ! !DESCRIPTION:
 !  Here, the npzd namelist is read and the variables exported
 !  by the model are registered with FABM.
 !
 ! !INPUT PARAMETERS:
-   integer,                          intent(in)    :: configunit
-   character(len=*),                 intent(in)    :: name
-   class (type_base_model),target,   intent(inout) :: parent
-   class (type_pml_ersem_gas_dynamics), pointer       :: self
+   class (type_pml_ersem_gas_dynamics), intent(inout), target :: self
+   integer,                             intent(in)          :: configunit
 !
 ! !REVISION HISTORY:
 !
@@ -41,12 +39,9 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-   allocate(self)
-   call self%initialize(name,parent)
-
    call self%register_state_variable(self%id_O3c,'O3c','mmol C/m^3','Carbon Dioxide', 2200._rk,minimum=0._rk)
    call self%register_state_variable(self%id_O2o,'O2o','mmol O/m^3','Oxygen',          300._rk,minimum=0._rk)
 
-   end function pml_ersem_gas_dynamics_create
+   end subroutine
 
 end module

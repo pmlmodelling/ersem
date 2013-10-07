@@ -11,7 +11,7 @@ module pml_ersem_pom
    private
 !
 ! !PUBLIC MEMBER FUNCTIONS:
-   public pml_ersem_pom_create, type_pml_ersem_pom
+   public type_pml_ersem_pom
 !
 ! !REVISION HISTORY:!
 !  Original author(s): Jorn Bruggeman
@@ -27,17 +27,15 @@ module pml_ersem_pom
       
 contains
       
-   function pml_ersem_pom_create(configunit,name,parent) result(self)
+   subroutine initialize(self,configunit)
 !
 ! !DESCRIPTION:
 !  Here, the npzd namelist is read and the variables exported
 !  by the model are registered with FABM.
 !
 ! !INPUT PARAMETERS:
-   integer,                          intent(in)    :: configunit
-   character(len=*),                 intent(in)    :: name
-   class (type_base_model),target,   intent(inout) :: parent
-   class (type_pml_ersem_pom), pointer       :: self
+   class (type_pml_ersem_pom), intent(inout), target :: self
+   integer,                    intent(in)            :: configunit
 !
 ! !REVISION HISTORY:
 !
@@ -45,9 +43,6 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-   allocate(self)
-   call self%initialize(name,parent)
-
    call self%register_state_variable(self%id_R6c,'R6c','mg C/m^3',  'POC', 0._rk,minimum=0._rk)
    call self%register_state_variable(self%id_R6p,'R6p','mmol P/m^3','POP', 0._rk,minimum=0._rk)
    call self%register_state_variable(self%id_R6n,'R6n','mmol N/m^3','PON', 0._rk,minimum=0._rk)
@@ -55,6 +50,6 @@ contains
 #ifdef IRON   
    call self%register_state_variable(self%id_R6f,'R6f','umol N/m^3','POF', 0._rk,minimum=0._rk)
 #endif
-   end function pml_ersem_pom_create
+   end subroutine
 
 end module
