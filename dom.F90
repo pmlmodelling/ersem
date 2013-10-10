@@ -20,7 +20,9 @@ module pml_ersem_dom
       type (type_state_variable_id)      :: id_R1c,id_R1p,id_R1n
       type (type_state_variable_id)      :: id_R2c
 
-      end type
+   contains
+      procedure                          :: initialize
+   end type
       
 contains
       

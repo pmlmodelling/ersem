@@ -18,7 +18,8 @@ module pml_ersem_gas_dynamics
    type,extends(type_base_model) :: type_pml_ersem_gas_dynamics
 !     Variable identifiers
       type (type_state_variable_id)      :: id_O3c,id_O2o
-
+   contains
+      procedure :: initialize
    end type
       
 contains

@@ -46,9 +46,10 @@ module pml_ersem_vphyt1
 #endif
       integer :: LimnutX
 
-      contains
+   contains
 
 !     Model procedures
+      procedure :: initialize
       procedure :: do
       procedure :: get_vertical_movement
 
@@ -162,41 +163,41 @@ contains
       call self%register_state_variable(self%id_P1c, 'P1c', 'mg C/m^3',  'Diatoms C', 1.e-4_rk,    minimum=_ZERO_)
       call self%register_state_variable(self%id_P1n, 'P1n', 'mmol N/m^3','Diatoms N', 1.26e-6_rk,  minimum=_ZERO_)
       call self%register_state_variable(self%id_P1p, 'P1p', 'mmol P/m^3','Diatoms P', 4.288e-8_rk, minimum=_ZERO_)
-      call self%register_state_variable(self%id_P1s, 'P1s', 'mmol S/m^3','Diatoms S', 1.e-6_rk,    minimum=_ZERO_)
+      call self%register_state_variable(self%id_P1s, 'P1s', 'mmol Si/m^3','Diatoms S', 1.e-6_rk,    minimum=_ZERO_)
       call self%register_state_variable(self%id_Chl1,'Chl1','mg C/m^3',  'Diatoms Chlorophyll-a', 3.e-6_rk, minimum=_ZERO_)
 #ifdef IRON   
-      call self%register_state_variable(self%id_P1f, 'P1f', 'umol F/m^3','Diatoms F', 5.e-6_rk, minimum=_ZERO_)
+      call self%register_state_variable(self%id_P1f, 'P1f', 'umol Fe/m^3','Diatoms F', 5.e-6_rk, minimum=_ZERO_)
 #endif
 
       ! Register links to external nutrient pools.
-      call self%register_state_dependency(self%id_N1p,N1p_variable)    
-      call self%register_state_dependency(self%id_N3n,N3n_variable)    
-      call self%register_state_dependency(self%id_N4n,N4n_variable)    
-      call self%register_state_dependency(self%id_N5s,N5s_variable)    
+      call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3', 'Phosphate',N1p_variable)    
+      call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3', 'Nitrate',  N3n_variable)    
+      call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3', 'Ammonium', N4n_variable)    
+      call self%register_state_dependency(self%id_N5s,'N5s','mmol Si/m^3','Silicate', N5s_variable)    
 #ifdef IRON   
-      call self%register_state_dependency(self%id_N7f,N7f_variable)    
+      call self%register_state_dependency(self%id_N7f,'N7f','umol F/m^3', 'Inorganic Iron',N7f_variable)    
 #endif
 
       ! Register links to external labile dissolved organic matter pools.
-      call self%register_state_dependency(self%id_R1c,R1c_variable)
-      call self%register_state_dependency(self%id_R1p,R1p_variable)    
-      call self%register_state_dependency(self%id_R1n,R1n_variable)    
+      call self%register_state_dependency(self%id_R1c,'R1c','mg C/m^3',  'DOC',R1c_variable)
+      call self%register_state_dependency(self%id_R1p,'R1p','mmol P/m^3','DOP',R1p_variable)    
+      call self%register_state_dependency(self%id_R1n,'R1n','mmol N/m^3','DON',R1n_variable)    
 
       ! Register links to external semi-labile dissolved organic matter pools.
-      call self%register_state_dependency(self%id_R2c,R2c_variable)    
+      call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','Semi-labile DOC',R2c_variable)    
 
       ! Register links to external particulate organic matter (medium-size) pools.
-      call self%register_state_dependency(self%id_R6c,R6c_variable)    
-      call self%register_state_dependency(self%id_R6p,R6p_variable)    
-      call self%register_state_dependency(self%id_R6n,R6n_variable)    
-      call self%register_state_dependency(self%id_R6s,R6s_variable)    
+      call self%register_state_dependency(self%id_R6c,'R6c','mg C/m^3',   'POC',R6c_variable)    
+      call self%register_state_dependency(self%id_R6p,'R6p','mmol P/m^3', 'POP',R6p_variable)    
+      call self%register_state_dependency(self%id_R6n,'R6n','mmol N/m^3', 'PON',R6n_variable)    
+      call self%register_state_dependency(self%id_R6s,'R6s','mmol Si/m^3','POS',R6s_variable)    
 #ifdef IRON   
-      call self%register_state_dependency(self%id_R6f,R6f_variable)    
+      call self%register_state_dependency(self%id_R6f,'R6f','umol Fe/m^3','POF',R6f_variable)    
 #endif
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
-      call self%register_state_dependency(self%id_O3c,O3c_variable)    
-      call self%register_state_dependency(self%id_O2o,O2o_variable)    
+      call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','Carbon Dioxide',O3c_variable)    
+      call self%register_state_dependency(self%id_O2o,'O2o','mmol O/m^3','Oxygen',        O2o_variable)    
 #ifdef CENH   
       call self%register_dependency(self%id_pco2a3,standard_variables%mole_fraction_of_carbon_dioxide_in_air)    
 #endif
@@ -325,7 +326,7 @@ contains
 
          !ChlCpp = max(min(phimP1X,chl1(I)/(p1c(I)-chl1(I)+zeroX)),ChlCmin)
          ChlCpp = chl1/p1c
-         
+
    !..Gross photosynthetic activity :
 #ifdef IRON
          sumP1 = self%sumP1X*etP1*iNP1s*iNP1f
@@ -333,7 +334,7 @@ contains
          sumP1 = self%sumP1X*etP1*iNP1s
 #endif          
          phi = self%phiP1HX + (ChlCpp/self%phimP1X)*(self%phimP1X-self%phiP1HX)
-        
+
          parEIR = self%pEIR_eowX*EIR
          if (parEIR.gt.0._rk) THEN
             sumP1 = sumP1 * (1._rk-exp(-self%alphaP1X*parEIR*ChlCpp/sumP1)) * EXP(-self%betaP1X*parEIR*ChlCpp/sumP1)
@@ -344,7 +345,7 @@ contains
          end if
 #ifdef CENH
    ! Enhancement factor (from MEECE D1.5) 379.48 = pco2a @ 2005
-         cenh=1.+(pco2a3-379.48)*0.0005
+         cenh=1.+(pco2a3-379.48_rk)*0.0005_rk
 #endif
 
    !..Nutrient-stress lysis rate :
@@ -392,7 +393,7 @@ contains
          rugP1 = fO3P1c
 
    !..Production and productivity
-         sunP1 = sumP1-(seoP1+seaP1+sraP1)        ! net productivity
+         sunP1 = sumP1-(seoP1+seaP1+sraP1)  ! net productivity
          runP1 = sunP1*P1c-srsP1*P1cP       ! net production
 
    !..To save net production

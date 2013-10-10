@@ -22,11 +22,14 @@ module pml_ersem_pom
 #ifdef IRON
       type (type_state_variable_id)      :: id_R6f
 #endif
+   contains
+
+      procedure :: initialize
 
    end type
-      
+
 contains
-      
+
    subroutine initialize(self,configunit)
 !
 ! !DESCRIPTION:

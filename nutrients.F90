@@ -25,8 +25,11 @@ module pml_ersem_nutrients
 #ifdef IRON   
       type (type_state_variable_id)      :: id_N7f
 #endif
-
-      end type
+   contains
+   
+      procedure :: initialize
+   
+   end type
       
 contains
       
