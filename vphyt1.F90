@@ -1,5 +1,6 @@
 #include "fabm_driver.h"
 #define IRON
+!#define CENH
 module pml_ersem_vphyt1
 
    use fabm_types
@@ -45,6 +46,7 @@ module pml_ersem_vphyt1
       real(rk) :: qflP1cX,qfRP1cX,qurP1fX
 #endif
       integer :: LimnutX
+      logical :: use_Si
 
    contains
 
@@ -56,9 +58,10 @@ module pml_ersem_vphyt1
    end type type_pml_ersem_vphyt1
 
    real(rk),parameter :: CMass = 12._rk
-      
+   real(rk),parameter :: ZeroX = 1e-8_rk
+
 contains
-      
+
    subroutine initialize(self,configunit)
 !
 ! !DESCRIPTION:
@@ -80,7 +83,8 @@ contains
       real(rk) :: pEIR_eowX,ChlCmin,R1R2X,uB1c_O2X,urB1_O2X
       real(rk) :: qflP1cX,qfRP1cX,qurP1fX
       integer :: LimnutX
-       
+      logical :: use_Si
+
       character(len=64) :: O3c_variable,O2o_variable, &
                            N1p_variable,N3n_variable,N4n_variable,N5s_variable,N7f_variable, &
                            R1c_variable,R1p_variable,R1n_variable,R2c_variable,R6c_variable,R6p_variable,R6n_variable,R6s_variable,R6f_variable
@@ -102,6 +106,7 @@ contains
       uB1c_O2X  = 0.11_rk
       urB1_O2X  = 0.1_rk
       LimnutX   = 1
+      use_Si = .true.
       O3c_variable = 'pml_ersem_gas_dynamics_O3c'
       O2o_variable = 'pml_ersem_gas_dynamics_O2o'
       N5s_variable = 'pml_ersem_nutrients_N5s'
@@ -122,6 +127,7 @@ contains
       ! Read the namelist
       read(configunit,nml=pml_ersem_vphyt1)
 
+      call self%get_parameter(self%use_Si,'use_Si',default=.true.)
       call self%get_parameter(self%qnrpicX,'qnrpicX',default=qnrpicX)
       call self%get_parameter(self%qprpicX,'qprpicX',default=qprpicX) 
       call self%get_parameter(self%sump1X,'sump1X',default=sump1X)
@@ -175,7 +181,7 @@ contains
       call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3', 'Ammonium', N4n_variable)    
       call self%register_state_dependency(self%id_N5s,'N5s','mmol Si/m^3','Silicate', N5s_variable)    
 #ifdef IRON   
-      call self%register_state_dependency(self%id_N7f,'N7f','umol F/m^3', 'Inorganic Iron',N7f_variable)    
+      call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3', 'Inorganic Iron',N7f_variable)    
 #endif
 
       ! Register links to external labile dissolved organic matter pools.
@@ -264,7 +270,7 @@ contains
          _GET_(self%id_P1c,P1c)
          _GET_(self%id_P1p,P1p)
          _GET_(self%id_P1n,P1n)
-         _GET_(self%id_P1s,P1s)
+         if (self%use_Si) _GET_(self%id_P1s,P1s)
 #ifdef IRON      
          _GET_(self%id_P1f,P1f)
          _GET_SAFE_(self%id_P1f,P1fP)
@@ -300,11 +306,15 @@ contains
                  MAX(0._rk, (qpP1c-self%qplP1cX) / (self%xqcP1pX*self%qpRPIcX-self%qplP1cX) ))
          iNP1n = MIN(1._rk,  &
                  MAX(0._rk, (qnP1c-self%qnlP1cX) / (self%xqcP1nX*self%qnRPIcX-self%qnlP1cX) ))
-         iNP1s = MIN(1._rk, N5s/(N5s+self%chP1sX))
 #ifdef IRON
          iNP1f = MIN(1._rk,  &
-                 MAX(0._rk, (qfP1c-self%qflP1cX) / (self%qfRP1cX-self%qflP1cX) ))
+                 MAX(ZeroX, (qfP1c-self%qflP1cX) / (self%qfRP1cX-self%qflP1cX) ))
 #endif
+         if (self%use_Si) then
+            iNP1s = MIN(1._rk, N5s/(N5s+self%chP1sX))
+         else
+            iNP1s = 1.0_rk
+         end if
 
          select case (self%LimnutX)
             case (0)
@@ -314,7 +324,7 @@ contains
             case (2)
                iNIP1 = 2.0_rk / (1._rk/iNP1p + 1._rk/iNP1n)
          end select
-
+            
    !..Regulation factors...................................................
 
    !..Temperature response
@@ -336,7 +346,7 @@ contains
          phi = self%phiP1HX + (ChlCpp/self%phimP1X)*(self%phimP1X-self%phiP1HX)
 
          parEIR = self%pEIR_eowX*EIR
-         if (parEIR.gt.0._rk) THEN
+         if (parEIR.gt.zeroX) THEN
             sumP1 = sumP1 * (1._rk-exp(-self%alphaP1X*parEIR*ChlCpp/sumP1)) * EXP(-self%betaP1X*parEIR*ChlCpp/sumP1)
             rho = (phi - self%ChlCmin) * (sumP1/(self%alphaP1X*parEIR*ChlCpp)) + self%ChlCmin
          else
@@ -359,10 +369,10 @@ contains
          sugP1 = sumP1-seoP1-seaP1
 
    !..Apportioning of LOC- and DET- fraction of excretion/lysis fluxes:
-         pe_R6P1 = MIN(self%qplP1cX/(qpP1c+0.0_rk),self%qnlP1cX/(qnP1c+0.0_rk))
+         pe_R6P1 = MIN(self%qplP1cX/(qpP1c+ZeroX),self%qnlP1cX/(qnP1c+ZeroX))
 
-         sP1R6 = pe_R6P1*sdoP1
-         fP1R6c = sP1R6*P1cP
+         sP1R6 = pe_R6P1*sdoP1   !Jorn: R4 for flagellates
+         fP1R6c = sP1R6*P1cP     !Jorn: R4 for flagellates
 
 #ifdef DOCDYN
          fP1R1c=  (1._rk-pe_R6P1)*sdoP1*P1cP
@@ -371,24 +381,26 @@ contains
 #else
          fP1RDc = (1._rk-pe_R6P1)*sdoP1*P1cP + (seoP1 + seaP1)*P1c
 #endif      
-   !..Respiration..........................................................
+
+#ifdef CALC
+! Calcified matter:
+      fO3L2c(I) = fO3L2c(I) + fP2R4c(I)*RainR(I)      !Jorn: flagellates only!
+#endif !..Respiration..........................................................
 
    !..Rest respiration rate :
          srsP1 = etP1*self%srsP1X 
 
    !..Activity respiration rate :
          sraP1 = sugP1*self%pu_raP1X
-#ifdef CENH
-         sraP1 = sraP1*cenh
-#endif
-
-   !..Total respiration flux :
+#ifndef CENH
+!..Total respiration flux :
          fP1O3c = srsP1*P1cP+sraP1*P1c
-         
-   !..Gross production as flux from inorganic CO2 to P1 :
+      
+!..Gross production as flux from inorganic CO2 to P1 :
          fO3P1c = sumP1*P1c
-#ifdef CENH
-         fO3P1c = fO3P1c*cenh
+#else
+         fO3P1c = fO3P1c*cenh !Jorn: a bug? where is fO3P1c set?
+         fP1O3c = srsP1*P1cP+sraP1*P1c*cenh
 #endif
          rugP1 = fO3P1c
 
@@ -397,7 +409,11 @@ contains
          runP1 = sunP1*P1c-srsP1*P1cP       ! net production
 
    !..To save net production
+#ifndef CENH
          _SET_DIAGNOSTIC_(self%id_netP1,runP1)
+#else
+         _SET_DIAGNOSTIC_(self%id_netP1,(sumP1*cenh-seoP1-seaP1-sraP1*cenh)*P1c-srsP1*P1cP)
+#endif
 
    !..Carbon Source equations
         
@@ -407,7 +423,7 @@ contains
          Chl_inc = rho*(sumP1-sraP1)*P1c
          Chl_loss = (sdoP1+srsP1)*Chl1P + (seoP1+seaP1)*Chl1
 
-         _SET_ODE_(self%id_P1c,(fO3P1c-fP1O3c-fP1R6c-fP1RDc)/secs_pr_day)
+         _SET_ODE_(self%id_P1c,(fO3P1c-fP1O3c-fP1R6c-fP1RDc)/secs_pr_day) ! Jorn: R4 in flagellates
 #ifdef DOCDYN
          _SET_ODE_(self%id_R1c,fP1R1c/secs_pr_day)
          _SET_ODE_(self%id_R2c,fP1R2c/secs_pr_day)
@@ -415,7 +431,7 @@ contains
          _SET_ODE_(self%id_R1c,(fP1RDc*self%R1R2X)/secs_pr_day)
          _SET_ODE_(self%id_R2c,fP1RDc*(1._rk-self%R1R2X)/secs_pr_day)
 #endif
-         _SET_ODE_(self%id_R6c,fP1R6c/secs_pr_day)
+         _SET_ODE_(self%id_R6c,fP1R6c/secs_pr_day) ! Jorn: R4 in flagellates
          _SET_ODE_(self%id_Chl1,(Chl_inc - Chl_loss)/secs_pr_day)
 
          _SET_ODE_(self%id_O3c,(fP1O3c - fO3P1c)/CMass/secs_pr_day)
@@ -424,8 +440,8 @@ contains
    !..Phosphorus flux through P1...........................................
 
    !..Lysis loss of phosphorus
-         fP1R6p = sP1R6 * min(self%qplP1cX*P1cP,P1pP)
-         fP1RDp = sdoP1 * P1pP - fP1R6p
+         fP1R6p = sP1R6 * min(self%qplP1cX*P1cP,P1pP) ! Jorn: R4 for flagellates
+         fP1RDp = sdoP1 * P1pP - fP1R6p               ! Jorn: R4 for flagellates
 
    !..Net phosphorus uptake
          rumP1p = self%qurP1pX * N1pP * P1c
@@ -434,16 +450,16 @@ contains
          fN1P1p = MIN(rumP1p, runP1p+misP1p)
 
    !..Source equations
-         _SET_ODE_(self%id_P1p,(fN1P1p-fP1RDp-fP1R6p)/secs_pr_day)
+         _SET_ODE_(self%id_P1p,(fN1P1p-fP1RDp-fP1R6p)/secs_pr_day) ! Jorn: R4 for flagellates
          _SET_ODE_(self%id_N1p,-fN1P1p/secs_pr_day)
-         _SET_ODE_(self%id_R6p,fP1R6p/secs_pr_day)
+         _SET_ODE_(self%id_R6p,fP1R6p/secs_pr_day) ! Jorn: R4 for flagellates
          _SET_ODE_(self%id_R1p,fP1RDp/secs_pr_day)
 
    !..Nitrogen flux through P1.............................................
 
    !..Nitrogen loss by lysis
          fP1R6n = sP1R6 * min(self%qnlP1cX*P1cP,P1nP)
-         fP1RDn = sdoP1 * P1nP - fP1R6n
+         fP1RDn = sdoP1 * P1nP - fP1R6n ! Jorn: R4 for flagellates
 
    !..Net nitrogen uptake
          rumP1n3 = self%quP1n3X * N3nP * P1c
@@ -467,27 +483,29 @@ contains
          _SET_ODE_(self%id_P1n,(fN4P1n+fN3P1n-fP1RDn-fP1R6n)/secs_pr_day)
          _SET_ODE_(self%id_N3n,-fN3P1n/secs_pr_day)
          _SET_ODE_(self%id_N4n,-fN4P1n/secs_pr_day)
-         _SET_ODE_(self%id_R6n,fP1R6n/secs_pr_day)
+         _SET_ODE_(self%id_R6n,fP1R6n/secs_pr_day) ! Jorn: R4 for flagellates
          _SET_ODE_(self%id_R1n,fP1RDn/secs_pr_day)
 
+         if (self%use_Si) then
    !..Silicate flux through P1.............................................
 
    !..Excretion loss of silicate
-         fP1R6s = sdoP1 * P1sP
+            fP1R6s = sdoP1 * P1sP
 
    !..Loss of excess silicate (qsP1c > qsP1cX)
-         fP1N5s = MAX ( 0._rk, P1sP-self%qsP1cX * P1cP)
+            fP1N5s = MAX ( 0._rk, P1sP-self%qsP1cX * P1cP)
 
    !..Net silicate uptake
-         fN5P1s = MAX ( 0._rk, self%qsP1cX*runP1) - fP1N5s
+            fN5P1s = MAX ( 0._rk, self%qsP1cX*runP1) - fP1N5s
 #ifdef SAVEFLX
-         fN5PXs(I) = fN5P1s
+            fN5PXs(I) = fN5P1s
 #endif
 
    !..Source equations
-         _SET_ODE_(self%id_P1s,(fN5P1s - fP1R6s)/secs_pr_day)
-         _SET_ODE_(self%id_N5s,-fN5P1s/secs_pr_day)
-         _SET_ODE_(self%id_R6s, fP1R6s/secs_pr_day)
+            _SET_ODE_(self%id_P1s,(fN5P1s - fP1R6s)/secs_pr_day)
+            _SET_ODE_(self%id_N5s,-fN5P1s/secs_pr_day)
+            _SET_ODE_(self%id_R6s, fP1R6s/secs_pr_day)
+         end if
 
 #ifdef IRON
    !..Iron flux through P1................................................
@@ -496,7 +514,7 @@ contains
    !  Because its high affinity with particles all the iron lost from phytoplankton by lysis is supposed to be 
    !  associated to organic particulate detritus. (luca)
 
-         fP1R6f = sdoP1 * P1fP
+         fP1R6f = sdoP1 * P1fP   ! Jorn: R4 for flagellates
 
    !..net iron uptake
          rumP1f = self%qurP1fX * N7fP * P1c
@@ -505,9 +523,9 @@ contains
          fN7P1f = MIN(rumP1f, runP1f+misP1f)
 
    !..Source equations
-         _SET_ODE_(self%id_P1f,(fN7P1f-fP1R6f)/secs_pr_day)
+         _SET_ODE_(self%id_P1f,(fN7P1f-fP1R6f)/secs_pr_day) ! Jorn: R4 for flagellates
          _SET_ODE_(self%id_N7f,-fN7P1f/secs_pr_day)
-         _SET_ODE_(self%id_R6f,fP1R6f/secs_pr_day)
+         _SET_ODE_(self%id_R6f,fP1R6f/secs_pr_day) ! Jorn: R4 for flagellates
 #endif
 
    !..add dia 
@@ -518,7 +536,6 @@ contains
    !       SP1s(I) = SP1s(I) + (0.2 - P1c(I))*16.0/106.0 
    !       SChl1(I) = SChl1(I) + (0.2 - P1c(I))*ChlCpp 
    !      END IF 
-
 
       ! Leave spatial loops (if any)
       _LOOP_END_
@@ -560,7 +577,7 @@ contains
          _SET_VERTICAL_MOVEMENT_(self%id_P1c,SDP1)
          _SET_VERTICAL_MOVEMENT_(self%id_P1p,SDP1)
          _SET_VERTICAL_MOVEMENT_(self%id_P1n,SDP1)
-         _SET_VERTICAL_MOVEMENT_(self%id_P1s,SDP1)
+         if (self%use_Si) _SET_VERTICAL_MOVEMENT_(self%id_P1s,SDP1)
          _SET_VERTICAL_MOVEMENT_(self%id_Chl1,SDP1)
 #ifdef IRON
          _SET_VERTICAL_MOVEMENT_(self%id_P1f,SDP1)
@@ -569,5 +586,5 @@ contains
       _FABM_LOOP_END_
 
    end subroutine get_vertical_movement
-   
+
 end module
