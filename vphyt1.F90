@@ -65,8 +65,6 @@ contains
    subroutine initialize(self,configunit)
 !
 ! !DESCRIPTION:
-!  Here, the npzd namelist is read and the variables exported
-!  by the model are registered with FABM.
 !
 ! !INPUT PARAMETERS:
       class (type_pml_ersem_vphyt1),    intent(inout),target :: self
@@ -75,33 +73,9 @@ contains
 ! !REVISION HISTORY:
 !
 ! !LOCAL VARIABLES:
-      character(len=64) :: O3c_variable,O2o_variable, &
-                           N1p_variable,N3n_variable,N4n_variable,N5s_variable,N7f_variable, &
-                           R1c_variable,R1p_variable,R1n_variable,R2c_variable,R6c_variable,R6p_variable,R6n_variable,R6s_variable,R6f_variable
-
-      namelist /pml_ersem_vphyt1/ O3c_variable,N5s_variable,R1c_variable,R2c_variable, &
-       R1p_variable,R6p_variable,R1n_variable,R6n_variable,R6s_variable,R6f_variable
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      ! Initialize namelist parameters
-      O3c_variable = 'pml_ersem_gas_dynamics_O3c'
-      O2o_variable = 'pml_ersem_gas_dynamics_O2o'
-      N5s_variable = 'pml_ersem_nutrients_N5s'
-      N1p_variable = 'pml_ersem_nutrients_N1p'
-      N3n_variable = 'pml_ersem_nutrients_N3n'
-      N4n_variable = 'pml_ersem_nutrients_N4n'
-      N7f_variable = 'pml_ersem_nutrients_N7f'
-      R1c_variable = 'pml_ersem_dom_R1c'
-      R1p_variable = 'pml_ersem_dom_R1p'
-      R1n_variable = 'pml_ersem_dom_R1n'
-      R2c_variable = 'pml_ersem_dom_R2c'
-      R6c_variable = 'pml_ersem_pom_R6c'
-      R6p_variable = 'pml_ersem_pom_R6p'
-      R6n_variable = 'pml_ersem_pom_R6n'
-      R6s_variable = 'pml_ersem_pom_R6s'
-      R6f_variable = 'pml_ersem_pom_R6f'
-
       call self%get_parameter(self%use_Si,'use_Si',default=.true.)
       call self%get_parameter(self%qnrpicX,'qnrpicX')
       call self%get_parameter(self%qprpicX,'qprpicX') 
@@ -141,44 +115,44 @@ contains
 #endif
 
       ! Register state variables
-      call self%register_state_variable(self%id_P1c, 'P1c', 'mg C/m^3',  'Diatoms C', 1.e-4_rk,    minimum=_ZERO_)
-      call self%register_state_variable(self%id_P1n, 'P1n', 'mmol N/m^3','Diatoms N', 1.26e-6_rk,  minimum=_ZERO_)
-      call self%register_state_variable(self%id_P1p, 'P1p', 'mmol P/m^3','Diatoms P', 4.288e-8_rk, minimum=_ZERO_)
-      call self%register_state_variable(self%id_P1s, 'P1s', 'mmol Si/m^3','Diatoms S', 1.e-6_rk,    minimum=_ZERO_)
-      call self%register_state_variable(self%id_Chl1,'Chl1','mg C/m^3',  'Diatoms Chlorophyll-a', 3.e-6_rk, minimum=_ZERO_)
+      call self%register_state_variable(self%id_P1c, 'P1c', 'mg C/m^3',  'Diatoms C', 1.e-4_rk,    minimum=0.0_rk)
+      call self%register_state_variable(self%id_P1n, 'P1n', 'mmol N/m^3','Diatoms N', 1.26e-6_rk,  minimum=0.0_rk)
+      call self%register_state_variable(self%id_P1p, 'P1p', 'mmol P/m^3','Diatoms P', 4.288e-8_rk, minimum=0.0_rk)
+      call self%register_state_variable(self%id_P1s, 'P1s', 'mmol Si/m^3','Diatoms S', 1.e-6_rk,    minimum=0.0_rk)
+      call self%register_state_variable(self%id_Chl1,'Chl1','mg C/m^3',  'Diatoms Chlorophyll-a', 3.e-6_rk, minimum=0.0_rk)
 #ifdef IRON   
-      call self%register_state_variable(self%id_P1f, 'P1f', 'umol Fe/m^3','Diatoms F', 5.e-6_rk, minimum=_ZERO_)
+      call self%register_state_variable(self%id_P1f, 'P1f', 'umol Fe/m^3','Diatoms F', 5.e-6_rk, minimum=0.0_rk)
 #endif
 
       ! Register links to external nutrient pools.
-      call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3', 'Phosphate',N1p_variable)    
-      call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3', 'Nitrate',  N3n_variable)    
-      call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3', 'Ammonium', N4n_variable)    
-      call self%register_state_dependency(self%id_N5s,'N5s','mmol Si/m^3','Silicate', N5s_variable)    
+      call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3', 'Phosphate')    
+      call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3', 'Nitrate')    
+      call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3', 'Ammonium')    
+      call self%register_state_dependency(self%id_N5s,'N5s','mmol Si/m^3','Silicate')    
 #ifdef IRON   
-      call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3', 'Inorganic Iron',N7f_variable)    
+      call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3', 'Inorganic Iron')    
 #endif
 
       ! Register links to external labile dissolved organic matter pools.
-      call self%register_state_dependency(self%id_R1c,'R1c','mg C/m^3',  'DOC',R1c_variable)
-      call self%register_state_dependency(self%id_R1p,'R1p','mmol P/m^3','DOP',R1p_variable)    
-      call self%register_state_dependency(self%id_R1n,'R1n','mmol N/m^3','DON',R1n_variable)    
+      call self%register_state_dependency(self%id_R1c,'R1c','mg C/m^3',  'DOC')
+      call self%register_state_dependency(self%id_R1p,'R1p','mmol P/m^3','DOP')    
+      call self%register_state_dependency(self%id_R1n,'R1n','mmol N/m^3','DON')    
 
       ! Register links to external semi-labile dissolved organic matter pools.
-      call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','Semi-labile DOC',R2c_variable)    
+      call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','Semi-labile DOC')    
 
       ! Register links to external particulate organic matter (medium-size) pools.
-      call self%register_state_dependency(self%id_R6c,'R6c','mg C/m^3',   'POC',R6c_variable)    
-      call self%register_state_dependency(self%id_R6p,'R6p','mmol P/m^3', 'POP',R6p_variable)    
-      call self%register_state_dependency(self%id_R6n,'R6n','mmol N/m^3', 'PON',R6n_variable)    
-      call self%register_state_dependency(self%id_R6s,'R6s','mmol Si/m^3','POS',R6s_variable)    
+      call self%register_state_dependency(self%id_R6c,'R6c','mg C/m^3',   'POC')    
+      call self%register_state_dependency(self%id_R6p,'R6p','mmol P/m^3', 'POP')    
+      call self%register_state_dependency(self%id_R6n,'R6n','mmol N/m^3', 'PON')    
+      call self%register_state_dependency(self%id_R6s,'R6s','mmol Si/m^3','POS')    
 #ifdef IRON   
-      call self%register_state_dependency(self%id_R6f,'R6f','umol Fe/m^3','POF',R6f_variable)    
+      call self%register_state_dependency(self%id_R6f,'R6f','umol Fe/m^3','POF')    
 #endif
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
-      call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','Carbon Dioxide',O3c_variable)    
-      call self%register_state_dependency(self%id_O2o,'O2o','mmol O/m^3','Oxygen',        O2o_variable)    
+      call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','Carbon Dioxide')    
+      call self%register_state_dependency(self%id_O2o,'O2o','mmol O/m^3','Oxygen')    
 #ifdef CENH   
       call self%register_dependency(self%id_pco2a3,standard_variables%mole_fraction_of_carbon_dioxide_in_air)    
 #endif
