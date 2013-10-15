@@ -1,7 +1,7 @@
 #include "fabm_driver.h"
 #define IRON
 !#define CENH
-module pml_ersem_vphyt1
+module pml_ersem_vphyt
 
    use fabm_types
 
@@ -11,7 +11,7 @@ module pml_ersem_vphyt1
    private
 !
 ! !PUBLIC MEMBER FUNCTIONS:
-   public type_pml_ersem_vphyt1
+   public type_pml_ersem_vphyt
 !
 ! !PRIVATE DATA MEMBERS:
    real(rk), parameter :: secs_pr_day = 86400.0_rk
@@ -19,7 +19,7 @@ module pml_ersem_vphyt1
 ! !REVISION HISTORY:!
 !  Original author(s): Jorn Bruggeman
 
-   type,extends(type_base_model) :: type_pml_ersem_vphyt1
+   type,extends(type_base_model) :: type_pml_ersem_vphyt
 !     Variable identifiers
       type (type_state_variable_id)      :: id_P1c,id_P1n,id_P1p,id_P1s,id_Chl1
       type (type_state_variable_id)      :: id_O3c,id_O2o
@@ -55,7 +55,7 @@ module pml_ersem_vphyt1
       procedure :: do
       procedure :: get_vertical_movement
 
-   end type type_pml_ersem_vphyt1
+   end type type_pml_ersem_vphyt
 
    real(rk),parameter :: CMass = 12._rk
    real(rk),parameter :: ZeroX = 1e-8_rk
@@ -67,8 +67,8 @@ contains
 ! !DESCRIPTION:
 !
 ! !INPUT PARAMETERS:
-      class (type_pml_ersem_vphyt1),    intent(inout),target :: self
-      integer,                          intent(in)           :: configunit
+      class (type_pml_ersem_vphyt),intent(inout),target :: self
+      integer,                     intent(in)           :: configunit
 !
 ! !REVISION HISTORY:
 !
@@ -175,7 +175,7 @@ contains
    
    subroutine do(self,_FABM_ARGS_DO_RHS_)
 
-      class (type_pml_ersem_vphyt1),intent(in) :: self
+      class (type_pml_ersem_vphyt),intent(in) :: self
       _DECLARE_FABM_ARGS_DO_RHS_
 
    ! !LOCAL VARIABLES:
@@ -492,7 +492,7 @@ contains
    end subroutine do
 
    subroutine get_vertical_movement(self,_FABM_ARGS_GET_VERTICAL_MOVEMENT_)
-      class (type_pml_ersem_vphyt1),intent(in) :: self
+      class (type_pml_ersem_vphyt),intent(in) :: self
       _DECLARE_FABM_ARGS_GET_VERTICAL_MOVEMENT_
       
       real(rk) :: SDP1
