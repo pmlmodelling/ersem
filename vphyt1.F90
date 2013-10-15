@@ -125,7 +125,7 @@ contains
       R6f_variable = 'pml_ersem_pom_R6f'
 
       ! Read the namelist
-      read(configunit,nml=pml_ersem_vphyt1)
+      if (configunit>=0) read(configunit,nml=pml_ersem_vphyt1)
 
       call self%get_parameter(self%use_Si,'use_Si',default=.true.)
       call self%get_parameter(self%qnrpicX,'qnrpicX',default=qnrpicX)
