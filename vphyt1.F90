@@ -75,38 +75,16 @@ contains
 ! !REVISION HISTORY:
 !
 ! !LOCAL VARIABLES:
-      real(rk) :: qnrpicX,qprpicX,sump1X
-      real(rk) :: q10p1X,srsp1X,pu_eap1X,pu_rap1X,chp1sX,qnlp1cX,qplp1cX,xqcp1pX
-      real(rk) :: xqcp1nX,xqnp1X,xqpp1X,qup1n3X,qup1n4X,qurp1pX,qsp1cX,esnip1X
-      real(rk) :: resp1mX,sdop1X
-      real(rk) :: alphaP1X,betaP1X,phimP1X,phiP1HX
-      real(rk) :: pEIR_eowX,ChlCmin,R1R2X,uB1c_O2X,urB1_O2X
-      real(rk) :: qflP1cX,qfRP1cX,qurP1fX
-      integer :: LimnutX
-      logical :: use_Si
-
       character(len=64) :: O3c_variable,O2o_variable, &
                            N1p_variable,N3n_variable,N4n_variable,N5s_variable,N7f_variable, &
                            R1c_variable,R1p_variable,R1n_variable,R2c_variable,R6c_variable,R6p_variable,R6n_variable,R6s_variable,R6f_variable
 
-      namelist /pml_ersem_vphyt1/ qnrpicX,qprpicX,sump1X, &
-        q10p1X,srsp1X,pu_eap1X,pu_rap1X,chp1sX,qnlp1cX,qplp1cX,xqcp1pX, &
-        xqcp1nX,xqnp1X,xqpp1X,qup1n3X,qup1n4X,qurp1pX,qsp1cX,esnip1X, &
-        resp1mX,sdop1X,alphaP1X,betaP1X,phimP1X,phiP1HX, &
-        pEIR_eowX,ChlCmin,LimnutX,R1R2X,uB1c_O2X,urB1_O2X, &
-        qflP1cX,qfRP1cX,qurP1fX, &
-        O3c_variable,N5s_variable,R1c_variable,R2c_variable, &
+      namelist /pml_ersem_vphyt1/ O3c_variable,N5s_variable,R1c_variable,R2c_variable, &
        R1p_variable,R6p_variable,R1n_variable,R6n_variable,R6s_variable,R6f_variable
 !EOP
 !-----------------------------------------------------------------------
 !BOC
       ! Initialize namelist parameters
-      pEIR_eowX = 0.5_rk
-      ChlCmin   = 0.0067_rk
-      uB1c_O2X  = 0.11_rk
-      urB1_O2X  = 0.1_rk
-      LimnutX   = 1
-      use_Si = .true.
       O3c_variable = 'pml_ersem_gas_dynamics_O3c'
       O2o_variable = 'pml_ersem_gas_dynamics_O2o'
       N5s_variable = 'pml_ersem_nutrients_N5s'
@@ -124,45 +102,42 @@ contains
       R6s_variable = 'pml_ersem_pom_R6s'
       R6f_variable = 'pml_ersem_pom_R6f'
 
-      ! Read the namelist
-      if (configunit>=0) read(configunit,nml=pml_ersem_vphyt1)
-
       call self%get_parameter(self%use_Si,'use_Si',default=.true.)
-      call self%get_parameter(self%qnrpicX,'qnrpicX',default=qnrpicX)
-      call self%get_parameter(self%qprpicX,'qprpicX',default=qprpicX) 
-      call self%get_parameter(self%sump1X,'sump1X',default=sump1X)
-      call self%get_parameter(self%q10p1X,'q10p1X',default=q10p1X)
-      call self%get_parameter(self%srsp1X,'srsp1X',default=srsp1X)
-      call self%get_parameter(self%pu_eap1X,'pu_eap1X',default=pu_eap1X)
-      call self%get_parameter(self%pu_rap1X,'pu_rap1X',default=pu_rap1X)
-      call self%get_parameter(self%chp1sX,'chp1sX',default=chp1sX)
-      call self%get_parameter(self%qnlp1cX,'qnlp1cX',default=qnlp1cX)
-      call self%get_parameter(self%qplp1cX,'qplp1cX',default=qplp1cX)
-      call self%get_parameter(self%xqcp1pX,'xqcp1pX',default=xqcp1pX)
-      call self%get_parameter(self%xqcp1nX,'xqcp1nX',default=xqcp1nX)
-      call self%get_parameter(self%xqnp1X,'xqnp1X',  default=xqnp1X)
-      call self%get_parameter(self%xqpp1X,'xqpp1X',default=xqpp1X)
-      call self%get_parameter(self%qup1n3X,'qup1n3X',default=qup1n3X)
-      call self%get_parameter(self%qup1n4X,'qup1n4X',default=qup1n4X)
-      call self%get_parameter(self%qurp1pX,'qurp1pX',default=qurp1pX)
-      call self%get_parameter(self%qsp1cX,'qsp1cX',default=qsp1cX)
-      call self%get_parameter(self%esnip1X,'esnip1X',default=esnip1X)
-      call self%get_parameter(self%resp1mX,'resp1mX',default=resp1mX)
-      call self%get_parameter(self%sdop1X,'sdop1X',default=sdop1X)
-      call self%get_parameter(self%alphaP1X,'alphaP1X',default=alphaP1X)
-      call self%get_parameter(self%betaP1X,'betaP1X',default=betaP1X)
-      call self%get_parameter(self%phimP1X,'phimP1X',default=phimP1X)
-      call self%get_parameter(self%phiP1HX,'phiP1HX',default=phiP1HX)
-      call self%get_parameter(self%pEIR_eowX,'pEIR_eowX',default=pEIR_eowX)
-      call self%get_parameter(self%ChlCmin,'ChlCmin',default=ChlCmin)
-      call self%get_parameter(self%LimnutX,'LimnutX',default=LimnutX)
-      call self%get_parameter(self%R1R2X,'R1R2X',default=R1R2X)
-      call self%get_parameter(self%uB1c_O2X,'uB1c_O2X',default=uB1c_O2X)
-      call self%get_parameter(self%urB1_O2X,'urB1_O2X',default=urB1_O2X)
+      call self%get_parameter(self%qnrpicX,'qnrpicX')
+      call self%get_parameter(self%qprpicX,'qprpicX') 
+      call self%get_parameter(self%sump1X,'sump1X')
+      call self%get_parameter(self%q10p1X,'q10p1X')
+      call self%get_parameter(self%srsp1X,'srsp1X')
+      call self%get_parameter(self%pu_eap1X,'pu_eap1X')
+      call self%get_parameter(self%pu_rap1X,'pu_rap1X')
+      call self%get_parameter(self%chp1sX,'chp1sX')
+      call self%get_parameter(self%qnlp1cX,'qnlp1cX')
+      call self%get_parameter(self%qplp1cX,'qplp1cX')
+      call self%get_parameter(self%xqcp1pX,'xqcp1pX')
+      call self%get_parameter(self%xqcp1nX,'xqcp1nX')
+      call self%get_parameter(self%xqnp1X,'xqnp1X')
+      call self%get_parameter(self%xqpp1X,'xqpp1X')
+      call self%get_parameter(self%qup1n3X,'qup1n3X')
+      call self%get_parameter(self%qup1n4X,'qup1n4X')
+      call self%get_parameter(self%qurp1pX,'qurp1pX')
+      call self%get_parameter(self%qsp1cX,'qsp1cX')
+      call self%get_parameter(self%esnip1X,'esnip1X')
+      call self%get_parameter(self%resp1mX,'resp1mX')
+      call self%get_parameter(self%sdop1X,'sdop1X')
+      call self%get_parameter(self%alphaP1X,'alphaP1X')
+      call self%get_parameter(self%betaP1X,'betaP1X')
+      call self%get_parameter(self%phimP1X,'phimP1X')
+      call self%get_parameter(self%phiP1HX,'phiP1HX')
+      call self%get_parameter(self%pEIR_eowX,'pEIR_eowX',default=0.5_rk)
+      call self%get_parameter(self%ChlCmin,'ChlCmin',default=0.0067_rk)
+      call self%get_parameter(self%LimnutX,'LimnutX',default=1)
+      call self%get_parameter(self%R1R2X,'R1R2X')
+      call self%get_parameter(self%uB1c_O2X,'uB1c_O2X',default=0.11_rk)
+      call self%get_parameter(self%urB1_O2X,'urB1_O2X',default=0.1_rk)
 #ifdef IRON
-      call self%get_parameter(self%qflP1cX,'qflP1cX',default=qflP1cX)
-      call self%get_parameter(self%qfRP1cX,'qfRP1cX',default=qfRP1cX)
-      call self%get_parameter(self%qurP1fX,'qurP1fX',default=qurP1fX)
+      call self%get_parameter(self%qflP1cX,'qflP1cX')
+      call self%get_parameter(self%qfRP1cX,'qfRP1cX')
+      call self%get_parameter(self%qurP1fX,'qurP1fX')
 #endif
 
       ! Register state variables
