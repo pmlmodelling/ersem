@@ -115,13 +115,13 @@ contains
 #endif
 
       ! Register state variables
-      call self%register_state_variable(self%id_P1c, 'P1c', 'mg C/m^3',  'Diatoms C', 1.e-4_rk,    minimum=0.0_rk)
-      call self%register_state_variable(self%id_P1n, 'P1n', 'mmol N/m^3','Diatoms N', 1.26e-6_rk,  minimum=0.0_rk)
-      call self%register_state_variable(self%id_P1p, 'P1p', 'mmol P/m^3','Diatoms P', 4.288e-8_rk, minimum=0.0_rk)
-      call self%register_state_variable(self%id_P1s, 'P1s', 'mmol Si/m^3','Diatoms S', 1.e-6_rk,    minimum=0.0_rk)
-      call self%register_state_variable(self%id_Chl1,'Chl1','mg C/m^3',  'Diatoms Chlorophyll-a', 3.e-6_rk, minimum=0.0_rk)
+      call self%register_state_variable(self%id_P1c, 'c',  'mg C/m^3',   'C',             1.e-4_rk,   minimum=0.0_rk)
+      call self%register_state_variable(self%id_P1n, 'n',  'mmol N/m^3', 'N',             1.26e-6_rk, minimum=0.0_rk)
+      call self%register_state_variable(self%id_P1p, 'p',  'mmol P/m^3', 'P',             4.288e-8_rk,minimum=0.0_rk)
+      call self%register_state_variable(self%id_P1s, 's',  'mmol Si/m^3','Si',            1.e-6_rk,   minimum=0.0_rk)
+      call self%register_state_variable(self%id_Chl1,'Chl','mg C/m^3',   'Chlorophyll-a', 3.e-6_rk,   minimum=0.0_rk)
 #ifdef IRON   
-      call self%register_state_variable(self%id_P1f, 'P1f', 'umol Fe/m^3','Diatoms F', 5.e-6_rk, minimum=0.0_rk)
+      call self%register_state_variable(self%id_P1f, 'f',  'umol Fe/m^3','Fe',            5.e-6_rk,   minimum=0.0_rk)
 #endif
 
       ! Register links to external nutrient pools.
@@ -145,9 +145,9 @@ contains
       call self%register_state_dependency(self%id_R6c,'R6c','mg C/m^3',   'POC')    
       call self%register_state_dependency(self%id_R6p,'R6p','mmol P/m^3', 'POP')    
       call self%register_state_dependency(self%id_R6n,'R6n','mmol N/m^3', 'PON')    
-      call self%register_state_dependency(self%id_R6s,'R6s','mmol Si/m^3','POS')    
+      call self%register_state_dependency(self%id_R6s,'R6s','mmol Si/m^3','POSi')    
 #ifdef IRON   
-      call self%register_state_dependency(self%id_R6f,'R6f','umol Fe/m^3','POF')    
+      call self%register_state_dependency(self%id_R6f,'R6f','umol Fe/m^3','POFe')    
 #endif
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
@@ -164,14 +164,7 @@ contains
       call self%register_dependency(self%id_EIR,standard_variables%downwelling_shortwave_flux)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
 
-      return
-
-99    call fatal_error('pml_ersem_vphyt1_create','Error reading namelist pml_ersem_vphyt1.')
-
-100   call fatal_error('pml_ersem_vphyt1_create','Namelist pml_ersem_vphyt1 was not found.')
-
    end subroutine
-
    
    subroutine do(self,_FABM_ARGS_DO_RHS_)
 
