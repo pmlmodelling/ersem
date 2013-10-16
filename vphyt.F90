@@ -1,26 +1,18 @@
 #include "fabm_driver.h"
+
 #define IRON
 !#define CENH
+
 module pml_ersem_vphyt
 
    use fabm_types
 
    implicit none
 
-!  default: all is private.
    private
-!
-! !PUBLIC MEMBER FUNCTIONS:
-   public type_pml_ersem_vphyt
-!
-! !PRIVATE DATA MEMBERS:
-   real(rk), parameter :: secs_pr_day = 86400.0_rk
-!
-! !REVISION HISTORY:!
-!  Original author(s): Jorn Bruggeman
 
-   type,extends(type_base_model) :: type_pml_ersem_vphyt
-!     Variable identifiers
+   type,extends(type_base_model),public :: type_pml_ersem_vphyt
+      ! Variable identifiers
       type (type_state_variable_id)      :: id_P1c,id_P1n,id_P1p,id_P1s,id_Chl1
       type (type_state_variable_id)      :: id_O3c,id_O2o
       type (type_state_variable_id)      :: id_N5s,id_N1p,id_N3n,id_N4n
@@ -32,10 +24,10 @@ module pml_ersem_vphyt
 #ifdef CENH
       type (type_horizontal_dependency_id) :: id_pco2a3
 #endif
-
       type (type_dependency_id)          :: id_EIR,id_ETW
       type (type_diagnostic_variable_id) :: id_netP1
 
+      ! Parameters
       real(rk) :: qnrpicX,qprpicX,sump1X
       real(rk) :: q10p1X,srsp1X,pu_eap1X,pu_rap1X,chp1sX,qnlp1cX,qplp1cX,xqcp1pX
       real(rk) :: xqcp1nX,xqnp1X,xqpp1X,qup1n3X,qup1n4X,qurp1pX,qsp1cX,esnip1X
@@ -47,18 +39,16 @@ module pml_ersem_vphyt
 #endif
       integer :: LimnutX
       logical :: use_Si
-
    contains
-
 !     Model procedures
       procedure :: initialize
       procedure :: do
       procedure :: get_vertical_movement
-
    end type type_pml_ersem_vphyt
 
    real(rk),parameter :: CMass = 12._rk
    real(rk),parameter :: ZeroX = 1e-8_rk
+   real(rk),parameter :: secs_pr_day = 86400.0_rk
 
 contains
 
@@ -76,42 +66,42 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%use_Si,'use_Si',default=.true.)
-      call self%get_parameter(self%qnrpicX,'qnrpicX')
-      call self%get_parameter(self%qprpicX,'qprpicX') 
-      call self%get_parameter(self%sump1X,'sump1X')
-      call self%get_parameter(self%q10p1X,'q10p1X')
-      call self%get_parameter(self%srsp1X,'srsp1X')
-      call self%get_parameter(self%pu_eap1X,'pu_eap1X')
-      call self%get_parameter(self%pu_rap1X,'pu_rap1X')
-      call self%get_parameter(self%chp1sX,'chp1sX')
-      call self%get_parameter(self%qnlp1cX,'qnlp1cX')
-      call self%get_parameter(self%qplp1cX,'qplp1cX')
-      call self%get_parameter(self%xqcp1pX,'xqcp1pX')
-      call self%get_parameter(self%xqcp1nX,'xqcp1nX')
-      call self%get_parameter(self%xqnp1X,'xqnp1X')
-      call self%get_parameter(self%xqpp1X,'xqpp1X')
-      call self%get_parameter(self%qup1n3X,'qup1n3X')
-      call self%get_parameter(self%qup1n4X,'qup1n4X')
-      call self%get_parameter(self%qurp1pX,'qurp1pX')
-      call self%get_parameter(self%qsp1cX,'qsp1cX')
-      call self%get_parameter(self%esnip1X,'esnip1X')
-      call self%get_parameter(self%resp1mX,'resp1mX')
-      call self%get_parameter(self%sdop1X,'sdop1X')
-      call self%get_parameter(self%alphaP1X,'alphaP1X')
-      call self%get_parameter(self%betaP1X,'betaP1X')
-      call self%get_parameter(self%phimP1X,'phimP1X')
-      call self%get_parameter(self%phiP1HX,'phiP1HX')
+      call self%get_parameter(self%use_Si,   'use_Si',  default=.true.)
+      call self%get_parameter(self%qnrpicX,  'qnrpicX')
+      call self%get_parameter(self%qprpicX,  'qprpicX') 
+      call self%get_parameter(self%sump1X,   'sump1X')
+      call self%get_parameter(self%q10p1X,   'q10p1X')
+      call self%get_parameter(self%srsp1X,   'srsp1X')
+      call self%get_parameter(self%pu_eap1X, 'pu_eap1X')
+      call self%get_parameter(self%pu_rap1X, 'pu_rap1X')
+      call self%get_parameter(self%chp1sX,   'chp1sX')
+      call self%get_parameter(self%qnlp1cX,  'qnlp1cX')
+      call self%get_parameter(self%qplp1cX,  'qplp1cX')
+      call self%get_parameter(self%xqcp1pX,  'xqcp1pX')
+      call self%get_parameter(self%xqcp1nX,  'xqcp1nX')
+      call self%get_parameter(self%xqnp1X,   'xqnp1X')
+      call self%get_parameter(self%xqpp1X,   'xqpp1X')
+      call self%get_parameter(self%qup1n3X,  'qup1n3X')
+      call self%get_parameter(self%qup1n4X,  'qup1n4X')
+      call self%get_parameter(self%qurp1pX,  'qurp1pX')
+      call self%get_parameter(self%qsp1cX,   'qsp1cX')
+      call self%get_parameter(self%esnip1X,  'esnip1X')
+      call self%get_parameter(self%resp1mX,  'resp1mX')
+      call self%get_parameter(self%sdop1X,   'sdop1X')
+      call self%get_parameter(self%alphaP1X, 'alphaP1X')
+      call self%get_parameter(self%betaP1X,  'betaP1X')
+      call self%get_parameter(self%phimP1X,  'phimP1X')
+      call self%get_parameter(self%phiP1HX,  'phiP1HX')
       call self%get_parameter(self%pEIR_eowX,'pEIR_eowX',default=0.5_rk)
-      call self%get_parameter(self%ChlCmin,'ChlCmin',default=0.0067_rk)
-      call self%get_parameter(self%LimnutX,'LimnutX',default=1)
-      call self%get_parameter(self%R1R2X,'R1R2X')
-      call self%get_parameter(self%uB1c_O2X,'uB1c_O2X',default=0.11_rk)
-      call self%get_parameter(self%urB1_O2X,'urB1_O2X',default=0.1_rk)
+      call self%get_parameter(self%ChlCmin,  'ChlCmin',  default=0.0067_rk)
+      call self%get_parameter(self%LimnutX,  'LimnutX',  default=1)
+      call self%get_parameter(self%R1R2X,    'R1R2X')
+      call self%get_parameter(self%uB1c_O2X, 'uB1c_O2X', default=0.11_rk)
+      call self%get_parameter(self%urB1_O2X, 'urB1_O2X', default=0.1_rk)
 #ifdef IRON
-      call self%get_parameter(self%qflP1cX,'qflP1cX')
-      call self%get_parameter(self%qfRP1cX,'qfRP1cX')
-      call self%get_parameter(self%qurP1fX,'qurP1fX')
+      call self%get_parameter(self%qflP1cX,  'qflP1cX')
+      call self%get_parameter(self%qfRP1cX,  'qfRP1cX')
+      call self%get_parameter(self%qurP1fX,  'qurP1fX')
 #endif
 
       ! Register state variables
@@ -166,10 +156,10 @@ contains
 
    end subroutine
    
-   subroutine do(self,_FABM_ARGS_DO_RHS_)
+   subroutine do(self,_ARGUMENTS_DO_)
 
       class (type_pml_ersem_vphyt),intent(in) :: self
-      _DECLARE_FABM_ARGS_DO_RHS_
+      _DECLARE_ARGUMENTS_DO_
 
    ! !LOCAL VARIABLES:
       real(rk) :: ETW,EIR
@@ -209,16 +199,20 @@ contains
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
 
+         ! First retrieve local state.
+         ! NB: _GET_SAFE_ retrieves the value of the state variable, minus an offset
+         ! (if any) specified by the owning model during registration of the state variable.
+         ! If the returned value would be negative, 0.0 is returned instead.
+
          _GET_(self%id_P1c,P1c)
          _GET_(self%id_P1p,P1p)
          _GET_(self%id_P1n,P1n)
          if (self%use_Si) _GET_(self%id_P1s,P1s)
 #ifdef IRON      
          _GET_(self%id_P1f,P1f)
-         _GET_SAFE_(self%id_P1f,P1fP)
-         _GET_SAFE_(self%id_N7f,N7fP)
 #endif
          _GET_(self%id_Chl1,chl1)
+
          _GET_(self%id_N5s,N5s)
 
          _GET_SAFE_(self%id_P1c,P1cP)
@@ -229,11 +223,17 @@ contains
          _GET_SAFE_(self%id_N1p,N1pP)
          _GET_SAFE_(self%id_N3n,N3nP)
          _GET_SAFE_(self%id_N4n,N4nP)
+#ifdef IRON      
+         _GET_SAFE_(self%id_P1f,P1fP)
+         _GET_SAFE_(self%id_N7f,N7fP)
+#endif
 
+         ! Get environmental dependencies (water temperature, shortwave radation)
          _GET_(self%id_ETW,ETW)
          _GET_(self%id_EIR,EIR)
 
 #ifdef CENH      
+         ! Get atmospheric pCO2
          _GET_HORIZONTAL_(self%id_pco2a3,pco2a3)
 #endif
 
@@ -484,15 +484,16 @@ contains
 
    end subroutine do
 
-   subroutine get_vertical_movement(self,_FABM_ARGS_GET_VERTICAL_MOVEMENT_)
+   subroutine get_vertical_movement(self,_ARGUMENTS_GET_VERTICAL_MOVEMENT_)
       class (type_pml_ersem_vphyt),intent(in) :: self
-      _DECLARE_FABM_ARGS_GET_VERTICAL_MOVEMENT_
-      
+      _DECLARE_ARGUMENTS_GET_VERTICAL_MOVEMENT_
+
       real(rk) :: SDP1
       real(rk) :: P1c,P1p,P1n,qpP1c,qnP1c,iNP1p,iNP1n,iNIP1
 
-      _FABM_LOOP_BEGIN_
+      _LOOP_BEGIN_
 
+         ! Retrieve local state
          _GET_(self%id_P1c,P1c)
          _GET_(self%id_P1p,P1p)
          _GET_(self%id_P1n,P1n)
@@ -525,7 +526,7 @@ contains
          _SET_VERTICAL_MOVEMENT_(self%id_P1f,SDP1)
 #endif
 
-      _FABM_LOOP_END_
+      _LOOP_END_
 
    end subroutine get_vertical_movement
 
