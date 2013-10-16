@@ -327,7 +327,8 @@ contains
 #ifdef CALC
 ! Calcified matter:
       fO3L2c(I) = fO3L2c(I) + fP2R4c(I)*RainR(I)      !Jorn: flagellates only!
-#endif !..Respiration..........................................................
+#endif
+   !..Respiration..........................................................
 
    !..Rest respiration rate :
          srsP1 = etP1*self%srsP1X 
