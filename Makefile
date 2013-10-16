@@ -4,9 +4,9 @@
 
 include ../../../Rules.make
 
-DOCSRC	= nutrients.F90 dom.F90 pom.F90 gas_dynamics.F90 vphyt1.F90
+DOCSRC	= nutrients.F90 dom.F90 pom.F90 gas_dynamics.F90 vphyt.F90
 
-OBJS    = ${LIBFABM}(nutrients.o) ${LIBFABM}(dom.o) ${LIBFABM}(pom.o) ${LIBFABM}(gas_dynamics.o) ${LIBFABM}(vphyt1.o)
+OBJS    = ${LIBFABM}(nutrients.o) ${LIBFABM}(dom.o) ${LIBFABM}(pom.o) ${LIBFABM}(gas_dynamics.o) ${LIBFABM}(vphyt.o)
 
 all: objs
 
