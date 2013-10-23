@@ -25,9 +25,7 @@ module pml_ersem_microzoo
       ! Parameters
       integer  :: nprey
       real(rk) :: chuz5cX,sumz5X,puz5X,pe_r1z5X,q10z5X,srsz5X,chrz5oX,pu_eaz5X
-      real(rk) :: sdz5oX,sdz5X,qnz5cX,qpz5cX,minfoodz5X,stempz5nX,stempz5pX,chuz6cX
-      real(rk) :: sumz6X,puz6X,pe_r1z6X,q10z6X,srsz6X,chrz6oX,pu_eaz6X,sdz6oX,sdz6X
-      real(rk) :: qnz6cX,qpz6cX,minfoodz6X,stempz6nX,stempz6pX
+      real(rk) :: sdz5oX,sdz5X,qnz5cX,qpz5cX,minfoodz5X,stempz5nX,stempz5pX
       real(rk),allocatable :: suprey_Z5X(:)
 
       ! ERSEM global parameters
@@ -74,21 +72,6 @@ contains
       call self%get_parameter(self%minfoodz5X,'minfoodz5X')
       call self%get_parameter(self%stempz5nX, 'stempz5nX')
       call self%get_parameter(self%stempz5pX, 'stempz5pX')
-      call self%get_parameter(self%chuz6cX,   'chuz6cX')
-      call self%get_parameter(self%sumz6X,    'sumz6X')
-      call self%get_parameter(self%puz6X,     'puz6X')
-      call self%get_parameter(self%pe_r1z6X,  'pe_r1z6X')
-      call self%get_parameter(self%srsz6X,    'srsz6X')
-      call self%get_parameter(self%q10z6X,    'q10z6X')
-      call self%get_parameter(self%chrz6oX,   'chrz6oX')
-      call self%get_parameter(self%pu_eaz6X,  'pu_eaz6X')
-      call self%get_parameter(self%sdz6oX,    'sdz6oX')
-      call self%get_parameter(self%sdz6X,     'sdz6X')
-      call self%get_parameter(self%qnz6cX,    'qnz6cX')
-      call self%get_parameter(self%qpz6cX,    'qpz6cX')
-      call self%get_parameter(self%minfoodz6X,'minfoodz6X')
-      call self%get_parameter(self%stempz6nX, 'stempz6nX')
-      call self%get_parameter(self%stempz6pX, 'stempz6pX')
 
       call self%get_parameter(self%R1R2X,   'R1R2X')
       call self%get_parameter(self%xR1pX,   'xR1pX')
@@ -118,7 +101,7 @@ contains
          call self%register_state_dependency(self%id_preyf(iprey),'prey'//trim(index)//'f','mmol Fe/m^3','Prey '//trim(index)//' Fe')    
          call self%register_state_dependency(self%id_preys(iprey),'prey'//trim(index)//'s','mmol Si/m^3','Prey '//trim(index)//' Si')    
          call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','mmol Fe/m^3','Target pool for Fe of assimilated prey '//trim(index))    
-         call self%get_parameter(self%suprey_Z5X(iprey),'suprey'//trim(index)//'_Z5X',default=0.0_rk)
+         call self%get_parameter(self%suprey_Z5X(iprey),'suprey'//trim(index)//'_Z5X')
       end do
 
       ! Register links to external nutrient pools.
