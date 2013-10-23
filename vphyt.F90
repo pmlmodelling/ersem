@@ -33,7 +33,7 @@ module pml_ersem_vphyt
       real(rk) :: xqcp1nX,xqnp1X,xqpp1X,qup1n3X,qup1n4X,qurp1pX,qsp1cX,esnip1X
       real(rk) :: resp1mX,sdop1X
       real(rk) :: alphaP1X,betaP1X,phimP1X,phiP1HX
-      real(rk) :: pEIR_eowX,ChlCmin,R1R2X,uB1c_O2X,urB1_O2X
+      real(rk) :: pEIR_eowX,R1R2X,uB1c_O2X,urB1_O2X
 #ifdef IRON
       real(rk) :: qflP1cX,qfRP1cX,qurP1fX
 #endif
@@ -49,6 +49,7 @@ module pml_ersem_vphyt
    real(rk),parameter :: CMass = 12._rk
    real(rk),parameter :: ZeroX = 1e-8_rk
    real(rk),parameter :: secs_pr_day = 86400.0_rk
+   real(rk),parameter :: ChlCmin=0.0067
 
 contains
 
@@ -74,7 +75,6 @@ contains
       call self%get_parameter(self%srsp1X,   'srsp1X')
       call self%get_parameter(self%pu_eap1X, 'pu_eap1X')
       call self%get_parameter(self%pu_rap1X, 'pu_rap1X')
-      call self%get_parameter(self%chp1sX,   'chp1sX')
       call self%get_parameter(self%qnlp1cX,  'qnlp1cX')
       call self%get_parameter(self%qplp1cX,  'qplp1cX')
       call self%get_parameter(self%xqcp1pX,  'xqcp1pX')
@@ -84,7 +84,10 @@ contains
       call self%get_parameter(self%qup1n3X,  'qup1n3X')
       call self%get_parameter(self%qup1n4X,  'qup1n4X')
       call self%get_parameter(self%qurp1pX,  'qurp1pX')
-      call self%get_parameter(self%qsp1cX,   'qsp1cX')
+      if (self%use_Si) then
+         call self%get_parameter(self%qsp1cX,'qsp1cX')
+         call self%get_parameter(self%chp1sX,'chp1sX')
+      end if
       call self%get_parameter(self%esnip1X,  'esnip1X')
       call self%get_parameter(self%resp1mX,  'resp1mX')
       call self%get_parameter(self%sdop1X,   'sdop1X')
@@ -92,12 +95,11 @@ contains
       call self%get_parameter(self%betaP1X,  'betaP1X')
       call self%get_parameter(self%phimP1X,  'phimP1X')
       call self%get_parameter(self%phiP1HX,  'phiP1HX')
-      call self%get_parameter(self%pEIR_eowX,'pEIR_eowX',default=0.5_rk)
-      call self%get_parameter(self%ChlCmin,  'ChlCmin',  default=0.0067_rk)
-      call self%get_parameter(self%LimnutX,  'LimnutX',  default=1)
+      call self%get_parameter(self%pEIR_eowX,'pEIR_eowX')
+      call self%get_parameter(self%LimnutX,  'LimnutX')
       call self%get_parameter(self%R1R2X,    'R1R2X')
-      call self%get_parameter(self%uB1c_O2X, 'uB1c_O2X', default=0.11_rk)
-      call self%get_parameter(self%urB1_O2X, 'urB1_O2X', default=0.1_rk)
+      call self%get_parameter(self%uB1c_O2X, 'uB1c_O2X')
+      call self%get_parameter(self%urB1_O2X, 'urB1_O2X')
 #ifdef IRON
       call self%get_parameter(self%qflP1cX,  'qflP1cX')
       call self%get_parameter(self%qfRP1cX,  'qfRP1cX')
@@ -239,7 +241,7 @@ contains
 
          qpP1c = P1p/P1c
          qnP1c = P1n/P1c
-         qsP1c = P1s/P1c
+         if (self%use_Si) qsP1c = P1s/P1c
 #ifdef IRON
          qfP1c = P1f/P1c
 #endif
@@ -290,10 +292,10 @@ contains
          parEIR = self%pEIR_eowX*EIR
          if (parEIR.gt.zeroX) THEN
             sumP1 = sumP1 * (1._rk-exp(-self%alphaP1X*parEIR*ChlCpp/sumP1)) * EXP(-self%betaP1X*parEIR*ChlCpp/sumP1)
-            rho = (phi - self%ChlCmin) * (sumP1/(self%alphaP1X*parEIR*ChlCpp)) + self%ChlCmin
+            rho = (phi - ChlCmin) * (sumP1/(self%alphaP1X*parEIR*ChlCpp)) + ChlCmin
          else
             sumP1 = 0._rk
-            rho = self%ChlCmin
+            rho = ChlCmin
          end if
 #ifdef CENH
    ! Enhancement factor (from MEECE D1.5) 379.48 = pco2a @ 2005

@@ -1,5 +1,5 @@
 #include "fabm_driver.h"
-   
+
 #define IRON
 
 module pml_ersem_microzoo
@@ -58,7 +58,42 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%nprey,'nprey',default=0)
+      call self%get_parameter(self%nprey,     'nprey',default=0)
+      call self%get_parameter(self%chuz5cX,   'chuz5cX')
+      call self%get_parameter(self%sumz5X,    'sumz5X')
+      call self%get_parameter(self%puz5X,     'puz5X')
+      call self%get_parameter(self%pe_r1z5X,  'pe_r1z5X')
+      call self%get_parameter(self%q10z5X,    'q10z5X')
+      call self%get_parameter(self%srsz5X,    'srsz5X')
+      call self%get_parameter(self%chrz5oX,   'chrz5oX')
+      call self%get_parameter(self%pu_eaz5X,  'pu_eaz5X')
+      call self%get_parameter(self%sdz5oX,    'sdz5oX')
+      call self%get_parameter(self%sdz5X,     'sdz5X')
+      call self%get_parameter(self%qnz5cX,    'qnz5cX')
+      call self%get_parameter(self%qpz5cX,    'qpz5cX')
+      call self%get_parameter(self%minfoodz5X,'minfoodz5X')
+      call self%get_parameter(self%stempz5nX, 'stempz5nX')
+      call self%get_parameter(self%stempz5pX, 'stempz5pX')
+      call self%get_parameter(self%chuz6cX,   'chuz6cX')
+      call self%get_parameter(self%sumz6X,    'sumz6X')
+      call self%get_parameter(self%puz6X,     'puz6X')
+      call self%get_parameter(self%pe_r1z6X,  'pe_r1z6X')
+      call self%get_parameter(self%srsz6X,    'srsz6X')
+      call self%get_parameter(self%q10z6X,    'q10z6X')
+      call self%get_parameter(self%chrz6oX,   'chrz6oX')
+      call self%get_parameter(self%pu_eaz6X,  'pu_eaz6X')
+      call self%get_parameter(self%sdz6oX,    'sdz6oX')
+      call self%get_parameter(self%sdz6X,     'sdz6X')
+      call self%get_parameter(self%qnz6cX,    'qnz6cX')
+      call self%get_parameter(self%qpz6cX,    'qpz6cX')
+      call self%get_parameter(self%minfoodz6X,'minfoodz6X')
+      call self%get_parameter(self%stempz6nX, 'stempz6nX')
+      call self%get_parameter(self%stempz6pX, 'stempz6pX')
+
+      call self%get_parameter(self%R1R2X,   'R1R2X')
+      call self%get_parameter(self%xR1pX,   'xR1pX')
+      call self%get_parameter(self%xR1nX,   'xR1nX')
+      call self%get_parameter(self%urB1_O2X,'urB1_O2X')
 
       ! Register state variables
       call self%register_state_variable(self%id_Z5c, 'c', 'mg C/m^3',   'C', 1.e-4_rk,   minimum=0.0_rk)
@@ -85,7 +120,7 @@ contains
          call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','mmol Fe/m^3','Target pool for Fe of assimilated prey '//trim(index))    
          call self%get_parameter(self%suprey_Z5X(iprey),'suprey'//trim(index)//'_Z5X',default=0.0_rk)
       end do
-      
+
       ! Register links to external nutrient pools.
       call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3', 'Phosphate')    
       call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3', 'Ammonium')    
@@ -160,7 +195,7 @@ contains
 
       qpZ5c = Z5p/Z5c
       qnZ5c = Z5n/Z5c
-      
+
 !..Temperature effect :
       etZ5 = self%q10Z5X**((ETW-10._rk)/10._rk) - self%q10Z5X**((ETW-32._rk)/3._rk)
 
