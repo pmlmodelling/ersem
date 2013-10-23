@@ -11,7 +11,7 @@ module pml_ersem_microzoo
    private
 
    type,extends(type_base_model),public :: type_pml_ersem_microzoo
-      ! Variable identifiers
+      ! Variables
       type (type_state_variable_id)      :: id_Z5c,id_Z5n,id_Z5p
       type (type_state_variable_id),allocatable,dimension(:) :: id_preyc,id_preyn,id_preyp,id_preys,id_preyf,id_preyChl,id_preyf_target
       type (type_state_variable_id)      :: id_O3c, id_O2o
@@ -94,12 +94,12 @@ contains
       allocate(self%suprey_Z5X(self%nprey))
       do iprey=1,self%nprey
          write (index,'(i0)') iprey
-         call self%register_state_dependency(self%id_preyc(iprey),'prey'//trim(index)//'c','mg C/m^3',   'Prey '//trim(index)//' C')    
-         call self%register_state_dependency(self%id_preyChl(iprey),'prey'//trim(index)//'Chl','mg/m^3',   'Prey '//trim(index)//' chlorophyll')    
-         call self%register_state_dependency(self%id_preyn(iprey),'prey'//trim(index)//'n','mmol N/m^3', 'Prey '//trim(index)//' N')    
-         call self%register_state_dependency(self%id_preyp(iprey),'prey'//trim(index)//'p','mmol P/m^3', 'Prey '//trim(index)//' P')    
-         call self%register_state_dependency(self%id_preyf(iprey),'prey'//trim(index)//'f','mmol Fe/m^3','Prey '//trim(index)//' Fe')    
-         call self%register_state_dependency(self%id_preys(iprey),'prey'//trim(index)//'s','mmol Si/m^3','Prey '//trim(index)//' Si')    
+         call self%register_state_dependency(self%id_preyc(iprey),  'prey'//trim(index)//'c',  'mg C/m^3',   'Prey '//trim(index)//' C')    
+         call self%register_state_dependency(self%id_preyChl(iprey),'prey'//trim(index)//'Chl','mg/m^3',     'Prey '//trim(index)//' chlorophyll')    
+         call self%register_state_dependency(self%id_preyn(iprey),  'prey'//trim(index)//'n',  'mmol N/m^3', 'Prey '//trim(index)//' N')    
+         call self%register_state_dependency(self%id_preyp(iprey),  'prey'//trim(index)//'p',  'mmol P/m^3', 'Prey '//trim(index)//' P')    
+         call self%register_state_dependency(self%id_preyf(iprey),  'prey'//trim(index)//'f',  'mmol Fe/m^3','Prey '//trim(index)//' Fe')    
+         call self%register_state_dependency(self%id_preys(iprey),  'prey'//trim(index)//'s',  'mmol Si/m^3','Prey '//trim(index)//' Si')    
          call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','mmol Fe/m^3','Target pool for Fe of assimilated prey '//trim(index))    
          call self%get_parameter(self%suprey_Z5X(iprey),'suprey'//trim(index)//'_Z5X')
       end do
