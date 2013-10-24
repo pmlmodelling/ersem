@@ -258,9 +258,7 @@ contains
       fZ5N1p = MAX( 0._rk, Z5pP - self%qpZ5cX*Z5cP)*self%stempZ5pX
 
 !..Source equations
-      _SET_ODE_(self%id_Z5p,sum(spreyZ5*preypP) &
-                        - fZ5R6p &
-                        - fZ5RDp - fZ5N1p)
+      _SET_ODE_(self%id_Z5p,sum(spreyZ5*preypP) - fZ5R6p - fZ5RDp - fZ5N1p)
 
 #ifdef IRON
 ! iron dynamics
@@ -293,9 +291,7 @@ contains
 
       fZ5NIn = MAX( 0._rk, Z5nP - self%qnZ5cX*Z5cP)*self%stempZ5nX
       _SET_ODE_(self%id_N4n,+ fZ5NIn)
-      _SET_ODE_(self%id_Z5n,sum(spreyZ5*preynP) &
-                        - fZ5R6n &
-                        - fZ5RDn - fZ5NIn)
+      _SET_ODE_(self%id_Z5n,sum(spreyZ5*preynP) - fZ5R6n - fZ5RDn - fZ5NIn)
 
 !..Nitrogen flux from/to detritus
       _SET_ODE_(self%id_R6n,+ fZ5R6n)
