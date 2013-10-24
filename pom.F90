@@ -3,29 +3,19 @@
 module pml_ersem_pom
 
    use fabm_types
-   use fabm_driver
 
    implicit none
 
 !  default: all is private.
    private
-!
-! !PUBLIC MEMBER FUNCTIONS:
-   public type_pml_ersem_pom
-!
-! !REVISION HISTORY:!
-!  Original author(s): Jorn Bruggeman
 
-   type,extends(type_base_model) :: type_pml_ersem_pom
-!     Variable identifiers
-      type (type_state_variable_id)      :: id_R6c,id_R6p,id_R6n,id_R6s
+   type,extends(type_base_model),public :: type_pml_ersem_pom
+      type (type_state_variable_id)      :: id_c,id_p,id_n,id_s
 #ifdef IRON
-      type (type_state_variable_id)      :: id_R6f
+      type (type_state_variable_id)      :: id_f
 #endif
    contains
-
       procedure :: initialize
-
    end type
 
 contains
@@ -33,26 +23,25 @@ contains
    subroutine initialize(self,configunit)
 !
 ! !DESCRIPTION:
-!  Here, the npzd namelist is read and the variables exported
-!  by the model are registered with FABM.
 !
 ! !INPUT PARAMETERS:
    class (type_pml_ersem_pom), intent(inout), target :: self
    integer,                    intent(in)            :: configunit
 !
-! !REVISION HISTORY:
-!
 ! !LOCAL VARIABLES:
+   logical :: has_s,has_f
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-   call self%register_state_variable(self%id_R6c,'R6c','mg C/m^3',  'POC', 0._rk,minimum=0._rk)
-   call self%register_state_variable(self%id_R6p,'R6p','mmol P/m^3','POP', 0._rk,minimum=0._rk)
-   call self%register_state_variable(self%id_R6n,'R6n','mmol N/m^3','PON', 0._rk,minimum=0._rk)
-   call self%register_state_variable(self%id_R6s,'R6s','mmol N/m^3','POS', 0._rk,minimum=0._rk)
-#ifdef IRON   
-   call self%register_state_variable(self%id_R6f,'R6f','umol N/m^3','POF', 0._rk,minimum=0._rk)
-#endif
+      call self%get_parameter(has_s,'has_s',default=.true.)
+      call self%get_parameter(has_f,'has_f',default=.true.)
+
+      call self%register_state_variable(self%id_c,'c','mg C/m^3',  'carbon',     0._rk,minimum=0._rk)
+      call self%register_state_variable(self%id_p,'p','mmol P/m^3','phosphorous',0._rk,minimum=0._rk)
+      call self%register_state_variable(self%id_n,'n','mmol N/m^3','nitrogen',   0._rk,minimum=0._rk)
+
+      if (has_s) call self%register_state_variable(self%id_s,'s','mmol Si/m^3','silicate',0._rk,minimum=0._rk)
+      if (has_f) call self%register_state_variable(self%id_f,'f','umol Fe/m^3','iron',    0._rk,minimum=0._rk)
    end subroutine
 
 end module

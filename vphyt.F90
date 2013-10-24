@@ -110,7 +110,7 @@ contains
       call self%register_state_variable(self%id_P1c, 'c',  'mg C/m^3',   'C',             1.e-4_rk,   minimum=0.0_rk)
       call self%register_state_variable(self%id_P1n, 'n',  'mmol N/m^3', 'N',             1.26e-6_rk, minimum=0.0_rk)
       call self%register_state_variable(self%id_P1p, 'p',  'mmol P/m^3', 'P',             4.288e-8_rk,minimum=0.0_rk)
-      call self%register_state_variable(self%id_P1s, 's',  'mmol Si/m^3','Si',            1.e-6_rk,   minimum=0.0_rk)
+      if (self%use_Si) call self%register_state_variable(self%id_P1s, 's',  'mmol Si/m^3','Si',            1.e-6_rk,   minimum=0.0_rk)
       call self%register_state_variable(self%id_Chl1,'Chl','mg C/m^3',   'Chlorophyll-a', 3.e-6_rk,   minimum=0.0_rk)
 #ifdef IRON   
       call self%register_state_variable(self%id_P1f, 'f',  'umol Fe/m^3','Fe',            5.e-6_rk,   minimum=0.0_rk)
@@ -120,7 +120,7 @@ contains
       call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3', 'Phosphate')    
       call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3', 'Nitrate')    
       call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3', 'Ammonium')    
-      call self%register_state_dependency(self%id_N5s,'N5s','mmol Si/m^3','Silicate')    
+      if (self%use_Si) call self%register_state_dependency(self%id_N5s,'N5s','mmol Si/m^3','Silicate')    
 #ifdef IRON   
       call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3', 'Inorganic Iron')    
 #endif
@@ -134,12 +134,12 @@ contains
       call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','Semi-labile DOC')    
 
       ! Register links to external particulate organic matter (medium-size) pools.
-      call self%register_state_dependency(self%id_R6c,'R6c','mg C/m^3',   'POC')    
-      call self%register_state_dependency(self%id_R6p,'R6p','mmol P/m^3', 'POP')    
-      call self%register_state_dependency(self%id_R6n,'R6n','mmol N/m^3', 'PON')    
-      call self%register_state_dependency(self%id_R6s,'R6s','mmol Si/m^3','POSi')    
+      call self%register_state_dependency(self%id_R6c,'RPc','mg C/m^3',   'POC')    
+      call self%register_state_dependency(self%id_R6p,'RPp','mmol P/m^3', 'POP')    
+      call self%register_state_dependency(self%id_R6n,'RPn','mmol N/m^3', 'PON')    
+      if (self%use_Si) call self%register_state_dependency(self%id_R6s,'RPs','mmol Si/m^3','POSi')    
 #ifdef IRON   
-      call self%register_state_dependency(self%id_R6f,'R6f','umol Fe/m^3','POFe')    
+      call self%register_state_dependency(self%id_R6f,'RPf','umol Fe/m^3','POFe')    
 #endif
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
@@ -209,18 +209,20 @@ contains
          _GET_(self%id_P1c,P1c)
          _GET_(self%id_P1p,P1p)
          _GET_(self%id_P1n,P1n)
-         if (self%use_Si) _GET_(self%id_P1s,P1s)
 #ifdef IRON      
          _GET_(self%id_P1f,P1f)
 #endif
          _GET_(self%id_Chl1,chl1)
 
-         _GET_(self%id_N5s,N5s)
+         if (self%use_Si) then
+            _GET_(self%id_P1s,P1s)
+            _GET_(self%id_N5s,N5s)
+            _GET_SAFE_(self%id_P1s,P1sP)
+         end if
 
          _GET_SAFE_(self%id_P1c,P1cP)
          _GET_SAFE_(self%id_P1p,P1pP)
          _GET_SAFE_(self%id_P1n,P1nP)
-         _GET_SAFE_(self%id_P1s,P1sP)
          _GET_SAFE_(self%id_Chl1,chl1P)
          _GET_SAFE_(self%id_N1p,N1pP)
          _GET_SAFE_(self%id_N3n,N3nP)

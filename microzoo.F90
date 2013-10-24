@@ -116,11 +116,11 @@ contains
       ! Register links to external semi-labile dissolved organic matter pools.
       call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','Semi-labile DOC')    
 
-      ! Register links to external particulate organic matter (medium-size) pools.
-      call self%register_state_dependency(self%id_R6c,'R6c','mg C/m^3',   'POC')    
-      call self%register_state_dependency(self%id_R6p,'R6p','mmol P/m^3', 'POP')    
-      call self%register_state_dependency(self%id_R6n,'R6n','mmol N/m^3', 'PON')    
-      call self%register_state_dependency(self%id_R6s,'R6s','mmol Si/m^3','POSi')    
+      ! Register links to external particulate organic matter pools.
+      call self%register_state_dependency(self%id_R6c,'RPc','mg C/m^3',   'POC')    
+      call self%register_state_dependency(self%id_R6p,'RPp','mmol P/m^3', 'POP')    
+      call self%register_state_dependency(self%id_R6n,'RPn','mmol N/m^3', 'PON')    
+      call self%register_state_dependency(self%id_R6s,'RPs','mmol Si/m^3','POSi')    
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','Carbon Dioxide')    
