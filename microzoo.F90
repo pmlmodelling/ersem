@@ -147,7 +147,10 @@ contains
       real(rk) :: rumZ5, put_uZ5,rugZ5
       real(rk) :: sdZ5,rdZ5
       real(rk) :: ineffZ5
-      real(rk) :: retZ5,fZ5RDc,fZ5R6c,fZXRDc
+      real(rk) :: retZ5,fZ5RDc,fZ5R6c
+#ifdef SAVEFLX
+      real(rk) :: fZXRDc
+#endif
       real(rk) :: rrsZ5,rraZ5
       real(rk) :: fZ5O3c
       real(rk) :: fZ5RIp,fZ5RDp,fZ5R6p,fZ5N1p
@@ -241,8 +244,8 @@ contains
 
 !..Grazing and predation
       do iprey=1,self%nprey
-         _SET_ODE_(self%id_preyc,- fpreyZ5c)
-         _SET_ODE_(self%id_preyChl,- spreyZ5*preychlP)
+         _SET_ODE_(self%id_preyc(iprey),- fpreyZ5c(iprey))
+         _SET_ODE_(self%id_preyChl(iprey),- spreyZ5(iprey)*preychlP(iprey))
       end do
 
 !..Respiration
