@@ -28,14 +28,13 @@ contains
 ! !REVISION HISTORY:
 !
 ! !LOCAL VARIABLES:
-   character(len=1024) :: name,units,long_name
+   character(len=1024) :: name,units
 !EOP
 !-----------------------------------------------------------------------
 !BOC
    call self%get_parameter(name,'name')
    call self%get_parameter(units,'units')
-   call self%get_parameter(long_name,'long_name',default=name)
-   call self%register_state_variable(self%id_N,name,units,long_name,1._rk,minimum=0._rk)
+   call self%register_state_variable(self%id_N,name,units,trim(self%long_name_prefix),1._rk,minimum=0._rk)
 
    end subroutine
 
