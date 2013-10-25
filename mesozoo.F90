@@ -223,50 +223,50 @@ contains
          fZ4RDc = (retZ4 + rdZ4)*self%pe_R1Z4X
          fZ4R8c = (retZ4 + rdZ4)*(1._rk - self%pe_R1Z4X)
 #ifdef SAVEFLX
-          fZXRDc(I) = fZXRDc(I)+fZ4RDc
+         fZXRDc(I) = fZXRDc(I)+fZ4RDc
 #endif
 
 !..Rest respiration, corrected for prevailing temperature
-          rrsZ4 = self%srsZ4X*etZ4*Z4cP
+         rrsZ4 = self%srsZ4X*etZ4*Z4cP
 
 !..Activity respiration
-          rraZ4 = ineffZ4 * rugZ4 - retZ4
+         rraZ4 = ineffZ4 * rugZ4 - retZ4
 
 !..Total respiration
-          fZ4O3c = rrsZ4 + rraZ4
+         fZ4O3c = rrsZ4 + rraZ4
 
 #ifdef CALC
-          fO3L2c(I) = fO3L2c(I) + &
-            RainR(I) * gutdiss * (1._fp8 - puZ4X)* pu_eaZ4X * fP2Z4c(I)
+         fO3L2c(I) = fO3L2c(I) + &
+            RainR(I) * gutdiss * (1._rk - puZ4X)* pu_eaZ4X * fP2Z4c
 #endif
-          rraZ4 = rugZ4*(1._rk - self%puZ4X)-retZ4
+         rraZ4 = rugZ4*(1._rk - self%puZ4X)-retZ4
 
 !..Source equations
-          SZ4c = rugZ4 - fZ4RDc - fZ4R8c - fZ4O3c   ! Jorn: cannibalism accounted for in grazing/predation section
+         SZ4c = rugZ4 - fZ4RDc - fZ4R8c - fZ4O3c   ! Jorn: cannibalism accounted for in grazing/predation section
 
 !..Flows from and to detritus
-          _SET_ODE_(self%id_R1c, + fZ4RDc * self%R1R2X)
-          _SET_ODE_(self%id_R2c, + fZ4RDc * (1._rk-self%R1R2X))
-          _SET_ODE_(self%id_R8c, + fZ4R8c)
+         _SET_ODE_(self%id_R1c, + fZ4RDc * self%R1R2X)
+         _SET_ODE_(self%id_R2c, + fZ4RDc * (1._rk-self%R1R2X))
+         _SET_ODE_(self%id_R8c, + fZ4R8c)
 
 !..Grazing and predation
-          do iprey=1,self%nprey
-             _SET_ODE_(self%id_preyc(iprey),   - fpreyZ4c(iprey))
-             _SET_ODE_(self%id_preyChl(iprey), - spreyZ4(iprey)*preyChlP(iprey))
-          end do
+         do iprey=1,self%nprey
+            _SET_ODE_(self%id_preyc(iprey),   - fpreyZ4c(iprey))
+            _SET_ODE_(self%id_preyChl(iprey), - spreyZ4(iprey)*preyChlP(iprey))
+         end do
 
 !..Respiration
-          _SET_ODE_(self%id_O3c, + fZ4O3c/CMass)
-          _SET_ODE_(self%id_O2o, - fZ4O3c*self%urB1_O2X)
+         _SET_ODE_(self%id_O3c, + fZ4O3c/CMass)
+         _SET_ODE_(self%id_O2o, - fZ4O3c*self%urB1_O2X)
 
 !..Phosphorus dynamics in mesozooplankton, derived from carbon flows....
 
-          fZ4RIp = (fZ4RDc + fZ4R8c) * self%qpZIcX
-          fZ4RDp = min(fZ4RIp, fZ4RDc * self%qpZIcX * self%xR1pX)
-          fZ4R8p = fZ4RIp - fZ4RDp
+         fZ4RIp = (fZ4RDc + fZ4R8c) * self%qpZIcX
+         fZ4RDp = min(fZ4RIp, fZ4RDc * self%qpZIcX * self%xR1pX)
+         fZ4R8p = fZ4RIp - fZ4RDp
 
 !..Source equations
-          SZ4p = sum(spreyZ4*preypP) - fZ4R8p - fZ4RDp
+         SZ4p = sum(spreyZ4*preypP) - fZ4R8p - fZ4RDp
 
 #ifdef IRON
 !  Iron dynamics

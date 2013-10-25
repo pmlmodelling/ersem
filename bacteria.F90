@@ -190,7 +190,7 @@ contains
       real(rk) :: R3c,R2cP,R3cP
       real(rk) :: fB1R1c
       integer  :: iRP
-      real(rk),dimension(self%nRP) :: RPc,RPn,RPp,RPcP,RPnP,RPpP
+      real(rk),dimension(self%nRP) :: RPc,RPcP,RPnP,RPpP
       real(rk),dimension(self%nRP) :: fRPB1p,fRPB1n
 #else
       real(rk) :: Nlim,Plim
@@ -199,204 +199,196 @@ contains
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
 
-      _GET_(self%id_ETW,ETW)
-      _GET_(self%id_eO2mO2,eO2mO2)
+         _GET_(self%id_ETW,ETW)
+         _GET_(self%id_eO2mO2,eO2mO2)
 
-      _GET_(self%id_B1c,B1c)
-      _GET_(self%id_B1p,B1p)
-      _GET_(self%id_B1n,B1n)
-      _GET_SAFE_(self%id_B1c,B1cP)
-      _GET_SAFE_(self%id_B1p,B1pP)
-      _GET_SAFE_(self%id_B1n,B1nP)
+         _GET_(self%id_B1c,B1c)
+         _GET_(self%id_B1p,B1p)
+         _GET_(self%id_B1n,B1n)
+         _GET_SAFE_(self%id_B1c,B1cP)
+         _GET_SAFE_(self%id_B1p,B1pP)
+         _GET_SAFE_(self%id_B1n,B1nP)
 
-      _GET_SAFE_(self%id_N1p,N1pP)
-      _GET_SAFE_(self%id_N4n,N4nP)
-      _GET_(self%id_R1c,R1c)
-      _GET_(self%id_R2c,R2c)
-      _GET_SAFE_(self%id_R1c,R1cP)
-      _GET_SAFE_(self%id_R1p,R1pP)
-      _GET_SAFE_(self%id_R1n,R1nP)
+         _GET_SAFE_(self%id_N1p,N1pP)
+         _GET_SAFE_(self%id_N4n,N4nP)
+         _GET_(self%id_R1c,R1c)
+         _GET_(self%id_R2c,R2c)
+         _GET_SAFE_(self%id_R1c,R1cP)
+         _GET_SAFE_(self%id_R1p,R1pP)
+         _GET_SAFE_(self%id_R1n,R1nP)
 #ifdef DOCDYN
-      _GET_(self%id_R3c,R3c)
-      _GET_SAFE_(self%id_R2c,R2cP)
-      _GET_SAFE_(self%id_R3c,R3cP)
-      do iRP=1,self%nRP
-         _GET_(self%id_RPc(iRP),RPc(iRP))
-         _GET_(self%id_RPn(iRP),RPn(iRP))
-         _GET_(self%id_RPp(iRP),RPp(iRP))
-         _GET_SAFE_(self%id_RPc(iRP),RPcP(iRP))
-         _GET_SAFE_(self%id_RPn(iRP),RPnP(iRP))
-         _GET_SAFE_(self%id_RPp(iRP),RPpP(iRP))
-      end do
+         _GET_(self%id_R3c,R3c)
+         _GET_SAFE_(self%id_R2c,R2cP)
+         _GET_SAFE_(self%id_R3c,R3cP)
+         do iRP=1,self%nRP
+            _GET_(self%id_RPc(iRP),RPc(iRP))
+            _GET_SAFE_(self%id_RPc(iRP),RPcP(iRP))
+            _GET_SAFE_(self%id_RPn(iRP),RPnP(iRP))
+            _GET_SAFE_(self%id_RPp(iRP),RPpP(iRP))
+         end do
 #endif
-      qpB1c = B1p/B1c
-      qnB1c = B1n/B1c
+         qpB1c = B1p/B1c
+         qnB1c = B1n/B1c
 !..Temperature effect on pelagic bacteria:
 
-      etB1 = self%q10B1X**((ETW-10._rk)/10._rk) - self%q10B1X**((ETW-32._rk)/3._rk)
+         etB1 = self%q10B1X**((ETW-10._rk)/10._rk) - self%q10B1X**((ETW-32._rk)/3._rk)
 
 !..Prevailing Oxygen limitation for bacteria:
 
-      eO2B1 = eO2mO2/( eO2mO2 + self%chdB1oX )
+         eO2B1 = eO2mO2/( eO2mO2 + self%chdB1oX )
 
 !..Potential nutrient limitation on bacterial growth after Anderson
 
 #ifndef DOCDYN
-      IF (self%iswBlimX .EQ. 1 ) THEN
-        Nlim = min(N4nP/(N4nP+self%chB1nX),R1nP/(R1nP+self%chB1nX))
-        Plim = min(N1pP/(N1pP+self%chB1pX),R1pP/(R1pP+self%chB1pX))
-      ELSE IF (self%iswBlimX .EQ. 2 ) THEN
-        Nlim = (N4nP+R1nP)/(N4nP+R1nP+self%chB1nX)
-        Plim = (N1pP+R1pP)/(N1pP+R1pP+self%chB1pX)
-      END IF
+         IF (self%iswBlimX .EQ. 1 ) THEN
+           Nlim = min(N4nP/(N4nP+self%chB1nX),R1nP/(R1nP+self%chB1nX))
+           Plim = min(N1pP/(N1pP+self%chB1pX),R1pP/(R1pP+self%chB1pX))
+         ELSE IF (self%iswBlimX .EQ. 2 ) THEN
+           Nlim = (N4nP+R1nP)/(N4nP+R1nP+self%chB1nX)
+           Plim = (N1pP+R1pP)/(N1pP+R1pP+self%chB1pX)
+         END IF
 #endif
 
 !..bacterial mortality
 
-      sB1RD=self%sdB1X*etB1
+         sB1RD=self%sdB1X*etB1
 #ifdef DOCDYN
-      fB1R1c = sB1RD*B1cP
+         fB1R1c = sB1RD*B1cP
 #else
-      fB1RDc = sB1RD*B1cP
+         fB1RDc = sB1RD*B1cP
 #endif
 
 !..Total amount of substrate available
 
-      sutB1 = 1._rk  ! DOM-specific uptake rate
-      ! rutB1 = sutB1*R1cP(I)
+         sutB1 = 1._rk  ! DOM-specific uptake rate
+         ! rutB1 = sutB1*R1cP(I)
 
 !..Potential uptake :
 #ifdef DOCDYN
-      rumB1 = self%sumB1X*etB1*eO2B1*B1c
+         rumB1 = self%sumB1X*etB1*eO2B1*B1c
 #else
-      rumB1 = self%sumB1X*etB1*eO2B1*min(Nlim,Plim)*B1c
+         rumB1 = self%sumB1X*etB1*eO2B1*min(Nlim,Plim)*B1c
 #endif
 !..Actual uptake
 
       ! rugB1 = MIN(rumB1,rutB1)
       ! specific in substrate concentration:
 #ifdef DOCDYN
-      sugB1 = rumB1/max(rumB1/sutB1,R1c+R2c*self%rR2B1X+R3c*self%rR3B1X+sum(RPc*self%sRPR1))
-          ! = MIN(rumB1,rutB1)=MIN(rumB1/(R1cP+R2cP*rR2B1X,sutB1) avoid pot. div. by 0
-      rugB1 = sugB1*(R1cP+R2cP*self%rR2B1X+R3c*self%rR3B1X+sum(RPc*self%sRPR1))
+         sugB1 = rumB1/max(rumB1/sutB1,R1c+R2c*self%rR2B1X+R3c*self%rR3B1X+sum(RPc*self%sRPR1/sutB1))
+             ! = MIN(rumB1,rutB1)=MIN(rumB1/(R1cP+R2cP*rR2B1X,sutB1) avoid pot. div. by 0
+         rugB1 = sugB1*(R1cP+R2cP*self%rR2B1X+R3c*self%rR3B1X+sum(RPc*self%sRPR1/sutB1))
 #else
-      sugB1 = rumB1/max(rumB1/sutB1,R1c)
-          ! = MIN(rumB1,rutB1)=MIN(rumB1/R1cP,sutB1) avoid pot. div. by 0
-      rugB1 = sugB1*R1cP
+         sugB1 = rumB1/max(rumB1/sutB1,R1c)
+             ! = MIN(rumB1,rutB1)=MIN(rumB1/R1cP,sutB1) avoid pot. div. by 0
+         rugB1 = sugB1*R1cP
 #endif
 
 !..Respiration :
 
 ! activity respiration
-       rraB1 = rugB1 * ( 1._rk - self%puB1X*eO2mO2  - self%puB1oX*( 1._rk - eO2mO2 ) )
+          rraB1 = rugB1 * ( 1._rk - self%puB1X*eO2mO2  - self%puB1oX*( 1._rk - eO2mO2 ) )
 ! total respiration:
-       fB1O3c = rraB1 + self%srsB1X * B1cP * etB1
+          fB1O3c = rraB1 + self%srsB1X * B1cP * etB1
 !      fB1O3c(I) = ( 1._fp8 - puB1X*eO2mO2  - puB1oX*( 1._fp8 - eO2mO2 ) )&
 !                * rugB1  + srsB1X * B1cP(I) * etB1
 
 #ifdef DOCDYN
 ! specific release of semilabile DOC 
 ! fudge factor 1. as used in Polimene et al. AME 2006
-      sB1R2=max(0._rk,max(1._rk-(qpB1c/self%qpB1cX),1._rk-(qnB1c/self%qnB1cX)))*1._rk
-      fB1R2c=sB1R2*B1cP
-      fB1R3c=self%frB1R3*rraB1
-      fB1RDc = fB1R1c + fB1R2c + fB1R3c
+         sB1R2=max(0._rk,max(1._rk-(qpB1c/self%qpB1cX),1._rk-(qnB1c/self%qnB1cX)))*1._rk
+         fB1R2c=sB1R2*B1cP
+         fB1R3c=self%frB1R3*rraB1
+         fB1RDc = fB1R1c + fB1R2c + fB1R3c
 #endif
 
 !..net bacterial production
 
-      netb1 = rugB1 - fB1o3c - fB1RDc
-      IF (netB1.gt.0._rk) THEN
-         BGE=netB1/rugB1
-      ELSE
-         BGE=0._rk
-      ENDIF
+         netb1 = rugB1 - fB1o3c - fB1RDc
+         IF (netB1.gt.0._rk) THEN
+            BGE=netB1/rugB1
+         ELSE
+            BGE=0._rk
+         ENDIF
 
 !..Source equations
 
 
-      _SET_ODE_(self%id_B1c,netb1)
+         _SET_ODE_(self%id_B1c,netb1)
 #ifdef DOCDYN
-      _SET_ODE_(self%id_R1c,+ fB1R1c - sugB1*R1cP)
-      _SET_ODE_(self%id_R2c,+ fB1R2c - sugB1*R2cP*self%rR2B1X)
-      _SET_ODE_(self%id_R3c,+ fB1R3c - sugB1*R3cP*self%rR3B1X)
-      do iRP=1,self%nRP
-         _SET_ODE_(self%id_RPc(iRP),- sugB1*RPcP(iRP)*self%sRPR1(iRP))
-      end do
+         _SET_ODE_(self%id_R1c,+ fB1R1c - sugB1*R1cP)
+         _SET_ODE_(self%id_R2c,+ fB1R2c - sugB1*R2cP*self%rR2B1X)
+         _SET_ODE_(self%id_R3c,+ fB1R3c - sugB1*R3cP*self%rR3B1X)
+         do iRP=1,self%nRP
+            _SET_ODE_(self%id_RPc(iRP),- sugB1*RPcP(iRP)*self%sRPR1(iRP))
+         end do
 #else
-      _SET_ODE_(self%id_R1c,- rugB1 + (fB1RDc * self%R1R2X))
-      _SET_ODE_(self%id_R2c,+ (fB1RDc * (1._rk - self%R1R2X)))
+         _SET_ODE_(self%id_R1c,- rugB1 + (fB1RDc * self%R1R2X))
+         _SET_ODE_(self%id_R2c,+ (fB1RDc * (1._rk - self%R1R2X)))
 #endif
 
-      _SET_ODE_(self%id_O3c,+ fB1O3c/CMass)
-      _SET_ODE_(self%id_O2o,- fB1O3c*self%urB1_O2X)
+         _SET_ODE_(self%id_O3c,+ fB1O3c/CMass)
+         _SET_ODE_(self%id_O2o,- fB1O3c*self%urB1_O2X)
 
 !..Phosporous dynamics in bacteria........................................
 
-      IF ((qpB1c - self%qpB1cX).gt.0._rk) THEN
-        fB1N1p = (qpB1c - self%qpB1cX ) * B1cP /onedayX ! sink
-      ELSE
-        fB1N1p = (qpB1c - self%qpB1cX ) * B1c *&
-                        N1pP/(N1pP+self%chB1pX) /onedayX ! source
-      ENDIF
+         IF ((qpB1c - self%qpB1cX).gt.0._rk) THEN
+           fB1N1p = (qpB1c - self%qpB1cX ) * B1cP /onedayX ! sink
+         ELSE
+           fB1N1p = (qpB1c - self%qpB1cX ) * B1c *&
+                           N1pP/(N1pP+self%chB1pX) /onedayX ! source
+         ENDIF
 
 !..uptake of DOP
 
-      fR1B1p = sugB1*R1pP
+         fR1B1p = sugB1*R1pP
 
 !..flux of DOP from B1
 
-      fB1RDp = sB1RD*B1pP
+         fB1RDp = sB1RD*B1pP
 
 
 !..Source equations
 
 #ifdef DOCDYN
-      fRPB1p = sugB1*RPpP*self%sRPR1
-      _SET_ODE_(self%id_B1p, sum(fRPB1p))
-      do iRP=1,self%nRP
-         _SET_ODE_(self%id_RPp(iRP), - fRPB1p(iRP))
-      end do
+         fRPB1p = sugB1*RPpP*self%sRPR1
+         _SET_ODE_(self%id_B1p, sum(fRPB1p))
+         do iRP=1,self%nRP
+            _SET_ODE_(self%id_RPp(iRP), - fRPB1p(iRP))
+         end do
 #endif
-      _SET_ODE_(self%id_B1p, + fR1B1p - fB1N1p - fB1RDp)
-      _SET_ODE_(self%id_N1p, + fB1N1p)
-      _SET_ODE_(self%id_R1p, + fB1RDp - fR1B1p)
+         _SET_ODE_(self%id_B1p, + fR1B1p - fB1N1p - fB1RDp)
+         _SET_ODE_(self%id_N1p, + fB1N1p)
+         _SET_ODE_(self%id_R1p, + fB1RDp - fR1B1p)
 
 !..Nitrogen dynamics in bacteria........................................
 
-      IF ((qnB1c - self%qnB1cX).gt.0._rk) THEN
-        fB1NIn = (qnB1c - self%qnB1cX ) * B1cP /onedayX ! sink
-      ELSE
-        fB1NIn = (qnB1c - self%qnB1cX ) * B1c *    &
-                        N4nP/(N4nP+self%chB1nX) /onedayX ! source
-      ENDIF
+         IF ((qnB1c - self%qnB1cX).gt.0._rk) THEN
+           fB1NIn = (qnB1c - self%qnB1cX ) * B1cP /onedayX ! sink
+         ELSE
+           fB1NIn = (qnB1c - self%qnB1cX ) * B1c *    &
+                           N4nP/(N4nP+self%chB1nX) /onedayX ! source
+         ENDIF
 
 !..uptake of DON
 
-      fR1B1n = sugB1*R1nP
+         fR1B1n = sugB1*R1nP
 
 !..flux of DON from B1
 
-      fB1RDn = sB1RD*B1nP
+         fB1RDn = sB1RD*B1nP
 
 !..Source equations
 
 #ifdef DOCDYN
-      fRPB1n = sugB1*RPnP*self%sRPR1
-      _SET_ODE_(self%id_B1n, sum(fRPB1n))
-      do iRP=1,self%nRP
-         _SET_ODE_(self%id_RPn(iRP), - fRPB1n(iRP))
-      end do
+         fRPB1n = sugB1*RPnP*self%sRPR1
+         _SET_ODE_(self%id_B1n, sum(fRPB1n))
+         do iRP=1,self%nRP
+            _SET_ODE_(self%id_RPn(iRP), - fRPB1n(iRP))
+         end do
 #endif
-      _SET_ODE_(self%id_N4n, + fB1NIn)
-      _SET_ODE_(self%id_B1n, + fR1B1n - fB1NIn - fB1RDn)
-      _SET_ODE_(self%id_R1n, + fB1RDn   - fR1B1n)
-
-#ifdef ERSEMDEBUG
-      if(ersem_debugger.gt.0 .and. I .eq. ip_dbg) then
-        PPWRITEDBGALLPRCS 'sn4n B',fB1NIn(I)
-      endif
-#endif
+         _SET_ODE_(self%id_N4n, + fB1NIn)
+         _SET_ODE_(self%id_B1n, + fR1B1n - fB1NIn - fB1RDn)
+         _SET_ODE_(self%id_R1n, + fB1RDn   - fR1B1n)
 
       ! Leave spatial loops (if any)
       _LOOP_END_
@@ -470,98 +462,98 @@ contains
          fRPr1  = sRPr1 * RPcP
          ruRPRD = sum(fRPr1)
 #ifdef NOBAC
-          ruRPRD = ruRPRD*etB1
+         ruRPRD = ruRPRD*etB1
 #endif
 #ifdef SAVEFLX
-          fRPRDc(I) = ruRPRD
+         fRPRDc(I) = ruRPRD
 #endif
 #endif
 
 #ifdef NOBAC
 !..mineralisation of DOC to CO2
 
-          fB1O3c = self%sR1N1X * R1cP*etB1
+         fB1O3c = self%sR1N1X * R1cP*etB1
 
 !..mineralisation of DOP to PO4
 
-          fR1N1p = self%sR1N1X * R1pP*etB1
+         fR1N1p = self%sR1N1X * R1pP*etB1
 
 !..mineralisation of DON to Nh4
 
-          fR1NIn = self%sR1N4X * R1nP*etB1
+         fR1NIn = self%sR1N4X * R1nP*etB1
 
 #else 
 !..mineralisation of DOP to PO4
 
-          fR1N1p = self%sR1N1X * R1pP
+         fR1N1p = self%sR1N1X * R1pP
 
 !..mineralisation of DON to Nh4
 
-          fR1NIn = self%sR1N4X * R1nP
+         fR1NIn = self%sR1N4X * R1nP
 #endif
 
 #ifdef IRON
 ! remineralization of particulate iron to Fe
 
-          fRPN7f=sRPr1*RPfP
+         fRPN7f=sRPr1*RPfP
 
 ! sink of Fe
 
 ! This term takes into account the scavenging due to hydroxide precipitation and it is supposed to be 
 ! regulateted by a threshold concentration (0.6 nM). See Aumont et al., 2003 (GBC) and Vichi et al., 2007 (JMS) for references.
 ! (Luca, 12/08)
-          n7fsink=self%fsinkX*max(0._rk,N7fP-0.6_rk)
+         n7fsink=self%fsinkX*max(0._rk,N7fP-0.6_rk)
 #endif
 
     !..Source equations
 
 #ifdef DOCDYN
-          _SET_ODE_(self%id_R1p, - fR1N1p)
-          _SET_ODE_(self%id_R1n, - fR1NIn)
+         _SET_ODE_(self%id_R1p, - fR1N1p)
+         _SET_ODE_(self%id_R1n, - fR1NIn)
 #else
 #ifdef NOBAC
-          _SET_ODE_(self%id_R1C,  + ruRPRD - fB1O3c)
-          _SET_ODE_(self%id_O3c, + fB1O3c/CMass)
-          _SET_ODE_(self%id_O2o, - fB1O3c*self%urB1_O2X)
+         _SET_ODE_(self%id_R1C,  + ruRPRD - fB1O3c)
+         _SET_ODE_(self%id_O3c, + fB1O3c/CMass)
+         _SET_ODE_(self%id_O2o, - fB1O3c*self%urB1_O2X)
 #else
-          _SET_ODE_(self%id_R1C, + ruRPRD)
+         _SET_ODE_(self%id_R1C, + ruRPRD)
 #endif
-          do iRP=1,self%nRP
-            _SET_ODE_(self%id_RPc(iRP), - fRPr1(iRP))
-            _SET_ODE_(self%id_RPp(iRP), - sRPr1(iRP)*RPpP(iRP))
-            _SET_ODE_(self%id_RPn(iRP), - sRPr1(iRP)*RPnP(iRP))
-          end do
-           _SET_ODE_(self%id_R1p, + sum(sRPr1*RPpP) - fR1N1p)
-           _SET_ODE_(self%id_R1n, + sum(sRPr1*RPnP) - fR1NIn)
+         do iRP=1,self%nRP
+         _SET_ODE_(self%id_RPc(iRP), - fRPr1(iRP))
+         _SET_ODE_(self%id_RPp(iRP), - sRPr1(iRP)*RPpP(iRP))
+         _SET_ODE_(self%id_RPn(iRP), - sRPr1(iRP)*RPnP(iRP))
+         end do
+         _SET_ODE_(self%id_R1p, + sum(sRPr1*RPpP) - fR1N1p)
+         _SET_ODE_(self%id_R1n, + sum(sRPr1*RPnP) - fR1NIn)
 #endif
 
-          _SET_ODE_(self%id_N1p, + fR1N1p)
-          _SET_ODE_(self%id_N4n, + fR1NIn)
+         _SET_ODE_(self%id_N1p, + fR1N1p)
+         _SET_ODE_(self%id_N4n, + fR1NIn)
 
 #ifdef IRON
-          do iRP=1,self%nRP
-             _SET_ODE_(self%id_RPf(iRP),-fRPn7f(iRP))
-          end do
-          _SET_ODE_(self%id_N7f,+sum(fRPn7f)-n7fsink)
+         do iRP=1,self%nRP
+            _SET_ODE_(self%id_RPf(iRP),-fRPn7f(iRP))
+         end do
+         _SET_ODE_(self%id_N7f,+sum(fRPn7f)-n7fsink)
 #endif
 
 !..Nitrification..
 !Ph influence on nitrification - empirical equation
 ! use(1) or not(2)
-          if(self%ISWphx.eq.1)then
-             Fph = MIN(2._rk,MAX(0._rk,0.6111_rk*phx-3.8889_rk))
-             fN4N3n = self%sN4N3X  * Fph * N4nP * etB1 * ESS / self%cessX
-          else
-             fN4N3n = self%sN4N3X  * N4nP * etB1 * ESS / self%cessX
-          endif
-          _SET_ODE_(self%id_N3n, + fN4N3n)
-          _SET_ODE_(self%id_N4n, - fN4N3n)
+         if(self%ISWphx.eq.1)then
+            Fph = MIN(2._rk,MAX(0._rk,0.6111_rk*phx-3.8889_rk))
+            fN4N3n = self%sN4N3X  * Fph * N4nP * etB1 * ESS / self%cessX
+         else
+            fN4N3n = self%sN4N3X  * N4nP * etB1 * ESS / self%cessX
+         endif
+         _SET_ODE_(self%id_N3n, + fN4N3n)
+         _SET_ODE_(self%id_N4n, - fN4N3n)
 
 !..Breakdown of semi labile to labile DOM
 
 #ifndef DOCDYN
-          _SET_ODE_(self%id_R1c, + self%rR2R1X * R2cP)
-          _SET_ODE_(self%id_R2c, - self%rR2R1X * R2cP)
+         _SET_ODE_(self%id_R1c, + self%rR2R1X * R2cP)
+         _SET_ODE_(self%id_R2c, - self%rR2R1X * R2cP)
 #endif
 
       ! Leave spatial loops (if any)
