@@ -20,7 +20,7 @@ module pml_ersem_bacteria
       type (type_state_variable_id) :: id_R1p
       type (type_state_variable_id) :: id_R1n
       type (type_state_variable_id) :: id_N1p,id_N3n,id_N4n,id_N7f
-      type (type_dependency_id)     :: id_ETW,id_ESS,id_Fph,id_eO2mO2
+      type (type_dependency_id)     :: id_ETW,id_ESS,id_phx,id_eO2mO2
       type (type_state_variable_id),allocatable,dimension(:) :: id_RPc,id_RPp,id_RPn,id_RPf
 
       ! Parameters
@@ -164,7 +164,7 @@ contains
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
       call self%register_dependency(self%id_ESS,'silt concentration')
-      call self%register_dependency(self%id_Fph,'pH')
+      call self%register_dependency(self%id_phx,'pH')
       call self%register_dependency(self%id_eO2mO2,'fractional_saturation_of_oxygen_in_sea_water')
 
    end subroutine
@@ -435,7 +435,7 @@ contains
 
          _GET_(self%id_ETW,ETW)
          _GET_(self%id_ESS,ESS)
-         _GET_(self%id_Fph,Fph)
+         _GET_(self%id_phx,phx)
 
 #ifdef NOBAC
          _GET_SAFE_(self%id_R1c,R1cP)
