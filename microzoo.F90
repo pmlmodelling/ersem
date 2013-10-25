@@ -16,8 +16,8 @@ module pml_ersem_microzoo
       type (type_state_variable_id),allocatable,dimension(:) :: id_preyc,id_preyn,id_preyp,id_preys,id_preyf,id_preyChl,id_preyf_target
       type (type_state_variable_id)      :: id_O3c, id_O2o
       type (type_state_variable_id)      :: id_R1c, id_R2c, id_R6c
-      type (type_state_variable_id)      :: id_R1p, id_R2p, id_R6p
-      type (type_state_variable_id)      :: id_R1n, id_R2n, id_R6n
+      type (type_state_variable_id)      :: id_R1p, id_R6p
+      type (type_state_variable_id)      :: id_R1n, id_R6n
       type (type_state_variable_id)      :: id_R6s
       type (type_state_variable_id)      :: id_N1p,id_N4n
       type (type_dependency_id)          :: id_ETW,id_eO2mO2

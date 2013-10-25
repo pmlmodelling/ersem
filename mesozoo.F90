@@ -1,89 +1,366 @@
-!-----------------------------------------------------------------------
-! TODO PML-ERSEM, version 0.9
-! Plymouth Marine Laboratory
-! Prospect Place, The Hoe
-! Plymouth, PL1 3DH, UK
-!    contact: momm@pml.ac.uk
-!-----------------------------------------------------------------------
-#include"ppdefs.h"
-!-----------------------------------------------------------------------
-!BOP
-!
-! !MODULE: mesozoo \label{sec:mesozoo}
+#include "fabm_driver.h"
+
+#define IRON
+
+module pml_ersem_mesozoo
+
+! Jorn TODO: overwintering, deal with implicit N and P in some prey [esp. when cannibalizing]
+
+   use fabm_types
+
+   implicit none
+
+   private
+
+   type,extends(type_base_model),public :: type_pml_ersem_mesozoo
+      ! Variables
+      type (type_state_variable_id)      :: id_Z4c
+      type (type_state_variable_id),allocatable,dimension(:) :: id_preyc,id_preyn,id_preyp,id_preys,id_preyf,id_preyChl,id_preyf_target
+      type (type_state_variable_id)      :: id_O3c,id_O2o
+      type (type_state_variable_id)      :: id_R1c,id_R1p,id_R1n
+      type (type_state_variable_id)      :: id_R2c
+      type (type_state_variable_id)      :: id_R8c,id_R8p,id_R8n
+      type (type_state_variable_id)      :: id_R6s
+      type (type_state_variable_id)      :: id_N1p,id_N4n
+      type (type_dependency_id)          :: id_ETW,id_eO2mO2
+
+      ! Parameters
+      integer  :: nprey
+      real(rk) :: qpZIcX,qnZIcX
+      real(rk) :: q10Z4X,chrZ4oX,minfoodZ4X,chuZ4cX
+      real(rk),allocatable :: suprey_Z4X(:)
+      logical,allocatable :: preyispom(:)
+      real(rk) :: sumZ4X
+      real(rk) :: sdZ4oX, sdZ4X, srsZ4X
+      real(rk) :: puZ4X
+      real(rk) :: pu_eaZ4X,pu_eaRZ4X
+      real(rk) :: pe_R1Z4X
+
+      ! ERSEM global parameters
+      real(rk) :: R1R2X,xR1pX,xR1nX,urB1_O2X
+   contains
+!     Model procedures
+      procedure :: initialize
+      procedure :: do
+   end type
+
+   real(rk),parameter :: CMass = 12._rk
+   real(rk),parameter :: ZeroX = 1e-8_rk
+
+contains
+
+   subroutine initialize(self,configunit)
 !
 ! !DESCRIPTION:
-!  TODO - Descripton
-!\\
-!\\
-! !INTERFACE:
-   MODULE mesozoo
 !
-! !USES:
-   use global_declarations
-   use general, ONLY: Adjust_Fixed_Nutrients
-   use gas_dynamics, ONLY: ub1c_o2x,urB1_O2X
-!
-   IMPLICIT NONE
-!
-!  Default all is private.
-   private
-!
-! !PUBLIC MEMBER FUNCTIONS:
-   public mesozoop
-!
-! !PUBLIC DATA MEMBERS:
-   real(fp8), public :: chuz4cX,sumz4X,puz4X,q10z4X,srsz4X,pu_eaz4X,pu_earz4X
-   real(fp8), public :: minfoodz4X,sdz4oX,sdz4X,pe_r1z4X,chrz4oX,Z4repwX,Z4mortX
-!
-! !PRIVATE DATA MEMBERS:
-   real(fp8) :: fZ4R8n,fZ4R8p,fZ4Rdc,fZ4Rdn,fZ4Rdp,ineffZ4
+! !INPUT PARAMETERS:
+      class (type_pml_ersem_mesozoo),intent(inout),target :: self
+      integer,                       intent(in)           :: configunit
 !
 ! !REVISION HISTORY:
-!  Original author(s) TODO
 !
-! !TO DO:
-!  Document this module.
-!
+! !LOCAL VARIABLES:
+      integer           :: iprey
+      character(len=16) :: index
 !EOP
 !-----------------------------------------------------------------------
+!BOC
+      call self%get_parameter(self%nprey,     'nprey',default=0)
+      call self%get_parameter(self%qpZIcX,    'qpZIcX')
+      call self%get_parameter(self%qnZIcX,    'qnZIcX')
+      call self%get_parameter(self%q10z4X,    'q10z4X')
+      call self%get_parameter(self%chrZ4oX,   'chrZ4oX')
+      call self%get_parameter(self%minfoodZ4X,'minfoodZ4X')
+      call self%get_parameter(self%chuZ4cX,   'chuZ4cX')
+      call self%get_parameter(self%sdZ4oX,    'sdZ4oX')
+      call self%get_parameter(self%sdZ4X,     'sdZ4X')
+      call self%get_parameter(self%srsZ4X,    'srsZ4X')
+      call self%get_parameter(self%puZ4X,     'puZ4X')
+      call self%get_parameter(self%pe_R1Z4X,  'pe_R1Z4X')
+      call self%get_parameter(self%sumZ4X,    'sumZ4X')
+      call self%get_parameter(self%pu_eaZ4X,  'pu_eaZ4X')
+      call self%get_parameter(self%pu_eaRZ4X, 'pu_eaRZ4X')
 
-CONTAINS
+      ! Register state variables
+      call self%register_state_variable(self%id_Z4c,'c','mg C/m^3','C',1.e-4_rk,minimum=0.0_rk)
+
+      ! Register links to carbon contents of prey.
+      allocate(self%id_preyc(self%nprey))
+      allocate(self%id_preyn(self%nprey))
+      allocate(self%id_preyp(self%nprey))
+      allocate(self%id_preyf(self%nprey))
+      allocate(self%id_preys(self%nprey))
+      allocate(self%id_preyf_target(self%nprey))
+      allocate(self%id_preyChl(self%nprey))
+      allocate(self%suprey_Z4X(self%nprey))
+      allocate(self%preyispom(self%nprey))
+      do iprey=1,self%nprey
+         write (index,'(i0)') iprey
+         call self%register_state_dependency(self%id_preyc(iprey),  'prey'//trim(index)//'c',  'mg C/m^3',   'Prey '//trim(index)//' C')    
+         call self%register_state_dependency(self%id_preyChl(iprey),'prey'//trim(index)//'Chl','mg/m^3',     'Prey '//trim(index)//' chlorophyll')    
+         call self%register_state_dependency(self%id_preyn(iprey),  'prey'//trim(index)//'n',  'mmol N/m^3', 'Prey '//trim(index)//' N')    
+         call self%register_state_dependency(self%id_preyp(iprey),  'prey'//trim(index)//'p',  'mmol P/m^3', 'Prey '//trim(index)//' P')    
+         call self%register_state_dependency(self%id_preyf(iprey),  'prey'//trim(index)//'f',  'mmol Fe/m^3','Prey '//trim(index)//' Fe')    
+         call self%register_state_dependency(self%id_preys(iprey),  'prey'//trim(index)//'s',  'mmol Si/m^3','Prey '//trim(index)//' Si')    
+         call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','mmol Fe/m^3','Target pool for Fe of assimilated prey '//trim(index))    
+         call self%get_parameter(self%suprey_Z4X(iprey),'suprey'//trim(index)//'_Z4X')
+         call self%get_parameter(self%preyispom(iprey),'prey'//trim(index)//'ispom',default=.false.)
+      end do
+
+      ! Register links to external nutrient pools.
+      call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3', 'Phosphate')    
+      call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3', 'Ammonium')    
+
+      ! Register links to external labile dissolved organic matter pools.
+      call self%register_state_dependency(self%id_R1c,'R1c','mg C/m^3',  'DOC')
+      call self%register_state_dependency(self%id_R1p,'R1p','mmol P/m^3','DOP')    
+      call self%register_state_dependency(self%id_R1n,'R1n','mmol N/m^3','DON')    
+
+      ! Register links to external semi-labile dissolved organic matter pools.
+      call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','Semi-labile DOC')    
+
+      ! Register links to external particulate organic matter pools.
+      call self%register_state_dependency(self%id_R8c,'RPc','mg C/m^3',   'POC')    
+      call self%register_state_dependency(self%id_R8p,'RPp','mmol P/m^3', 'POP')    
+      call self%register_state_dependency(self%id_R8n,'RPn','mmol N/m^3', 'PON')    
+      call self%register_state_dependency(self%id_R6s,'RPs','mmol Si/m^3','POSi')    
+
+      ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
+      call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','Carbon Dioxide')    
+      call self%register_state_dependency(self%id_O2o,'O2o','mmol O/m^3','Oxygen')    
+
+      ! Register environmental dependencies (temperature, shortwave radiation)
+      call self%register_dependency(self%id_ETW,standard_variables%temperature)
+      call self%register_dependency(self%id_eO2mO2,'fractional_saturation_of_oxygen_in_sea_water')
+
+   end subroutine
+   
+   subroutine do(self,_ARGUMENTS_DO_)
+
+      class (type_pml_ersem_mesozoo),intent(in) :: self
+      _DECLARE_ARGUMENTS_DO_
+
+   ! !LOCAL VARIABLES:
+      integer  :: iprey
+      real(rk) :: ETW,eO2mO2
+      real(rk) :: Z4c,Z4cP
+      real(rk),dimension(self%nprey) :: preycP,preypP,preynP,preysP,preyfP,preyChlP
+      real(rk) :: SZ4c,SZ4n,SZ4p
+      real(rk) :: etZ4,CORROX,eO2Z4
+      real(rk),dimension(self%nprey) :: spreyZ4,rupreyZ4c,fpreyZ4c
+      real(rk) :: rumZ4,put_uZ4,rugZ4
+      real(rk) :: sdZ4,rdZ4
+      real(rk) :: ineffZ4
+      real(rk) :: rrsZ4,rraZ4
+      real(rk) :: fZ4O3c
+      real(rk) :: retZ4,fZ4RDc,fZ4R8c
+      real(rk) :: fZ4RIp,fZ4RDp,fZ4R8p
+      real(rk) :: fZ4RIn,fZ4RDn,fZ4R8n
+      real(rk) :: fZ4NIn,fZ4N1p,SR8c
+
+      ! Enter spatial loops (if any)
+      _LOOP_BEGIN_
+
+         ! Get environment (temperature, oxygen saturation)
+         _GET_(self%id_ETW,ETW)
+         _GET_(self%id_eO2mO2,eO2mO2)
+
+         ! Get own concentrations
+         _GET_(self%id_Z4c,Z4c)
+         _GET_SAFE_(self%id_Z4c,Z4cP)
+
+         ! Get prey concentrations
+         do iprey=1,self%nprey
+            _GET_SAFE_(self%id_preyc(iprey),  preycP(iprey))
+            _GET_SAFE_(self%id_preyp(iprey),  preypP(iprey))
+            _GET_SAFE_(self%id_preyn(iprey),  preynP(iprey))
+            _GET_SAFE_(self%id_preys(iprey),  preysP(iprey))
+            _GET_SAFE_(self%id_preyf(iprey),  preyfP(iprey))
+            _GET_SAFE_(self%id_preyChl(iprey),preyChlP(iprey))
+         end do
+
+!..Temperature effect :
+
+         etZ4 = self%q10Z4X**((ETW-10._rk)/10._rk) - self%q10Z4X**((ETW-32._rk)/3._rk)
+
+!..Oxygen limitation :
+         CORROX = 1._rk + self%chrZ4oX
+         eO2Z4 = MIN(1._rk,CORROX*(eO2mO2/(self%chrZ4oX + eO2mO2)))
+
+!..Available food :
+         spreyZ4 = self%suprey_Z4X*preycP/(preycP+self%minfoodZ4X)
+         rupreyZ4c = spreyZ4*preycP
+         rumZ4 = sum(rupreyZ4c)
+
+!..Uptake :
+         put_uZ4 = self%sumZ4X/(rumZ4 + self%chuZ4cX)*etZ4*Z4c
+         rugZ4 = put_uZ4*rumZ4
+
+!..Fluxes into mesoplankton :
+         fpreyZ4c = put_uZ4*rupreyZ4c
+         spreyZ4 = put_uZ4*spreyZ4
+
+!..Zooplankton Grazing
+!      Z4herb(i) = fP1Z4c(i) + fP2Z4c(i) + fP3Z4c(i) +fP4Z4c(i)
+!      Z4carn(i) = fB1Z4c(i) + fZ5Z4c(i) + fZ6Z4c(i) + fR6Z4c(i)
+
+!..Mortality
+         sdZ4 = ((1._rk - eO2Z4)*self%sdZ4oX + self%sdZ4X) 
+         rdZ4 = sdZ4*Z4cP
+
+!..Assimilation inefficiency:
+         ineffZ4 = (1._rk - self%puZ4X)
+
+!..Excretion
+         retZ4 = 0.0_rk
+         do iprey=1,self%nprey
+            if (self%preyispom(iprey)) then
+               retZ4 = retZ4 + ineffZ4 * fpreyZ4c(iprey) * self%pu_eaZ4X
+            else
+               retZ4 = retZ4 + ineffZ4 * fpreyZ4c(iprey) * self%pu_eaRZ4X
+            end if
+         end do
+         fZ4RDc = (retZ4 + rdZ4)*self%pe_R1Z4X
+         fZ4R8c = (retZ4 + rdZ4)*(1._rk - self%pe_R1Z4X)
+#ifdef SAVEFLX
+          fZXRDc(I) = fZXRDc(I)+fZ4RDc
+#endif
+
+!..Rest respiration, corrected for prevailing temperature
+          rrsZ4 = self%srsZ4X*etZ4*Z4cP
+
+!..Activity respiration
+          rraZ4 = ineffZ4 * rugZ4 - retZ4
+
+!..Total respiration
+          fZ4O3c = rrsZ4 + rraZ4
+
+#ifdef CALC
+          fO3L2c(I) = fO3L2c(I) + &
+            RainR(I) * gutdiss * (1._fp8 - puZ4X)* pu_eaZ4X * fP2Z4c(I)
+#endif
+          rraZ4 = rugZ4*(1._rk - self%puZ4X)-retZ4
+
+!..Source equations
+          SZ4c = rugZ4 - fZ4RDc - fZ4R8c - fZ4O3c   ! Jorn: cannibalism accounted for in grazing/predation section
+
+!..Flows from and to detritus
+          _SET_ODE_(self%id_R1c, + fZ4RDc * self%R1R2X)
+          _SET_ODE_(self%id_R2c, + fZ4RDc * (1._rk-self%R1R2X))
+          _SET_ODE_(self%id_R8c, + fZ4R8c)
+
+!..Grazing and predation
+          do iprey=1,self%nprey
+             _SET_ODE_(self%id_preyc(iprey),   - fpreyZ4c(iprey))
+             _SET_ODE_(self%id_preyChl(iprey), - spreyZ4(iprey)*preyChlP(iprey))
+          end do
+
+!..Respiration
+          _SET_ODE_(self%id_O3c, + fZ4O3c/CMass)
+          _SET_ODE_(self%id_O2o, - fZ4O3c*self%urB1_O2X)
+
+!..Phosphorus dynamics in mesozooplankton, derived from carbon flows....
+
+          fZ4RIp = (fZ4RDc + fZ4R8c) * self%qpZIcX
+          fZ4RDp = min(fZ4RIp, fZ4RDc * self%qpZIcX * self%xR1pX)
+          fZ4R8p = fZ4RIp - fZ4RDp
+
+!..Source equations
+          SZ4p = sum(spreyZ4*preypP) - fZ4R8p - fZ4RDp
+
+#ifdef IRON
+!  Iron dynamics
+! following Vichi et al., 2007 it is assumed that the iron fraction of the ingested phytoplankton
+! is egested as particulate detritus (Luca)
+         do iprey=1,self%nprey
+            _SET_ODE_(self%id_preyf(iprey),       - spreyZ4(iprey)*preyfP(iprey))
+            _SET_ODE_(self%id_preyf_target(iprey),  spreyZ4(iprey)*preyfP(iprey))
+         end do
+#endif
+
+!..Phosphorus flux from/to detritus
+         _SET_ODE_(self%id_R1p, + fZ4RDp)
+         _SET_ODE_(self%id_R8p, + fZ4R8p)
+
+!..Phosphorus flux from prey
+         do iprey=1,self%nprey
+            _SET_ODE_(self%id_preyp(iprey),- spreyZ4(iprey)*preypP(iprey))
+         end do
+
+!..Nitrogen dynamics in mesozooplankton, derived from carbon flows......
+
+         fZ4RIn = (fZ4RDc + fZ4R8c) * self%qnZIcX
+         fZ4RDn = min(fZ4RIn, fZ4RDc * self%qnZIcX * self%xR1nX)
+         fZ4R8n = fZ4RIn - fZ4RDn
+
+!..Source equations
+         SZ4n = sum(spreyZ4*preynP) - fZ4R8n - fZ4RDn
+
+!..Nitrogen flux from/to detritus
+         _SET_ODE_(self%id_R1n, + fZ4RDn)
+         _SET_ODE_(self%id_R8n, + fZ4R8n)
+
+!..Nitrogen flux from prey
+         do iprey=1,self%nprey
+            _SET_ODE_(self%id_preyn(iprey),- spreyZ4(iprey)*preynP(iprey))
+         end do
+
+!..Silica-flux from diatoms due to mesozooplankton grazing
+         do iprey=1,self%nprey
+            _SET_ODE_(self%id_preys(iprey),- spreyZ4(iprey)*preysP(iprey))
+         end do
+         _SET_ODE_(self%id_R6s,sum(spreyZ4*preysP))
+
+!..re-establish the fixed nutrient ratio in zooplankton.................
+
+         fZ4NIn = 0.0_rk
+         fZ4N1p = 0.0_rk
+         SR8c = 0.0_rk
+         CALL Adjust_fixed_nutrients ( SZ4c, SZ4n, SZ4p, self%qnZIcX, &
+                                    self%qpZIcX, fZ4NIn, fZ4N1p, SR8c)
+
+         _SET_ODE_(self%id_Z4c,SZ4c)
+         _SET_ODE_(self%id_N4n,fZ4NIn)
+         _SET_ODE_(self%id_N1p,fZ4N1p)
+         _SET_ODE_(self%id_R8c,SR8c)
+
+      ! Leave spatial loops (if any)
+      _LOOP_END_
+
+   end subroutine do
 
 !-----------------------------------------------------------------------
 !BOP
 !
-! !IROUTINE: mesozoop \label{sec:mesozoop}
+! !IROUTINE: Adjust_fixed_nutrients \label{sec:AdjustFixedNutrients}
 !
 ! !DESCRIPTION:
 !  TODO - description
 !
-!  simple mesozooplankton routine
+!  This routine determines the amount of excess c,n or p in the
+!  source terms and excretes the appropriate amount(s) to Q6 and
+!  nutrients, so that the fixed nutrient ratio is re-established
+!
+!  IN:  Source terms of fixed quota bio-state.(cnp)......SXx
+!       Fixed quota values (np)..........................qx
+!
+!  INT: Excess nutrient in bio-state (np)................ExcessX
+!
+!  OUT: Source terms for Predator (SX), Q6 and nutrients
 !\\
 !\\
 ! !INTERFACE:
-   SUBROUTINE mesozoop(I)
+      SUBROUTINE Adjust_fixed_nutrients ( SXc, SXn, SXp,qn, qp, SKn, SKp, SQc )
 !
-! !USES:
-   IMPLICIT NONE
+! !INPUT/OUTPUT PARAMETERS:
+       real(rk), intent(inout)  :: SXc, SXn, SXp, SKn, SKp, SQc
+       real(rk), intent(in)     :: qn, qp
 !
-! !INPUT PARAMETERS:
-   integer :: i
-!
-! !LOCAL VARIABLES:
-   real(fp8) :: SZ4n, SZ4p, etZ4
-   real(fp8) :: rumZ4, put_uZ4, rrsZ4, rraZ4, rugZ4, rdZ4, sdZ4
-   real(fp8) :: sP1Z4,sP2Z4,sP3Z4,sP4Z4,sB1Z4,sR6Z4,sZ5Z4,sZ6Z4
-   real(fp8) :: corrox, eO2Z4, fZ4RIp, fZ4RIn
-   real(fp8) :: retZ4
-   real(fp8) :: ruP1Z4c, ruP2Z4c, ruP3Z4c, ruP4Z4c
-   real(fp8) :: ruZ6Z4c, ruB1Z4c, ruZ5Z4c, ruR6Z4c, ruZ4Z4c
-   real(fp8) :: temp_n,temp_p
+! !LOCAL PARAMETERS:
+       real(rk) :: ExcessN, ExcessP, ExcessC
 !
 ! !REVISION HISTORY:
 !  Original author(s) TODO
-!
-! !TO DO:
-!  Document this module.
 !
 !EOP
 !-----------------------------------------------------------------------
@@ -91,223 +368,31 @@ CONTAINS
 !-----------------------------------------------------------------------
 !BOC
 !
-!..set up dummy source terms for nutrient components....................
-       SZ4n = SZ4c(I) * qnZIcX
-       SZ4p = SZ4c(I) * qpZIcX
+       ExcessC = max(max(SXc - SXp/qp,SXc - SXn/qn),0._rk)
+!
+       IF ( ExcessC .GT. ZeroX ) THEN
+         SXc = SXc - ExcessC
+         SQc = SQc + ExcessC
+       END If
 
-!..Temperature effect :
+       ExcessN = max(SXn - SXc*qn,0._rk)
+       ExcessP = max(SXp - SXc*qp,0._rk)
 
-       etZ4 = q10Z4X**((ETW(I)-10._fp8)/10._fp8) - q10Z4X**((ETW(I)-32._fp8)/3._fp8)
+       IF ( ExcessN .GT. ZeroX ) THEN
+         SXn = SXn - ExcessN
+         SKn = SKn + ExcessN
+       END If
 
-!..Oxygen limitation :
-       CORROX = 1._fp8 + chrZ4oX
-       eO2Z4 = MIN(1._fp8,CORROX*(eO2mO2/(chrZ4oX + eO2mO2)))
+       IF ( ExcessP .GT. ZeroX ) THEN
+         SXp = SXp - EXcessP
+         SKp = SKp + ExcessP
+       END If
 
-!..Available food :
-       sB1Z4 = suB1_Z4X*B1cP(I)/(B1cP(I)+minfoodZ4X)
-       sP1Z4 = suP1_Z4X*P1cP(I)/(P1cP(I)+minfoodZ4X)
-       sP2Z4 = suP2_Z4X*P2cP(I)/(P2cP(I)+minfoodZ4X)
-       sP3Z4 = suP3_Z4X*P3cP(I)/(P3cP(I)+minfoodZ4X)
-       sP4Z4 = suP4_Z4X*P4cP(I)/(P4cP(I)+minfoodZ4X)
-       sZ5Z4 = suZ5_Z4X*Z5cP(I)/(Z5cP(I)+minfoodZ4X)
-       sZ6Z4 = suZ6_Z4X*Z6cP(I)/(Z6cP(I)+minfoodZ4X)
-       sR6Z4 = suR6_Z4X*R6cP(I)/(R6cP(I)+minfoodZ4X)
-       ruZ4Z4c = suZ4_Z4X*Z4cP(I)*Z4cP(I)/(Z4cP(I)+minfoodZ4X)
-       ruB1Z4c = sB1Z4*B1cP(I)
-       ruP1Z4c = sP1Z4*P1cP(I)
-       ruP2Z4c = sP2Z4*P2cP(I)
-       ruP3Z4c = sP3Z4*P3cP(I)
-       ruP4Z4c = sP4Z4*P4cP(I)
-       ruZ5Z4c = sZ5Z4*Z5cP(I)
-       ruZ6Z4c = sZ6Z4*Z6cP(I)
-       ruR6Z4c = sR6Z4*R6cP(I)
+       RETURN
 
-       rumZ4 = ruP1Z4c + ruP2Z4c + ruP3Z4c + ruP4Z4c + ruZ4Z4c &
-     &       + ruB1Z4c + ruZ5Z4c + ruZ6Z4c + ruR6Z4c
-
-!..Uptake :
-       put_uZ4 = sumZ4X/(rumZ4 + chuZ4cX)*etZ4*Z4c(I)
-       rugZ4 = put_uZ4*rumZ4
-
-!..Fluxes into mesoplankton :
-       fB1Z4c(I) = put_uZ4*ruB1Z4c
-       fP1Z4c(I) = put_uZ4*ruP1Z4c
-       fP2Z4c(I) = put_uZ4*ruP2Z4c
-       fP3Z4c(I) = put_uZ4*ruP3Z4c
-       fP4Z4c(I) = put_uZ4*ruP4Z4c
-       fZ5Z4c(I) = put_uZ4*ruZ5Z4c
-       fZ6Z4c(I) = put_uZ4*ruZ6Z4c
-       fR6Z4c(I) = put_uZ4*ruR6Z4c
-       fZ4Z4c(I) = put_uZ4*ruZ4Z4c
-       sB1Z4 = put_uZ4*sB1Z4
-       sP1Z4 = put_uZ4*sP1Z4
-       sP2Z4 = put_uZ4*sP2Z4
-       sP3Z4 = put_uZ4*sP3Z4
-       sP4Z4 = put_uZ4*sP4Z4
-       sZ5Z4 = put_uZ4*sZ5Z4
-       sZ6Z4 = put_uZ4*sZ6Z4
-       sR6Z4 = put_uZ4*sR6Z4
-
-!..Zooplankton Grazing
-!      Z4herb(i) = fP1Z4c(i) + fP2Z4c(i) + fP3Z4c(i) +fP4Z4c(i)
-!      Z4carn(i) = fB1Z4c(i) + fZ5Z4c(i) + fZ6Z4c(i) + fR6Z4c(i)
-
-!..Mortality
-       sdZ4 = ((1._fp8 - eO2Z4)*sdZ4oX + sdZ4X) 
-       rdZ4 = sdZ4*Z4cP(I)
-
-!..Assimilation inefficiency:
-      ineffZ4 = (1._fp8 - puZ4X)
-
-!..Excretion
-       retZ4 = ineffZ4 * ( (rugZ4-fR6Z4c(I)) * pu_eaZ4X &
-             + fR6Z4c(I) * pu_eaRZ4X )
-       fZ4RDc = (retZ4 + rdZ4)*pe_R1Z4X
-       fZ4R8c(I) = (retZ4 + rdZ4)*(1._fp8 - pe_R1Z4X)
-#ifdef SAVEFLX
-       fZXRDc(I) = fZXRDc(I)+fZ4RDc
-#endif
-
-!..Rest respiration, corrected for prevailing temperature
-       rrsZ4 = srsZ4X*etZ4*Z4cP(I)
-
-!..Activity respiration
-       rraZ4 = ineffZ4 * rugZ4 - retZ4
-
-!..Total respiration
-       fZ4O3c(I) = rrsZ4 + rraZ4
-
-#ifdef CALC
-       fO3L2c(I) = fO3L2c(I) + &
-         RainR(I) * gutdiss * (1._fp8 - puZ4X)* pu_eaZ4X * fP2Z4c(I)
-#endif
-       rraZ4 = rugZ4*(1._fp8 - puZ4X)-retZ4
-
-!..Source equations
-       SZ4c(I) = SZ4c(I) + rugZ4 &
-                         - fZ4RDc - fZ4R8c(I) - fZ4Z4c(I) - fZ4O3c(I)
-
-!..Flows from and to detritus
-       SR1c(I) = SR1c(I) + (fZ4RDc * R1R2X)
-       SR2c(I) = SR2c(I) + (fZ4RDc * (1._fp8-R1R2X))
-       SR8c(I) = SR8c(I) + fZ4R8c(I)
-       SR6c(I) = SR6c(I) - fR6Z4c(I)
-
-!..Grazing and predation
-       SP1c(I) = SP1c(I) - fP1Z4c(I)
-       SP2c(I) = SP2c(I) - fP2Z4c(I)
-       SP3c(I) = SP3c(I) - fP3Z4c(I)
-       SP4c(I) = SP4c(I) - fP4Z4c(I)
-       SZ5c(I) = SZ5c(I) - fZ5Z4c(I)
-       SZ6c(I) = SZ6c(I) - fZ6Z4c(I)
-       SB1c(I) = SB1c(I) - fB1Z4c(I)
-       SChl1(I) = SChl1(I) - sP1Z4*chl1P(I)
-       SChl2(I) = SChl2(I) - sP2Z4*chl2P(I)
-       SChl3(I) = SChl3(I) - sP3Z4*chl3P(I)
-       SChl4(I) = SChl4(I) - sP4Z4*chl4P(I)
-
-!..Respiration
-       SO3c(I) = SO3c(I) + fZ4O3c(I)/CMass
-       SO2o(I) = SO2o(I) - fZ4O3c(I)*urB1_O2X
-
-!..Phosphorus dynamics in mesozooplankton, derived from carbon flows....
-
-       fZ4RIp = (fZ4RDc + fZ4R8c(I)) * qpZIcX
-       fZ4RDp = min(fZ4RIp, fZ4RDc * qpZIcX * xR1pX)
-       fZ4R8p = fZ4RIp - fZ4RDp
-
-!..Source equations
-       SZ4p = SZ4p + sP1Z4*P1pP(I) &
-                   + sP2Z4*P2pP(I) &
-                   + sP3Z4*P3pP(I) &
-                   + sP4Z4*P4pP(I) &
-                   + sZ5Z4*Z5pP(I) &
-                   + sZ6Z4*Z6pP(I) &
-                   + sB1Z4*B1pP(I) &
-                   + sR6Z4*R6pP(I) &
-                   - fZ4R8p - fZ4RDp
-
-#ifdef IRON
-!  Iron dynamics
-! following Vichi et al., 2007 it is assumed that the iron fraction of the ingested phytoplankton
-! is egested as particulate detritus (Luca)
-
-   SR6f(I)=SR6f(I) + sP1Z4*P1fP(I)+sP4Z4*P4fP(I)-sR6Z4*R6fP(I)
-   SR4f(I)=SR4f(I) + sP2Z4*P2fP(I)+sP3Z4*P3fP(I)
-   SN7f(I)=SN7f(I)+sR6Z4*R6fP(I)
-
-   SP1f(I)=SP1f(I)- sP1Z4*P1fP(I)
-   SP4f(I)=SP4f(I)- sP4Z4*P4fP(I)
-   SP2f(I)=SP2f(I)- sP2Z4*P2fP(I)
-   SP3f(I)=SP3f(I)- sP3Z4*P3fP(I) 
-#endif
-
-!..Phosphorus flux from/to detritus
-       SR1p(I) = SR1p(I) + fZ4RDp
-       SR6p(I) = SR6p(I) - sR6Z4*R6pP(I)
-       SR8p(I) = SR8p(I) + fZ4R8p
-
-!..Phosphorus flux from prey
-       SP1p(I) = SP1p(I) - sP1Z4*P1pP(I)
-       SP2p(I) = SP2p(I) - sP2Z4*P2pP(I)
-       SP3p(I) = SP3p(I) - sP3Z4*P3pP(I)
-       SP4p(I) = SP4p(I) - sP4Z4*P4pP(I)
-       SZ5p(I) = SZ5p(I) - sZ5Z4*Z5pP(I)
-       SZ6p(I) = SZ6p(I) - sZ6Z4*Z6pP(I)
-       SB1p(I) = SB1p(I) - sB1Z4*B1pP(I)
-
-!..Nitrogen dynamics in mesozooplankton, derived from carbon flows......
-
-       fZ4RIn = (fZ4RDc + fZ4R8c(I)) * qnZIcX
-       fZ4RDn = min(fZ4RIn, fZ4RDc * qnZIcX * xR1nX)
-       fZ4R8n = fZ4RIn - fZ4RDn
-
-!..Source equations
-       SZ4n = SZ4n + sP1Z4*P1nP(I) &
-                   + sP2Z4*P2nP(I) &
-                   + sP3Z4*P3nP(I) &
-                   + sP4Z4*P4nP(I) &
-                   + sZ5Z4*Z5nP(I) &
-                   + sZ6Z4*Z6nP(I) &
-                   + sB1Z4*B1nP(I) &
-                   + sR6Z4*R6nP(I) &
-                   - fZ4R8n - fZ4RDn
-
-!..Nitrogen flux from/to detritus
-       SR1n(I) = SR1n(I) + fZ4RDn
-       SR6n(I) = SR6n(I) - sR6Z4*R6nP(I)
-       SR8n(I) = SR8n(I) + fZ4R8n
-
-!..Nitrogen flux from prey
-       SP1n(I) = SP1n(I) - sP1Z4*P1nP(I)
-       SP2n(I) = SP2n(I) - sP2Z4*P2nP(I)
-       SP3n(I) = SP3n(I) - sP3Z4*P3nP(I)
-       SP4n(I) = SP4n(I) - sP4Z4*P4nP(I)
-       SZ5n(I) = SZ5n(I) - sZ5Z4*Z5nP(I)
-       SZ6n(I) = SZ6n(I) - sZ6Z4*Z6nP(I)
-       SB1n(I) = SB1n(I) - sB1Z4*B1nP(I)
-
-!..Silica-flux from diatoms due to mesozooplankton grazing
-       SP1s(I) = SP1s(I) - sP1Z4 * P1sP(I)
-       SR8s(I) = SR8s(I) + sP1Z4 * P1sP(I)
-
-!..re-establish the fixed nutrient ratio in zooplankton.................
-
-    temp_p = SN1p(I)
-    temp_n = SN4n(I)
-    CALL Adjust_fixed_nutrients ( SZ4c(I), SZ4n, SZ4p, qnZIcX, &
-                                qpZIcX, SN4n(I), SN1p(I), SR8c(I) )
-    fZ4N1p(I) = SN1p(I)-temp_p
-    fZ4NIn(I) = SN4n(I)-temp_n
-    
-   RETURN
-
-   END SUBROUTINE mesozoop
+       END SUBROUTINE Adjust_fixed_nutrients
 !
 !EOC
 !-----------------------------------------------------------------------
-
-   END MODULE mesozoo
-
-!-----------------------------------------------------------------------
-!-----------------------------------------------------------------------
+   
+end module
