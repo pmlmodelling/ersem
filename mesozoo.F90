@@ -131,7 +131,7 @@ contains
 
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
-      call self%register_dependency(self%id_eO2mO2,'fractional_saturation_of_oxygen_in_sea_water')
+      call self%register_dependency(self%id_eO2mO2,standard_variables%fractional_saturation_of_oxygen)
 
    end subroutine
    

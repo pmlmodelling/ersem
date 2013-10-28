@@ -164,8 +164,8 @@ contains
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
       call self%register_dependency(self%id_ESS,'silt concentration')
-      call self%register_dependency(self%id_phx,'pH')
-      call self%register_dependency(self%id_eO2mO2,'fractional_saturation_of_oxygen_in_sea_water')
+      if (self%ISWphx==1) call self%register_dependency(self%id_phx,standard_variables%ph_reported_on_total_scale)
+      call self%register_dependency(self%id_eO2mO2,standard_variables%fractional_saturation_of_oxygen)
 
    end subroutine
    
