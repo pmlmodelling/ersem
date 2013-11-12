@@ -427,7 +427,6 @@ contains
 
          _GET_(self%id_ETW,ETW)
          _GET_(self%id_ESS,ESS)
-         _GET_(self%id_phx,phx)
 
 #ifdef NOBAC
          _GET_SAFE_(self%id_R1c,R1cP)
@@ -541,6 +540,7 @@ contains
 !Ph influence on nitrification - empirical equation
 ! use(1) or not(2)
          if(self%ISWphx.eq.1)then
+            _GET_(self%id_phx,phx)
             Fph = MIN(2._rk,MAX(0._rk,0.6111_rk*phx-3.8889_rk))
             fN4N3n = self%sN4N3X  * Fph * N4nP * etB1 * ESS / self%cessX
          else
