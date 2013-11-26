@@ -6,19 +6,18 @@
 module pml_ersem_vphyt
 
    use fabm_types
+   use pml_ersem_base
 
    implicit none
 
    private
 
-   type,extends(type_base_model),public :: type_pml_ersem_vphyt
+   type,extends(type_ersem_base_model),public :: type_pml_ersem_vphyt
       ! Variable identifiers
-      type (type_state_variable_id)      :: id_P1c,id_P1n,id_P1p,id_P1s,id_Chl1
       type (type_state_variable_id)      :: id_O3c,id_O2o
       type (type_state_variable_id)      :: id_N5s,id_N1p,id_N3n,id_N4n
       type (type_state_variable_id)      :: id_R1c,id_R1p,id_R1n,id_R2c,id_R6c,id_R6p,id_R6n,id_R6s
 #ifdef IRON   
-      type (type_state_variable_id)      :: id_P1f
       type (type_state_variable_id)      :: id_N7f,id_R6f
 #endif
 #ifdef CENH
@@ -107,14 +106,11 @@ contains
 #endif
 
       ! Register state variables
-      call self%register_state_variable(self%id_P1c, 'c',  'mg C/m^3',   'C',             1.e-4_rk,   minimum=0.0_rk)
-      call self%register_state_variable(self%id_P1n, 'n',  'mmol N/m^3', 'N',             1.26e-6_rk, minimum=0.0_rk)
-      call self%register_state_variable(self%id_P1p, 'p',  'mmol P/m^3', 'P',             4.288e-8_rk,minimum=0.0_rk)
-      if (self%use_Si) call self%register_state_variable(self%id_P1s, 's',  'mmol Si/m^3','Si',            1.e-6_rk,   minimum=0.0_rk)
-      call self%register_state_variable(self%id_Chl1,'Chl','mg C/m^3',   'Chlorophyll-a', 3.e-6_rk,   minimum=0.0_rk)
-#ifdef IRON   
-      call self%register_state_variable(self%id_P1f, 'f',  'umol Fe/m^3','Fe',            5.e-6_rk,   minimum=0.0_rk)
-#endif
+      if (self%use_Si) then
+         call self%initialize_ersem_base(c_ini=1.e-4_rk,n_ini=1.26e-6_rk,p_ini=4.288e-8_rk,chl_ini=3.e-6_rk,s_ini=1.e-6_rk,f_ini=5.e-6_rk)
+      else
+         call self%initialize_ersem_base(c_ini=1.e-4_rk,n_ini=1.26e-6_rk,p_ini=4.288e-8_rk,chl_ini=3.e-6_rk,f_ini=5.e-6_rk)
+      end if
 
       ! Register links to external nutrient pools.
       call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3', 'Phosphate')    
@@ -206,29 +202,29 @@ contains
          ! (if any) specified by the owning model during registration of the state variable.
          ! If the returned value would be negative, 0.0 is returned instead.
 
-         _GET_(self%id_P1c,P1c)
-         _GET_(self%id_P1p,P1p)
-         _GET_(self%id_P1n,P1n)
+         _GET_(self%id_c,P1c)
+         _GET_(self%id_p,P1p)
+         _GET_(self%id_n,P1n)
 #ifdef IRON      
-         _GET_(self%id_P1f,P1f)
+         _GET_(self%id_f,P1f)
 #endif
-         _GET_(self%id_Chl1,chl1)
+         _GET_(self%id_chl,chl1)
 
          if (self%use_Si) then
-            _GET_(self%id_P1s,P1s)
+            _GET_(self%id_s,P1s)
             _GET_(self%id_N5s,N5s)
-            _GET_SAFE_(self%id_P1s,P1sP)
+            _GET_SAFE_(self%id_s,P1sP)
          end if
 
-         _GET_SAFE_(self%id_P1c,P1cP)
-         _GET_SAFE_(self%id_P1p,P1pP)
-         _GET_SAFE_(self%id_P1n,P1nP)
-         _GET_SAFE_(self%id_Chl1,chl1P)
+         _GET_SAFE_(self%id_c,P1cP)
+         _GET_SAFE_(self%id_p,P1pP)
+         _GET_SAFE_(self%id_n,P1nP)
+         _GET_SAFE_(self%id_chl,chl1P)
          _GET_SAFE_(self%id_N1p,N1pP)
          _GET_SAFE_(self%id_N3n,N3nP)
          _GET_SAFE_(self%id_N4n,N4nP)
 #ifdef IRON      
-         _GET_SAFE_(self%id_P1f,P1fP)
+         _GET_SAFE_(self%id_f,P1fP)
          _GET_SAFE_(self%id_N7f,N7fP)
 #endif
 
@@ -370,7 +366,7 @@ contains
          Chl_inc = rho*(sumP1-sraP1)*P1c
          Chl_loss = (sdoP1+srsP1)*Chl1P + (seoP1+seaP1)*Chl1
 
-         _SET_ODE_(self%id_P1c,(fO3P1c-fP1O3c-fP1R6c-fP1RDc)/secs_pr_day) ! Jorn: R4 in flagellates
+         _SET_ODE_(self%id_c,(fO3P1c-fP1O3c-fP1R6c-fP1RDc)/secs_pr_day) ! Jorn: R4 in flagellates
 #ifdef DOCDYN
          _SET_ODE_(self%id_R1c,fP1R1c/secs_pr_day)
          _SET_ODE_(self%id_R2c,fP1R2c/secs_pr_day)
@@ -379,7 +375,7 @@ contains
          _SET_ODE_(self%id_R2c,fP1RDc*(1._rk-self%R1R2X)/secs_pr_day)
 #endif
          _SET_ODE_(self%id_R6c,fP1R6c/secs_pr_day) ! Jorn: R4 in flagellates
-         _SET_ODE_(self%id_Chl1,(Chl_inc - Chl_loss)/secs_pr_day)
+         _SET_ODE_(self%id_chl,(Chl_inc - Chl_loss)/secs_pr_day)
 
          _SET_ODE_(self%id_O3c,(fP1O3c - fO3P1c)/CMass/secs_pr_day)
          _SET_ODE_(self%id_O2o,(fO3P1c*self%uB1c_O2X - fP1O3c*self%urB1_O2X)/secs_pr_day)
@@ -397,7 +393,7 @@ contains
          fN1P1p = MIN(rumP1p, runP1p+misP1p)
 
    !..Source equations
-         _SET_ODE_(self%id_P1p,(fN1P1p-fP1RDp-fP1R6p)/secs_pr_day) ! Jorn: R4 for flagellates
+         _SET_ODE_(self%id_p,(fN1P1p-fP1RDp-fP1R6p)/secs_pr_day) ! Jorn: R4 for flagellates
          _SET_ODE_(self%id_N1p,-fN1P1p/secs_pr_day)
          _SET_ODE_(self%id_R6p,fP1R6p/secs_pr_day) ! Jorn: R4 for flagellates
          _SET_ODE_(self%id_R1p,fP1RDp/secs_pr_day)
@@ -427,7 +423,7 @@ contains
          ENDIF
 
    !..Source equations
-         _SET_ODE_(self%id_P1n,(fN4P1n+fN3P1n-fP1RDn-fP1R6n)/secs_pr_day)
+         _SET_ODE_(self%id_n,(fN4P1n+fN3P1n-fP1RDn-fP1R6n)/secs_pr_day)
          _SET_ODE_(self%id_N3n,-fN3P1n/secs_pr_day)
          _SET_ODE_(self%id_N4n,-fN4P1n/secs_pr_day)
          _SET_ODE_(self%id_R6n,fP1R6n/secs_pr_day) ! Jorn: R4 for flagellates
@@ -449,7 +445,7 @@ contains
 #endif
 
    !..Source equations
-            _SET_ODE_(self%id_P1s,(fN5P1s - fP1R6s)/secs_pr_day)
+            _SET_ODE_(self%id_s,(fN5P1s - fP1R6s)/secs_pr_day)
             _SET_ODE_(self%id_N5s,-fN5P1s/secs_pr_day)
             _SET_ODE_(self%id_R6s, fP1R6s/secs_pr_day)
          end if
@@ -470,7 +466,7 @@ contains
          fN7P1f = MIN(rumP1f, runP1f+misP1f)
 
    !..Source equations
-         _SET_ODE_(self%id_P1f,(fN7P1f-fP1R6f)/secs_pr_day) ! Jorn: R4 for flagellates
+         _SET_ODE_(self%id_f,(fN7P1f-fP1R6f)/secs_pr_day) ! Jorn: R4 for flagellates
          _SET_ODE_(self%id_N7f,-fN7P1f/secs_pr_day)
          _SET_ODE_(self%id_R6f,fP1R6f/secs_pr_day) ! Jorn: R4 for flagellates
 #endif
@@ -499,9 +495,9 @@ contains
       _LOOP_BEGIN_
 
          ! Retrieve local state
-         _GET_(self%id_P1c,P1c)
-         _GET_(self%id_P1p,P1p)
-         _GET_(self%id_P1n,P1n)
+         _GET_(self%id_c,P1c)
+         _GET_(self%id_p,P1p)
+         _GET_(self%id_n,P1n)
 
          qpP1c = P1p/P1c
          qnP1c = P1n/P1c
@@ -522,13 +518,13 @@ contains
 
 !..sedimentation and resting stages.....................................
          SDP1 = -self%resP1mX * MAX(0._rk, (self%esNIP1X - iNIP1))/secs_pr_day
-         _SET_VERTICAL_MOVEMENT_(self%id_P1c,SDP1)
-         _SET_VERTICAL_MOVEMENT_(self%id_P1p,SDP1)
-         _SET_VERTICAL_MOVEMENT_(self%id_P1n,SDP1)
-         if (self%use_Si) _SET_VERTICAL_MOVEMENT_(self%id_P1s,SDP1)
-         _SET_VERTICAL_MOVEMENT_(self%id_Chl1,SDP1)
+         _SET_VERTICAL_MOVEMENT_(self%id_c,SDP1)
+         _SET_VERTICAL_MOVEMENT_(self%id_p,SDP1)
+         _SET_VERTICAL_MOVEMENT_(self%id_n,SDP1)
+         if (self%use_Si) _SET_VERTICAL_MOVEMENT_(self%id_s,SDP1)
+         _SET_VERTICAL_MOVEMENT_(self%id_chl,SDP1)
 #ifdef IRON
-         _SET_VERTICAL_MOVEMENT_(self%id_P1f,SDP1)
+         _SET_VERTICAL_MOVEMENT_(self%id_f,SDP1)
 #endif
 
       _LOOP_END_

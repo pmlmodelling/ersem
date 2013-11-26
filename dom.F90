@@ -2,14 +2,14 @@
 module pml_ersem_dom
 
    use fabm_types
+   use pml_ersem_base
 
    implicit none
 
 !  default: all is private.
    private
 
-   type,extends(type_base_model),public :: type_pml_ersem_dom
-      type (type_state_variable_id)      :: id_c,id_p,id_n
+   type,extends(type_ersem_base_model),public :: type_pml_ersem_dom
    contains
       procedure                          :: initialize
    end type
@@ -30,10 +30,10 @@ contains
 !-----------------------------------------------------------------------
 !BOC
    call self%get_parameter(has_np,'has_np',default=.true.)
-   call self%register_state_variable(self%id_c,'c','mg C/m^3','carbon',0._rk,minimum=0._rk)
    if (has_np) then
-      call self%register_state_variable(self%id_p,'p','mmol P/m^3','phosphorus',0._rk,minimum=0._rk)
-      call self%register_state_variable(self%id_n,'n','mmol N/m^3','nitrogen',  0._rk,minimum=0._rk)
+      call self%initialize_ersem_base(c_ini=0._rk,p_ini=0._rk,n_ini=0._rk)
+   else
+      call self%initialize_ersem_base(c_ini=0._rk)
    end if
 
    end subroutine

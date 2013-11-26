@@ -7,14 +7,14 @@
 module pml_ersem_bacteria
 
    use fabm_types
+   use pml_ersem_base
 
    implicit none
 
    private
 
-   type,extends(type_base_model),public :: type_pml_ersem_bacteria
+   type,extends(type_ersem_base_model),public :: type_pml_ersem_bacteria
       ! Variables
-      type (type_state_variable_id) :: id_B1c,id_B1p,id_B1n
       type (type_state_variable_id) :: id_O3c, id_O2o
       type (type_state_variable_id) :: id_R1c, id_R2c, id_R3c
       type (type_state_variable_id) :: id_R1p
@@ -102,9 +102,7 @@ contains
       call self%get_parameter(self%cessX,    'cessX')
       
       ! Register state variables
-      call self%register_state_variable(self%id_B1c, 'c', 'mg C/m^3',   'C', 1.e-4_rk,   minimum=0.0_rk)
-      call self%register_state_variable(self%id_B1n, 'n', 'mmol N/m^3', 'N', 1.26e-6_rk, minimum=0.0_rk)
-      call self%register_state_variable(self%id_B1p, 'p', 'mmol P/m^3', 'P', 4.288e-8_rk,minimum=0.0_rk)
+      call self%initialize_ersem_base(c_ini=1.e-4_rk,n_ini=1.26e-6_rk,p_ini=4.288e-8_rk)
 
       ! Register links to nutrient pools.
       call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3', 'Phosphate')    
@@ -202,12 +200,12 @@ contains
          _GET_(self%id_ETW,ETW)
          _GET_(self%id_eO2mO2,eO2mO2)
 
-         _GET_(self%id_B1c,B1c)
-         _GET_(self%id_B1p,B1p)
-         _GET_(self%id_B1n,B1n)
-         _GET_SAFE_(self%id_B1c,B1cP)
-         _GET_SAFE_(self%id_B1p,B1pP)
-         _GET_SAFE_(self%id_B1n,B1nP)
+         _GET_(self%id_c,B1c)
+         _GET_(self%id_p,B1p)
+         _GET_(self%id_n,B1n)
+         _GET_SAFE_(self%id_c,B1cP)
+         _GET_SAFE_(self%id_p,B1pP)
+         _GET_SAFE_(self%id_n,B1nP)
 
          _GET_SAFE_(self%id_N1p,N1pP)
          _GET_SAFE_(self%id_N4n,N4nP)
@@ -313,7 +311,7 @@ contains
 !..Source equations
 
 
-         _SET_ODE_(self%id_B1c,netb1)
+         _SET_ODE_(self%id_c,netb1)
 #ifdef DOCDYN
          _SET_ODE_(self%id_R1c,+ fB1R1c - sugB1*R1cP)
          _SET_ODE_(self%id_R2c,+ fB1R2c - sugB1*R2cP*self%rR2B1X)
@@ -351,12 +349,12 @@ contains
 
 #ifdef DOCDYN
          fRPB1p = sugB1*RPpP*self%sRPR1
-         _SET_ODE_(self%id_B1p, sum(fRPB1p))
+         _SET_ODE_(self%id_p, sum(fRPB1p))
          do iRP=1,self%nRP
             _SET_ODE_(self%id_RPp(iRP), - fRPB1p(iRP))
          end do
 #endif
-         _SET_ODE_(self%id_B1p, + fR1B1p - fB1N1p - fB1RDp)
+         _SET_ODE_(self%id_p, + fR1B1p - fB1N1p - fB1RDp)
          _SET_ODE_(self%id_N1p, + fB1N1p)
          _SET_ODE_(self%id_R1p, + fB1RDp - fR1B1p)
 
@@ -381,13 +379,13 @@ contains
 
 #ifdef DOCDYN
          fRPB1n = sugB1*RPnP*self%sRPR1
-         _SET_ODE_(self%id_B1n, sum(fRPB1n))
+         _SET_ODE_(self%id_n, sum(fRPB1n))
          do iRP=1,self%nRP
             _SET_ODE_(self%id_RPn(iRP), - fRPB1n(iRP))
          end do
 #endif
          _SET_ODE_(self%id_N4n, + fB1NIn)
-         _SET_ODE_(self%id_B1n, + fR1B1n - fB1NIn - fB1RDn)
+         _SET_ODE_(self%id_n,   + fR1B1n - fB1NIn - fB1RDn)
          _SET_ODE_(self%id_R1n, + fB1RDn   - fR1B1n)
 
       ! Leave spatial loops (if any)

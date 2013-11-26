@@ -3,17 +3,14 @@
 module pml_ersem_pom
 
    use fabm_types
+   use pml_ersem_base
 
    implicit none
 
 !  default: all is private.
    private
 
-   type,extends(type_base_model),public :: type_pml_ersem_pom
-      type (type_state_variable_id)      :: id_c,id_p,id_n,id_s
-#ifdef IRON
-      type (type_state_variable_id)      :: id_f
-#endif
+   type,extends(type_ersem_base_model),public :: type_pml_ersem_pom
    contains
       procedure :: initialize
    end type
@@ -36,12 +33,15 @@ contains
       call self%get_parameter(has_s,'has_s',default=.true.)
       call self%get_parameter(has_f,'has_f',default=.true.)
 
-      call self%register_state_variable(self%id_c,'c','mg C/m^3',  'carbon',     0._rk,minimum=0._rk)
-      call self%register_state_variable(self%id_p,'p','mmol P/m^3','phosphorous',0._rk,minimum=0._rk)
-      call self%register_state_variable(self%id_n,'n','mmol N/m^3','nitrogen',   0._rk,minimum=0._rk)
-
-      if (has_s) call self%register_state_variable(self%id_s,'s','mmol Si/m^3','silicate',0._rk,minimum=0._rk)
-      if (has_f) call self%register_state_variable(self%id_f,'f','umol Fe/m^3','iron',    0._rk,minimum=0._rk)
+      if (has_s.and.has_f) then
+         call self%initialize_ersem_base(c_ini=0._rk,p_ini=0._rk,n_ini=0._rk,s_ini=0._rk,f_ini=0._rk)
+      elseif (has_s) then
+         call self%initialize_ersem_base(c_ini=0._rk,p_ini=0._rk,n_ini=0._rk,s_ini=0._rk)
+      elseif (has_f) then
+         call self%initialize_ersem_base(c_ini=0._rk,p_ini=0._rk,n_ini=0._rk,f_ini=0._rk)
+      else
+         call self%initialize_ersem_base(c_ini=0._rk,p_ini=0._rk,n_ini=0._rk)
+      end if
    end subroutine
 
 end module

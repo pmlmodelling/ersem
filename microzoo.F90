@@ -5,15 +5,17 @@
 module pml_ersem_microzoo
 
    use fabm_types
+   use pml_ersem_base
 
    implicit none
 
    private
 
-   type,extends(type_base_model),public :: type_pml_ersem_microzoo
+   type,extends(type_ersem_base_model),public :: type_pml_ersem_microzoo
       ! Variables
-      type (type_state_variable_id)      :: id_Z5c,id_Z5n,id_Z5p
-      type (type_state_variable_id),allocatable,dimension(:) :: id_preyc,id_preyn,id_preyp,id_preys,id_preyf,id_preyChl,id_preyf_target
+      type (type_model_id),     allocatable,dimension(:)     :: id_prey
+      type (type_dependency_id),allocatable,dimension(:)     :: id_preyc,id_preyn,id_preyp,id_preys,id_preyf
+      type (type_state_variable_id),allocatable,dimension(:) :: id_preyf_target
       type (type_state_variable_id)      :: id_O3c, id_O2o
       type (type_state_variable_id)      :: id_R1c, id_R2c, id_R6c
       type (type_state_variable_id)      :: id_R1p, id_R6p
@@ -79,27 +81,30 @@ contains
       call self%get_parameter(self%urB1_O2X,'urB1_O2X')
 
       ! Register state variables
-      call self%register_state_variable(self%id_Z5c, 'c', 'mg C/m^3',   'C', 1.e-4_rk,   minimum=0.0_rk)
-      call self%register_state_variable(self%id_Z5n, 'n', 'mmol N/m^3', 'N', 1.26e-6_rk, minimum=0.0_rk)
-      call self%register_state_variable(self%id_Z5p, 'p', 'mmol P/m^3', 'P', 4.288e-8_rk,minimum=0.0_rk)
+      call self%initialize_ersem_base(c_ini=1.e-4_rk,p_ini=4.288e-8_rk,n_ini=1.26e-6_rk)
 
       ! Register links to carbon contents of prey.
+      allocate(self%id_prey(self%nprey))
       allocate(self%id_preyc(self%nprey))
       allocate(self%id_preyn(self%nprey))
       allocate(self%id_preyp(self%nprey))
       allocate(self%id_preyf(self%nprey))
       allocate(self%id_preys(self%nprey))
       allocate(self%id_preyf_target(self%nprey))
-      allocate(self%id_preyChl(self%nprey))
       allocate(self%suprey_Z5X(self%nprey))
       do iprey=1,self%nprey
          write (index,'(i0)') iprey
-         call self%register_state_dependency(self%id_preyc(iprey),  'prey'//trim(index)//'c',  'mg C/m^3',   'Prey '//trim(index)//' C')    
-         call self%register_state_dependency(self%id_preyChl(iprey),'prey'//trim(index)//'Chl','mg/m^3',     'Prey '//trim(index)//' chlorophyll')    
-         call self%register_state_dependency(self%id_preyn(iprey),  'prey'//trim(index)//'n',  'mmol N/m^3', 'Prey '//trim(index)//' N')    
-         call self%register_state_dependency(self%id_preyp(iprey),  'prey'//trim(index)//'p',  'mmol P/m^3', 'Prey '//trim(index)//' P')    
-         call self%register_state_dependency(self%id_preyf(iprey),  'prey'//trim(index)//'f',  'mmol Fe/m^3','Prey '//trim(index)//' Fe')    
-         call self%register_state_dependency(self%id_preys(iprey),  'prey'//trim(index)//'s',  'mmol Si/m^3','Prey '//trim(index)//' Si')    
+         call self%register_model_dependency(self%id_prey(iprey),'prey'//trim(index))
+         call self%register_dependency(self%id_preyc(iprey),  'prey'//trim(index)//'c',  'mg C/m^3',   'Prey '//trim(index)//' C')    
+         call self%register_dependency(self%id_preyn(iprey),  'prey'//trim(index)//'n',  'mmol N/m^3', 'Prey '//trim(index)//' N')    
+         call self%register_dependency(self%id_preyp(iprey),  'prey'//trim(index)//'p',  'mmol P/m^3', 'Prey '//trim(index)//' P')    
+         call self%register_dependency(self%id_preyf(iprey),  'prey'//trim(index)//'f',  'mmol Fe/m^3','Prey '//trim(index)//' Fe')    
+         call self%register_dependency(self%id_preys(iprey),  'prey'//trim(index)//'s',  'mmol Si/m^3','Prey '//trim(index)//' Si')    
+         call self%request_coupling('prey'//trim(index)//'c','c',source=self%id_prey(iprey))
+         call self%request_coupling('prey'//trim(index)//'n','n',source=self%id_prey(iprey))
+         call self%request_coupling('prey'//trim(index)//'p','p',source=self%id_prey(iprey))
+         call self%request_coupling('prey'//trim(index)//'s','s',source=self%id_prey(iprey))
+         call self%request_coupling('prey'//trim(index)//'f','f',source=self%id_prey(iprey))
          call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','mmol Fe/m^3','Target pool for Fe of assimilated prey '//trim(index))    
          call self%get_parameter(self%suprey_Z5X(iprey),'suprey'//trim(index)//'_Z5X')
       end do
@@ -138,10 +143,10 @@ contains
       _DECLARE_ARGUMENTS_DO_
 
    ! !LOCAL VARIABLES:
-      integer  :: iprey
+      integer  :: iprey,istate
       real(rk) :: ETW, eO2mO2
       real(rk) :: Z5c,Z5p,Z5n,Z5cP,Z5nP,Z5pP
-      real(rk),dimension(self%nprey) :: preycP,preynP,preypP,preysP,preyfP,preyChlP
+      real(rk),dimension(self%nprey) :: preycP,preynP,preypP,preysP,preyfP
       real(rk),dimension(self%nprey) :: spreyZ5,rupreyZ5c,fpreyZ5c
       real(rk) :: etZ5,CORROX,eO2Z5
       real(rk) :: rumZ5, put_uZ5,rugZ5
@@ -157,18 +162,20 @@ contains
       real(rk) :: fZ5RIn,fZ5RDn,fZ5R6n,fZ5NIn
       real(rk) :: qpZ5c,qnZ5c
 
+      real(rk) :: preyP
+
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
 
       _GET_(self%id_ETW,ETW)
       _GET_(self%id_eO2mO2,eO2mO2)
 
-      _GET_(self%id_Z5c,Z5c)
-      _GET_(self%id_Z5p,Z5p)
-      _GET_(self%id_Z5n,Z5n)
-      _GET_SAFE_(self%id_Z5c,Z5cP)
-      _GET_SAFE_(self%id_Z5n,Z5nP)
-      _GET_SAFE_(self%id_Z5p,Z5pP)
+      _GET_(self%id_c,Z5c)
+      _GET_(self%id_p,Z5p)
+      _GET_(self%id_n,Z5n)
+      _GET_SAFE_(self%id_c,Z5cP)
+      _GET_SAFE_(self%id_n,Z5nP)
+      _GET_SAFE_(self%id_p,Z5pP)
 
       do iprey=1,self%nprey
          _GET_SAFE_(self%id_preyc(iprey),preycP(iprey))
@@ -176,7 +183,6 @@ contains
          _GET_SAFE_(self%id_preyp(iprey),preypP(iprey))
          _GET_SAFE_(self%id_preys(iprey),preysP(iprey))
          _GET_SAFE_(self%id_preyf(iprey),preyfP(iprey))
-         _GET_SAFE_(self%id_preyChl(iprey),preyChlP(iprey))
       end do
 
       qpZ5c = Z5p/Z5c
@@ -235,7 +241,7 @@ contains
          RainR(I) * gutdiss * (1._rk - puZ5X)* pu_eaZ5X * fP2Z5c(I)
 #endif
 !..Source equation
-      _SET_ODE_(self%id_Z5c,rugZ5 - fZ5R6c - fZ5RDc - fZ5O3c)
+      _SET_ODE_(self%id_c,rugZ5 - fZ5R6c - fZ5RDc - fZ5O3c)
 
 !..Flows from and to detritus
       _SET_ODE_(self%id_R1c,(fZ5RDc * self%R1R2X))
@@ -244,8 +250,8 @@ contains
 
 !..Grazing and predation
       do iprey=1,self%nprey
-         _SET_ODE_(self%id_preyc(iprey),- fpreyZ5c(iprey))
-         _SET_ODE_(self%id_preyChl(iprey),- spreyZ5(iprey)*preychlP(iprey))
+         !_SET_ODE_(self%id_preyc(iprey),- fpreyZ5c(iprey))
+         !_SET_ODE_(self%id_preyChl(iprey),- spreyZ5(iprey)*preychlP(iprey))
       end do
 
 !..Respiration
@@ -261,7 +267,7 @@ contains
       fZ5N1p = MAX( 0._rk, Z5pP - self%qpZ5cX*Z5cP)*self%stempZ5pX
 
 !..Source equations
-      _SET_ODE_(self%id_Z5p,sum(spreyZ5*preypP) - fZ5R6p - fZ5RDp - fZ5N1p)
+      _SET_ODE_(self%id_p,sum(spreyZ5*preypP) - fZ5R6p - fZ5RDp - fZ5N1p)
 
 #ifdef IRON
 ! iron dynamics
@@ -269,7 +275,7 @@ contains
 ! is egested as particulate detritus (Luca)
 
       do iprey=1,self%nprey
-         _SET_ODE_(self%id_preyf(iprey),-spreyZ5(iprey)*preyfP(iprey))
+         !_SET_ODE_(self%id_preyf(iprey),-spreyZ5(iprey)*preyfP(iprey))
          _SET_ODE_(self%id_preyf_target(iprey),+spreyZ5(iprey)*preyfP(iprey))
       end do
 #endif
@@ -283,7 +289,7 @@ contains
 
 !..Phosphorus flux from prey
       do iprey=1,self%nprey
-         _SET_ODE_(self%id_preyp(iprey),-spreyZ5(iprey)*preypP(iprey))
+         !_SET_ODE_(self%id_preyp(iprey),-spreyZ5(iprey)*preypP(iprey))
       end do
 
 !..Nitrogen dynamics
@@ -294,7 +300,7 @@ contains
 
       fZ5NIn = MAX( 0._rk, Z5nP - self%qnZ5cX*Z5cP)*self%stempZ5nX
       _SET_ODE_(self%id_N4n,+ fZ5NIn)
-      _SET_ODE_(self%id_Z5n,sum(spreyZ5*preynP) - fZ5R6n - fZ5RDn - fZ5NIn)
+      _SET_ODE_(self%id_n,sum(spreyZ5*preynP) - fZ5R6n - fZ5RDn - fZ5NIn)
 
 !..Nitrogen flux from/to detritus
       _SET_ODE_(self%id_R6n,+ fZ5R6n)
@@ -302,15 +308,23 @@ contains
 
 !..Nitrogen flux from prey
       do iprey=1,self%nprey
-         _SET_ODE_(self%id_preyn(iprey),-spreyZ5(iprey)*preynP(iprey))
+         !_SET_ODE_(self%id_preyn(iprey),-spreyZ5(iprey)*preynP(iprey))
       end do
 
 !..Silica-flux from diatoms due to microzooplankton grazing
       do iprey=1,self%nprey
-         _SET_ODE_(self%id_preys(iprey),-spreyZ5(iprey)*preysP(iprey))
+         !_SET_ODE_(self%id_preys(iprey),-spreyZ5(iprey)*preysP(iprey))
       end do
       _SET_ODE_(self%id_R6s,sum(spreyZ5*preysP))
 
+      ! Apply specific predation rates to all state variables of every prey.
+      do iprey=1,self%nprey
+         do istate=1,size(self%id_prey(iprey)%model%state)
+            _GET_(self%id_prey(iprey)%model%state(istate),preyP)
+            _SET_ODE_(self%id_prey(iprey)%model%state(istate),-spreyZ5(iprey)*preyP)
+         end do
+      end do
+      
       ! Leave spatial loops (if any)
       _LOOP_END_
 

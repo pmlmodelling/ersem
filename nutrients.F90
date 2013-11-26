@@ -3,14 +3,14 @@
 module pml_ersem_nutrient
 
    use fabm_types
+   use pml_ersem_base
 
    implicit none
 
 !  default: all is private.
    private
 
-   type,extends(type_base_model),public :: type_pml_ersem_nutrient
-      type (type_state_variable_id) :: id_N
+   type,extends(type_ersem_base_model),public :: type_pml_ersem_nutrient
    contains
       procedure :: initialize
    end type
@@ -33,8 +33,18 @@ contains
 !-----------------------------------------------------------------------
 !BOC
    call self%get_parameter(name,'name')
-   call self%get_parameter(units,'units')
-   call self%register_state_variable(self%id_N,name,units,trim(self%long_name_prefix),1._rk,minimum=0._rk)
+   select case (name)
+      case ('n')
+         call self%initialize_ersem_base(n_ini=0._rk)
+      case ('p')
+         call self%initialize_ersem_base(p_ini=0._rk)
+      case ('f')
+         call self%initialize_ersem_base(f_ini=0._rk)
+      case ('s')
+         call self%initialize_ersem_base(s_ini=0._rk)
+      case default
+         call self%fatal_error('initialize','unknown element '//trim(name))
+   end select
 
    end subroutine
 
