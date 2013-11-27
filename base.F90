@@ -171,6 +171,7 @@ contains
             sum = sum + component%weight*value
             component => component%next
          end do
+         _SET_DIAGNOSTIC_(self%id_output,sum)
       _LOOP_END_
    end subroutine
 end module

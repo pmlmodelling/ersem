@@ -148,7 +148,7 @@ contains
       _DECLARE_ARGUMENTS_DO_
 
    ! !LOCAL VARIABLES:
-      integer  :: iprey
+      integer  :: iprey,istate
       real(rk) :: ETW,eO2mO2
       real(rk) :: Z4c,Z4cP
       real(rk),dimension(self%nprey) :: preycP,preypP,preynP,preysP,preyfP
@@ -164,6 +164,7 @@ contains
       real(rk) :: fZ4RIp,fZ4RDp,fZ4R8p
       real(rk) :: fZ4RIn,fZ4RDn,fZ4R8n
       real(rk) :: fZ4NIn,fZ4N1p,SR8c
+      real(rk) :: preyP
 
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
@@ -255,12 +256,6 @@ contains
          _SET_ODE_(self%id_R2c, + fZ4RDc * (1._rk-self%R1R2X))
          _SET_ODE_(self%id_R8c, + fZ4R8c)
 
-!..Grazing and predation
-         do iprey=1,self%nprey
-            !_SET_ODE_(self%id_preyc(iprey),   - fpreyZ4c(iprey))
-            !_SET_ODE_(self%id_preyChl(iprey), - spreyZ4(iprey)*preyChlP(iprey))
-         end do
-
 !..Respiration
          _SET_ODE_(self%id_O3c, + fZ4O3c/CMass)
          _SET_ODE_(self%id_O2o, - fZ4O3c*self%urB1_O2X)
@@ -279,7 +274,6 @@ contains
 ! following Vichi et al., 2007 it is assumed that the iron fraction of the ingested phytoplankton
 ! is egested as particulate detritus (Luca)
          do iprey=1,self%nprey
-            !_SET_ODE_(self%id_preyf(iprey),       - spreyZ4(iprey)*preyfP(iprey))
             _SET_ODE_(self%id_preyf_target(iprey),  spreyZ4(iprey)*preyfP(iprey))
          end do
 #endif
@@ -287,11 +281,6 @@ contains
 !..Phosphorus flux from/to detritus
          _SET_ODE_(self%id_R1p, + fZ4RDp)
          _SET_ODE_(self%id_R8p, + fZ4R8p)
-
-!..Phosphorus flux from prey
-         do iprey=1,self%nprey
-            !_SET_ODE_(self%id_preyp(iprey),- spreyZ4(iprey)*preypP(iprey))
-         end do
 
 !..Nitrogen dynamics in mesozooplankton, derived from carbon flows......
 
@@ -306,15 +295,7 @@ contains
          _SET_ODE_(self%id_R1n, + fZ4RDn)
          _SET_ODE_(self%id_R8n, + fZ4R8n)
 
-!..Nitrogen flux from prey
-         do iprey=1,self%nprey
-            !_SET_ODE_(self%id_preyn(iprey),- spreyZ4(iprey)*preynP(iprey))
-         end do
-
 !..Silica-flux from diatoms due to mesozooplankton grazing
-         do iprey=1,self%nprey
-            !_SET_ODE_(self%id_preys(iprey),- spreyZ4(iprey)*preysP(iprey))
-         end do
          _SET_ODE_(self%id_R6s,sum(spreyZ4*preysP))
 
 !..re-establish the fixed nutrient ratio in zooplankton.................
@@ -330,6 +311,14 @@ contains
          _SET_ODE_(self%id_N1p,fZ4N1p)
          _SET_ODE_(self%id_R8c,SR8c)
 
+         ! Apply specific predation rates to all state variables of every prey.
+         do iprey=1,self%nprey
+            do istate=1,size(self%id_prey(iprey)%model%state)
+               _GET_SAFE_(self%id_prey(iprey)%model%state(istate),preyP)
+               _SET_ODE_(self%id_prey(iprey)%model%state(istate),-spreyZ4(iprey)*preyP)
+            end do
+         end do
+         
       ! Leave spatial loops (if any)
       _LOOP_END_
 
@@ -384,17 +373,15 @@ contains
        ExcessN = max(SXn - SXc*qn,0._rk)
        ExcessP = max(SXp - SXc*qp,0._rk)
 
-       IF ( ExcessN .GT. ZeroX ) THEN
+       IF ( ExcessN .GT. 0.0_rk ) THEN ! Jorn: 0.0_rk was ZeroX before (why?), but that cause violation of conservation
          SXn = SXn - ExcessN
          SKn = SKn + ExcessN
        END If
 
-       IF ( ExcessP .GT. ZeroX ) THEN
+       IF ( ExcessP .GT. 0.0_rk ) THEN ! Jorn: 0.0_rk was ZeroX before (why?), but that cause violation of conservation
          SXp = SXp - EXcessP
          SKp = SKp + ExcessP
        END If
-
-       RETURN
 
        END SUBROUTINE Adjust_fixed_nutrients
 !

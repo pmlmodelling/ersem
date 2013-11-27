@@ -101,14 +101,14 @@ contains
       call self%get_parameter(self%sN4N3X,   'sN4N3X')
       call self%get_parameter(self%cessX,    'cessX')
       
-      ! Register state variables
+      ! Allow ERSEM base model to declare our own state variables.
       call self%initialize_ersem_base(c_ini=1.e-4_rk,n_ini=1.26e-6_rk,p_ini=4.288e-8_rk)
 
       ! Register links to nutrient pools.
-      call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3', 'Phosphate')    
-      call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3', 'Nitrate')    
-      call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3', 'Ammonium')    
-      call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3', 'Inorganic Iron')    
+      call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3', 'Phosphate')
+      call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3', 'Nitrate')
+      call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3', 'Ammonium')
+      call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3','Inorganic Iron')
 
       ! Register links to labile dissolved organic matter pools.
       call self%register_state_dependency(self%id_R1c,'R1c','mg C/m^3',  'DOC')
@@ -134,7 +134,7 @@ contains
       
 #ifdef DOCDYN
       ! Register links to semi-refractory dissolved organic matter pool.
-      call self%register_state_dependency(self%id_R3c,'R3c','mg C/m^3','Semi-refractory DOC')    
+      call self%register_state_dependency(self%id_R3c,'R3c','mg C/m^3','Semi-refractory DOC')
 
       allocate(self%sRPR1(self%nRP))
       do iRP=1,self%nRP
@@ -156,8 +156,8 @@ contains
 #endif
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
-      call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','Carbon Dioxide')    
-      call self%register_state_dependency(self%id_O2o,'O2o','mmol O/m^3','Oxygen')    
+      call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','Carbon Dioxide')
+      call self%register_state_dependency(self%id_O2o,'O2o','mmol O/m^3','Oxygen')
 
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
@@ -187,6 +187,7 @@ contains
 #ifdef DOCDYN
       real(rk) :: R3c,R2cP,R3cP
       real(rk) :: fB1R1c
+      real(rk) :: totsubst
       integer  :: iRP
       real(rk),dimension(self%nRP) :: RPc,RPcP,RPnP,RPpP
       real(rk),dimension(self%nRP) :: fRPB1p,fRPB1n
@@ -272,7 +273,13 @@ contains
       ! rugB1 = MIN(rumB1,rutB1)
       ! specific in substrate concentration:
 #ifdef DOCDYN
-         sugB1 = rumB1/max(rumB1/sutB1,R1c+R2c*self%rR2B1X+R3c*self%rR3B1X+sum(RPc*self%sRPR1/sutB1))
+         totsubst = R1c+R2c*self%rR2B1X+R3c*self%rR3B1X+sum(RPc*self%sRPR1/sutB1)
+         ! Jorn: check whether total substrate>0 to prevent NaNs
+         if (totsubst>0.0_rk) then
+            sugB1 = rumB1/max(rumB1/sutB1,totsubst)
+         else
+            sugB1 = 0.0_rk
+         end if
              ! = MIN(rumB1,rutB1)=MIN(rumB1/(R1cP+R2cP*rR2B1X,sutB1) avoid pot. div. by 0
          rugB1 = sugB1*(R1cP+R2cP*self%rR2B1X+R3c*self%rR3B1X+sum(RPc*self%sRPR1/sutB1))
 #else
@@ -497,7 +504,7 @@ contains
 ! sink of Fe
 
 ! This term takes into account the scavenging due to hydroxide precipitation and it is supposed to be 
-! regulateted by a threshold concentration (0.6 nM). See Aumont et al., 2003 (GBC) and Vichi et al., 2007 (JMS) for references.
+! regulated by a threshold concentration (0.6 nM). See Aumont et al., 2003 (GBC) and Vichi et al., 2007 (JMS) for references.
 ! (Luca, 12/08)
          n7fsink=self%fsinkX*max(0._rk,N7fP-0.6_rk)
 #endif

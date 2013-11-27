@@ -320,7 +320,7 @@ contains
       ! Apply specific predation rates to all state variables of every prey.
       do iprey=1,self%nprey
          do istate=1,size(self%id_prey(iprey)%model%state)
-            _GET_(self%id_prey(iprey)%model%state(istate),preyP)
+            _GET_SAFE_(self%id_prey(iprey)%model%state(istate),preyP)
             _SET_ODE_(self%id_prey(iprey)%model%state(istate),-spreyZ5(iprey)*preyP)
          end do
       end do
