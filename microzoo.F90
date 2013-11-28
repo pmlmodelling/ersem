@@ -94,42 +94,43 @@ contains
       allocate(self%suprey_Z5X(self%nprey))
       do iprey=1,self%nprey
          write (index,'(i0)') iprey
-         call self%register_model_dependency(self%id_prey(iprey),'prey'//trim(index))
-         call self%register_dependency(self%id_preyc(iprey),  'prey'//trim(index)//'c',  'mg C/m^3',   'Prey '//trim(index)//' C')    
-         call self%register_dependency(self%id_preyn(iprey),  'prey'//trim(index)//'n',  'mmol N/m^3', 'Prey '//trim(index)//' N')    
-         call self%register_dependency(self%id_preyp(iprey),  'prey'//trim(index)//'p',  'mmol P/m^3', 'Prey '//trim(index)//' P')    
-         call self%register_dependency(self%id_preyf(iprey),  'prey'//trim(index)//'f',  'mmol Fe/m^3','Prey '//trim(index)//' Fe')    
-         call self%register_dependency(self%id_preys(iprey),  'prey'//trim(index)//'s',  'mmol Si/m^3','Prey '//trim(index)//' Si')    
-         call self%request_coupling('prey'//trim(index)//'c','c',source=self%id_prey(iprey))
-         call self%request_coupling('prey'//trim(index)//'n','n',source=self%id_prey(iprey))
-         call self%request_coupling('prey'//trim(index)//'p','p',source=self%id_prey(iprey))
-         call self%request_coupling('prey'//trim(index)//'s','s',source=self%id_prey(iprey))
-         call self%request_coupling('prey'//trim(index)//'f','f',source=self%id_prey(iprey))
-         call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','mmol Fe/m^3','Target pool for Fe of assimilated prey '//trim(index))    
          call self%get_parameter(self%suprey_Z5X(iprey),'suprey'//trim(index)//'_Z5X')
+         call self%register_dependency(self%id_preyc(iprey),  'prey'//trim(index)//'c',  'mg C m-3',   'Prey '//trim(index)//' C')
+         call self%register_dependency(self%id_preyn(iprey),  'prey'//trim(index)//'n',  'mmol N m-3', 'Prey '//trim(index)//' N')
+         call self%register_dependency(self%id_preyp(iprey),  'prey'//trim(index)//'p',  'mmol P m-3', 'Prey '//trim(index)//' P')
+         call self%register_dependency(self%id_preyf(iprey),  'prey'//trim(index)//'f',  'mmol Fe m-3','Prey '//trim(index)//' Fe')
+         call self%register_dependency(self%id_preys(iprey),  'prey'//trim(index)//'s',  'mmol Si m-3','Prey '//trim(index)//' Si')
+         call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe m-3','Target pool for Fe of assimilated prey '//trim(index))    
+
+         call self%register_model_dependency(self%id_prey(iprey),'prey'//trim(index))
+         call self%request_coupling(self%id_preyc(iprey),'c',source=self%id_prey(iprey))
+         call self%request_coupling(self%id_preyn(iprey),'n',source=self%id_prey(iprey))
+         call self%request_coupling(self%id_preyp(iprey),'p',source=self%id_prey(iprey))
+         call self%request_coupling(self%id_preys(iprey),'s',source=self%id_prey(iprey))
+         call self%request_coupling(self%id_preyf(iprey),'f',source=self%id_prey(iprey))
       end do
 
       ! Register links to external nutrient pools.
-      call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3', 'Phosphate')    
-      call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3', 'Ammonium')    
+      call self%register_state_dependency(self%id_N1p,'N1p','mmol P m-3', 'Phosphate')    
+      call self%register_state_dependency(self%id_N4n,'N4n','mmol N m-3', 'Ammonium')    
 
       ! Register links to external labile dissolved organic matter pools.
-      call self%register_state_dependency(self%id_R1c,'R1c','mg C/m^3',  'DOC')
-      call self%register_state_dependency(self%id_R1p,'R1p','mmol P/m^3','DOP')    
-      call self%register_state_dependency(self%id_R1n,'R1n','mmol N/m^3','DON')    
+      call self%register_state_dependency(self%id_R1c,'R1c','mg C m-3',  'DOC')
+      call self%register_state_dependency(self%id_R1p,'R1p','mmol P m-3','DOP')    
+      call self%register_state_dependency(self%id_R1n,'R1n','mmol N m-3','DON')    
 
       ! Register links to external semi-labile dissolved organic matter pools.
-      call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','Semi-labile DOC')    
+      call self%register_state_dependency(self%id_R2c,'R2c','mg C m-3','Semi-labile DOC')    
 
       ! Register links to external particulate organic matter pools.
-      call self%register_state_dependency(self%id_R6c,'RPc','mg C/m^3',   'POC')    
-      call self%register_state_dependency(self%id_R6p,'RPp','mmol P/m^3', 'POP')    
-      call self%register_state_dependency(self%id_R6n,'RPn','mmol N/m^3', 'PON')    
-      call self%register_state_dependency(self%id_R6s,'RPs','mmol Si/m^3','POSi')    
+      call self%register_state_dependency(self%id_R6c,'RPc','mg C m-3',   'POC')    
+      call self%register_state_dependency(self%id_R6p,'RPp','mmol P m-3', 'POP')    
+      call self%register_state_dependency(self%id_R6n,'RPn','mmol N m-3', 'PON')    
+      call self%register_state_dependency(self%id_R6s,'RPs','mmol Si m-3','POSi')    
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
-      call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','Carbon Dioxide')    
-      call self%register_state_dependency(self%id_O2o,'O2o','mmol O/m^3','Oxygen')    
+      call self%register_state_dependency(self%id_O3c,'O3c','mmol C m-3','Carbon Dioxide')    
+      call self%register_state_dependency(self%id_O2o,'O2o','mmol O m-3','Oxygen')    
 
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
