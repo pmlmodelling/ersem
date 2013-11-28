@@ -366,19 +366,19 @@ contains
          Chl_inc = rho*(sumP1-sraP1)*P1c
          Chl_loss = (sdoP1+srsP1)*Chl1P + (seoP1+seaP1)*Chl1
 
-         _SET_ODE_(self%id_c,(fO3P1c-fP1O3c-fP1R6c-fP1RDc)/secs_pr_day) ! Jorn: R4 in flagellates
+         _SET_ODE_(self%id_c,(fO3P1c-fP1O3c-fP1R6c-fP1RDc)) ! Jorn: R4 in flagellates
 #ifdef DOCDYN
-         _SET_ODE_(self%id_R1c,fP1R1c/secs_pr_day)
-         _SET_ODE_(self%id_R2c,fP1R2c/secs_pr_day)
+         _SET_ODE_(self%id_R1c,fP1R1c)
+         _SET_ODE_(self%id_R2c,fP1R2c)
 #else
-         _SET_ODE_(self%id_R1c,(fP1RDc*self%R1R2X)/secs_pr_day)
-         _SET_ODE_(self%id_R2c,fP1RDc*(1._rk-self%R1R2X)/secs_pr_day)
+         _SET_ODE_(self%id_R1c,(fP1RDc*self%R1R2X))
+         _SET_ODE_(self%id_R2c,fP1RDc*(1._rk-self%R1R2X))
 #endif
-         _SET_ODE_(self%id_R6c,fP1R6c/secs_pr_day) ! Jorn: R4 in flagellates
-         _SET_ODE_(self%id_chl,(Chl_inc - Chl_loss)/secs_pr_day)
+         _SET_ODE_(self%id_R6c,fP1R6c) ! Jorn: R4 in flagellates
+         _SET_ODE_(self%id_chl,(Chl_inc - Chl_loss))
 
-         _SET_ODE_(self%id_O3c,(fP1O3c - fO3P1c)/CMass/secs_pr_day)
-         _SET_ODE_(self%id_O2o,(fO3P1c*self%uB1c_O2X - fP1O3c*self%urB1_O2X)/secs_pr_day)
+         _SET_ODE_(self%id_O3c,(fP1O3c - fO3P1c)/CMass)
+         _SET_ODE_(self%id_O2o,(fO3P1c*self%uB1c_O2X - fP1O3c*self%urB1_O2X))
          
    !..Phosphorus flux through P1...........................................
 
@@ -393,10 +393,10 @@ contains
          fN1P1p = MIN(rumP1p, runP1p+misP1p)
 
    !..Source equations
-         _SET_ODE_(self%id_p,(fN1P1p-fP1RDp-fP1R6p)/secs_pr_day) ! Jorn: R4 for flagellates
-         _SET_ODE_(self%id_N1p,-fN1P1p/secs_pr_day)
-         _SET_ODE_(self%id_R6p,fP1R6p/secs_pr_day) ! Jorn: R4 for flagellates
-         _SET_ODE_(self%id_R1p,fP1RDp/secs_pr_day)
+         _SET_ODE_(self%id_p,(fN1P1p-fP1RDp-fP1R6p)) ! Jorn: R4 for flagellates
+         _SET_ODE_(self%id_N1p,-fN1P1p)
+         _SET_ODE_(self%id_R6p,fP1R6p) ! Jorn: R4 for flagellates
+         _SET_ODE_(self%id_R1p,fP1RDp)
 
    !..Nitrogen flux through P1.............................................
 
@@ -423,11 +423,11 @@ contains
          ENDIF
 
    !..Source equations
-         _SET_ODE_(self%id_n,(fN4P1n+fN3P1n-fP1RDn-fP1R6n)/secs_pr_day)
-         _SET_ODE_(self%id_N3n,-fN3P1n/secs_pr_day)
-         _SET_ODE_(self%id_N4n,-fN4P1n/secs_pr_day)
-         _SET_ODE_(self%id_R6n,fP1R6n/secs_pr_day) ! Jorn: R4 for flagellates
-         _SET_ODE_(self%id_R1n,fP1RDn/secs_pr_day)
+         _SET_ODE_(self%id_n,(fN4P1n+fN3P1n-fP1RDn-fP1R6n))
+         _SET_ODE_(self%id_N3n,-fN3P1n)
+         _SET_ODE_(self%id_N4n,-fN4P1n)
+         _SET_ODE_(self%id_R6n,fP1R6n) ! Jorn: R4 for flagellates
+         _SET_ODE_(self%id_R1n,fP1RDn)
 
          if (self%use_Si) then
    !..Silicate flux through P1.............................................
@@ -445,9 +445,9 @@ contains
 #endif
 
    !..Source equations
-            _SET_ODE_(self%id_s,(fN5P1s - fP1R6s)/secs_pr_day)
-            _SET_ODE_(self%id_N5s,-fN5P1s/secs_pr_day)
-            _SET_ODE_(self%id_R6s, fP1R6s/secs_pr_day)
+            _SET_ODE_(self%id_s,(fN5P1s - fP1R6s))
+            _SET_ODE_(self%id_N5s,-fN5P1s)
+            _SET_ODE_(self%id_R6s, fP1R6s)
          end if
 
 #ifdef IRON
@@ -466,9 +466,9 @@ contains
          fN7P1f = MIN(rumP1f, runP1f+misP1f)
 
    !..Source equations
-         _SET_ODE_(self%id_f,(fN7P1f-fP1R6f)/secs_pr_day) ! Jorn: R4 for flagellates
-         _SET_ODE_(self%id_N7f,-fN7P1f/secs_pr_day)
-         _SET_ODE_(self%id_R6f,fP1R6f/secs_pr_day) ! Jorn: R4 for flagellates
+         _SET_ODE_(self%id_f,(fN7P1f-fP1R6f)) ! Jorn: R4 for flagellates
+         _SET_ODE_(self%id_N7f,-fN7P1f)
+         _SET_ODE_(self%id_R6f,fP1R6f) ! Jorn: R4 for flagellates
 #endif
 
    !..add dia 
@@ -517,7 +517,7 @@ contains
          end select
 
 !..sedimentation and resting stages.....................................
-         SDP1 = -self%resP1mX * MAX(0._rk, (self%esNIP1X - iNIP1))/secs_pr_day
+         SDP1 = -self%resP1mX * MAX(0._rk, (self%esNIP1X - iNIP1))
          _SET_VERTICAL_MOVEMENT_(self%id_c,SDP1)
          _SET_VERTICAL_MOVEMENT_(self%id_p,SDP1)
          _SET_VERTICAL_MOVEMENT_(self%id_n,SDP1)

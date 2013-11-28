@@ -117,6 +117,8 @@ contains
          ! No nitrogen
          call self%register_diagnostic_variable(self%id_nD, 'n', 'mmol N m-3', 'nitrogen', missing_value=0._rk)
       end if
+
+      self%dt = 86400._rk
    end subroutine
 
    subroutine weighted_sum_initialize(self,configunit)
