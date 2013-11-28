@@ -13,8 +13,8 @@ module pml_ersem_microzoo
 
    type,extends(type_ersem_base_model),public :: type_pml_ersem_microzoo
       ! Variables
-      type (type_model_id),     allocatable,dimension(:)     :: id_prey
-      type (type_dependency_id),allocatable,dimension(:)     :: id_preyc,id_preyn,id_preyp,id_preys,id_preyf
+      type (type_model_id),         allocatable,dimension(:) :: id_prey
+      type (type_dependency_id),    allocatable,dimension(:) :: id_preyc,id_preyn,id_preyp,id_preys,id_preyf
       type (type_state_variable_id),allocatable,dimension(:) :: id_preyf_target
       type (type_state_variable_id)      :: id_O3c, id_O2o
       type (type_state_variable_id)      :: id_R1c, id_R2c, id_R6c
@@ -248,12 +248,6 @@ contains
       _SET_ODE_(self%id_R2c,(fZ5RDc * (1._rk-self%R1R2X)))
       _SET_ODE_(self%id_R6c,fZ5R6c)
 
-!..Grazing and predation
-      do iprey=1,self%nprey
-         !_SET_ODE_(self%id_preyc(iprey),- fpreyZ5c(iprey))
-         !_SET_ODE_(self%id_preyChl(iprey),- spreyZ5(iprey)*preychlP(iprey))
-      end do
-
 !..Respiration
       _SET_ODE_(self%id_O3c,+ fZ5O3c/CMass)
       _SET_ODE_(self%id_O2o,- fZ5O3c*self%urB1_O2X)
@@ -273,9 +267,7 @@ contains
 ! iron dynamics
 ! following Vichi et al., 2007 it is assumed that the iron fraction of the ingested phytoplankton
 ! is egested as particulate detritus (Luca)
-
       do iprey=1,self%nprey
-         !_SET_ODE_(self%id_preyf(iprey),-spreyZ5(iprey)*preyfP(iprey))
          _SET_ODE_(self%id_preyf_target(iprey),+spreyZ5(iprey)*preyfP(iprey))
       end do
 #endif
@@ -286,11 +278,6 @@ contains
 !..Phosphorus flux from/to detritus
       _SET_ODE_(self%id_R6p,+ fZ5R6p)
       _SET_ODE_(self%id_R1p,+ fZ5RDp)
-
-!..Phosphorus flux from prey
-      do iprey=1,self%nprey
-         !_SET_ODE_(self%id_preyp(iprey),-spreyZ5(iprey)*preypP(iprey))
-      end do
 
 !..Nitrogen dynamics
 
@@ -306,15 +293,7 @@ contains
       _SET_ODE_(self%id_R6n,+ fZ5R6n)
       _SET_ODE_(self%id_R1n,+ fZ5RDn)
 
-!..Nitrogen flux from prey
-      do iprey=1,self%nprey
-         !_SET_ODE_(self%id_preyn(iprey),-spreyZ5(iprey)*preynP(iprey))
-      end do
-
 !..Silica-flux from diatoms due to microzooplankton grazing
-      do iprey=1,self%nprey
-         !_SET_ODE_(self%id_preys(iprey),-spreyZ5(iprey)*preysP(iprey))
-      end do
       _SET_ODE_(self%id_R6s,sum(spreyZ5*preysP))
 
       ! Apply specific predation rates to all state variables of every prey.
@@ -324,7 +303,7 @@ contains
             _SET_ODE_(self%id_prey(iprey)%model%state(istate),-spreyZ5(iprey)*preyP)
          end do
       end do
-      
+
       ! Leave spatial loops (if any)
       _LOOP_END_
 
