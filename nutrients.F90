@@ -28,7 +28,7 @@ contains
 ! !REVISION HISTORY:
 !
 ! !LOCAL VARIABLES:
-   character(len=1024) :: name,units
+   character(len=1024) :: name
 !EOP
 !-----------------------------------------------------------------------
 !BOC
