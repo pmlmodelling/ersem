@@ -100,7 +100,7 @@ contains
          call self%register_dependency(self%id_preyp(iprey),  'prey'//trim(index)//'p',  'mmol P m-3', 'Prey '//trim(index)//' P')
          call self%register_dependency(self%id_preyf(iprey),  'prey'//trim(index)//'f',  'mmol Fe m-3','Prey '//trim(index)//' Fe')
          call self%register_dependency(self%id_preys(iprey),  'prey'//trim(index)//'s',  'mmol Si m-3','Prey '//trim(index)//' Si')
-         call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe m-3','Target pool for Fe of assimilated prey '//trim(index))    
+         call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe m-3','sink for Fe of prey '//trim(index),required=.false.)
 
          call self%register_model_dependency(self%id_prey(iprey),'prey'//trim(index))
          call self%request_coupling(self%id_preyc(iprey),'c',source=self%id_prey(iprey))
@@ -111,26 +111,26 @@ contains
       end do
 
       ! Register links to external nutrient pools.
-      call self%register_state_dependency(self%id_N1p,'N1p','mmol P m-3', 'Phosphate')    
-      call self%register_state_dependency(self%id_N4n,'N4n','mmol N m-3', 'Ammonium')    
+      call self%register_state_dependency(self%id_N1p,'N1p','mmol P m-3', 'Phosphate')
+      call self%register_state_dependency(self%id_N4n,'N4n','mmol N m-3', 'Ammonium')
 
       ! Register links to external labile dissolved organic matter pools.
       call self%register_state_dependency(self%id_R1c,'R1c','mg C m-3',  'DOC')
-      call self%register_state_dependency(self%id_R1p,'R1p','mmol P m-3','DOP')    
-      call self%register_state_dependency(self%id_R1n,'R1n','mmol N m-3','DON')    
+      call self%register_state_dependency(self%id_R1p,'R1p','mmol P m-3','DOP')
+      call self%register_state_dependency(self%id_R1n,'R1n','mmol N m-3','DON')
 
       ! Register links to external semi-labile dissolved organic matter pools.
-      call self%register_state_dependency(self%id_R2c,'R2c','mg C m-3','Semi-labile DOC')    
+      call self%register_state_dependency(self%id_R2c,'R2c','mg C m-3','Semi-labile DOC')
 
       ! Register links to external particulate organic matter pools.
-      call self%register_state_dependency(self%id_R6c,'RPc','mg C m-3',   'POC')    
-      call self%register_state_dependency(self%id_R6p,'RPp','mmol P m-3', 'POP')    
-      call self%register_state_dependency(self%id_R6n,'RPn','mmol N m-3', 'PON')    
-      call self%register_state_dependency(self%id_R6s,'RPs','mmol Si m-3','POSi')    
+      call self%register_state_dependency(self%id_R6c,'RPc','mg C m-3',   'POC')
+      call self%register_state_dependency(self%id_R6p,'RPp','mmol P m-3', 'POP')
+      call self%register_state_dependency(self%id_R6n,'RPn','mmol N m-3', 'PON')
+      call self%register_state_dependency(self%id_R6s,'RPs','mmol Si m-3','POSi')
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
-      call self%register_state_dependency(self%id_O3c,'O3c','mmol C m-3','Carbon Dioxide')    
-      call self%register_state_dependency(self%id_O2o,'O2o','mmol O m-3','Oxygen')    
+      call self%register_state_dependency(self%id_O3c,'O3c','mmol C m-3','Carbon Dioxide')
+      call self%register_state_dependency(self%id_O2o,'O2o','mmol O m-3','Oxygen')
 
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
@@ -147,7 +147,7 @@ contains
       integer  :: iprey,istate
       real(rk) :: ETW, eO2mO2
       real(rk) :: Z5c,Z5p,Z5n,Z5cP,Z5nP,Z5pP
-      real(rk),dimension(self%nprey) :: preycP,preynP,preypP,preysP,preyfP
+      real(rk),dimension(self%nprey) :: preycP,preynP,preypP,preysP
       real(rk),dimension(self%nprey) :: spreyZ5,rupreyZ5c,fpreyZ5c
       real(rk) :: etZ5,CORROX,eO2Z5
       real(rk) :: rumZ5, put_uZ5,rugZ5
@@ -183,7 +183,6 @@ contains
          _GET_SAFE_(self%id_preyn(iprey),preynP(iprey))
          _GET_SAFE_(self%id_preyp(iprey),preypP(iprey))
          _GET_SAFE_(self%id_preys(iprey),preysP(iprey))
-         _GET_SAFE_(self%id_preyf(iprey),preyfP(iprey))
       end do
 
       qpZ5c = Z5p/Z5c
@@ -269,7 +268,8 @@ contains
 ! following Vichi et al., 2007 it is assumed that the iron fraction of the ingested phytoplankton
 ! is egested as particulate detritus (Luca)
       do iprey=1,self%nprey
-         _SET_ODE_(self%id_preyf_target(iprey),+spreyZ5(iprey)*preyfP(iprey))
+         _GET_SAFE_(self%id_preyf(iprey),preyP)
+         if (preyP/=0.0_rk) _SET_ODE_(self%id_preyf_target(iprey),+spreyZ5(iprey)*preyP)
       end do
 #endif
 

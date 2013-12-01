@@ -129,7 +129,7 @@ contains
          call self%register_state_dependency(self%id_RPc(iRP),'RP'//trim(index)//'c','mg C/m^3',   'POC '//trim(index))    
          call self%register_state_dependency(self%id_RPn(iRP),'RP'//trim(index)//'n','mmol N/m^3', 'PON '//trim(index))    
          call self%register_state_dependency(self%id_RPp(iRP),'RP'//trim(index)//'p','mmol P/m^3', 'POP '//trim(index))    
-         call self%register_state_dependency(self%id_RPf(iRP),'RP'//trim(index)//'f','umol Fe/m^3','POFe '//trim(index))    
+         call self%register_state_dependency(self%id_RPf(iRP),'RP'//trim(index)//'f','umol Fe/m^3','POFe '//trim(index),required=.false.)    
       end do
       
 #ifdef DOCDYN
@@ -439,8 +439,9 @@ contains
 #endif
          _GET_SAFE_(self%id_R1p,R1pP)
          _GET_SAFE_(self%id_R1n,R1nP)
+         RPfP = 0.0_rk
          do iRP=1,self%nRP
-            _GET_SAFE_(self%id_RPf(iRP),RPfP(iRP))
+            if (_AVAILABLE_(self%id_RPf(iRP))) _GET_SAFE_(self%id_RPf(iRP),RPfP(iRP))
          end do
 
          _GET_SAFE_(self%id_N4n,N4nP)
@@ -537,7 +538,7 @@ contains
 
 #ifdef IRON
          do iRP=1,self%nRP
-            _SET_ODE_(self%id_RPf(iRP),-fRPn7f(iRP))
+            if (fRPn7f(iRP)/=0.0_rk) _SET_ODE_(self%id_RPf(iRP),-fRPn7f(iRP))
          end do
          _SET_ODE_(self%id_N7f,+sum(fRPn7f)-n7fsink)
 #endif

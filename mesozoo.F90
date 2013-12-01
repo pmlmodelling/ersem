@@ -105,7 +105,7 @@ contains
          call self%register_dependency(self%id_preyp(iprey), 'prey'//trim(index)//'p',  'mmol P m-3', 'Prey '//trim(index)//' P')    
          call self%register_dependency(self%id_preyf(iprey), 'prey'//trim(index)//'f',  'mmol Fe m-3','Prey '//trim(index)//' Fe')    
          call self%register_dependency(self%id_preys(iprey), 'prey'//trim(index)//'s',  'mmol Si m-3','Prey '//trim(index)//' Si')
-         call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe m-3','Target pool for Fe of assimilated prey '//trim(index))    
+         call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe m-3','sink for Fe of prey '//trim(index),required=.false.)    
 
          call self%register_model_dependency(self%id_prey(iprey),'prey'//trim(index))
          call self%request_coupling(self%id_preyc(iprey),'c',source=self%id_prey(iprey))
@@ -152,7 +152,7 @@ contains
       integer  :: iprey,istate
       real(rk) :: ETW,eO2mO2
       real(rk) :: Z4c,Z4cP
-      real(rk),dimension(self%nprey) :: preycP,preypP,preynP,preysP,preyfP
+      real(rk),dimension(self%nprey) :: preycP,preypP,preynP,preysP
       real(rk) :: SZ4c,SZ4n,SZ4p
       real(rk) :: etZ4,CORROX,eO2Z4
       real(rk),dimension(self%nprey) :: spreyZ4,rupreyZ4c,fpreyZ4c
@@ -184,7 +184,6 @@ contains
             _GET_SAFE_(self%id_preyp(iprey),  preypP(iprey))
             _GET_SAFE_(self%id_preyn(iprey),  preynP(iprey))
             _GET_SAFE_(self%id_preys(iprey),  preysP(iprey))
-            _GET_SAFE_(self%id_preyf(iprey),  preyfP(iprey))
          end do
 
 !..Temperature effect :
@@ -275,7 +274,8 @@ contains
 ! following Vichi et al., 2007 it is assumed that the iron fraction of the ingested phytoplankton
 ! is egested as particulate detritus (Luca)
          do iprey=1,self%nprey
-            _SET_ODE_(self%id_preyf_target(iprey),  spreyZ4(iprey)*preyfP(iprey))
+            _GET_SAFE_(self%id_preyf(iprey),preyP)
+            if (preyP/=0.0_rk) _SET_ODE_(self%id_preyf_target(iprey),spreyZ4(iprey)*preyP)
          end do
 #endif
 
