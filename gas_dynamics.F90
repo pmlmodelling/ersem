@@ -23,6 +23,7 @@ module pml_ersem_gas_dynamics
    contains
       procedure :: initialize
       procedure :: do
+      procedure :: do_surface
    end type
       
 contains
@@ -52,6 +53,8 @@ contains
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
       call self%register_dependency(self%id_X1X,standard_variables%practical_salinity)
       call self%register_dependency(self%id_wnd,standard_variables%wind_speed)
+
+      self%dt = 3600._rk*24._rk
 
    end subroutine
 
