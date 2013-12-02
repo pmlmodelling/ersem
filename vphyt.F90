@@ -13,7 +13,7 @@ module pml_ersem_vphyt
    private
 
    type,extends(type_ersem_base_model),public :: type_pml_ersem_vphyt
-      ! Variable identifiers
+      ! Identifiers for model dependencies
       type (type_state_variable_id)      :: id_O3c,id_O2o
       type (type_state_variable_id)      :: id_N5s,id_N1p,id_N3n,id_N4n
       type (type_state_variable_id)      :: id_R1c,id_R1p,id_R1n,id_R2c,id_R6c,id_R6p,id_R6n,id_R6s
@@ -24,6 +24,8 @@ module pml_ersem_vphyt
       type (type_horizontal_dependency_id) :: id_pco2a3
 #endif
       type (type_dependency_id)          :: id_EIR,id_ETW
+
+      ! Identifiers for diagnostic variables
       type (type_diagnostic_variable_id) :: id_netP1
 
       ! Parameters
@@ -45,10 +47,10 @@ module pml_ersem_vphyt
       procedure :: get_vertical_movement
    end type type_pml_ersem_vphyt
 
-   real(rk),parameter :: CMass = 12._rk
-   real(rk),parameter :: ZeroX = 1e-8_rk
+   real(rk),parameter :: CMass       = 12._rk
+   real(rk),parameter :: ZeroX       = 1e-8_rk
    real(rk),parameter :: secs_pr_day = 86400.0_rk
-   real(rk),parameter :: ChlCmin=0.0067
+   real(rk),parameter :: ChlCmin     = 0.0067_rk
 
 contains
 
