@@ -38,12 +38,15 @@ module pml_ersem_base
       
 contains
       
-   subroutine initialize_ersem_base(self,c_ini,n_ini,p_ini,s_ini,f_ini,chl_ini,qn,qp)
+   subroutine initialize_ersem_base(self,c_ini,n_ini,p_ini,s_ini,f_ini,chl_ini,qn,qp,w)
       class (type_ersem_base_model), intent(inout), target :: self
-      real(rk),optional,             intent(in)            :: c_ini,n_ini,p_ini,s_ini,f_ini,chl_ini
+      real(rk),optional,             intent(in)            :: c_ini,n_ini,p_ini,s_ini,f_ini,chl_ini,w
       real(rk),optional,             intent(in)            :: qn,qp
       
       type (type_weighted_sum),pointer :: child
+      real(rk)                         :: w_eff
+
+      self%dt = 86400._rk
 
       call self%register_conserved_quantity(self%id_totc,standard_variables%total_carbon)
       call self%register_conserved_quantity(self%id_totn,standard_variables%total_nitrogen)
@@ -51,22 +54,25 @@ contains
       call self%register_conserved_quantity(self%id_tots,standard_variables%total_silicate)
       call self%register_conserved_quantity(self%id_totf,standard_variables%total_iron)
 
+      w_eff = 0.0_rk
+      if (present(w)) w_eff = w
+
       if (present(c_ini)) then
-         call self%register_state_variable(self%id_c,'c','mg m-3','carbon',c_ini,minimum=0._rk)
+         call self%register_state_variable(self%id_c,'c','mg m-3','carbon',c_ini,minimum=0._rk,vertical_movement=w_eff/self%dt)
          call self%add_conserved_quantity_component(self%id_totc,self%id_c,scale_factor=1._rk/12._rk)
       else
          call self%register_diagnostic_variable(self%id_cD,'c','mg m-3','carbon',missing_value=0._rk)
       end if
 
       if (present(s_ini)) then
-         call self%register_state_variable(self%id_s,'s','mmol Si m-3','silicate',s_ini,minimum=0._rk)
+         call self%register_state_variable(self%id_s,'s','mmol Si m-3','silicate',s_ini,minimum=0._rk,vertical_movement=w_eff/self%dt)
          call self%add_conserved_quantity_component(self%id_tots,self%id_s)
       else
          call self%register_diagnostic_variable(self%id_sD,'s','mmol Si m-3','silicate',missing_value=0._rk)
       end if
 
       if (present(chl_ini)) then
-         call self%register_state_variable(self%id_chl,'Chl','mg C m-3','chlorophyll-a',chl_ini,minimum=0._rk)
+         call self%register_state_variable(self%id_chl,'Chl','mg C m-3','chlorophyll-a',chl_ini,minimum=0._rk,vertical_movement=w_eff/self%dt)
       else
          call self%register_diagnostic_variable(self%id_chlD,'Chl','mg C m-3','chlorophyll-a',missing_value=0._rk)
       end if
@@ -74,7 +80,7 @@ contains
 #ifdef IRON   
       if (present(f_ini)) then
          ! Iron as state variable
-         call self%register_state_variable(self%id_f,'f','umol Fe m-3','iron',f_ini,minimum=0._rk)
+         call self%register_state_variable(self%id_f,'f','umol Fe m-3','iron',f_ini,minimum=0._rk,vertical_movement=w_eff/self%dt)
          call self%add_conserved_quantity_component(self%id_totf,self%id_f)
       else
          ! No iron
@@ -84,7 +90,7 @@ contains
 
       if (present(p_ini)) then
          ! Phosphorous as state variable
-         call self%register_state_variable(self%id_p, 'p', 'mmol P m-3', 'phosphorus', p_ini, minimum=0._rk)
+         call self%register_state_variable(self%id_p, 'p', 'mmol P m-3', 'phosphorus', p_ini, minimum=0._rk,vertical_movement=w_eff/self%dt)
          call self%add_conserved_quantity_component(self%id_totp,self%id_p)
       elseif (present(qp)) then
          ! Phosphorous derived from carbon (constant C:P)
@@ -102,7 +108,7 @@ contains
 
       if (present(n_ini)) then
          ! Nitrogen as state variable
-         call self%register_state_variable(self%id_n, 'n', 'mmol N m-3', 'nitrogen', n_ini, minimum=0._rk)
+         call self%register_state_variable(self%id_n, 'n', 'mmol N m-3', 'nitrogen', n_ini, minimum=0._rk,vertical_movement=w_eff/self%dt)
          call self%add_conserved_quantity_component(self%id_totn,self%id_n)
       elseif (present(qn)) then
          ! Nitrogen derived from carbon (constant C:P)
@@ -118,7 +124,6 @@ contains
          call self%register_diagnostic_variable(self%id_nD, 'n', 'mmol N m-3', 'nitrogen', missing_value=0._rk)
       end if
 
-      self%dt = 86400._rk
    end subroutine
 
    subroutine weighted_sum_initialize(self,configunit)
