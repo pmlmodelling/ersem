@@ -1,5 +1,5 @@
 #include "fabm_driver.h"
-module pml_ersem_gas_dynamics
+module pml_ersem_oxygen
 
    use fabm_types
 
@@ -10,10 +10,9 @@ module pml_ersem_gas_dynamics
 ! !REVISION HISTORY:!
 !  Original author(s): Jorn Bruggeman
 
-   type,extends(type_base_model),public :: type_pml_ersem_gas_dynamics
+   type,extends(type_base_model),public :: type_pml_ersem_oxygen
 !     Variable identifiers
-      type (type_state_variable_id)     :: id_O3c,id_O2o
-      type (type_conserved_quantity_id) :: id_totc
+      type (type_state_variable_id)     :: id_O2o
       type (type_dependency_id)         :: id_ETW, id_X1X
       type (type_horizontal_dependency_id) :: id_wnd
 
@@ -31,19 +30,15 @@ contains
    subroutine initialize(self,configunit)
 !
 ! !INPUT PARAMETERS:
-      class (type_pml_ersem_gas_dynamics), intent(inout), target :: self
-      integer,                             intent(in)            :: configunit
+      class (type_pml_ersem_oxygen), intent(inout), target :: self
+      integer,                       intent(in)            :: configunit
 !
 !EOP
 !-----------------------------------------------------------------------
 !BOC
       call self%get_parameter(self%ISWO2X,'ISWO2X')
 
-      call self%register_state_variable(self%id_O3c,'O3c','mmol C/m^3','Carbon Dioxide', 2200._rk,minimum=0._rk)
-      call self%register_state_variable(self%id_O2o,'O2o','mmol O/m^3','Oxygen',          300._rk,minimum=0._rk)
-
-      call self%register_conserved_quantity(self%id_totc,standard_variables%total_carbon)
-      call self%add_conserved_quantity_component(self%id_totc,self%id_O3c)
+      call self%register_state_variable(self%id_O2o,'o','mmol O/m^3','Oxygen',300._rk,minimum=0._rk)
    
       call self%register_diagnostic_variable(self%id_eO2mO2,'eO2mO2','1','relative oxygen saturation', &
          standard_variable=standard_variables%fractional_saturation_of_oxygen)
@@ -59,7 +54,7 @@ contains
    end subroutine
 
    subroutine do(self,_ARGUMENTS_DO_)
-      class (type_pml_ersem_gas_dynamics), intent(in) :: self
+      class (type_pml_ersem_oxygen), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_
 
       real(rk) :: O2o,ETW,X1X,OSAT
@@ -76,7 +71,7 @@ contains
    end subroutine
 
    subroutine do_surface(self,_ARGUMENTS_DO_SURFACE_)
-      class (type_pml_ersem_gas_dynamics), intent(in) :: self
+      class (type_pml_ersem_oxygen), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_SURFACE_
 
       real(rk) :: O2o,ETW,X1X,wnd
@@ -104,9 +99,9 @@ contains
    end subroutine
 
    function oxygen_saturation_concentration(self,ETW,X1X) result(OSAT)
-      class (type_pml_ersem_gas_dynamics), intent(in) :: self
-      real(rk),                            intent(in) :: ETW,X1X
-      real(rk)                                        :: OSAT
+      class (type_pml_ersem_oxygen), intent(in) :: self
+      real(rk),                      intent(in) :: ETW,X1X
+      real(rk)                                  :: OSAT
 
       real(rk) :: A1,A2,A3,A4,B1,B2,B3
       real(rk) :: R,P,T
