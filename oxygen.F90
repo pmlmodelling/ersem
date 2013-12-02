@@ -103,16 +103,18 @@ contains
       real(rk),                      intent(in) :: ETW,X1X
       real(rk)                                  :: OSAT
 
-      real(rk) :: A1,A2,A3,A4,B1,B2,B3
-      real(rk) :: R,P,T
-
-      DATA A1/-173.4292_rk/,A2/249.6339_rk/,A3/143.3483_rk/,A4/-21.8492_rk/
-      DATA B1/-0.033096_rk/,B2/0.014259_rk/,B3/-0.0017_rk/
-      DATA R/8.3145_rk/,P/101325_rk/,T/273.15_rk/
-
-      real(rk) :: VIDEAL,ABT
-
-      VIDEAL = (R * 298.15_rk / P) *1000._rk
+      real(rk),parameter :: A1 = -173.4292_rk
+      real(rk),parameter :: A2 = 249.6339_rk
+      real(rk),parameter :: A3 = 143.3483_rk
+      real(rk),parameter :: A4 = -21.8492_rk
+      real(rk),parameter :: B1 = -0.033096_rk
+      real(rk),parameter :: B2 = 0.014259_rk
+      real(rk),parameter :: B3 = -0.0017_rk
+      real(rk),parameter :: R = 8.3145_rk
+      real(rk),parameter :: P = 101325_rk
+      real(rk),parameter :: T = 273.15_rk
+      real(rk),parameter :: VIDEAL = (R * 298.15_rk / P) *1000._rk
+      real(rk)           :: ABT
 
 !  calc absolute temperature
       ABT = ETW + T
