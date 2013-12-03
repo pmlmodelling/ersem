@@ -17,6 +17,13 @@ module pml_ersem_base
       procedure :: initialize_ersem_base
    end type
 
+   type,extends(type_base_model),public :: type_ersem_benthic_base_model
+      type (type_bottom_state_variable_id) :: id_c,id_n,id_p,id_f,id_s,id_chl
+      type (type_conserved_quantity_id)    :: id_totc,id_totn,id_totp,id_tots,id_totf
+   contains
+      procedure :: initialize_ersem_benthic_base
+   end type
+
    type type_component
       character(len=attribute_length) :: name   = ''
       real(rk)                        :: weight = 1._rk
@@ -122,6 +129,50 @@ contains
       else
          ! No nitrogen
          call self%register_diagnostic_variable(self%id_nD, 'n', 'mmol N m-3', 'nitrogen', missing_value=0._rk)
+      end if
+
+   end subroutine
+      
+   subroutine initialize_ersem_benthic_base(self,c_ini,n_ini,p_ini,s_ini,f_ini)
+      class (type_ersem_benthic_base_model), intent(inout), target :: self
+      real(rk),optional,                     intent(in)            :: c_ini,n_ini,p_ini,s_ini,f_ini
+
+      self%dt = 86400._rk
+
+      call self%register_conserved_quantity(self%id_totc,standard_variables%total_carbon)
+      call self%register_conserved_quantity(self%id_totn,standard_variables%total_nitrogen)
+      call self%register_conserved_quantity(self%id_totp,standard_variables%total_phosphorus)
+      call self%register_conserved_quantity(self%id_tots,standard_variables%total_silicate)
+      call self%register_conserved_quantity(self%id_totf,standard_variables%total_iron)
+
+      if (present(c_ini)) then
+         call self%register_state_variable(self%id_c,'c','mg m-3','carbon',c_ini,minimum=0._rk)
+         call self%add_conserved_quantity_component(self%id_totc,self%id_c,scale_factor=1._rk/12._rk)
+      end if
+
+      if (present(s_ini)) then
+         call self%register_state_variable(self%id_s,'s','mmol Si m-3','silicate',s_ini,minimum=0._rk)
+         call self%add_conserved_quantity_component(self%id_tots,self%id_s)
+      end if
+
+#ifdef IRON   
+      if (present(f_ini)) then
+         ! Iron as state variable
+         call self%register_state_variable(self%id_f,'f','umol Fe m-3','iron',f_ini,minimum=0._rk)
+         call self%add_conserved_quantity_component(self%id_totf,self%id_f)
+      end if
+#endif
+
+      if (present(p_ini)) then
+         ! Phosphorous as state variable
+         call self%register_state_variable(self%id_p, 'p', 'mmol P m-3', 'phosphorus', p_ini, minimum=0._rk)
+         call self%add_conserved_quantity_component(self%id_totp,self%id_p)
+      end if
+
+      if (present(n_ini)) then
+         ! Nitrogen as state variable
+         call self%register_state_variable(self%id_n, 'n', 'mmol N m-3', 'nitrogen', n_ini, minimum=0._rk)
+         call self%add_conserved_quantity_component(self%id_totn,self%id_n)
       end if
 
    end subroutine
