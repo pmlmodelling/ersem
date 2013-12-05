@@ -11,7 +11,7 @@ module pml_ersem_microzoo
 
    private
 
-   type,extends(type_ersem_base_model),public :: type_pml_ersem_microzoo
+   type,extends(type_ersem_pelagic_base_model),public :: type_pml_ersem_microzoo
       ! Variables
       type (type_model_id),         allocatable,dimension(:) :: id_prey
       type (type_dependency_id),    allocatable,dimension(:) :: id_preyc,id_preyn,id_preyp,id_preys,id_preyf
@@ -31,7 +31,7 @@ module pml_ersem_microzoo
       real(rk),allocatable :: suprey_Z5X(:)
 
       ! ERSEM global parameters
-      real(rk) :: R1R2X,xR1pX,xR1nX,urB1_O2X
+      real(rk) :: R1R2X,urB1_O2X
    contains
 !     Model procedures
       procedure :: initialize

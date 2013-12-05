@@ -9,7 +9,7 @@ module pml_ersem_dom
 !  default: all is private.
    private
 
-   type,extends(type_ersem_base_model),public :: type_pml_ersem_dom
+   type,extends(type_ersem_pelagic_base_model),public :: type_pml_ersem_dom
    contains
       procedure                          :: initialize
    end type

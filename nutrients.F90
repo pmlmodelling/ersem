@@ -10,7 +10,7 @@ module pml_ersem_nutrient
 !  default: all is private.
    private
 
-   type,extends(type_ersem_base_model),public :: type_pml_ersem_nutrient
+   type,extends(type_ersem_pelagic_base_model),public :: type_pml_ersem_nutrient
    contains
       procedure :: initialize
    end type

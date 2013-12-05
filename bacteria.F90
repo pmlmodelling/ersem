@@ -13,7 +13,7 @@ module pml_ersem_bacteria
 
    private
 
-   type,extends(type_ersem_base_model),public :: type_pml_ersem_bacteria
+   type,extends(type_ersem_pelagic_base_model),public :: type_pml_ersem_bacteria
       ! Variables
       type (type_state_variable_id) :: id_O3c, id_O2o
       type (type_state_variable_id) :: id_R1c, id_R2c, id_R3c

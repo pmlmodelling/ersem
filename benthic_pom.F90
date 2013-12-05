@@ -11,7 +11,9 @@ module pml_ersem_benthic_pom
    private
 
    type,extends(type_ersem_benthic_base_model),public :: type_pml_ersem_benthic_pom
-      type (type_state_variable_id) :: id_resuspenion_c,id_resuspenion_n,id_resuspenion_p,id_resuspenion_s,id_resuspenion_f
+      type (type_state_variable_id)        :: id_resuspenion_c,id_resuspenion_n,id_resuspenion_p,id_resuspenion_s,id_resuspenion_f
+      type (type_horizontal_dependency_id) :: id_bedstress,id_wdepth
+      type (type_dependency_id)            :: id_dens
    contains
       procedure :: initialize
    end type
@@ -49,10 +51,98 @@ contains
       call self%register_state_dependency(self%id_resuspenion_p,'resuspension_target_p','mmol m-3','pelagic variable taking up resuspended phosphorus',required=.false.)
       if (has_s) call self%register_state_dependency(self%id_resuspenion_s,'resuspension_target_s','mmol m-3','pelagic variable taking up resuspended silicate',required=.false.)
       if (has_f) call self%register_state_dependency(self%id_resuspenion_f,'resuspension_target_f','umol m-3','pelagic variable taking up resuspended iron',required=.false.)
+
+      call self%register_dependency(self%id_bedstress,standard_variables%bottom_stress)
+      call self%register_dependency(self%id_wdepth,   standard_variables%bottom_depth_below_geoid)
+      call self%register_dependency(self%id_dens,     standard_variables%density)
    end subroutine
 
    subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
       class (type_pml_ersem_benthic_pom), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
+      
+      real(rk) :: ter,er,density
+      real(rk) :: Q6cP,Q6nP,Q6pP,Q6sP,Q6fP,bedstress,wdepth
+      real(rk) :: bedsedXc,bedsedXn,bedsedXp,bedsedXs
+      real(rk) :: fac,FerC,FerN,FerP,FerS,FerF
+
+      _HORIZONTAL_LOOP_BEGIN_
+
+!     Critical stress for erosion (m/s)
+!
+      ter=0.02_rk**2
+!
+!     erosion constant (g/m^2/s)
+!
+      er=100._rk*Ter * 1000._rk*86400._rk  !convert to mg/day
+
+      _GET_HORIZONTAL_(self%id_bedstress,bedstress)
+      _GET_HORIZONTAL_(self%id_c,Q6cP)
+      _GET_HORIZONTAL_(self%id_n,Q6nP)
+      _GET_HORIZONTAL_(self%id_p,Q6pP)
+      _GET_HORIZONTAL_(self%id_s,Q6sP)
+      _GET_HORIZONTAL_(self%id_f,Q6fP)
+      _GET_(self%id_dens,density)
+
+      ! From actual stress (Pa) to shear velocity (m/s)
+      !bedstress = sqrt(bedstress/density)
+!
+      if(bedstress.gt.ter) then
+!     Inorganic sedment (could replace by transport model)
+!     for now assume 90% is a fixed inorganic component
+      bedsedXc=10._rk*(-1069._rk*LOG(wdepth) + 10900._rk)
+      bedsedXn=10._rk*(-7.6368_rk*LOG(wdepth) + 78.564_rk)
+      bedsedXp=10._rk*(-0.545_rk*LOG(wdepth) + 6.0114_rk)
+      bedsedXs=10._rk*(-64.598_rk*LOG(wdepth) + 391.61_rk)
+!      fac = er*(bedstress(k)/ter - 1.0)
+      fac = er*(bedstress/ter - 1._rk)/(Q6cP+bedsedXc)
+! C
+!      FerC=fac*Q6cP(k)/(Q6cP(k)+bedsedXc)
+      FerC=fac*Q6cP
+      !FerC=max(min(FerC,Q6cP(k)/timestep+ &
+      !       min(SQ6c(k)-wsoQ6c(k),0._rk)),0._rk)
+! N
+!      FerN=fac*Q6nP(k)/(Q6nP(k)+bedsedXn)
+      FerN=fac*Q6nP
+      !FerN=max(min(FerN,Q6nP(k)/timestep+ &
+      !       min(SQ6n(k)-wsoQ6n(k),0._rk)),0._rk)
+! P
+!      FerP=fac*Q6pP(k)/(Q6pP(k)+bedsedXp)
+      FerP=fac*Q6pP
+      !FerP=max(min(FerP,Q6pP(k)/timestep+ &
+      !       min(SQ6p(k)-wsoQ6p(k),0._rk)),0._rk)
+! S
+!      FerS=fac*Q6sP(k)/(Q6sP(k)+bedsedXs)
+      FerS=fac*Q6sP
+      !FerS=max(min(FerS,Q6sP(k)/timestep+ &
+      !       min(SQ6s(k)-wsoQ6s(k),0._rk)),0._rk)
+#ifdef IRON
+! F
+      FerF=fac*Q6fP
+      !FerF=max(min(FerF,Q6fP(k)/timestep+ &
+      !       min(SQ6f(k)-wsoQ6f(k),0._rk)),0._rk)
+#endif
+
+      _SET_ODE_BEN_(self%id_c,-FerC)
+      _SET_ODE_BEN_(self%id_n,-FerN)
+      _SET_ODE_BEN_(self%id_p,-FerP)
+      _SET_ODE_BEN_(self%id_s,-FerS)
+#ifdef IRON
+      _SET_ODE_BEN_(self%id_f,-FerF)
+#endif
+
+      _SET_BOTTOM_EXCHANGE_(self%id_resuspenion_c,FerC)
+      _SET_BOTTOM_EXCHANGE_(self%id_resuspenion_n,FerN)
+      _SET_BOTTOM_EXCHANGE_(self%id_resuspenion_p,FerP)
+      _SET_BOTTOM_EXCHANGE_(self%id_resuspenion_s,FerS)
+#ifdef IRON
+      _SET_BOTTOM_EXCHANGE_(self%id_resuspenion_f,FerF)
+#endif
+
+      endif
+! end of resuspension bit
+   _HORIZONTAL_LOOP_END_
+
    end subroutine
+
 end module

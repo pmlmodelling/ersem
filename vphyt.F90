@@ -12,7 +12,7 @@ module pml_ersem_vphyt
 
    private
 
-   type,extends(type_ersem_base_model),public :: type_pml_ersem_vphyt
+   type,extends(type_ersem_pelagic_base_model),public :: type_pml_ersem_vphyt
       ! Identifiers for model dependencies
       type (type_state_variable_id)      :: id_O3c,id_O2o
       type (type_state_variable_id)      :: id_N5s,id_N1p,id_N3n,id_N4n
@@ -45,6 +45,7 @@ module pml_ersem_vphyt
       procedure :: initialize
       procedure :: do
       procedure :: get_vertical_movement
+      procedure :: get_sinking_rate
    end type type_pml_ersem_vphyt
 
    real(rk),parameter :: CMass       = 12._rk
@@ -486,40 +487,51 @@ contains
       _LOOP_END_
 
    end subroutine do
+   
+   function get_sinking_rate(self,_ARGUMENTS_LOCAL_) result(SDP1)
+      class (type_pml_ersem_vphyt),intent(in) :: self
+      _DECLARE_ARGUMENTS_LOCAL_
+
+      real(rk) :: P1c,P1p,P1n
+      real(rk) :: qpP1c,qnP1c
+      real(rk) :: SDP1
+      real(rk) :: iNP1p,iNP1n,iNIP1
+
+      _GET_(self%id_c,P1c)
+      _GET_(self%id_p,P1p)
+      _GET_(self%id_n,P1n)
+      
+      qpP1c = P1p/P1c
+      qnP1c = P1n/P1c
+
+      iNP1p = MIN(1._rk,  &
+               MAX(0._rk, (qpP1c-self%qplP1cX) / (self%xqcP1pX*self%qpRPIcX-self%qplP1cX) ))
+      iNP1n = MIN(1._rk,  &
+               MAX(0._rk, (qnP1c-self%qnlP1cX) / (self%xqcP1nX*self%qnRPIcX-self%qnlP1cX) ))
+
+      select case (self%LimnutX)
+         case (0)
+            iNIP1 = (iNP1p * iNP1n)**.5_rk
+         case (1)
+            iNIP1 = MIN(iNP1p, iNP1n)
+         case (2)
+            iNIP1 = 2.0_rk / (1._rk/iNP1p + 1._rk/iNP1n)
+      end select
+
+!..sedimentation and resting stages.....................................
+      SDP1 = self%resP1mX * MAX(0._rk, (self%esNIP1X - iNIP1))
+   end function
 
    subroutine get_vertical_movement(self,_ARGUMENTS_GET_VERTICAL_MOVEMENT_)
       class (type_pml_ersem_vphyt),intent(in) :: self
       _DECLARE_ARGUMENTS_GET_VERTICAL_MOVEMENT_
 
       real(rk) :: SDP1
-      real(rk) :: P1c,P1p,P1n,qpP1c,qnP1c,iNP1p,iNP1n,iNIP1
 
       _LOOP_BEGIN_
 
          ! Retrieve local state
-         _GET_(self%id_c,P1c)
-         _GET_(self%id_p,P1p)
-         _GET_(self%id_n,P1n)
-
-         qpP1c = P1p/P1c
-         qnP1c = P1n/P1c
-
-         iNP1p = MIN(1._rk,  &
-                 MAX(0._rk, (qpP1c-self%qplP1cX) / (self%xqcP1pX*self%qpRPIcX-self%qplP1cX) ))
-         iNP1n = MIN(1._rk,  &
-                 MAX(0._rk, (qnP1c-self%qnlP1cX) / (self%xqcP1nX*self%qnRPIcX-self%qnlP1cX) ))
-
-         select case (self%LimnutX)
-            case (0)
-               iNIP1 = (iNP1p * iNP1n)**.5_rk
-            case (1)
-               iNIP1 = MIN(iNP1p, iNP1n)
-            case (2)
-               iNIP1 = 2.0_rk / (1._rk/iNP1p + 1._rk/iNP1n)
-         end select
-
-!..sedimentation and resting stages.....................................
-         SDP1 = -self%resP1mX * MAX(0._rk, (self%esNIP1X - iNIP1))
+         SDP1 = -get_sinking_rate(self,_ARGUMENTS_LOCAL_)
          _SET_VERTICAL_MOVEMENT_(self%id_c,SDP1)
          _SET_VERTICAL_MOVEMENT_(self%id_p,SDP1)
          _SET_VERTICAL_MOVEMENT_(self%id_n,SDP1)
