@@ -1,5 +1,5 @@
 #include "fabm_driver.h"
-#define IRON
+
 module pml_ersem_benthic_pom
 
    use fabm_types
@@ -12,7 +12,7 @@ module pml_ersem_benthic_pom
 
    type,extends(type_ersem_benthic_base_model),public :: type_pml_ersem_benthic_pom
       type (type_state_variable_id)        :: id_resuspenion_c,id_resuspenion_n,id_resuspenion_p,id_resuspenion_s,id_resuspenion_f
-      type (type_state_variable_id)        :: id_O3c,id_N1p,id_N3n,id_N4n,id_N5s
+      type (type_state_variable_id)        :: id_O3c,id_N1p,id_N3n,id_N4n,id_N5s,id_N7f
       type (type_horizontal_dependency_id) :: id_bedstress,id_wdepth
       type (type_dependency_id)            :: id_dens
 
@@ -63,7 +63,8 @@ contains
          call self%register_state_dependency(self%id_N1p,'N1p','mmol m-3','phosphate')
          call self%register_state_dependency(self%id_N3n,'N3n','mmol m-3','nitrate')
          call self%register_state_dependency(self%id_N4n,'N4n','mmol m-3','ammonium')
-         call self%register_state_dependency(self%id_N5s,'N5s','mmol m-3','silicate')
+         if (has_s) call self%register_state_dependency(self%id_N5s,'N5s','mmol m-3','silicate')
+         if (has_f) call self%register_state_dependency(self%id_N7f,'N7f','umol m-3','dissolved iron')
       end if
 
       call self%register_dependency(self%id_bedstress,standard_variables%bottom_stress)
@@ -169,6 +170,11 @@ contains
             _GET_HORIZONTAL_(self%id_s,Q6sP)
             _SET_ODE_BEN_(self%id_s,-self%reminQIX*Q6sP)
             _SET_BOTTOM_EXCHANGE_(self%id_N5s,self%reminQIX*Q6sP)
+         end if
+         if (_VARIABLE_REGISTERED_(self%id_f)) then
+            _GET_HORIZONTAL_(self%id_f,Q6fP)
+            _SET_ODE_BEN_(self%id_f,-self%reminQIX*Q6fP)
+            _SET_BOTTOM_EXCHANGE_(self%id_N7f,self%reminQIX*Q6fP)
          end if
       end if
    _HORIZONTAL_LOOP_END_
