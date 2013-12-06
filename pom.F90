@@ -1,5 +1,5 @@
 #include "fabm_driver.h"
-#define IRON
+
 module pml_ersem_pom
 
    use fabm_types
