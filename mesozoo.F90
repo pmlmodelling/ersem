@@ -7,6 +7,7 @@ module pml_ersem_mesozoo
 ! Jorn TODO: overwintering, deal with implicit N and P in some prey [esp. when cannibalizing]
 
    use fabm_types
+   use fabm_expressions
    use pml_ersem_base
 
    implicit none
@@ -24,7 +25,8 @@ module pml_ersem_mesozoo
       type (type_state_variable_id)      :: id_R8c,id_R8p,id_R8n
       type (type_state_variable_id)      :: id_R6s
       type (type_state_variable_id)      :: id_N1p,id_N4n
-      type (type_dependency_id)          :: id_ETW,id_eO2mO2
+      type (type_dependency_id)          :: id_ETW,id_eO2mO2,id_totprey
+      type (type_horizontal_dependency_id) :: id_inttotprey
 
       ! Parameters
       integer  :: nprey
@@ -37,6 +39,8 @@ module pml_ersem_mesozoo
       real(rk) :: puZ4X
       real(rk) :: pu_eaZ4X,pu_eaRZ4X
       real(rk) :: pe_R1Z4X
+
+      real(rk) :: MinpreyX,Z4repwX,Z4mortX
 
       ! ERSEM global parameters
       real(rk) :: R1R2X,urB1_O2X
@@ -64,6 +68,7 @@ contains
 ! !LOCAL VARIABLES:
       integer           :: iprey
       character(len=16) :: index
+      type (type_weighted_sum),pointer :: child
 !EOP
 !-----------------------------------------------------------------------
 !BOC
@@ -82,9 +87,18 @@ contains
       call self%get_parameter(self%sumZ4X,    'sumZ4X')
       call self%get_parameter(self%pu_eaZ4X,  'pu_eaZ4X')
       call self%get_parameter(self%pu_eaRZ4X, 'pu_eaRZ4X')
+      call self%get_parameter(self%MinpreyX,  'MinpreyX')
+      call self%get_parameter(self%Z4repwX,   'Z4repwX')
+      call self%get_parameter(self%Z4mortX,   'Z4mortX')
 
       ! Register state variables
       call self%initialize_ersem_base(c_ini=1.e-4_rk,qn=self%qnZIcX,qp=self%qpZIcX)
+
+      ! Create an expression that will compute the total prey
+      ! (wil be depth integrated to determine overwintering)
+      allocate(child)
+      child%output_name = 'totprey'
+      child%output_units = 'mg C m-3'
 
       ! Register links to carbon contents of prey.
       allocate(self%id_prey(self%nprey))
@@ -113,7 +127,13 @@ contains
          call self%request_coupling(self%id_preyp(iprey),'p',source=self%id_prey(iprey))
          call self%request_coupling(self%id_preys(iprey),'s',source=self%id_prey(iprey))
          call self%request_coupling(self%id_preyf(iprey),'f',source=self%id_prey(iprey))
+
+         call child%add_component('prey'//trim(index)//'c',self%suprey_Z4X(iprey))
       end do
+
+      call self%add_child(child,'totprey',configunit=-1)
+      call self%register_dependency(self%id_totprey,'totprey')
+      call self%register_expression_dependency(self%id_inttotprey,vertical_integral(self%id_totprey))
 
       ! Register links to external nutrient pools.
       call self%register_state_dependency(self%id_N1p,'N1p','mmol P m-3', 'Phosphate')    
@@ -166,160 +186,187 @@ contains
       real(rk) :: fZ4RIn,fZ4RDn,fZ4R8n
       real(rk) :: fZ4NIn,fZ4N1p,SR8c
       real(rk) :: preyP
+      real(rk) :: intprey
 
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
 
-         ! Get environment (temperature, oxygen saturation)
-         _GET_(self%id_ETW,ETW)
-         _GET_(self%id_eO2mO2,eO2mO2)
+         _GET_HORIZONTAL_(self%id_inttotprey,intprey)
 
-         ! Get own concentrations
-         _GET_(self%id_c,Z4c)
-         _GET_SAFE_(self%id_c,Z4cP)
+         if (intprey>self%MinpreyX) then
+            ! Enough prey available - not overwintering
 
-         ! Get prey concentrations
-         do iprey=1,self%nprey
-            _GET_SAFE_(self%id_preyc(iprey),  preycP(iprey))
-            _GET_SAFE_(self%id_preyp(iprey),  preypP(iprey))
-            _GET_SAFE_(self%id_preyn(iprey),  preynP(iprey))
-            _GET_SAFE_(self%id_preys(iprey),  preysP(iprey))
-         end do
+            ! Get environment (temperature, oxygen saturation)
+            _GET_(self%id_ETW,ETW)
+            _GET_(self%id_eO2mO2,eO2mO2)
 
-!..Temperature effect :
+            ! Get own concentrations
+            _GET_(self%id_c,Z4c)
+            _GET_SAFE_(self%id_c,Z4cP)
 
-         etZ4 = self%q10Z4X**((ETW-10._rk)/10._rk) - self%q10Z4X**((ETW-32._rk)/3._rk)
+            ! Get prey concentrations
+            do iprey=1,self%nprey
+               _GET_SAFE_(self%id_preyc(iprey),  preycP(iprey))
+               _GET_SAFE_(self%id_preyp(iprey),  preypP(iprey))
+               _GET_SAFE_(self%id_preyn(iprey),  preynP(iprey))
+               _GET_SAFE_(self%id_preys(iprey),  preysP(iprey))
+            end do
 
-!..Oxygen limitation :
-         CORROX = 1._rk + self%chrZ4oX
-         eO2Z4 = MIN(1._rk,CORROX*(eO2mO2/(self%chrZ4oX + eO2mO2)))
+   !..Temperature effect :
 
-!..Available food :
-         spreyZ4 = self%suprey_Z4X*preycP/(preycP+self%minfoodZ4X)
-         rupreyZ4c = spreyZ4*preycP
-         rumZ4 = sum(rupreyZ4c)
+            etZ4 = self%q10Z4X**((ETW-10._rk)/10._rk) - self%q10Z4X**((ETW-32._rk)/3._rk)
 
-!..Uptake :
-         put_uZ4 = self%sumZ4X/(rumZ4 + self%chuZ4cX)*etZ4*Z4c
-         rugZ4 = put_uZ4*rumZ4
+   !..Oxygen limitation :
+            CORROX = 1._rk + self%chrZ4oX
+            eO2Z4 = MIN(1._rk,CORROX*(eO2mO2/(self%chrZ4oX + eO2mO2)))
 
-!..Fluxes into mesoplankton :
-         fpreyZ4c = put_uZ4*rupreyZ4c
-         spreyZ4 = put_uZ4*spreyZ4
+   !..Available food :
+            spreyZ4 = self%suprey_Z4X*preycP/(preycP+self%minfoodZ4X)
+            rupreyZ4c = spreyZ4*preycP
+            rumZ4 = sum(rupreyZ4c)
 
-!..Zooplankton Grazing
-!      Z4herb(i) = fP1Z4c(i) + fP2Z4c(i) + fP3Z4c(i) +fP4Z4c(i)
-!      Z4carn(i) = fB1Z4c(i) + fZ5Z4c(i) + fZ6Z4c(i) + fR6Z4c(i)
+   !..Uptake :
+            put_uZ4 = self%sumZ4X/(rumZ4 + self%chuZ4cX)*etZ4*Z4c
+            rugZ4 = put_uZ4*rumZ4
 
-!..Mortality
-         sdZ4 = ((1._rk - eO2Z4)*self%sdZ4oX + self%sdZ4X) 
-         rdZ4 = sdZ4*Z4cP
+   !..Fluxes into mesoplankton :
+            fpreyZ4c = put_uZ4*rupreyZ4c
+            spreyZ4 = put_uZ4*spreyZ4
 
-!..Assimilation inefficiency:
-         ineffZ4 = (1._rk - self%puZ4X)
+   !..Zooplankton Grazing
+   !      Z4herb(i) = fP1Z4c(i) + fP2Z4c(i) + fP3Z4c(i) +fP4Z4c(i)
+   !      Z4carn(i) = fB1Z4c(i) + fZ5Z4c(i) + fZ6Z4c(i) + fR6Z4c(i)
 
-!..Excretion
-         retZ4 = 0.0_rk
-         do iprey=1,self%nprey
-            if (self%preyispom(iprey)) then
-               retZ4 = retZ4 + ineffZ4 * fpreyZ4c(iprey) * self%pu_eaZ4X
-            else
-               retZ4 = retZ4 + ineffZ4 * fpreyZ4c(iprey) * self%pu_eaRZ4X
-            end if
-         end do
-         fZ4RDc = (retZ4 + rdZ4)*self%pe_R1Z4X
-         fZ4R8c = (retZ4 + rdZ4)*(1._rk - self%pe_R1Z4X)
+   !..Mortality
+            sdZ4 = ((1._rk - eO2Z4)*self%sdZ4oX + self%sdZ4X) 
+            rdZ4 = sdZ4*Z4cP
+
+   !..Assimilation inefficiency:
+            ineffZ4 = (1._rk - self%puZ4X)
+
+   !..Excretion
+            retZ4 = 0.0_rk
+            do iprey=1,self%nprey
+               if (self%preyispom(iprey)) then
+                  retZ4 = retZ4 + ineffZ4 * fpreyZ4c(iprey) * self%pu_eaZ4X
+               else
+                  retZ4 = retZ4 + ineffZ4 * fpreyZ4c(iprey) * self%pu_eaRZ4X
+               end if
+            end do
+            fZ4RDc = (retZ4 + rdZ4)*self%pe_R1Z4X
+            fZ4R8c = (retZ4 + rdZ4)*(1._rk - self%pe_R1Z4X)
 #ifdef SAVEFLX
-         fZXRDc(I) = fZXRDc(I)+fZ4RDc
+            fZXRDc(I) = fZXRDc(I)+fZ4RDc
 #endif
 
-!..Rest respiration, corrected for prevailing temperature
-         rrsZ4 = self%srsZ4X*etZ4*Z4cP
+   !..Rest respiration, corrected for prevailing temperature
+            rrsZ4 = self%srsZ4X*etZ4*Z4cP
 
-!..Activity respiration
-         rraZ4 = ineffZ4 * rugZ4 - retZ4
+   !..Activity respiration
+            rraZ4 = ineffZ4 * rugZ4 - retZ4
 
-!..Total respiration
-         fZ4O3c = rrsZ4 + rraZ4
+   !..Total respiration
+            fZ4O3c = rrsZ4 + rraZ4
 
 #ifdef CALC
-         fO3L2c(I) = fO3L2c(I) + &
-            RainR(I) * gutdiss * (1._rk - puZ4X)* pu_eaZ4X * fP2Z4c
+            fO3L2c(I) = fO3L2c(I) + &
+               RainR(I) * gutdiss * (1._rk - puZ4X)* pu_eaZ4X * fP2Z4c
 #endif
-         rraZ4 = rugZ4*(1._rk - self%puZ4X)-retZ4
+            rraZ4 = rugZ4*(1._rk - self%puZ4X)-retZ4
 
-!..Source equations
-         SZ4c = rugZ4 - fZ4RDc - fZ4R8c - fZ4O3c   ! Jorn: cannibalism accounted for in grazing/predation section
+   !..Source equations
+            SZ4c = rugZ4 - fZ4RDc - fZ4R8c - fZ4O3c   ! Jorn: cannibalism accounted for in grazing/predation section
 
-!..Flows from and to detritus
-         _SET_ODE_(self%id_R1c, + fZ4RDc * self%R1R2X)
-         _SET_ODE_(self%id_R2c, + fZ4RDc * (1._rk-self%R1R2X))
-         _SET_ODE_(self%id_R8c, + fZ4R8c)
+   !..Flows from and to detritus
+            _SET_ODE_(self%id_R1c, + fZ4RDc * self%R1R2X)
+            _SET_ODE_(self%id_R2c, + fZ4RDc * (1._rk-self%R1R2X))
+            _SET_ODE_(self%id_R8c, + fZ4R8c)
 
-!..Respiration
-         _SET_ODE_(self%id_O3c, + fZ4O3c/CMass)
-         _SET_ODE_(self%id_O2o, - fZ4O3c*self%urB1_O2X)
+   !..Respiration
+            _SET_ODE_(self%id_O3c, + fZ4O3c/CMass)
+            _SET_ODE_(self%id_O2o, - fZ4O3c*self%urB1_O2X)
 
-!..Phosphorus dynamics in mesozooplankton, derived from carbon flows....
+   !..Phosphorus dynamics in mesozooplankton, derived from carbon flows....
 
-         fZ4RIp = (fZ4RDc + fZ4R8c) * self%qpZIcX
-         fZ4RDp = min(fZ4RIp, fZ4RDc * self%qpZIcX * self%xR1pX)
-         fZ4R8p = fZ4RIp - fZ4RDp
+            fZ4RIp = (fZ4RDc + fZ4R8c) * self%qpZIcX
+            fZ4RDp = min(fZ4RIp, fZ4RDc * self%qpZIcX * self%xR1pX)
+            fZ4R8p = fZ4RIp - fZ4RDp
 
-!..Source equations
-         SZ4p = sum(spreyZ4*preypP) - fZ4R8p - fZ4RDp
+   !..Source equations
+            SZ4p = sum(spreyZ4*preypP) - fZ4R8p - fZ4RDp
 
 #ifdef IRON
-!  Iron dynamics
-! following Vichi et al., 2007 it is assumed that the iron fraction of the ingested phytoplankton
-! is egested as particulate detritus (Luca)
-         do iprey=1,self%nprey
-            _GET_SAFE_(self%id_preyf(iprey),preyP)
-            if (preyP/=0.0_rk) _SET_ODE_(self%id_preyf_target(iprey),spreyZ4(iprey)*preyP)
-         end do
+   !  Iron dynamics
+   ! following Vichi et al., 2007 it is assumed that the iron fraction of the ingested phytoplankton
+   ! is egested as particulate detritus (Luca)
+            do iprey=1,self%nprey
+               _GET_SAFE_(self%id_preyf(iprey),preyP)
+               if (preyP/=0.0_rk) _SET_ODE_(self%id_preyf_target(iprey),spreyZ4(iprey)*preyP)
+            end do
 #endif
 
-!..Phosphorus flux from/to detritus
-         _SET_ODE_(self%id_R1p, + fZ4RDp)
-         _SET_ODE_(self%id_R8p, + fZ4R8p)
+   !..Phosphorus flux from/to detritus
+            _SET_ODE_(self%id_R1p, + fZ4RDp)
+            _SET_ODE_(self%id_R8p, + fZ4R8p)
 
-!..Nitrogen dynamics in mesozooplankton, derived from carbon flows......
+   !..Nitrogen dynamics in mesozooplankton, derived from carbon flows......
 
-         fZ4RIn = (fZ4RDc + fZ4R8c) * self%qnZIcX
-         fZ4RDn = min(fZ4RIn, fZ4RDc * self%qnZIcX * self%xR1nX)
-         fZ4R8n = fZ4RIn - fZ4RDn
+            fZ4RIn = (fZ4RDc + fZ4R8c) * self%qnZIcX
+            fZ4RDn = min(fZ4RIn, fZ4RDc * self%qnZIcX * self%xR1nX)
+            fZ4R8n = fZ4RIn - fZ4RDn
 
-!..Source equations
-         SZ4n = sum(spreyZ4*preynP) - fZ4R8n - fZ4RDn
+   !..Source equations
+            SZ4n = sum(spreyZ4*preynP) - fZ4R8n - fZ4RDn
 
-!..Nitrogen flux from/to detritus
-         _SET_ODE_(self%id_R1n, + fZ4RDn)
-         _SET_ODE_(self%id_R8n, + fZ4R8n)
+   !..Nitrogen flux from/to detritus
+            _SET_ODE_(self%id_R1n, + fZ4RDn)
+            _SET_ODE_(self%id_R8n, + fZ4R8n)
 
-!..Silica-flux from diatoms due to mesozooplankton grazing
-         _SET_ODE_(self%id_R6s,sum(spreyZ4*preysP))
+   !..Silica-flux from diatoms due to mesozooplankton grazing
+            _SET_ODE_(self%id_R6s,sum(spreyZ4*preysP))
 
-!..re-establish the fixed nutrient ratio in zooplankton.................
+   !..re-establish the fixed nutrient ratio in zooplankton.................
 
-         fZ4NIn = 0.0_rk
-         fZ4N1p = 0.0_rk
-         SR8c = 0.0_rk
-         CALL Adjust_fixed_nutrients ( SZ4c, SZ4n, SZ4p, self%qnZIcX, &
-                                    self%qpZIcX, fZ4NIn, fZ4N1p, SR8c)
+            fZ4NIn = 0.0_rk
+            fZ4N1p = 0.0_rk
+            SR8c = 0.0_rk
+            CALL Adjust_fixed_nutrients ( SZ4c, SZ4n, SZ4p, self%qnZIcX, &
+                                       self%qpZIcX, fZ4NIn, fZ4N1p, SR8c)
 
-         _SET_ODE_(self%id_c,SZ4c)
-         _SET_ODE_(self%id_N4n,fZ4NIn)
-         _SET_ODE_(self%id_N1p,fZ4N1p)
-         _SET_ODE_(self%id_R8c,SR8c)
+            _SET_ODE_(self%id_c,SZ4c)
+            _SET_ODE_(self%id_N4n,fZ4NIn)
+            _SET_ODE_(self%id_N1p,fZ4N1p)
+            _SET_ODE_(self%id_R8c,SR8c)
 
-         ! Apply specific predation rates to all state variables of every prey.
-         do iprey=1,self%nprey
-            do istate=1,size(self%id_prey(iprey)%model%state)
-               _GET_SAFE_(self%id_prey(iprey)%model%state(istate),preyP)
-               _SET_ODE_(self%id_prey(iprey)%model%state(istate),-spreyZ4(iprey)*preyP)
+            ! Apply specific predation rates to all state variables of every prey.
+            do iprey=1,self%nprey
+               do istate=1,size(self%id_prey(iprey)%model%state)
+                  _GET_SAFE_(self%id_prey(iprey)%model%state(istate),preyP)
+                  _SET_ODE_(self%id_prey(iprey)%model%state(istate),-spreyZ4(iprey)*preyP)
+               end do
             end do
-         end do
-         
+         else
+            ! Insufficient prey - overwintering
+            _GET_SAFE_(self%id_c,Z4cP)
+
+!.. Respiration
+            fZ4O3c = Z4cP * self%Z4repwX
+
+!.. Mortality
+            fZ4R8c = Z4cP * self%Z4mortX
+
+            _SET_ODE_(self%id_R8c,fZ4R8c)
+            _SET_ODE_(self%id_R8n,fZ4R8c*self%qnZIcX)
+            _SET_ODE_(self%id_R8p,fZ4R8c*self%qpZIcX)
+
+            _SET_ODE_(self%id_O3c,fZ4O3c)
+            _SET_ODE_(self%id_N4n,fZ4O3c*self%qnZIcX)
+            _SET_ODE_(self%id_N1p,fZ4O3c*self%qpZIcX)
+
+            _SET_ODE_(self%id_c,- fZ4R8c - fZ4O3c)
+
+         end if
+
       ! Leave spatial loops (if any)
       _LOOP_END_
 

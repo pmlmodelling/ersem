@@ -3,6 +3,7 @@
 module pml_ersem_base
 
    use fabm_types
+   use fabm_expressions
 
    implicit none
 
@@ -38,25 +39,6 @@ module pml_ersem_base
    contains
       procedure :: initialize_ersem_benthic_base
    end type
-
-   type type_component
-      character(len=attribute_length) :: name   = ''
-      real(rk)                        :: weight = 1._rk
-      type (type_dependency_id)       :: id
-      type (type_component),pointer   :: next   => null()
-   end type
-
-   type,extends(type_base_model) :: type_weighted_sum
-      character(len=attribute_length) :: output_name      = ''
-      character(len=attribute_length) :: output_long_name = ''
-      character(len=attribute_length) :: output_units     = ''
-      type (type_diagnostic_variable_id) :: id_output
-      type (type_component),pointer   :: first => null()
-   contains
-      procedure :: initialize    => weighted_sum_initialize
-      procedure :: do            => weighted_sum_do
-      procedure :: add_component => weighted_sum_add_component
-   end type
       
 contains
       
@@ -73,6 +55,7 @@ contains
       ! Sedimentation
       self%sedimentation = .false.
       if (present(sedimentation)) self%sedimentation = sedimentation
+      !if (self%sedimentation) call self%get_parameter(self%sedimentation,'sedimentation',default=.true.)
       if (self%sedimentation) then
          call self%register_dependency(self%id_bedstress,standard_variables%bottom_stress)
          call self%register_dependency(self%id_dens,     standard_variables%density)
@@ -324,59 +307,4 @@ contains
 
    end subroutine
 
-   subroutine weighted_sum_initialize(self,configunit)
-      class (type_weighted_sum),intent(inout),target :: self
-      integer,                  intent(in)           :: configunit
-
-      type (type_component),pointer :: component
-      component => self%first
-      do while (associated(component))
-         call self%register_dependency(component%id,trim(component%name))
-         component => component%next
-      end do
-      if (self%output_long_name=='') self%output_long_name = self%output_name
-      call self%register_diagnostic_variable(self%id_output,self%output_name,self%output_units,self%output_long_name)
-      call self%parent%add_alias(self%id_output,trim(self%output_name))
-   end subroutine
-
-   subroutine weighted_sum_add_component(self,name,weight)
-      class (type_weighted_sum),intent(inout) :: self
-      character(len=*),         intent(in)    :: name
-      real(rk),optional,        intent(in)    :: weight
-      
-      type (type_component),pointer :: component
-
-      if (.not.associated(self%first)) then
-         allocate(self%first)
-         component => self%first
-      else
-         component => self%first
-         do while (associated(component%next))
-            component => component%next
-         end do
-         allocate(component%next)
-         component => component%next
-      end if
-      component%name = name
-      if (present(weight)) component%weight = weight
-   end subroutine
-
-   subroutine weighted_sum_do(self,_ARGUMENTS_DO_)
-      class (type_weighted_sum),intent(in) :: self
-      _DECLARE_ARGUMENTS_DO_
-      
-      type (type_component),pointer :: component
-      real(rk)                      :: sum,value
-      
-      _LOOP_BEGIN_
-         sum = 0._rk
-         component => self%first
-         do while (associated(component))
-            _GET_(component%id,value)
-            sum = sum + component%weight*value
-            component => component%next
-         end do
-         _SET_DIAGNOSTIC_(self%id_output,sum)
-      _LOOP_END_
-   end subroutine
 end module
