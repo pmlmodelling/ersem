@@ -13,7 +13,6 @@ module pml_ersem_base
    type,extends(type_base_model),public :: type_ersem_pelagic_base_model
       type (type_state_variable_id)      :: id_c,id_n,id_p,id_f,id_s,id_chl
       type (type_diagnostic_variable_id) :: id_cD,id_nD,id_pD,id_fD,id_sD,id_chlD
-      type (type_conserved_quantity_id)  :: id_totc,id_totn,id_totp,id_tots,id_totf
       type (type_horizontal_dependency_id) :: id_bedstress,id_wdepth
       type (type_dependency_id)            :: id_dens
 
@@ -55,7 +54,7 @@ contains
       ! Sedimentation
       self%sedimentation = .false.
       if (present(sedimentation)) self%sedimentation = sedimentation
-      !if (self%sedimentation) call self%get_parameter(self%sedimentation,'sedimentation',default=.true.)
+      if (self%sedimentation) call self%get_parameter(self%sedimentation,'sedimentation',default=.true.)
       if (self%sedimentation) then
          call self%register_dependency(self%id_bedstress,standard_variables%bottom_stress)
          call self%register_dependency(self%id_dens,     standard_variables%density)
@@ -98,13 +97,6 @@ contains
          call self%request_coupling(self%id_Q7p,'p',source=self%id_Q7)
       end if
 
-      ! Conserved quantities
-      call self%register_conserved_quantity(self%id_totc,standard_variables%total_carbon)
-      call self%register_conserved_quantity(self%id_totn,standard_variables%total_nitrogen)
-      call self%register_conserved_quantity(self%id_totp,standard_variables%total_phosphorus)
-      call self%register_conserved_quantity(self%id_tots,standard_variables%total_silicate)
-      call self%register_conserved_quantity(self%id_totf,standard_variables%total_iron)
-
       ! Vertical velocity (positive: upwards, negative: downwards)
       self%w = 0.0_rk
       if (present(w)) self%w = w
@@ -112,7 +104,7 @@ contains
       ! Carbon
       if (present(c_ini)) then
          call self%register_state_variable(self%id_c,'c','mg m-3','carbon',c_ini,minimum=0._rk,vertical_movement=self%w/self%dt)
-         call self%add_conserved_quantity_component(self%id_totc,self%id_c,scale_factor=1._rk/12._rk)
+         call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_c,scale_factor=1._rk/12._rk)
       else
          call self%register_diagnostic_variable(self%id_cD,'c','mg m-3','carbon',missing_value=0._rk)
       end if
@@ -121,7 +113,7 @@ contains
       if (present(n_ini)) then
          ! Nitrogen as state variable
          call self%register_state_variable(self%id_n, 'n', 'mmol N m-3', 'nitrogen', n_ini, minimum=0._rk,vertical_movement=self%w/self%dt)
-         call self%add_conserved_quantity_component(self%id_totn,self%id_n)
+         call self%add_to_aggregate_variable(standard_variables%total_nitrogen,self%id_n)
       elseif (present(qn)) then
          ! Nitrogen derived from carbon (constant C:P)
          ! Create an expression that computes N content, so external models (e.g., predators) can access it.
@@ -130,7 +122,7 @@ contains
          child%output_units = 'mmol N m-3'
          call child%add_component('c',qn)
          call self%add_child(child,'dynamic_n',configunit=-1)
-         call self%add_conserved_quantity_component(self%id_totn,self%id_c,scale_factor=qn)
+         call self%add_to_aggregate_variable(standard_variables%total_nitrogen,self%id_c,scale_factor=qn)
       else
          ! No nitrogen
          call self%register_diagnostic_variable(self%id_nD, 'n', 'mmol N m-3', 'nitrogen', missing_value=0._rk)
@@ -140,7 +132,7 @@ contains
       if (present(p_ini)) then
          ! Phosphorous as state variable
          call self%register_state_variable(self%id_p, 'p', 'mmol P m-3', 'phosphorus', p_ini, minimum=0._rk,vertical_movement=self%w/self%dt)
-         call self%add_conserved_quantity_component(self%id_totp,self%id_p)
+         call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_p)
       elseif (present(qp)) then
          ! Phosphorous derived from carbon (constant C:P)
          ! Create an expression that computes P content, so external models (e.g., predators) can access it.
@@ -149,7 +141,7 @@ contains
          child%output_units = 'mmol P m-3'
          call child%add_component('c',qp)
          call self%add_child(child,'dynamic_p',configunit=-1)
-         call self%add_conserved_quantity_component(self%id_totp,self%id_c,scale_factor=qp)
+         call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_c,scale_factor=qp)
       else
          ! No phosphorous
          call self%register_diagnostic_variable(self%id_pD, 'p', 'mmol P m-3', 'phosphorus', missing_value=0._rk)
@@ -158,7 +150,7 @@ contains
       ! Silicate
       if (present(s_ini)) then
          call self%register_state_variable(self%id_s,'s','mmol Si m-3','silicate',s_ini,minimum=0._rk,vertical_movement=self%w/self%dt)
-         call self%add_conserved_quantity_component(self%id_tots,self%id_s)
+         call self%add_to_aggregate_variable(standard_variables%total_silicate,self%id_s)
       else
          call self%register_diagnostic_variable(self%id_sD,'s','mmol Si m-3','silicate',missing_value=0._rk)
       end if
@@ -175,7 +167,7 @@ contains
       if (present(f_ini)) then
          ! Iron as state variable
          call self%register_state_variable(self%id_f,'f','umol Fe m-3','iron',f_ini,minimum=0._rk,vertical_movement=self%w/self%dt)
-         call self%add_conserved_quantity_component(self%id_totf,self%id_f)
+         call self%add_to_aggregate_variable(standard_variables%total_iron,self%id_f)
       else
          ! No iron
          call self%register_diagnostic_variable(self%id_fD,'f','umol Fe m-3','iron',missing_value=0._rk)
@@ -207,12 +199,12 @@ contains
 
          _GET_HORIZONTAL_(self%id_bedstress,tbed)
          _GET_(self%id_dens,density)
-         
+
          Pc = 0.0_rk
          Pn = 0.0_rk
          Pp = 0.0_rk
          Ps = 0.0_rk
-         if (_AVAILABLE_(self%id_c)) _GET_(self%id_p,Pc)
+         if (_AVAILABLE_(self%id_c)) _GET_(self%id_c,Pc)
          if (_AVAILABLE_(self%id_n)) _GET_(self%id_n,Pn)
          if (_AVAILABLE_(self%id_p)) _GET_(self%id_p,Pp)
          if (_AVAILABLE_(self%id_s)) _GET_(self%id_s,Ps)
@@ -241,7 +233,7 @@ contains
       fsdn = sdrate*Pn
       fsdp = sdrate*Pp
       fsds = sdrate*Ps
-      
+
       _SET_ODE_BEN_(self%id_Q6c, fsdc * (1._rk - self%qQ1c - self%qQ7c))
       _SET_ODE_BEN_(self%id_Q6n, fsdn * (1._rk - MIN(1._rk, self%qQ1c * self%xR1nX) - MIN(1._rk, self%qQ7c * self%xR7nX)))
       _SET_ODE_BEN_(self%id_Q6p, fsdp * (1._rk - MIN(1._rk, self%qQ1c * self%xR1pX) - MIN(1._rk, self%qQ7c * self%xR7pX)))
@@ -269,40 +261,34 @@ contains
 
       self%dt = 86400._rk
 
-      call self%register_conserved_quantity(self%id_totc,standard_variables%total_carbon)
-      call self%register_conserved_quantity(self%id_totn,standard_variables%total_nitrogen)
-      call self%register_conserved_quantity(self%id_totp,standard_variables%total_phosphorus)
-      call self%register_conserved_quantity(self%id_tots,standard_variables%total_silicate)
-      call self%register_conserved_quantity(self%id_totf,standard_variables%total_iron)
-
       if (present(c_ini)) then
          call self%register_state_variable(self%id_c,'c','mg m-2','carbon',c_ini,minimum=0._rk)
-         call self%add_conserved_quantity_component(self%id_totc,self%id_c,scale_factor=1._rk/12._rk)
+         call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_c,scale_factor=1._rk/12._rk)
       end if
 
       if (present(s_ini)) then
          call self%register_state_variable(self%id_s,'s','mmol Si m-2','silicate',s_ini,minimum=0._rk)
-         call self%add_conserved_quantity_component(self%id_tots,self%id_s)
+         call self%add_to_aggregate_variable(standard_variables%total_silicate,self%id_s)
       end if
 
 #ifdef IRON   
       if (present(f_ini)) then
          ! Iron as state variable
          call self%register_state_variable(self%id_f,'f','umol Fe m-2','iron',f_ini,minimum=0._rk)
-         call self%add_conserved_quantity_component(self%id_totf,self%id_f)
+         call self%add_to_aggregate_variable(standard_variables%total_iron,self%id_f)
       end if
 #endif
 
       if (present(p_ini)) then
          ! Phosphorous as state variable
          call self%register_state_variable(self%id_p, 'p', 'mmol P m-2', 'phosphorus', p_ini, minimum=0._rk)
-         call self%add_conserved_quantity_component(self%id_totp,self%id_p)
+         call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_p)
       end if
 
       if (present(n_ini)) then
          ! Nitrogen as state variable
          call self%register_state_variable(self%id_n, 'n', 'mmol N m-2', 'nitrogen', n_ini, minimum=0._rk)
-         call self%add_conserved_quantity_component(self%id_totn,self%id_n)
+         call self%add_to_aggregate_variable(standard_variables%total_nitrogen,self%id_n)
       end if
 
    end subroutine

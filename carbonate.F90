@@ -46,7 +46,7 @@ contains
       call self%register_state_variable(self%id_O3c,'c','mmol C/m^3','total dissolved inorganic carbon', 2200._rk,minimum=0._rk)
 
       call self%register_conserved_quantity(self%id_totc,standard_variables%total_carbon)
-      call self%add_conserved_quantity_component(self%id_totc,self%id_O3c)
+      call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_O3c)
    
       if (self%iswtalk==5) then
          call self%register_state_variable(self%id_TA,'TA','umol/kg','total alkalinity',minimum=0._rk)
