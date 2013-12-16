@@ -359,7 +359,7 @@ contains
             _SET_ODE_(self%id_R8n,fZ4R8c*self%qnZIcX)
             _SET_ODE_(self%id_R8p,fZ4R8c*self%qpZIcX)
 
-            _SET_ODE_(self%id_O3c,fZ4O3c)
+            _SET_ODE_(self%id_O3c,fZ4O3c/CMass)
             _SET_ODE_(self%id_N4n,fZ4O3c*self%qnZIcX)
             _SET_ODE_(self%id_N1p,fZ4O3c*self%qpZIcX)
 
