@@ -22,6 +22,8 @@ module pml_ersem_benthic_pom
       procedure :: do_bottom
    end type
 
+   real(rk),parameter :: CMass = 12._rk
+
 contains
 
    subroutine initialize(self,configunit)
@@ -162,7 +164,7 @@ contains
          _SET_ODE_BEN_(self%id_c,-self%reminQIX*Q6cP)
          _SET_ODE_BEN_(self%id_p,-self%reminQIX*Q6pP)
          _SET_ODE_BEN_(self%id_n,-self%reminQIX*Q6nP)
-         _SET_BOTTOM_EXCHANGE_(self%id_O3c,self%reminQIX*Q6cP)
+         _SET_BOTTOM_EXCHANGE_(self%id_O3c,self%reminQIX*Q6cP/CMass)
          _SET_BOTTOM_EXCHANGE_(self%id_N1p,self%reminQIX*Q6pP)
          _SET_BOTTOM_EXCHANGE_(self%id_N3n,self%pQIN3X*self%reminQIX*Q6nP)
          _SET_BOTTOM_EXCHANGE_(self%id_N4n,(1.0_rk-self%pQIN3X)*self%reminQIX*Q6nP)
