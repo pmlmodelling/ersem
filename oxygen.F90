@@ -64,9 +64,9 @@ contains
          _GET_(self%id_ETW,ETW)
          _GET_(self%id_X1X,X1X)
          OSAT = oxygen_saturation_concentration(self,ETW,X1X)
-        _SET_DIAGNOSTIC_(self%id_osat,OSAT)
-        _SET_DIAGNOSTIC_(self%id_eO2mO2,O2o/OSAT)
-        _SET_DIAGNOSTIC_(self%id_aou,OSAT-O2o)
+         _SET_DIAGNOSTIC_(self%id_osat,OSAT)
+         _SET_DIAGNOSTIC_(self%id_eO2mO2,O2o/OSAT)
+         _SET_DIAGNOSTIC_(self%id_aou,OSAT-O2o)
       _LOOP_END_
    end subroutine
 
@@ -91,7 +91,7 @@ contains
                0.050091_rk*etw**3)/660._rk) * (0.31_rk * wnd**2._rk)
          endif
 
-! units of ko2 converted from cm/hr to m/day
+         ! units of ko2 converted from cm/hr to m/day
          ko2o = ko2o*(24._rk/100._rk)
 
          _SET_SURFACE_EXCHANGE_(self%id_O2o,ko2o*(OSAT-O2o))
@@ -113,32 +113,31 @@ contains
       real(rk),parameter :: R = 8.3145_rk
       real(rk),parameter :: P = 101325_rk
       real(rk),parameter :: T = 273.15_rk
+
+      ! volume of an ideal gas at standard temp (25C) and pressure (1 atm)
       real(rk),parameter :: VIDEAL = (R * 298.15_rk / P) *1000._rk
+
       real(rk)           :: ABT
 
-!  calc absolute temperature
+      ! calc absolute temperature
       ABT = ETW + T
 
-      IF (self%ISWO2X.EQ.1) THEN
+      select case (self%ISWO2X)
+         case (1)
+            ! old ERSEM saturation Formulation
+            OSAT = 31.25_rk * (475._rk-2.65_rk*X1X) / (33.5_rk+ETW)
+         case (2)
+            ! calc theoretical oxygen saturation for temp + salinity
+            ! From WEISS 1970 DEEP SEA RES 17, 721-735.
+            ! units of ln(ml(STP)/l)
+            OSAT = A1 + A2 * (100._rk/ABT) + A3 * log(ABT/100._rk) &
+                   + A4 * (ABT/100._rk) &
+                   + X1X * ( B1 + B2 * (ABT/100._rk) + B3 * ((ABT/100._rk)**2))
 
-   !  old ERSEM saturation Formulation
-
-         OSAT = 31.25_rk * (475._rk-2.65_rk*X1X) / (33.5_rk+ETW)
-
-      ELSE IF (self%iswO2X .EQ. 2 ) THEN
-
-   !  calc theoretical oxygen saturation for temp + salinity
-   !  From WEISS 1970 DEEP SEA RES 17, 721-735.
-   !  units of ln(ml(STP)/l)
-
-         OSAT = A1 + A2 * (100._rk/ABT) + A3 * log(ABT/100._rk) &
-         + A4 * (ABT/100._rk) &
-         + X1X * ( B1 + B2 * (ABT/100._rk) + B3 * ((ABT/100._rk)**2))
-
-   !  convert units to ml(STP)/l then to mMol/m3
-
-         OSAT = exp( OSAT )
-         OSAT = OSAT * 1000._rk / VIDEAL
-      ENDIF
+            ! convert units to ml(STP)/l then to mMol/m3
+            OSAT = exp( OSAT )
+            OSAT = OSAT * 1000._rk / VIDEAL
+      end select
    end function
+
 end module
