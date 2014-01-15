@@ -26,14 +26,16 @@ contains
 !
 ! !LOCAL VARIABLES:
    logical :: has_np
+   real(rk) :: c0
 !EOP
 !-----------------------------------------------------------------------
 !BOC
    call self%get_parameter(has_np,'has_np',default=.true.)
+   call self%get_parameter(c0,'c0',default=0.0_rk)
    if (has_np) then
-      call self%initialize_ersem_base(c_ini=0._rk,p_ini=0._rk,n_ini=0._rk)
+      call self%initialize_ersem_base(c_ini=0._rk,p_ini=0._rk,n_ini=0._rk,c0=c0,n0=qnRPIcX*c0,p0=qpRPIcX*c0)
    else
-      call self%initialize_ersem_base(c_ini=0._rk)
+      call self%initialize_ersem_base(c_ini=0._rk,c0=c0)
    end if
 
    end subroutine

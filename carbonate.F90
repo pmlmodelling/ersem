@@ -13,7 +13,6 @@ module pml_ersem_carbonate
    type,extends(type_base_model),public :: type_pml_ersem_carbonate
 !     Variable identifiers
       type (type_state_variable_id)     :: id_O3c,id_TA
-      type (type_conserved_quantity_id) :: id_totc
       type (type_dependency_id)         :: id_ETW, id_X1X, id_dens, id_pres
       type (type_dependency_id)         :: id_Carb_in,id_pco2_in
       type (type_horizontal_dependency_id) :: id_wnd,id_PCO2A
@@ -21,7 +20,7 @@ module pml_ersem_carbonate
       type (type_diagnostic_variable_id) :: id_ph,id_pco2,id_CarbA, id_BiCarb, id_Carb, id_TA_diag
       type (type_diagnostic_variable_id) :: id_Om_cal,id_Om_arg
 
-      integer :: iswCO2X,iswtalk
+      integer :: iswCO2X,iswtalk,iswASFLUX
    contains
       procedure :: initialize
       procedure :: do
@@ -40,12 +39,11 @@ contains
 !-----------------------------------------------------------------------
 !BOC
       call self%get_parameter(self%iswCO2X,'iswCO2X')
+      call self%get_parameter(self%iswASFLUX,'iswASFLUX')
       call self%get_parameter(self%iswtalk,'iswtalk')
       if (self%iswtalk<1.or.self%iswtalk>5) call self%fatal_error('type_pml_ersem_carbonate::initialize','"iswtalk" out of bounds')
 
       call self%register_state_variable(self%id_O3c,'c','mmol C/m^3','total dissolved inorganic carbon', 2200._rk,minimum=0._rk)
-
-      call self%register_conserved_quantity(self%id_totc,standard_variables%total_carbon)
       call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_O3c)
    
       if (self%iswtalk==5) then
@@ -175,7 +173,9 @@ contains
 
       real(rk) :: ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2
       logical  :: success
-      
+
+      if (self%iswASFLUX<=0) return
+
       _HORIZONTAL_LOOP_BEGIN_
          _GET_(self%id_O3c,O3c)
          _GET_(self%id_ETW,T)
@@ -191,7 +191,7 @@ contains
             _GET_(self%id_TA,TA)
             TA = TA/1.0e6_rk
          end if
-         
+
 !  for surface box only calculate air-sea flux
 !Nightingale and Liss parameterisation
 

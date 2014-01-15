@@ -1,6 +1,6 @@
 #include "fabm_driver.h"
 
-#define IRON
+!#define IRON
 
 module pml_ersem_mesozoo
 
@@ -17,13 +17,13 @@ module pml_ersem_mesozoo
    type,extends(type_ersem_pelagic_base_model),public :: type_pml_ersem_mesozoo
       ! Variables
       type (type_model_id),         allocatable,dimension(:) :: id_prey
+      type (type_model_id)                                   :: id_RP
       type (type_dependency_id),    allocatable,dimension(:) :: id_preyc,id_preyn,id_preyp,id_preys,id_preyf
       type (type_state_variable_id),allocatable,dimension(:) :: id_preyf_target
       type (type_state_variable_id)      :: id_O3c,id_O2o
       type (type_state_variable_id)      :: id_R1c,id_R1p,id_R1n
       type (type_state_variable_id)      :: id_R2c
-      type (type_state_variable_id)      :: id_R8c,id_R8p,id_R8n
-      type (type_state_variable_id)      :: id_R6s
+      type (type_state_variable_id)      :: id_R8c,id_R8p,id_R8n,id_R8s
       type (type_state_variable_id)      :: id_N1p,id_N4n
       type (type_dependency_id)          :: id_ETW,id_eO2mO2,id_totprey
       type (type_horizontal_dependency_id) :: id_inttotprey
@@ -50,7 +50,6 @@ module pml_ersem_mesozoo
       procedure :: do
    end type
 
-   real(rk),parameter :: CMass = 12._rk
    real(rk),parameter :: ZeroX = 1e-8_rk
 
 contains
@@ -69,6 +68,7 @@ contains
       integer           :: iprey
       character(len=16) :: index
       type (type_weighted_sum),pointer :: child
+      real(rk)          :: c0
 !EOP
 !-----------------------------------------------------------------------
 !BOC
@@ -79,20 +79,26 @@ contains
       call self%get_parameter(self%chrZ4oX,   'chrZ4oX')
       call self%get_parameter(self%minfoodZ4X,'minfoodZ4X')
       call self%get_parameter(self%chuZ4cX,   'chuZ4cX')
+      call self%get_parameter(self%sumZ4X,    'sumZ4X')
       call self%get_parameter(self%sdZ4oX,    'sdZ4oX')
       call self%get_parameter(self%sdZ4X,     'sdZ4X')
       call self%get_parameter(self%srsZ4X,    'srsZ4X')
       call self%get_parameter(self%puZ4X,     'puZ4X')
-      call self%get_parameter(self%pe_R1Z4X,  'pe_R1Z4X')
-      call self%get_parameter(self%sumZ4X,    'sumZ4X')
       call self%get_parameter(self%pu_eaZ4X,  'pu_eaZ4X')
       call self%get_parameter(self%pu_eaRZ4X, 'pu_eaRZ4X')
+      call self%get_parameter(self%pe_R1Z4X,  'pe_R1Z4X')
       call self%get_parameter(self%MinpreyX,  'MinpreyX')
       call self%get_parameter(self%Z4repwX,   'Z4repwX')
       call self%get_parameter(self%Z4mortX,   'Z4mortX')
+      call self%get_parameter(c0,             'c0')
+
+      call self%get_parameter(self%R1R2X,   'R1R2X')
+      call self%get_parameter(self%xR1pX,   'xR1pX')
+      call self%get_parameter(self%xR1nX,   'xR1nX')
+      call self%get_parameter(self%urB1_O2X,'urB1_O2X')
 
       ! Register state variables
-      call self%initialize_ersem_base(c_ini=1.e-4_rk,qn=self%qnZIcX,qp=self%qpZIcX)
+      call self%initialize_ersem_base(c_ini=1.e-4_rk,qn=self%qnZIcX,qp=self%qpZIcX,c0=c0)
 
       ! Create an expression that will compute the total prey
       ! (wil be depth integrated to determine overwintering)
@@ -117,16 +123,20 @@ contains
          call self%register_dependency(self%id_preyc(iprey), 'prey'//trim(index)//'c',  'mg C m-3',   'Prey '//trim(index)//' C')    
          call self%register_dependency(self%id_preyn(iprey), 'prey'//trim(index)//'n',  'mmol N m-3', 'Prey '//trim(index)//' N')    
          call self%register_dependency(self%id_preyp(iprey), 'prey'//trim(index)//'p',  'mmol P m-3', 'Prey '//trim(index)//' P')    
-         call self%register_dependency(self%id_preyf(iprey), 'prey'//trim(index)//'f',  'mmol Fe m-3','Prey '//trim(index)//' Fe')    
          call self%register_dependency(self%id_preys(iprey), 'prey'//trim(index)//'s',  'mmol Si m-3','Prey '//trim(index)//' Si')
+#ifdef IRON
+         call self%register_dependency(self%id_preyf(iprey), 'prey'//trim(index)//'f',  'mmol Fe m-3','Prey '//trim(index)//' Fe')    
          call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe m-3','sink for Fe of prey '//trim(index),required=.false.)    
+#endif
 
          call self%register_model_dependency(self%id_prey(iprey),'prey'//trim(index))
          call self%request_coupling(self%id_preyc(iprey),'c',source=self%id_prey(iprey))
          call self%request_coupling(self%id_preyn(iprey),'n',source=self%id_prey(iprey))
          call self%request_coupling(self%id_preyp(iprey),'p',source=self%id_prey(iprey))
          call self%request_coupling(self%id_preys(iprey),'s',source=self%id_prey(iprey))
+#ifdef IRON
          call self%request_coupling(self%id_preyf(iprey),'f',source=self%id_prey(iprey))
+#endif
 
          call child%add_component('prey'//trim(index)//'c',self%suprey_Z4X(iprey))
       end do
@@ -151,7 +161,14 @@ contains
       call self%register_state_dependency(self%id_R8c,'RPc','mg C m-3',   'POC')    
       call self%register_state_dependency(self%id_R8p,'RPp','mmol P m-3', 'POP')    
       call self%register_state_dependency(self%id_R8n,'RPn','mmol N m-3', 'PON')    
-      call self%register_state_dependency(self%id_R6s,'RPs','mmol Si m-3','POSi')    
+      call self%register_state_dependency(self%id_R8s,'RPs','mmol Si m-3','POSi')    
+
+      ! Allow coupling of all required particulate organic matter variables to a single source model.
+      call self%register_model_dependency(self%id_RP,'RP')
+      call self%request_coupling(self%id_R8c,'c',source=self%id_RP)
+      call self%request_coupling(self%id_R8n,'n',source=self%id_RP)
+      call self%request_coupling(self%id_R8p,'p',source=self%id_RP)
+      call self%request_coupling(self%id_R8s,'s',source=self%id_RP)
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C m-3','Carbon Dioxide')    
@@ -199,17 +216,18 @@ contains
             ! Get environment (temperature, oxygen saturation)
             _GET_(self%id_ETW,ETW)
             _GET_(self%id_eO2mO2,eO2mO2)
+            eO2mO2 = min(1.0_rk,eO2mO2)
 
             ! Get own concentrations
             _GET_(self%id_c,Z4c)
-            _GET_SAFE_(self%id_c,Z4cP)
+            _GET_WITHOUT_BACKGROUND_(self%id_c,Z4cP)
 
             ! Get prey concentrations
             do iprey=1,self%nprey
-               _GET_SAFE_(self%id_preyc(iprey),  preycP(iprey))
-               _GET_SAFE_(self%id_preyp(iprey),  preypP(iprey))
-               _GET_SAFE_(self%id_preyn(iprey),  preynP(iprey))
-               _GET_SAFE_(self%id_preys(iprey),  preysP(iprey))
+               _GET_WITHOUT_BACKGROUND_(self%id_preyc(iprey),  preycP(iprey))
+               _GET_WITHOUT_BACKGROUND_(self%id_preyp(iprey),  preypP(iprey))
+               _GET_WITHOUT_BACKGROUND_(self%id_preyn(iprey),  preynP(iprey))
+               _GET_WITHOUT_BACKGROUND_(self%id_preys(iprey),  preysP(iprey))
             end do
 
    !..Temperature effect :
@@ -248,9 +266,9 @@ contains
             retZ4 = 0.0_rk
             do iprey=1,self%nprey
                if (self%preyispom(iprey)) then
-                  retZ4 = retZ4 + ineffZ4 * fpreyZ4c(iprey) * self%pu_eaZ4X
-               else
                   retZ4 = retZ4 + ineffZ4 * fpreyZ4c(iprey) * self%pu_eaRZ4X
+               else
+                  retZ4 = retZ4 + ineffZ4 * fpreyZ4c(iprey) * self%pu_eaZ4X
                end if
             end do
             fZ4RDc = (retZ4 + rdZ4)*self%pe_R1Z4X
@@ -300,7 +318,7 @@ contains
    ! following Vichi et al., 2007 it is assumed that the iron fraction of the ingested phytoplankton
    ! is egested as particulate detritus (Luca)
             do iprey=1,self%nprey
-               _GET_SAFE_(self%id_preyf(iprey),preyP)
+               _GET_WITHOUT_BACKGROUND_(self%id_preyf(iprey),preyP)
                if (preyP/=0.0_rk) _SET_ODE_(self%id_preyf_target(iprey),spreyZ4(iprey)*preyP)
             end do
 #endif
@@ -323,7 +341,7 @@ contains
             _SET_ODE_(self%id_R8n, + fZ4R8n)
 
    !..Silica-flux from diatoms due to mesozooplankton grazing
-            _SET_ODE_(self%id_R6s,sum(spreyZ4*preysP))
+            _SET_ODE_(self%id_R8s,sum(spreyZ4*preysP))
 
    !..re-establish the fixed nutrient ratio in zooplankton.................
 
@@ -341,13 +359,13 @@ contains
             ! Apply specific predation rates to all state variables of every prey.
             do iprey=1,self%nprey
                do istate=1,size(self%id_prey(iprey)%model%state)
-                  _GET_SAFE_(self%id_prey(iprey)%model%state(istate),preyP)
+                  _GET_WITHOUT_BACKGROUND_(self%id_prey(iprey)%model%state(istate),preyP)
                   _SET_ODE_(self%id_prey(iprey)%model%state(istate),-spreyZ4(iprey)*preyP)
                end do
             end do
          else
             ! Insufficient prey - overwintering
-            _GET_SAFE_(self%id_c,Z4cP)
+            _GET_WITHOUT_BACKGROUND_(self%id_c,Z4cP)
 
 !.. Respiration
             fZ4O3c = Z4cP * self%Z4repwX

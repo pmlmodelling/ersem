@@ -1,5 +1,5 @@
 #include "fabm_driver.h"
-#define IRON
+!#define IRON
 module pml_ersem_base
 
    use fabm_types
@@ -9,6 +9,11 @@ module pml_ersem_base
 
 !  default: all is private.
    private
+
+   real(rk),parameter,public :: CMass = 12.011_rk
+   real(rk),parameter,public :: qnRPIcX = 1.26E-02_rk
+   real(rk),parameter,public :: qpRPIcX = 7.86E-04_rk
+   real(rk),parameter,public :: qsRPIcX=15._rk/106._rk/CMass
 
    type,extends(type_base_model),public :: type_ersem_pelagic_base_model
       type (type_state_variable_id)      :: id_c,id_n,id_p,id_f,id_s,id_chl
@@ -41,9 +46,10 @@ module pml_ersem_base
       
 contains
       
-   subroutine initialize_ersem_base(self,c_ini,n_ini,p_ini,s_ini,f_ini,chl_ini,qn,qp,w,sedimentation)
+   subroutine initialize_ersem_base(self,c_ini,n_ini,p_ini,s_ini,f_ini,chl_ini,qn,qp,w,sedimentation,c0,n0,p0,s0,f0,chl0)
       class (type_ersem_pelagic_base_model), intent(inout), target :: self
       real(rk),optional,             intent(in)            :: c_ini,n_ini,p_ini,s_ini,f_ini,chl_ini,w
+      real(rk),optional,             intent(in)            :: c0,n0,p0,s0,f0,chl0
       real(rk),optional,             intent(in)            :: qn,qp
       logical,optional,              intent(in)            :: sedimentation
       
@@ -73,7 +79,9 @@ contains
          call self%register_state_dependency(self%id_Q6n,'Q6n','mmol N m-2','Q6n')
          call self%register_state_dependency(self%id_Q6p,'Q6p','mmol P m-2','Q6p')
          call self%register_state_dependency(self%id_Q6s,'Q6s','mmol Si m-2','Q6s')
+#ifdef IRON   
          call self%register_state_dependency(self%id_Q6f,'Q6f','mmol Fe m-2','Q6f')
+#endif
          call self%register_state_dependency(self%id_Q7c,'Q7c','mg C m-2',  'Q7c')
          call self%register_state_dependency(self%id_Q7n,'Q7n','mmol N m-2','Q7n')
          call self%register_state_dependency(self%id_Q7p,'Q7p','mmol P m-2','Q7p')
@@ -89,7 +97,9 @@ contains
          call self%request_coupling(self%id_Q6n,'n',source=self%id_Q6)
          call self%request_coupling(self%id_Q6p,'p',source=self%id_Q6)
          call self%request_coupling(self%id_Q6s,'s',source=self%id_Q6)
+#ifdef IRON   
          call self%request_coupling(self%id_Q6f,'f',source=self%id_Q6)
+#endif
 
          call self%register_model_dependency(self%id_Q7,'Q7')
          call self%request_coupling(self%id_Q7c,'c',source=self%id_Q7)
@@ -103,8 +113,8 @@ contains
 
       ! Carbon
       if (present(c_ini)) then
-         call self%register_state_variable(self%id_c,'c','mg m-3','carbon',c_ini,minimum=0._rk,vertical_movement=self%w/self%dt)
-         call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_c,scale_factor=1._rk/12._rk)
+         call self%register_state_variable(self%id_c,'c','mg m-3','carbon',c_ini,minimum=0._rk,vertical_movement=self%w/self%dt,background_value=c0)
+         call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_c,scale_factor=1._rk/CMass)
       else
          call self%register_diagnostic_variable(self%id_cD,'c','mg m-3','carbon',missing_value=0._rk)
       end if
@@ -112,7 +122,7 @@ contains
       ! Nitrogen
       if (present(n_ini)) then
          ! Nitrogen as state variable
-         call self%register_state_variable(self%id_n, 'n', 'mmol N m-3', 'nitrogen', n_ini, minimum=0._rk,vertical_movement=self%w/self%dt)
+         call self%register_state_variable(self%id_n, 'n', 'mmol N m-3', 'nitrogen', n_ini, minimum=0._rk,vertical_movement=self%w/self%dt,background_value=n0)
          call self%add_to_aggregate_variable(standard_variables%total_nitrogen,self%id_n)
       elseif (present(qn)) then
          ! Nitrogen derived from carbon (constant C:P)
@@ -131,7 +141,7 @@ contains
       ! Phosphorus
       if (present(p_ini)) then
          ! Phosphorous as state variable
-         call self%register_state_variable(self%id_p, 'p', 'mmol P m-3', 'phosphorus', p_ini, minimum=0._rk,vertical_movement=self%w/self%dt)
+         call self%register_state_variable(self%id_p, 'p', 'mmol P m-3', 'phosphorus', p_ini, minimum=0._rk,vertical_movement=self%w/self%dt,background_value=p0)
          call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_p)
       elseif (present(qp)) then
          ! Phosphorous derived from carbon (constant C:P)
@@ -149,7 +159,7 @@ contains
 
       ! Silicate
       if (present(s_ini)) then
-         call self%register_state_variable(self%id_s,'s','mmol Si m-3','silicate',s_ini,minimum=0._rk,vertical_movement=self%w/self%dt)
+         call self%register_state_variable(self%id_s,'s','mmol Si m-3','silicate',s_ini,minimum=0._rk,vertical_movement=self%w/self%dt,background_value=s0)
          call self%add_to_aggregate_variable(standard_variables%total_silicate,self%id_s)
       else
          call self%register_diagnostic_variable(self%id_sD,'s','mmol Si m-3','silicate',missing_value=0._rk)
@@ -157,7 +167,7 @@ contains
 
       ! Chlorophyll
       if (present(chl_ini)) then
-         call self%register_state_variable(self%id_chl,'Chl','mg C m-3','chlorophyll-a',chl_ini,minimum=0._rk,vertical_movement=self%w/self%dt)
+         call self%register_state_variable(self%id_chl,'Chl','mg C m-3','chlorophyll-a',chl_ini,minimum=0._rk,vertical_movement=self%w/self%dt,background_value=chl0)
       else
          call self%register_diagnostic_variable(self%id_chlD,'Chl','mg C m-3','chlorophyll-a',missing_value=0._rk)
       end if
@@ -166,7 +176,7 @@ contains
       ! Iron
       if (present(f_ini)) then
          ! Iron as state variable
-         call self%register_state_variable(self%id_f,'f','umol Fe m-3','iron',f_ini,minimum=0._rk,vertical_movement=self%w/self%dt)
+         call self%register_state_variable(self%id_f,'f','umol Fe m-3','iron',f_ini,minimum=0._rk,vertical_movement=self%w/self%dt,background_value=f0)
          call self%add_to_aggregate_variable(standard_variables%total_iron,self%id_f)
       else
          ! No iron
@@ -181,7 +191,7 @@ contains
       _DECLARE_ARGUMENTS_LOCAL_
       real(rk) :: w
 
-      w = self%w
+      w = -self%w
    end function
 
    subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
@@ -209,7 +219,7 @@ contains
          if (_AVAILABLE_(self%id_p)) _GET_(self%id_p,Pp)
          if (_AVAILABLE_(self%id_s)) _GET_(self%id_s,Ps)
 
-         fsd = -self%get_sinking_rate(_ARGUMENTS_LOCAL_)
+         fsd = self%get_sinking_rate(_ARGUMENTS_LOCAL_)
 
          ! From actual stress (Pa) to shear velocity (m/s)
          tbed = sqrt(tbed/density)
@@ -263,7 +273,7 @@ contains
 
       if (present(c_ini)) then
          call self%register_state_variable(self%id_c,'c','mg m-2','carbon',c_ini,minimum=0._rk)
-         call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_c,scale_factor=1._rk/12._rk)
+         call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_c,scale_factor=1._rk/CMass)
       end if
 
       if (present(s_ini)) then

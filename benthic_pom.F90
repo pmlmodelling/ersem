@@ -22,8 +22,6 @@ module pml_ersem_benthic_pom
       procedure :: do_bottom
    end type
 
-   real(rk),parameter :: CMass = 12._rk
-
 contains
 
    subroutine initialize(self,configunit)
@@ -57,7 +55,9 @@ contains
       call self%register_state_dependency(self%id_resuspenion_n,'resuspension_target_n','mmol m-3','pelagic variable taking up resuspended nitrogen',  required=.false.)
       call self%register_state_dependency(self%id_resuspenion_p,'resuspension_target_p','mmol m-3','pelagic variable taking up resuspended phosphorus',required=.false.)
       if (has_s) call self%register_state_dependency(self%id_resuspenion_s,'resuspension_target_s','mmol m-3','pelagic variable taking up resuspended silicate',required=.false.)
+#ifdef IRON
       if (has_f) call self%register_state_dependency(self%id_resuspenion_f,'resuspension_target_f','umol m-3','pelagic variable taking up resuspended iron',required=.false.)
+#endif
 
       if (self%reminQIX/=0.0_rk) then
          call self%get_parameter(self%pQIN3X,'pQIN3X',default=0.0_rk)
@@ -66,7 +66,9 @@ contains
          call self%register_state_dependency(self%id_N3n,'N3n','mmol m-3','nitrate')
          call self%register_state_dependency(self%id_N4n,'N4n','mmol m-3','ammonium')
          if (has_s) call self%register_state_dependency(self%id_N5s,'N5s','mmol m-3','silicate')
+#ifdef IRON
          if (has_f) call self%register_state_dependency(self%id_N7f,'N7f','umol m-3','dissolved iron')
+#endif
       end if
 
       call self%register_dependency(self%id_bedstress,standard_variables%bottom_stress)

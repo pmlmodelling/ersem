@@ -1,6 +1,6 @@
 #include "fabm_driver.h"
 
-#define IRON
+!#define IRON
 
 module pml_ersem_microzoo
 
@@ -38,8 +38,6 @@ module pml_ersem_microzoo
       procedure :: do
    end type
 
-   real(rk),parameter :: CMass = 12._rk
-
 contains
 
    subroutine initialize(self,configunit)
@@ -55,6 +53,7 @@ contains
 ! !LOCAL VARIABLES:
       integer           :: iprey
       character(len=16) :: index
+      real(rk)          :: c0
 !EOP
 !-----------------------------------------------------------------------
 !BOC
@@ -80,8 +79,10 @@ contains
       call self%get_parameter(self%xR1nX,   'xR1nX')
       call self%get_parameter(self%urB1_O2X,'urB1_O2X')
 
+      call self%get_parameter(c0,'c0')
+      
       ! Register state variables
-      call self%initialize_ersem_base(c_ini=1.e-4_rk,p_ini=4.288e-8_rk,n_ini=1.26e-6_rk)
+      call self%initialize_ersem_base(c_ini=1.e-4_rk,p_ini=4.288e-8_rk,n_ini=1.26e-6_rk,c0=c0,n0=qnRPIcX*c0,p0=qpRPIcX*c0)
 
       ! Register links to carbon contents of prey.
       allocate(self%id_prey(self%nprey))
@@ -98,16 +99,20 @@ contains
          call self%register_dependency(self%id_preyc(iprey),  'prey'//trim(index)//'c',  'mg C m-3',   'Prey '//trim(index)//' C')
          call self%register_dependency(self%id_preyn(iprey),  'prey'//trim(index)//'n',  'mmol N m-3', 'Prey '//trim(index)//' N')
          call self%register_dependency(self%id_preyp(iprey),  'prey'//trim(index)//'p',  'mmol P m-3', 'Prey '//trim(index)//' P')
-         call self%register_dependency(self%id_preyf(iprey),  'prey'//trim(index)//'f',  'mmol Fe m-3','Prey '//trim(index)//' Fe')
          call self%register_dependency(self%id_preys(iprey),  'prey'//trim(index)//'s',  'mmol Si m-3','Prey '//trim(index)//' Si')
+#ifdef IRON
+         call self%register_dependency(self%id_preyf(iprey),  'prey'//trim(index)//'f',  'mmol Fe m-3','Prey '//trim(index)//' Fe')
          call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe m-3','sink for Fe of prey '//trim(index),required=.false.)
+#endif
 
          call self%register_model_dependency(self%id_prey(iprey),'prey'//trim(index))
          call self%request_coupling(self%id_preyc(iprey),'c',source=self%id_prey(iprey))
          call self%request_coupling(self%id_preyn(iprey),'n',source=self%id_prey(iprey))
          call self%request_coupling(self%id_preyp(iprey),'p',source=self%id_prey(iprey))
          call self%request_coupling(self%id_preys(iprey),'s',source=self%id_prey(iprey))
+#ifdef IRON
          call self%request_coupling(self%id_preyf(iprey),'f',source=self%id_prey(iprey))
+#endif
       end do
 
       ! Register links to external nutrient pools.
@@ -170,19 +175,20 @@ contains
 
       _GET_(self%id_ETW,ETW)
       _GET_(self%id_eO2mO2,eO2mO2)
+      eO2mO2 = min(1.0_rk,eO2mO2)
 
       _GET_(self%id_c,Z5c)
       _GET_(self%id_p,Z5p)
       _GET_(self%id_n,Z5n)
-      _GET_SAFE_(self%id_c,Z5cP)
-      _GET_SAFE_(self%id_n,Z5nP)
-      _GET_SAFE_(self%id_p,Z5pP)
+      _GET_WITHOUT_BACKGROUND_(self%id_c,Z5cP)
+      _GET_WITHOUT_BACKGROUND_(self%id_n,Z5nP)
+      _GET_WITHOUT_BACKGROUND_(self%id_p,Z5pP)
 
       do iprey=1,self%nprey
-         _GET_SAFE_(self%id_preyc(iprey),preycP(iprey))
-         _GET_SAFE_(self%id_preyn(iprey),preynP(iprey))
-         _GET_SAFE_(self%id_preyp(iprey),preypP(iprey))
-         _GET_SAFE_(self%id_preys(iprey),preysP(iprey))
+         _GET_WITHOUT_BACKGROUND_(self%id_preyc(iprey),preycP(iprey))
+         _GET_WITHOUT_BACKGROUND_(self%id_preyn(iprey),preynP(iprey))
+         _GET_WITHOUT_BACKGROUND_(self%id_preyp(iprey),preypP(iprey))
+         _GET_WITHOUT_BACKGROUND_(self%id_preys(iprey),preysP(iprey))
       end do
 
       qpZ5c = Z5p/Z5c
@@ -268,7 +274,7 @@ contains
 ! following Vichi et al., 2007 it is assumed that the iron fraction of the ingested phytoplankton
 ! is egested as particulate detritus (Luca)
       do iprey=1,self%nprey
-         _GET_SAFE_(self%id_preyf(iprey),preyP)
+         _GET_WITHOUT_BACKGROUND_(self%id_preyf(iprey),preyP)
          if (preyP/=0.0_rk) _SET_ODE_(self%id_preyf_target(iprey),+spreyZ5(iprey)*preyP)
       end do
 #endif
@@ -300,7 +306,7 @@ contains
       ! Apply specific predation rates to all state variables of every prey.
       do iprey=1,self%nprey
          do istate=1,size(self%id_prey(iprey)%model%state)
-            _GET_SAFE_(self%id_prey(iprey)%model%state(istate),preyP)
+            _GET_WITHOUT_BACKGROUND_(self%id_prey(iprey)%model%state(istate),preyP)
             _SET_ODE_(self%id_prey(iprey)%model%state(istate),-spreyZ5(iprey)*preyP)
          end do
       end do

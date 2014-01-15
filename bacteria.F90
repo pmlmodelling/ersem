@@ -1,8 +1,8 @@
 #include "fabm_driver.h"
 
-#define DOCDYN
+!#define DOCDYN
 !#define NOBAC
-#define IRON
+!#define IRON
 
 module pml_ersem_bacteria
 
@@ -57,7 +57,6 @@ module pml_ersem_bacteria
       procedure :: do
    end type
 
-   real(rk),parameter :: CMass = 12._rk
    real(rk),parameter :: onedayX = 1.0_rk
 
 contains
@@ -75,6 +74,7 @@ contains
 ! !LOCAL VARIABLES:
       integer           :: iRP
       character(len=16) :: index
+      real(rk)          :: c0
 !EOP
 !-----------------------------------------------------------------------
 !BOC
@@ -101,14 +101,22 @@ contains
       call self%get_parameter(self%sN4N3X,   'sN4N3X')
       call self%get_parameter(self%cessX,    'cessX')
       
+#ifndef DOCDYN
+      call self%get_parameter(self%rR2R1X,   'rR2R1X')
+#endif
+
+      call self%get_parameter(c0,'c0')
+
       ! Allow ERSEM base model to declare our own state variables.
-      call self%initialize_ersem_base(c_ini=1.e-4_rk,n_ini=1.26e-6_rk,p_ini=4.288e-8_rk)
+      call self%initialize_ersem_base(c_ini=1.e-4_rk,n_ini=1.26e-6_rk,p_ini=4.288e-8_rk,c0=c0,n0=self%qnB1cX*c0,p0=self%qpB1cX*c0)
 
       ! Register links to nutrient pools.
       call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3', 'Phosphate')
       call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3', 'Nitrate')
       call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3', 'Ammonium')
+#ifdef IRON
       call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3','Inorganic Iron')
+#endif
 
       ! Register links to labile dissolved organic matter pools.
       call self%register_state_dependency(self%id_R1c,'R1c','mg C/m^3',  'DOC')
@@ -129,7 +137,9 @@ contains
          call self%register_state_dependency(self%id_RPc(iRP),'RP'//trim(index)//'c','mg C/m^3',   'POC '//trim(index))    
          call self%register_state_dependency(self%id_RPn(iRP),'RP'//trim(index)//'n','mmol N/m^3', 'PON '//trim(index))    
          call self%register_state_dependency(self%id_RPp(iRP),'RP'//trim(index)//'p','mmol P/m^3', 'POP '//trim(index))    
+#ifdef IRON
          call self%register_state_dependency(self%id_RPf(iRP),'RP'//trim(index)//'f','umol Fe/m^3','POFe '//trim(index),required=.false.)    
+#endif
       end do
       
 #ifdef DOCDYN
@@ -161,7 +171,7 @@ contains
 
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
-      !call self%register_dependency(self%id_ESS,'silt concentration')
+      call self%register_dependency(self%id_ESS,type_bulk_standard_variable(name='mass_concentration_of_silt'))
       if (self%ISWphx==1) call self%register_dependency(self%id_phx,standard_variables%ph_reported_on_total_scale)
       call self%register_dependency(self%id_eO2mO2,standard_variables%fractional_saturation_of_oxygen)
 
@@ -200,30 +210,31 @@ contains
 
          _GET_(self%id_ETW,ETW)
          _GET_(self%id_eO2mO2,eO2mO2)
+         eO2mO2 = min(1.0_rk,eO2mO2)
 
          _GET_(self%id_c,B1c)
          _GET_(self%id_p,B1p)
          _GET_(self%id_n,B1n)
-         _GET_SAFE_(self%id_c,B1cP)
-         _GET_SAFE_(self%id_p,B1pP)
-         _GET_SAFE_(self%id_n,B1nP)
+         _GET_WITHOUT_BACKGROUND_(self%id_c,B1cP)
+         _GET_WITHOUT_BACKGROUND_(self%id_p,B1pP)
+         _GET_WITHOUT_BACKGROUND_(self%id_n,B1nP)
 
-         _GET_SAFE_(self%id_N1p,N1pP)
-         _GET_SAFE_(self%id_N4n,N4nP)
+         _GET_WITHOUT_BACKGROUND_(self%id_N1p,N1pP)
+         _GET_WITHOUT_BACKGROUND_(self%id_N4n,N4nP)
          _GET_(self%id_R1c,R1c)
          _GET_(self%id_R2c,R2c)
-         _GET_SAFE_(self%id_R1c,R1cP)
-         _GET_SAFE_(self%id_R1p,R1pP)
-         _GET_SAFE_(self%id_R1n,R1nP)
+         _GET_WITHOUT_BACKGROUND_(self%id_R1c,R1cP)
+         _GET_WITHOUT_BACKGROUND_(self%id_R1p,R1pP)
+         _GET_WITHOUT_BACKGROUND_(self%id_R1n,R1nP)
 #ifdef DOCDYN
          _GET_(self%id_R3c,R3c)
-         _GET_SAFE_(self%id_R2c,R2cP)
-         _GET_SAFE_(self%id_R3c,R3cP)
+         _GET_WITHOUT_BACKGROUND_(self%id_R2c,R2cP)
+         _GET_WITHOUT_BACKGROUND_(self%id_R3c,R3cP)
          do iRP=1,self%nRP
             _GET_(self%id_RPc(iRP),RPc(iRP))
-            _GET_SAFE_(self%id_RPc(iRP),RPcP(iRP))
-            _GET_SAFE_(self%id_RPn(iRP),RPnP(iRP))
-            _GET_SAFE_(self%id_RPp(iRP),RPpP(iRP))
+            _GET_WITHOUT_BACKGROUND_(self%id_RPc(iRP),RPcP(iRP))
+            _GET_WITHOUT_BACKGROUND_(self%id_RPn(iRP),RPnP(iRP))
+            _GET_WITHOUT_BACKGROUND_(self%id_RPp(iRP),RPpP(iRP))
          end do
 #endif
          qpB1c = B1p/B1c
@@ -421,7 +432,10 @@ contains
       real(rk) :: R1cP
       real(rk) :: fB1O3c
 #endif
-      real(rk) :: R1pP,R1nP,N4nP,N7fP
+      real(rk) :: R1pP,R1nP,N4nP
+#ifdef IRON
+      real(rk) :: N7fP
+#endif
       real(rk) :: fR1N1p,fR1NIn
       real(rk) :: sRPr1(self%nRP)
       real(rk) :: RPfP(self%nRP),fRPN7f(self%nRP),n7fsink
@@ -431,21 +445,22 @@ contains
       _LOOP_BEGIN_
 
          _GET_(self%id_ETW,ETW)
-         !_GET_(self%id_ESS,ESS)
-         ESS = self%cessX
+         _GET_(self%id_ESS,ESS)
 
 #ifdef NOBAC
-         _GET_SAFE_(self%id_R1c,R1cP)
+         _GET_WITHOUT_BACKGROUND_(self%id_R1c,R1cP)
 #endif
-         _GET_SAFE_(self%id_R1p,R1pP)
-         _GET_SAFE_(self%id_R1n,R1nP)
+         _GET_WITHOUT_BACKGROUND_(self%id_R1p,R1pP)
+         _GET_WITHOUT_BACKGROUND_(self%id_R1n,R1nP)
          RPfP = 0.0_rk
          do iRP=1,self%nRP
-            if (_AVAILABLE_(self%id_RPf(iRP))) _GET_SAFE_(self%id_RPf(iRP),RPfP(iRP))
+            if (_AVAILABLE_(self%id_RPf(iRP))) _GET_WITHOUT_BACKGROUND_(self%id_RPf(iRP),RPfP(iRP))
          end do
 
-         _GET_SAFE_(self%id_N4n,N4nP)
-         _GET_SAFE_(self%id_N7f,N7fP)
+         _GET_WITHOUT_BACKGROUND_(self%id_N4n,N4nP)
+#ifdef IRON
+         _GET_WITHOUT_BACKGROUND_(self%id_N7f,N7fP)
+#endif
 
          etB1 = self%q10B1X**((ETW-10._rk)/10._rk) - self%q10B1X**((ETW-32._rk)/3._rk)
 
@@ -454,14 +469,14 @@ contains
 #ifdef DOCDYN
          sRPr1 = self%sRPr1
 #else
-         _GET_SAFE_(self%id_R2c,R2cP)
+         _GET_WITHOUT_BACKGROUND_(self%id_R2c,R2cP)
          do iRP=1,self%nRP
             _GET_(self%id_RPc(iRP),RPc(iRP))
             _GET_(self%id_RPn(iRP),RPn(iRP))
             _GET_(self%id_RPp(iRP),RPp(iRP))
-            _GET_SAFE_(self%id_RPc(iRP),RPcP(iRP))
-            _GET_SAFE_(self%id_RPp(iRP),RPpP(iRP))
-            _GET_SAFE_(self%id_RPn(iRP),RPnP(iRP))
+            _GET_WITHOUT_BACKGROUND_(self%id_RPc(iRP),RPcP(iRP))
+            _GET_WITHOUT_BACKGROUND_(self%id_RPp(iRP),RPpP(iRP))
+            _GET_WITHOUT_BACKGROUND_(self%id_RPn(iRP),RPnP(iRP))
          end do
          qnRPc = RPn/RPc
          sRPr1  = self%redfieldX*CMass * qnRPc * self%puRP_B1X 

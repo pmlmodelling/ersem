@@ -1,6 +1,6 @@
 #include "fabm_driver.h"
 
-#define IRON
+!#define IRON
 !#define CENH
 
 module pml_ersem_vphyt
@@ -29,7 +29,7 @@ module pml_ersem_vphyt
       type (type_diagnostic_variable_id) :: id_netP1
 
       ! Parameters
-      real(rk) :: qnrpicX,qprpicX,sump1X
+      real(rk) :: sump1X
       real(rk) :: q10p1X,srsp1X,pu_eap1X,pu_rap1X,chp1sX,qnlp1cX,qplp1cX,xqcp1pX
       real(rk) :: xqcp1nX,xqnp1X,xqpp1X,qup1n3X,qup1n4X,qurp1pX,qsp1cX,esnip1X
       real(rk) :: resp1mX,sdop1X
@@ -38,6 +38,7 @@ module pml_ersem_vphyt
 #ifdef IRON
       real(rk) :: qflP1cX,qfRP1cX,qurP1fX
 #endif
+      real(rk) :: EPSP1X
       integer :: LimnutX
       logical :: use_Si
    contains
@@ -46,9 +47,9 @@ module pml_ersem_vphyt
       procedure :: do
       procedure :: get_vertical_movement
       procedure :: get_sinking_rate
+      procedure :: get_light_extinction
    end type type_pml_ersem_vphyt
 
-   real(rk),parameter :: CMass       = 12._rk
    real(rk),parameter :: ZeroX       = 1e-8_rk
    real(rk),parameter :: secs_pr_day = 86400.0_rk
    real(rk),parameter :: ChlCmin     = 0.0067_rk
@@ -66,12 +67,11 @@ contains
 ! !REVISION HISTORY:
 !
 ! !LOCAL VARIABLES:
+      real(rk) :: c0
 !EOP
 !-----------------------------------------------------------------------
 !BOC
       call self%get_parameter(self%use_Si,   'use_Si',  default=.true.)
-      call self%get_parameter(self%qnrpicX,  'qnrpicX')
-      call self%get_parameter(self%qprpicX,  'qprpicX') 
       call self%get_parameter(self%sump1X,   'sump1X')
       call self%get_parameter(self%q10p1X,   'q10p1X')
       call self%get_parameter(self%srsp1X,   'srsp1X')
@@ -107,12 +107,16 @@ contains
       call self%get_parameter(self%qfRP1cX,  'qfRP1cX')
       call self%get_parameter(self%qurP1fX,  'qurP1fX')
 #endif
+      call self%get_parameter(self%EPSP1X,   'EPSP1X')
+      call self%get_parameter(c0,'c0',default=0.0_rk)
 
       ! Register state variables
       if (self%use_Si) then
-         call self%initialize_ersem_base(c_ini=1.e-4_rk,n_ini=1.26e-6_rk,p_ini=4.288e-8_rk,chl_ini=3.e-6_rk,s_ini=1.e-6_rk,f_ini=5.e-6_rk)
+         call self%initialize_ersem_base(c_ini=1.e-4_rk,n_ini=1.26e-6_rk,p_ini=4.288e-8_rk,chl_ini=3.e-6_rk,s_ini=1.e-6_rk,f_ini=5.e-6_rk, &
+                                         c0=c0,n0=qnrpicX*c0,p0=qprpicX*c0,s0=self%qsp1cX*c0,chl0=self%phimP1X*c0,sedimentation=.true.)
       else
-         call self%initialize_ersem_base(c_ini=1.e-4_rk,n_ini=1.26e-6_rk,p_ini=4.288e-8_rk,chl_ini=3.e-6_rk,f_ini=5.e-6_rk)
+         call self%initialize_ersem_base(c_ini=1.e-4_rk,n_ini=1.26e-6_rk,p_ini=4.288e-8_rk,chl_ini=3.e-6_rk,f_ini=5.e-6_rk, &
+                                         c0=c0,n0=qnrpicX*c0,p0=qprpicX*c0,chl0=self%phimP1X*c0,sedimentation=.true.)
       end if
 
       ! Register links to external nutrient pools.
@@ -129,7 +133,7 @@ contains
       call self%register_state_dependency(self%id_R1p,'R1p','mmol P/m^3','DOP')    
       call self%register_state_dependency(self%id_R1n,'R1n','mmol N/m^3','DON')    
 
-      ! Register links to external semi-labile dissolved organic matter pools.
+      ! Register links to external semi-labile dissolved organic matter pool.
       call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','Semi-labile DOC')    
 
       ! Register links to external particulate organic matter (medium-size) pools.
@@ -201,7 +205,7 @@ contains
       _LOOP_BEGIN_
 
          ! First retrieve local state.
-         ! NB: _GET_SAFE_ retrieves the value of the state variable, minus an offset
+         ! NB: _GET_WITHOUT_BACKGROUND_ retrieves the value of the state variable, minus an offset
          ! (if any) specified by the owning model during registration of the state variable.
          ! If the returned value would be negative, 0.0 is returned instead.
 
@@ -216,19 +220,19 @@ contains
          if (self%use_Si) then
             _GET_(self%id_s,P1s)
             _GET_(self%id_N5s,N5s)
-            _GET_SAFE_(self%id_s,P1sP)
+            _GET_WITHOUT_BACKGROUND_(self%id_s,P1sP)
          end if
 
-         _GET_SAFE_(self%id_c,P1cP)
-         _GET_SAFE_(self%id_p,P1pP)
-         _GET_SAFE_(self%id_n,P1nP)
-         _GET_SAFE_(self%id_chl,chl1P)
-         _GET_SAFE_(self%id_N1p,N1pP)
-         _GET_SAFE_(self%id_N3n,N3nP)
-         _GET_SAFE_(self%id_N4n,N4nP)
+         _GET_WITHOUT_BACKGROUND_(self%id_c,P1cP)
+         _GET_WITHOUT_BACKGROUND_(self%id_p,P1pP)
+         _GET_WITHOUT_BACKGROUND_(self%id_n,P1nP)
+         _GET_WITHOUT_BACKGROUND_(self%id_chl,chl1P)
+         _GET_WITHOUT_BACKGROUND_(self%id_N1p,N1pP)
+         _GET_WITHOUT_BACKGROUND_(self%id_N3n,N3nP)
+         _GET_WITHOUT_BACKGROUND_(self%id_N4n,N4nP)
 #ifdef IRON      
-         _GET_SAFE_(self%id_f,P1fP)
-         _GET_SAFE_(self%id_N7f,N7fP)
+         _GET_WITHOUT_BACKGROUND_(self%id_f,P1fP)
+         _GET_WITHOUT_BACKGROUND_(self%id_N7f,N7fP)
 #endif
 
          ! Get environmental dependencies (water temperature, shortwave radation)
@@ -248,9 +252,9 @@ contains
 #endif
 
          iNP1p = MIN(1._rk,  &
-                 MAX(0._rk, (qpP1c-self%qplP1cX) / (self%xqcP1pX*self%qpRPIcX-self%qplP1cX) ))
+                 MAX(0._rk, (qpP1c-self%qplP1cX) / (self%xqcP1pX*qpRPIcX-self%qplP1cX) ))
          iNP1n = MIN(1._rk,  &
-                 MAX(0._rk, (qnP1c-self%qnlP1cX) / (self%xqcP1nX*self%qnRPIcX-self%qnlP1cX) ))
+                 MAX(0._rk, (qnP1c-self%qnlP1cX) / (self%xqcP1nX*qnRPIcX-self%qnlP1cX) ))
 #ifdef IRON
          iNP1f = MIN(1._rk,  &
                  MAX(ZeroX, (qfP1c-self%qflP1cX) / (self%qfRP1cX-self%qflP1cX) ))
@@ -391,8 +395,8 @@ contains
 
    !..Net phosphorus uptake
          rumP1p = self%qurP1pX * N1pP * P1c
-         misP1p = self%xqpP1X * self%qpRPIcX*P1cP - P1pP
-         runP1p = sunP1*P1c * self%qpRPIcX*self%xqpP1X - srsP1*P1pP
+         misP1p = self%xqpP1X * qpRPIcX*P1cP - P1pP
+         runP1p = sunP1*P1c * qpRPIcX*self%xqpP1X - srsP1*P1pP
          fN1P1p = MIN(rumP1p, runP1p+misP1p)
 
    !..Source equations
@@ -412,8 +416,8 @@ contains
          rumP1n4 = self%quP1n4X * N4nP * P1c
          rumP1n = rumP1n3 + rumP1n4
 
-         misP1n = self%xqnP1X * self%qnRPIcX*P1cP - P1nP
-         runP1n = sunP1*P1c * self%qnRPIcX*self%xqnP1X - srsP1*P1nP
+         misP1n = self%xqnP1X * qnRPIcX*P1cP - P1nP
+         runP1n = sunP1*P1c * qnRPIcX*self%xqnP1X - srsP1*P1nP
          fNIP1n = MIN(rumP1n, runP1n + misP1n)
 
    !..Partitioning over NH4 and NO3 uptake
@@ -505,9 +509,9 @@ contains
       qnP1c = P1n/P1c
 
       iNP1p = MIN(1._rk,  &
-               MAX(0._rk, (qpP1c-self%qplP1cX) / (self%xqcP1pX*self%qpRPIcX-self%qplP1cX) ))
+               MAX(0._rk, (qpP1c-self%qplP1cX) / (self%xqcP1pX*qpRPIcX-self%qplP1cX) ))
       iNP1n = MIN(1._rk,  &
-               MAX(0._rk, (qnP1c-self%qnlP1cX) / (self%xqcP1nX*self%qnRPIcX-self%qnlP1cX) ))
+               MAX(0._rk, (qnP1c-self%qnlP1cX) / (self%xqcP1nX*qnRPIcX-self%qnlP1cX) ))
 
       select case (self%LimnutX)
          case (0)
@@ -544,5 +548,17 @@ contains
       _LOOP_END_
 
    end subroutine get_vertical_movement
+
+   subroutine get_light_extinction(self,_ARGUMENTS_GET_EXTINCTION_)
+      class (type_pml_ersem_vphyt),intent(in) :: self
+      _DECLARE_ARGUMENTS_GET_EXTINCTION_
+
+      real(rk) :: c
+
+      _LOOP_BEGIN_
+         _GET_(self%id_c,c)
+         _SET_EXTINCTION_(self%EPSP1X*c)
+      _LOOP_END_
+   end subroutine
 
 end module

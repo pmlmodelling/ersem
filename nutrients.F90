@@ -29,19 +29,23 @@ contains
 !
 ! !LOCAL VARIABLES:
    character(len=1024) :: name
+   real(rk)            :: c0
 !EOP
 !-----------------------------------------------------------------------
 !BOC
    call self%get_parameter(name,'name')
    select case (name)
       case ('n')
-         call self%initialize_ersem_base(n_ini=0._rk)
+         call self%get_parameter(c0,'c0',default=0.0_rk)
+         call self%initialize_ersem_base(n_ini=0._rk,n0=qnRPIcX*c0)
       case ('p')
-         call self%initialize_ersem_base(p_ini=0._rk)
+         call self%get_parameter(c0,'c0',default=0.0_rk)
+         call self%initialize_ersem_base(p_ini=0._rk,p0=qpRPIcX*c0)
       case ('f')
          call self%initialize_ersem_base(f_ini=0._rk)
       case ('s')
-         call self%initialize_ersem_base(s_ini=0._rk)
+         call self%get_parameter(c0,'s0',default=0.0_rk)
+         call self%initialize_ersem_base(s_ini=0._rk,s0=c0)
       case default
          call self%fatal_error('initialize','unknown element '//trim(name))
    end select
