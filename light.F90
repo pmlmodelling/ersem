@@ -1,0 +1,75 @@
+#include "fabm_driver.h"
+
+module pml_ersem_light
+
+   use fabm_types
+
+   implicit none
+
+   private
+
+   type,extends(type_base_model),public :: type_pml_ersem_light
+      ! Identifiers for diagnostic variables
+      type (type_diagnostic_variable_id)   :: id_EIR
+      type (type_dependency_id)            :: id_dz, id_xEPS, id_ESS
+      type (type_horizontal_dependency_id) :: id_I_0
+
+      ! Parameters
+      real(rk) :: EPSESSX,EPS0X
+   contains
+!     Model procedures
+      procedure :: initialize
+      procedure :: get_light
+   end type type_pml_ersem_light
+
+contains
+
+   subroutine initialize(self,configunit)
+!
+! !DESCRIPTION:
+!
+! !INPUT PARAMETERS:
+      class (type_pml_ersem_light),intent(inout),target :: self
+      integer,                     intent(in)           :: configunit
+!
+! !REVISION HISTORY:
+!
+! !LOCAL VARIABLES:
+!EOP
+!-----------------------------------------------------------------------
+!BOC
+      call self%get_parameter(self%EPSESSX,'EPSESSX')
+      call self%get_parameter(self%EPS0X,  'EPS0Xr') 
+
+      ! Register diagnostic variables
+      call self%register_diagnostic_variable(self%id_EIR,'EIR','W m-2','shortwave radiation', &
+              time_treatment=time_treatment_averaged, standard_variable=standard_variables%downwelling_shortwave_flux)
+
+      ! Register environmental dependencies (temperature, shortwave radiation)
+      call self%register_dependency(self%id_I_0,standard_variables%surface_downwelling_shortwave_flux)
+      call self%register_dependency(self%id_dz, standard_variables%cell_thickness)
+      call self%register_dependency(self%id_xEPS,standard_variables%attenuation_coefficient_of_photosynthetic_radiative_flux)
+      call self%register_dependency(self%id_ESS, type_bulk_standard_variable(name='mass_concentration_of_silt'))
+   end subroutine
+   
+   subroutine get_light(self,_ARGUMENTS_VERT_)
+      class (type_pml_ersem_light),intent(in) :: self
+      _DECLARE_ARGUMENTS_VERT_
+
+      real(rk) :: buffer,dz,xEPS,xtnc,EIR,ESS
+
+      _GET_HORIZONTAL_(self%id_I_0,buffer)
+      _VERTICAL_LOOP_BEGIN_
+         _GET_(self%id_dz,dz)
+         _GET_(self%id_xEPS,xEPS)
+         _GET_(self%id_ESS,ESS)
+         xEPS = xEPS + self%EPS0X + self%EPSESSX*ESS
+         xtnc = xEPS*dz
+         EIR = buffer/xtnc*(1.0_rk-exp(-xtnc))
+         buffer = buffer*exp(-xtnc)
+         _SET_DIAGNOSTIC_(self%id_EIR,EIR)
+      _VERTICAL_LOOP_END_
+
+   end subroutine get_light
+
+end module
