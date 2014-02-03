@@ -177,18 +177,18 @@ contains
       _GET_(self%id_eO2mO2,eO2mO2)
       eO2mO2 = min(1.0_rk,eO2mO2)
 
-      _GET_(self%id_c,Z5c)
-      _GET_(self%id_p,Z5p)
-      _GET_(self%id_n,Z5n)
-      _GET_WITHOUT_BACKGROUND_(self%id_c,Z5cP)
-      _GET_WITHOUT_BACKGROUND_(self%id_n,Z5nP)
-      _GET_WITHOUT_BACKGROUND_(self%id_p,Z5pP)
+      _GET_WITH_BACKGROUND_(self%id_c,Z5c)
+      _GET_WITH_BACKGROUND_(self%id_p,Z5p)
+      _GET_WITH_BACKGROUND_(self%id_n,Z5n)
+      _GET_(self%id_c,Z5cP)
+      _GET_(self%id_n,Z5nP)
+      _GET_(self%id_p,Z5pP)
 
       do iprey=1,self%nprey
-         _GET_WITHOUT_BACKGROUND_(self%id_preyc(iprey),preycP(iprey))
-         _GET_WITHOUT_BACKGROUND_(self%id_preyn(iprey),preynP(iprey))
-         _GET_WITHOUT_BACKGROUND_(self%id_preyp(iprey),preypP(iprey))
-         _GET_WITHOUT_BACKGROUND_(self%id_preys(iprey),preysP(iprey))
+         _GET_(self%id_preyc(iprey),preycP(iprey))
+         _GET_(self%id_preyn(iprey),preynP(iprey))
+         _GET_(self%id_preyp(iprey),preypP(iprey))
+         _GET_(self%id_preys(iprey),preysP(iprey))
       end do
 
       qpZ5c = Z5p/Z5c
@@ -274,7 +274,7 @@ contains
 ! following Vichi et al., 2007 it is assumed that the iron fraction of the ingested phytoplankton
 ! is egested as particulate detritus (Luca)
       do iprey=1,self%nprey
-         _GET_WITHOUT_BACKGROUND_(self%id_preyf(iprey),preyP)
+         _GET_(self%id_preyf(iprey),preyP)
          if (preyP/=0.0_rk) _SET_ODE_(self%id_preyf_target(iprey),+spreyZ5(iprey)*preyP)
       end do
 #endif
@@ -306,7 +306,7 @@ contains
       ! Apply specific predation rates to all state variables of every prey.
       do iprey=1,self%nprey
          do istate=1,size(self%id_prey(iprey)%model%state)
-            _GET_WITHOUT_BACKGROUND_(self%id_prey(iprey)%model%state(istate),preyP)
+            _GET_(self%id_prey(iprey)%model%state(istate),preyP)
             _SET_ODE_(self%id_prey(iprey)%model%state(istate),-spreyZ5(iprey)*preyP)
          end do
       end do

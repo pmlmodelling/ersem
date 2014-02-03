@@ -205,34 +205,34 @@ contains
       _LOOP_BEGIN_
 
          ! First retrieve local state.
-         ! NB: _GET_WITHOUT_BACKGROUND_ retrieves the value of the state variable, minus an offset
+         ! NB: _GET_ retrieves the value of the state variable, minus an offset
          ! (if any) specified by the owning model during registration of the state variable.
          ! If the returned value would be negative, 0.0 is returned instead.
 
-         _GET_(self%id_c,P1c)
-         _GET_(self%id_p,P1p)
-         _GET_(self%id_n,P1n)
+         _GET_WITH_BACKGROUND_(self%id_c,P1c)
+         _GET_WITH_BACKGROUND_(self%id_p,P1p)
+         _GET_WITH_BACKGROUND_(self%id_n,P1n)
 #ifdef IRON      
-         _GET_(self%id_f,P1f)
+         _GET_WITH_BACKGROUND_(self%id_f,P1f)
 #endif
-         _GET_(self%id_chl,chl1)
+         _GET_WITH_BACKGROUND_(self%id_chl,chl1)
 
          if (self%use_Si) then
-            _GET_(self%id_s,P1s)
-            _GET_(self%id_N5s,N5s)
-            _GET_WITHOUT_BACKGROUND_(self%id_s,P1sP)
+            _GET_WITH_BACKGROUND_(self%id_s,P1s)
+            _GET_(self%id_N5s,N5s) ! Jorn: legacy ERSEM operated on N5s (incl. background)
+            _GET_(self%id_s,P1sP)
          end if
 
-         _GET_WITHOUT_BACKGROUND_(self%id_c,P1cP)
-         _GET_WITHOUT_BACKGROUND_(self%id_p,P1pP)
-         _GET_WITHOUT_BACKGROUND_(self%id_n,P1nP)
-         _GET_WITHOUT_BACKGROUND_(self%id_chl,chl1P)
-         _GET_WITHOUT_BACKGROUND_(self%id_N1p,N1pP)
-         _GET_WITHOUT_BACKGROUND_(self%id_N3n,N3nP)
-         _GET_WITHOUT_BACKGROUND_(self%id_N4n,N4nP)
+         _GET_(self%id_c,P1cP)
+         _GET_(self%id_p,P1pP)
+         _GET_(self%id_n,P1nP)
+         _GET_(self%id_chl,chl1P)
+         _GET_(self%id_N1p,N1pP)
+         _GET_(self%id_N3n,N3nP)
+         _GET_(self%id_N4n,N4nP)
 #ifdef IRON      
-         _GET_WITHOUT_BACKGROUND_(self%id_f,P1fP)
-         _GET_WITHOUT_BACKGROUND_(self%id_N7f,N7fP)
+         _GET_(self%id_f,P1fP)
+         _GET_(self%id_N7f,N7fP)
 #endif
 
          ! Get environmental dependencies (water temperature, shortwave radation)
@@ -501,9 +501,9 @@ contains
       real(rk) :: SDP1
       real(rk) :: iNP1p,iNP1n,iNIP1
 
-      _GET_(self%id_c,P1c)
-      _GET_(self%id_p,P1p)
-      _GET_(self%id_n,P1n)
+      _GET_WITH_BACKGROUND_(self%id_c,P1c)
+      _GET_WITH_BACKGROUND_(self%id_p,P1p)
+      _GET_WITH_BACKGROUND_(self%id_n,P1n)
       
       qpP1c = P1p/P1c
       qnP1c = P1n/P1c
@@ -556,7 +556,7 @@ contains
       real(rk) :: c
 
       _LOOP_BEGIN_
-         _GET_(self%id_c,c)
+         _GET_WITH_BACKGROUND_(self%id_c,c)
          _SET_EXTINCTION_(self%EPSP1X*c)
       _LOOP_END_
    end subroutine

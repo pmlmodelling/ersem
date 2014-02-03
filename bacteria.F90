@@ -212,29 +212,29 @@ contains
          _GET_(self%id_eO2mO2,eO2mO2)
          eO2mO2 = min(1.0_rk,eO2mO2)
 
-         _GET_(self%id_c,B1c)
-         _GET_(self%id_p,B1p)
-         _GET_(self%id_n,B1n)
-         _GET_WITHOUT_BACKGROUND_(self%id_c,B1cP)
-         _GET_WITHOUT_BACKGROUND_(self%id_p,B1pP)
-         _GET_WITHOUT_BACKGROUND_(self%id_n,B1nP)
+         _GET_WITH_BACKGROUND_(self%id_c,B1c)
+         _GET_WITH_BACKGROUND_(self%id_p,B1p)
+         _GET_WITH_BACKGROUND_(self%id_n,B1n)
+         _GET_(self%id_c,B1cP)
+         _GET_(self%id_p,B1pP)
+         _GET_(self%id_n,B1nP)
 
-         _GET_WITHOUT_BACKGROUND_(self%id_N1p,N1pP)
-         _GET_WITHOUT_BACKGROUND_(self%id_N4n,N4nP)
-         _GET_(self%id_R1c,R1c)
-         _GET_(self%id_R2c,R2c)
-         _GET_WITHOUT_BACKGROUND_(self%id_R1c,R1cP)
-         _GET_WITHOUT_BACKGROUND_(self%id_R1p,R1pP)
-         _GET_WITHOUT_BACKGROUND_(self%id_R1n,R1nP)
+         _GET_(self%id_N1p,N1pP)
+         _GET_(self%id_N4n,N4nP)
+         _GET_WITH_BACKGROUND_(self%id_R1c,R1c)
+         _GET_WITH_BACKGROUND_(self%id_R2c,R2c)
+         _GET_(self%id_R1c,R1cP)
+         _GET_(self%id_R1p,R1pP)
+         _GET_(self%id_R1n,R1nP)
 #ifdef DOCDYN
-         _GET_(self%id_R3c,R3c)
-         _GET_WITHOUT_BACKGROUND_(self%id_R2c,R2cP)
-         _GET_WITHOUT_BACKGROUND_(self%id_R3c,R3cP)
+         _GET_WITH_BACKGROUND_(self%id_R3c,R3c)
+         _GET_(self%id_R2c,R2cP)
+         _GET_(self%id_R3c,R3cP)
          do iRP=1,self%nRP
-            _GET_(self%id_RPc(iRP),RPc(iRP))
-            _GET_WITHOUT_BACKGROUND_(self%id_RPc(iRP),RPcP(iRP))
-            _GET_WITHOUT_BACKGROUND_(self%id_RPn(iRP),RPnP(iRP))
-            _GET_WITHOUT_BACKGROUND_(self%id_RPp(iRP),RPpP(iRP))
+            _GET_WITH_BACKGROUND_(self%id_RPc(iRP),RPc(iRP))
+            _GET_(self%id_RPc(iRP),RPcP(iRP))
+            _GET_(self%id_RPn(iRP),RPnP(iRP))
+            _GET_(self%id_RPp(iRP),RPpP(iRP))
          end do
 #endif
          qpB1c = B1p/B1c
@@ -448,18 +448,18 @@ contains
          _GET_(self%id_ESS,ESS)
 
 #ifdef NOBAC
-         _GET_WITHOUT_BACKGROUND_(self%id_R1c,R1cP)
+         _GET_(self%id_R1c,R1cP)
 #endif
-         _GET_WITHOUT_BACKGROUND_(self%id_R1p,R1pP)
-         _GET_WITHOUT_BACKGROUND_(self%id_R1n,R1nP)
+         _GET_(self%id_R1p,R1pP)
+         _GET_(self%id_R1n,R1nP)
          RPfP = 0.0_rk
          do iRP=1,self%nRP
-            if (_AVAILABLE_(self%id_RPf(iRP))) _GET_WITHOUT_BACKGROUND_(self%id_RPf(iRP),RPfP(iRP))
+            if (_AVAILABLE_(self%id_RPf(iRP))) _GET_(self%id_RPf(iRP),RPfP(iRP))
          end do
 
-         _GET_WITHOUT_BACKGROUND_(self%id_N4n,N4nP)
+         _GET_(self%id_N4n,N4nP)
 #ifdef IRON
-         _GET_WITHOUT_BACKGROUND_(self%id_N7f,N7fP)
+         _GET_(self%id_N7f,N7fP)
 #endif
 
          etB1 = self%q10B1X**((ETW-10._rk)/10._rk) - self%q10B1X**((ETW-32._rk)/3._rk)
@@ -469,14 +469,14 @@ contains
 #ifdef DOCDYN
          sRPr1 = self%sRPr1
 #else
-         _GET_WITHOUT_BACKGROUND_(self%id_R2c,R2cP)
+         _GET_(self%id_R2c,R2cP)
          do iRP=1,self%nRP
-            _GET_(self%id_RPc(iRP),RPc(iRP))
-            _GET_(self%id_RPn(iRP),RPn(iRP))
-            _GET_(self%id_RPp(iRP),RPp(iRP))
-            _GET_WITHOUT_BACKGROUND_(self%id_RPc(iRP),RPcP(iRP))
-            _GET_WITHOUT_BACKGROUND_(self%id_RPp(iRP),RPpP(iRP))
-            _GET_WITHOUT_BACKGROUND_(self%id_RPn(iRP),RPnP(iRP))
+            _GET_WITH_BACKGROUND_(self%id_RPc(iRP),RPc(iRP))
+            _GET_WITH_BACKGROUND_(self%id_RPn(iRP),RPn(iRP))
+            _GET_WITH_BACKGROUND_(self%id_RPp(iRP),RPp(iRP))
+            _GET_(self%id_RPc(iRP),RPcP(iRP))
+            _GET_(self%id_RPp(iRP),RPpP(iRP))
+            _GET_(self%id_RPn(iRP),RPnP(iRP))
          end do
          qnRPc = RPn/RPc
          sRPr1  = self%redfieldX*CMass * qnRPc * self%puRP_B1X 

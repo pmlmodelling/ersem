@@ -57,7 +57,7 @@ contains
       real(rk) :: c
 
       _LOOP_BEGIN_
-         _GET_(self%id_c,c)
+         _GET_WITH_BACKGROUND_(self%id_c,c)
          _SET_EXTINCTION_(self%EPSR6X*c)
       _LOOP_END_
    end subroutine

@@ -219,15 +219,15 @@ contains
             eO2mO2 = min(1.0_rk,eO2mO2)
 
             ! Get own concentrations
-            _GET_(self%id_c,Z4c)
-            _GET_WITHOUT_BACKGROUND_(self%id_c,Z4cP)
+            _GET_WITH_BACKGROUND_(self%id_c,Z4c)
+            _GET_(self%id_c,Z4cP)
 
             ! Get prey concentrations
             do iprey=1,self%nprey
-               _GET_WITHOUT_BACKGROUND_(self%id_preyc(iprey),  preycP(iprey))
-               _GET_WITHOUT_BACKGROUND_(self%id_preyp(iprey),  preypP(iprey))
-               _GET_WITHOUT_BACKGROUND_(self%id_preyn(iprey),  preynP(iprey))
-               _GET_WITHOUT_BACKGROUND_(self%id_preys(iprey),  preysP(iprey))
+               _GET_(self%id_preyc(iprey),  preycP(iprey))
+               _GET_(self%id_preyp(iprey),  preypP(iprey))
+               _GET_(self%id_preyn(iprey),  preynP(iprey))
+               _GET_(self%id_preys(iprey),  preysP(iprey))
             end do
 
    !..Temperature effect :
@@ -318,7 +318,7 @@ contains
    ! following Vichi et al., 2007 it is assumed that the iron fraction of the ingested phytoplankton
    ! is egested as particulate detritus (Luca)
             do iprey=1,self%nprey
-               _GET_WITHOUT_BACKGROUND_(self%id_preyf(iprey),preyP)
+               _GET_(self%id_preyf(iprey),preyP)
                if (preyP/=0.0_rk) _SET_ODE_(self%id_preyf_target(iprey),spreyZ4(iprey)*preyP)
             end do
 #endif
@@ -359,13 +359,13 @@ contains
             ! Apply specific predation rates to all state variables of every prey.
             do iprey=1,self%nprey
                do istate=1,size(self%id_prey(iprey)%model%state)
-                  _GET_WITHOUT_BACKGROUND_(self%id_prey(iprey)%model%state(istate),preyP)
+                  _GET_(self%id_prey(iprey)%model%state(istate),preyP)
                   _SET_ODE_(self%id_prey(iprey)%model%state(istate),-spreyZ4(iprey)*preyP)
                end do
             end do
          else
             ! Insufficient prey - overwintering
-            _GET_WITHOUT_BACKGROUND_(self%id_c,Z4cP)
+            _GET_(self%id_c,Z4cP)
 
 !.. Respiration
             fZ4O3c = Z4cP * self%Z4repwX
