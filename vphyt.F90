@@ -172,7 +172,7 @@ contains
       real(rk) :: P1cP,P1pP,P1nP,P1sP,Chl1P
       real(rk) :: N5s,N1pP,N3nP,N4nP
       real(rk) :: iNP1n,iNP1p,iNP1s,iNP1f,iNIP1
-      real(rk) :: qpP1c,qnP1c,qsP1c
+      real(rk) :: qpP1c,qnP1c
       real(rk) :: parEIR
     
       real(rk) :: srsP1
@@ -194,9 +194,7 @@ contains
       real(rk) :: runP1f,rumP1f,misP1f
       real(rk) :: fN7P1f,fP1R6f
 #endif
-#ifdef DOCDYN
       real(rk) :: fP1R1c,fP1R2c
-#endif
 #ifdef CENH
       real(rk) :: pco2a3,cenh
 #endif
@@ -246,7 +244,6 @@ contains
 
          qpP1c = P1p/P1c
          qnP1c = P1n/P1c
-         if (self%use_Si) qsP1c = P1s/P1c
 #ifdef IRON
          qfP1c = P1f/P1c
 #endif
@@ -329,7 +326,9 @@ contains
          fP1RDc = fP1R1c+fP1R2c
 #else
          fP1RDc = (1._rk-pe_R6P1)*sdoP1*P1cP + (seoP1 + seaP1)*P1c
-#endif      
+         fP1R1c = fP1RDc*self%R1R2X
+         fP1R2c = fP1RDc*(1._rk-self%R1R2X)
+#endif
 
 #ifdef CALC
 ! Calcified matter:
@@ -374,13 +373,9 @@ contains
          Chl_loss = (sdoP1+srsP1)*Chl1P + (seoP1+seaP1)*Chl1
 
          _SET_ODE_(self%id_c,(fO3P1c-fP1O3c-fP1R6c-fP1RDc)) ! Jorn: R4 in flagellates
-#ifdef DOCDYN
+
          _SET_ODE_(self%id_R1c,fP1R1c)
          _SET_ODE_(self%id_R2c,fP1R2c)
-#else
-         _SET_ODE_(self%id_R1c,(fP1RDc*self%R1R2X))
-         _SET_ODE_(self%id_R2c,fP1RDc*(1._rk-self%R1R2X))
-#endif
          _SET_ODE_(self%id_R6c,fP1R6c) ! Jorn: R4 in flagellates
          _SET_ODE_(self%id_chl,(Chl_inc - Chl_loss))
 
