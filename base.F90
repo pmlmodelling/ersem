@@ -116,7 +116,7 @@ contains
          call self%register_state_variable(self%id_c,'c','mg m-3','carbon',c_ini,minimum=0._rk,vertical_movement=self%w/self%dt,background_value=c0)
          call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_c,scale_factor=1._rk/CMass)
       else
-         call self%register_diagnostic_variable(self%id_cD,'c','mg m-3','carbon',missing_value=0._rk)
+         call self%register_diagnostic_variable(self%id_cD,'c','mg m-3','carbon',missing_value=0._rk,output=output_none)
       end if
 
       ! Nitrogen
@@ -135,7 +135,7 @@ contains
          call self%add_to_aggregate_variable(standard_variables%total_nitrogen,self%id_c,scale_factor=qn)
       else
          ! No nitrogen
-         call self%register_diagnostic_variable(self%id_nD, 'n', 'mmol N m-3', 'nitrogen', missing_value=0._rk)
+         call self%register_diagnostic_variable(self%id_nD, 'n', 'mmol N m-3', 'nitrogen', missing_value=0._rk,output=output_none)
       end if
 
       ! Phosphorus
@@ -154,7 +154,7 @@ contains
          call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_c,scale_factor=qp)
       else
          ! No phosphorous
-         call self%register_diagnostic_variable(self%id_pD, 'p', 'mmol P m-3', 'phosphorus', missing_value=0._rk)
+         call self%register_diagnostic_variable(self%id_pD, 'p', 'mmol P m-3', 'phosphorus', missing_value=0._rk,output=output_none)
       end if
 
       ! Silicate
@@ -162,14 +162,14 @@ contains
          call self%register_state_variable(self%id_s,'s','mmol Si m-3','silicate',s_ini,minimum=0._rk,vertical_movement=self%w/self%dt,background_value=s0)
          call self%add_to_aggregate_variable(standard_variables%total_silicate,self%id_s)
       else
-         call self%register_diagnostic_variable(self%id_sD,'s','mmol Si m-3','silicate',missing_value=0._rk)
+         call self%register_diagnostic_variable(self%id_sD,'s','mmol Si m-3','silicate',missing_value=0._rk,output=output_none)
       end if
 
       ! Chlorophyll
       if (present(chl_ini)) then
          call self%register_state_variable(self%id_chl,'Chl','mg C m-3','chlorophyll-a',chl_ini,minimum=0._rk,vertical_movement=self%w/self%dt,background_value=chl0)
       else
-         call self%register_diagnostic_variable(self%id_chlD,'Chl','mg C m-3','chlorophyll-a',missing_value=0._rk)
+         call self%register_diagnostic_variable(self%id_chlD,'Chl','mg C m-3','chlorophyll-a',missing_value=0._rk,output=output_none)
       end if
 
 #ifdef IRON   
@@ -180,7 +180,7 @@ contains
          call self%add_to_aggregate_variable(standard_variables%total_iron,self%id_f)
       else
          ! No iron
-         call self%register_diagnostic_variable(self%id_fD,'f','umol Fe m-3','iron',missing_value=0._rk)
+         call self%register_diagnostic_variable(self%id_fD,'f','umol Fe m-3','iron',missing_value=0._rk,output=output_none)
       end if
 #endif
 
