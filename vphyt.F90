@@ -217,7 +217,7 @@ contains
 
          if (self%use_Si) then
             _GET_WITH_BACKGROUND_(self%id_s,P1s)
-            _GET_(self%id_N5s,N5s) ! Jorn: legacy ERSEM operated on N5s (incl. background)
+            _GET_WITH_BACKGROUND_(self%id_N5s,N5s) ! Jorn: kept identical to legacy ersem, but should likely exclude background
             _GET_(self%id_s,P1sP)
          end if
 
