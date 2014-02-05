@@ -85,10 +85,10 @@ contains
          OSAT = oxygen_saturation_concentration(self,ETW,X1X)
          if (wnd.gt.11._rk) then
             ko2o = sqrt((1953.4_rk-128._rk*etw+3.9918_rk*etw**2-  &
-               0.050091_rk*etw**3)/660._rk) * (0.02383_rk * wnd**3._rk)
+               0.050091_rk*etw**3)/660._rk) * (0.02383_rk * wnd**3)
          else
             ko2o = sqrt((1953.4_rk-128._rk*etw+3.9918_rk*etw**2- &
-               0.050091_rk*etw**3)/660._rk) * (0.31_rk * wnd**2._rk)
+               0.050091_rk*etw**3)/660._rk) * (0.31_rk * wnd**2)
          endif
 
          ! units of ko2 converted from cm/hr to m/day
