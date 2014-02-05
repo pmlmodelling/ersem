@@ -80,28 +80,27 @@ contains
       real(rk),intent(in) :: T,S
       real(rk)            :: TA
 
-      select case (iswtalk)
-         case (1)       !!!!   Old formulation
-            IF (S .GE. 34.65_rk) THEN
-               TA =  (66.96_rk*S - 36.803_rk) / 1.0e6_rk ! From Bellerby & Canoba
-            ELSE
-               TA = (3887._rk-46.25_rk*S) / 1.0e6_rk ! From Borges & Frankignoulle & Canoba
-            END IF
-         case (2)
-            TA = (520.1_rk+51.24_rk*S)/1.0e6_rk        ! from Millero et al, MarChem, 1998
-         case (3)
-            IF (T.lt.20._rk) then
-               TA = (S/35._rk*(2291._rk-2.69_rk*(T-20._rk)-0.046_rk*(T-20._rk)**2))/1.0e6_rk            ! from Millero et al, MarChem, 1998
-            else
-               TA = (520.1_rk+51.24_rk*S)/1.0e6_rk                               !    from Millero et al, MarChem, 1998
-            ENDIF
-         case (4)
-            IF (T.lt.20._rk) then
-               TA = (2305._rk+53.97_rk*(S-35._rk)+2.74_rk*(S-35._rk)**2-1.16_rk*(T-20._rk)-0.04_rk*(T-20._rk)**2)/1.0e6_rk            ! from Lee et al., Geophys REs Lett, 1998
-            else
-               TA = (2305._rk+58.66_rk*(S-35._rk)+2.32_rk*(S-35._rk)**2-1.41_rk*(T-20._rk)+0.04_rk*(T-20._rk)**2)/1.0e6_rk                               !    from Lee et al., Geophys REs Lett, 1998
-            ENDIF
-      end select
+      if (iswtalk==1) then       !!!!   Old formulation
+         IF (S .GE. 34.65_rk) THEN
+            TA =  (66.96_rk*S - 36.803_rk) / 1.0e6_rk ! From Bellerby & Canoba
+         ELSE
+            TA = (3887._rk-46.25_rk*S) / 1.0e6_rk ! From Borges & Frankignoulle & Canoba
+         END IF
+      elseif (iswtalk==2) then
+         TA = (520.1_rk+51.24_rk*S)/1.0e6_rk        ! from Millero et al, MarChem, 1998
+      elseif (iswtalk==3) then
+         IF (T.lt.20._rk) then
+            TA = (S/35._rk*(2291._rk-2.69_rk*(T-20._rk)-0.046_rk*(T-20._rk)**2))/1.0e6_rk            ! from Millero et al, MarChem, 1998
+         else
+            TA = (520.1_rk+51.24_rk*S)/1.0e6_rk                               !    from Millero et al, MarChem, 1998
+         ENDIF
+      elseif (iswtalk==4) then
+         IF (T.lt.20._rk) then
+            TA = (2305._rk+53.97_rk*(S-35._rk)+2.74_rk*(S-35._rk)**2-1.16_rk*(T-20._rk)-0.04_rk*(T-20._rk)**2)/1.0e6_rk            ! from Lee et al., Geophys REs Lett, 1998
+         else
+            TA = (2305._rk+58.66_rk*(S-35._rk)+2.32_rk*(S-35._rk)**2-1.41_rk*(T-20._rk)+0.04_rk*(T-20._rk)**2)/1.0e6_rk                               !    from Lee et al., Geophys REs Lett, 1998
+         ENDIF
+      end if
    end function
 
    subroutine do(self,_ARGUMENTS_DO_)

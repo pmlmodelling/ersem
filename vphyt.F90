@@ -168,10 +168,10 @@ contains
 
    ! !LOCAL VARIABLES:
       real(rk) :: ETW,EIR
-      real(rk) :: P1c, P1p, P1n, P1s, Chl1
+      real(rk) :: P1c, P1p, P1n, Chl1
       real(rk) :: P1cP,P1pP,P1nP,P1sP,Chl1P
       real(rk) :: N5s,N1pP,N3nP,N4nP
-      real(rk) :: iNP1n,iNP1p,iNP1s,iNP1f,iNIP1
+      real(rk) :: iNP1n,iNP1p,iNP1s,iNIP1
       real(rk) :: qpP1c,qnP1c
       real(rk) :: parEIR
     
@@ -190,7 +190,7 @@ contains
       real(rk) :: rho,Chl_inc,Chl_loss
       real(rk) :: phi,ChlCpp
 #ifdef IRON
-      real(rk) :: N7fP,P1f,P1fP,qfP1c
+      real(rk) :: N7fP,P1f,P1fP,qfP1c,iNP1f
       real(rk) :: runP1f,rumP1f,misP1f
       real(rk) :: fN7P1f,fP1R6f
 #endif
@@ -214,12 +214,6 @@ contains
          _GET_WITH_BACKGROUND_(self%id_f,P1f)
 #endif
          _GET_WITH_BACKGROUND_(self%id_chl,chl1)
-
-         if (self%use_Si) then
-            _GET_WITH_BACKGROUND_(self%id_s,P1s)
-            _GET_WITH_BACKGROUND_(self%id_N5s,N5s) ! Jorn: kept identical to legacy ersem, but should likely exclude background
-            _GET_(self%id_s,P1sP)
-         end if
 
          _GET_(self%id_c,P1cP)
          _GET_(self%id_p,P1pP)
@@ -257,19 +251,19 @@ contains
                  MAX(ZeroX, (qfP1c-self%qflP1cX) / (self%qfRP1cX-self%qflP1cX) ))
 #endif
          if (self%use_Si) then
+            _GET_WITH_BACKGROUND_(self%id_N5s,N5s) ! Jorn: kept identical to legacy ersem, but should likely exclude background
             iNP1s = MIN(1._rk, N5s/(N5s+self%chP1sX))
          else
             iNP1s = 1.0_rk
          end if
 
-         select case (self%LimnutX)
-            case (0)
-               iNIP1 = (iNP1p * iNP1n)**0.5_rk
-            case (1)
-               iNIP1 = MIN(iNP1p, iNP1n)
-            case (2)
-               iNIP1 = 2.0_rk / (1._rk/iNP1p + 1._rk/iNP1n)
-         end select
+         if (self%LimnutX==0) then  ! NB select case would be cleaner but makes vectorization impossible for ifort 14
+            iNIP1 = (iNP1p * iNP1n)**0.5_rk
+         elseif (self%LimnutX==1) then
+            iNIP1 = MIN(iNP1p, iNP1n)
+         else
+            iNIP1 = 2.0_rk / (1._rk/iNP1p + 1._rk/iNP1n)
+         end if
             
    !..Regulation factors...................................................
 
@@ -432,6 +426,7 @@ contains
          _SET_ODE_(self%id_R1n,fP1RDn)
 
          if (self%use_Si) then
+            _GET_(self%id_s,P1sP)
    !..Silicate flux through P1.............................................
 
    !..Excretion loss of silicate
@@ -508,14 +503,13 @@ contains
       iNP1n = MIN(1._rk,  &
                MAX(0._rk, (qnP1c-self%qnlP1cX) / (self%xqcP1nX*qnRPIcX-self%qnlP1cX) ))
 
-      select case (self%LimnutX)
-         case (0)
-            iNIP1 = (iNP1p * iNP1n)**.5_rk
-         case (1)
-            iNIP1 = MIN(iNP1p, iNP1n)
-         case (2)
-            iNIP1 = 2.0_rk / (1._rk/iNP1p + 1._rk/iNP1n)
-      end select
+      if (self%LimnutX==0) then  ! NB select case would be cleaner but makes vectorization impossible for ifort 14
+         iNIP1 = (iNP1p * iNP1n)**0.5_rk
+      elseif (self%LimnutX==1) then
+         iNIP1 = MIN(iNP1p, iNP1n)
+      else
+         iNIP1 = 2.0_rk / (1._rk/iNP1p + 1._rk/iNP1n)
+      end if
 
 !..sedimentation and resting stages.....................................
       SDP1 = self%resP1mX * MAX(0._rk, (self%esNIP1X - iNIP1))

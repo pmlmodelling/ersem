@@ -32,12 +32,10 @@ module pml_ersem_mesozoo
       integer  :: nprey
       real(rk) :: qpZIcX,qnZIcX
       real(rk) :: q10Z4X,chrZ4oX,minfoodZ4X,chuZ4cX
-      real(rk),allocatable :: suprey_Z4X(:)
-      logical,allocatable :: preyispom(:)
+      real(rk),allocatable :: suprey_Z4X(:),pu_eaZ4X(:)
       real(rk) :: sumZ4X
       real(rk) :: sdZ4oX, sdZ4X, srsZ4X
       real(rk) :: puZ4X
-      real(rk) :: pu_eaZ4X,pu_eaRZ4X
       real(rk) :: pe_R1Z4X
 
       real(rk) :: MinpreyX,Z4repwX,Z4mortX
@@ -68,6 +66,8 @@ contains
       integer           :: iprey
       character(len=16) :: index
       type (type_weighted_sum),pointer :: child
+      real(rk)          :: pu_eaZ4X,pu_eaRZ4X
+      logical           :: preyispom
       real(rk)          :: c0
 !EOP
 !-----------------------------------------------------------------------
@@ -84,8 +84,8 @@ contains
       call self%get_parameter(self%sdZ4X,     'sdZ4X')
       call self%get_parameter(self%srsZ4X,    'srsZ4X')
       call self%get_parameter(self%puZ4X,     'puZ4X')
-      call self%get_parameter(self%pu_eaZ4X,  'pu_eaZ4X')
-      call self%get_parameter(self%pu_eaRZ4X, 'pu_eaRZ4X')
+      call self%get_parameter(pu_eaZ4X,       'pu_eaZ4X')
+      call self%get_parameter(pu_eaRZ4X,      'pu_eaRZ4X')
       call self%get_parameter(self%pe_R1Z4X,  'pe_R1Z4X')
       call self%get_parameter(self%MinpreyX,  'MinpreyX')
       call self%get_parameter(self%Z4repwX,   'Z4repwX')
@@ -115,11 +115,11 @@ contains
       allocate(self%id_preys(self%nprey))
       allocate(self%id_preyf_target(self%nprey))
       allocate(self%suprey_Z4X(self%nprey))
-      allocate(self%preyispom(self%nprey))
+      allocate(self%pu_eaZ4X(self%nprey))
       do iprey=1,self%nprey
          write (index,'(i0)') iprey
          call self%get_parameter(self%suprey_Z4X(iprey),'suprey'//trim(index)//'_Z4X')
-         call self%get_parameter(self%preyispom(iprey),'prey'//trim(index)//'ispom',default=.false.)
+         call self%get_parameter(preyispom,'prey'//trim(index)//'ispom',default=.false.)
          call self%register_dependency(self%id_preyc(iprey), 'prey'//trim(index)//'c',  'mg C m-3',   'Prey '//trim(index)//' C')    
          call self%register_dependency(self%id_preyn(iprey), 'prey'//trim(index)//'n',  'mmol N m-3', 'Prey '//trim(index)//' N')    
          call self%register_dependency(self%id_preyp(iprey), 'prey'//trim(index)//'p',  'mmol P m-3', 'Prey '//trim(index)//' P')    
@@ -139,6 +139,12 @@ contains
 #endif
 
          call child%add_component('prey'//trim(index)//'c',self%suprey_Z4X(iprey))
+
+         if (preyispom) then
+            self%pu_eaZ4X(iprey) = pu_eaRZ4X
+         else
+            self%pu_eaZ4X(iprey) = pu_eaZ4X
+         end if
       end do
 
       call self%add_child(child,'totprey',configunit=-1)
@@ -263,14 +269,7 @@ contains
             ineffZ4 = (1._rk - self%puZ4X)
 
    !..Excretion
-            retZ4 = 0.0_rk
-            do iprey=1,self%nprey
-               if (self%preyispom(iprey)) then
-                  retZ4 = retZ4 + ineffZ4 * fpreyZ4c(iprey) * self%pu_eaRZ4X
-               else
-                  retZ4 = retZ4 + ineffZ4 * fpreyZ4c(iprey) * self%pu_eaZ4X
-               end if
-            end do
+            retZ4 = ineffZ4 * sum(fpreyZ4c*self%pu_eaZ4X)
             fZ4RDc = (retZ4 + rdZ4)*self%pe_R1Z4X
             fZ4R8c = (retZ4 + rdZ4)*(1._rk - self%pe_R1Z4X)
 #ifdef SAVEFLX
