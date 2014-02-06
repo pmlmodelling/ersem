@@ -17,7 +17,7 @@ module pml_ersem_base
 
    type,extends(type_base_model),public :: type_ersem_pelagic_base_model
       type (type_state_variable_id)      :: id_c,id_n,id_p,id_f,id_s,id_chl
-      type (type_diagnostic_variable_id) :: id_cD,id_nD,id_pD,id_fD,id_sD,id_chlD
+      type (type_diagnostic_variable_id) :: id_cD,id_nD,id_pD,id_fD,id_sD,id_chlD,id_lD
       type (type_horizontal_dependency_id) :: id_bedstress,id_wdepth
       type (type_dependency_id)            :: id_dens
 
@@ -38,10 +38,11 @@ module pml_ersem_base
    end type
 
    type,extends(type_base_model),public :: type_ersem_benthic_base_model
-      type (type_bottom_state_variable_id) :: id_c,id_n,id_p,id_f,id_s,id_chl
+      type (type_bottom_state_variable_id) :: id_c,id_n,id_p,id_f,id_s,id_l
       type (type_conserved_quantity_id)    :: id_totc,id_totn,id_totp,id_tots,id_totf
    contains
       procedure :: initialize_ersem_benthic_base
+      procedure :: add_constituent => benthic_base_add_constituent
    end type
       
 contains
@@ -184,9 +185,12 @@ contains
       end if
 #endif
 
+      call self%register_diagnostic_variable(self%id_lD,'l','mg C m-3','calcite',missing_value=0._rk,output=output_none)
+
    end subroutine
-   
+
    function get_sinking_rate(self,_ARGUMENTS_LOCAL_) result(w)
+      ! Returns sinking rate in m/d, positive for downward movement [sinking]
       class (type_ersem_pelagic_base_model),intent(in) :: self
       _DECLARE_ARGUMENTS_LOCAL_
       real(rk) :: w
@@ -270,37 +274,42 @@ contains
       real(rk),optional,                     intent(in)            :: c_ini,n_ini,p_ini,s_ini,f_ini
 
       self%dt = 86400._rk
-
-      if (present(c_ini)) then
-         call self%register_state_variable(self%id_c,'c','mg m-2','carbon',c_ini,minimum=0._rk)
-         call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_c,scale_factor=1._rk/CMass)
-      end if
-
-      if (present(s_ini)) then
-         call self%register_state_variable(self%id_s,'s','mmol Si m-2','silicate',s_ini,minimum=0._rk)
-         call self%add_to_aggregate_variable(standard_variables%total_silicate,self%id_s)
-      end if
-
-#ifdef IRON   
-      if (present(f_ini)) then
-         ! Iron as state variable
-         call self%register_state_variable(self%id_f,'f','umol Fe m-2','iron',f_ini,minimum=0._rk)
-         call self%add_to_aggregate_variable(standard_variables%total_iron,self%id_f)
-      end if
-#endif
-
-      if (present(p_ini)) then
-         ! Phosphorous as state variable
-         call self%register_state_variable(self%id_p, 'p', 'mmol P m-2', 'phosphorus', p_ini, minimum=0._rk)
-         call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_p)
-      end if
-
-      if (present(n_ini)) then
-         ! Nitrogen as state variable
-         call self%register_state_variable(self%id_n, 'n', 'mmol N m-2', 'nitrogen', n_ini, minimum=0._rk)
-         call self%add_to_aggregate_variable(standard_variables%total_nitrogen,self%id_n)
-      end if
-
+      if (present(c_ini)) call self%add_constituent('c',c_ini)
+      if (present(n_ini)) call self%add_constituent('n',n_ini)
+      if (present(p_ini)) call self%add_constituent('p',p_ini)
+      if (present(s_ini)) call self%add_constituent('s',s_ini)
+      if (present(f_ini)) call self%add_constituent('f',f_ini)
    end subroutine
 
+   subroutine benthic_base_add_constituent(self,name,initial_value)
+      class (type_ersem_benthic_base_model), intent(inout), target :: self
+      character(len=*),                      intent(in)            :: name
+      real(rk),                              intent(in)            :: initial_value
+
+      select case (name)
+         case ('c')
+            call self%register_state_variable(self%id_c,'c','mg C m-2','carbon',initial_value,minimum=0._rk)
+            call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_c,scale_factor=1._rk/CMass)
+         case ('n')
+            call self%register_state_variable(self%id_n, 'n', 'mmol N m-2', 'nitrogen', initial_value, minimum=0._rk)
+            call self%add_to_aggregate_variable(standard_variables%total_nitrogen,self%id_n)
+         case ('p')
+            call self%register_state_variable(self%id_p, 'p', 'mmol P m-2', 'phosphorus', initial_value, minimum=0._rk)
+            call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_p)
+         case ('s')
+            call self%register_state_variable(self%id_s,'s','mmol Si m-2','silicate',initial_value,minimum=0._rk)
+            call self%add_to_aggregate_variable(standard_variables%total_silicate,self%id_s)
+         case ('f')
+#ifdef IRON   
+            call self%register_state_variable(self%id_f,'f','umol Fe m-2','iron',initial_value,minimum=0._rk)
+            call self%add_to_aggregate_variable(standard_variables%total_iron,self%id_f)
+#endif
+         case ('l')
+            call self%register_state_variable(self%id_l,'l','mg C m-2','calcite',initial_value,minimum=0._rk)
+            call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_l,scale_factor=1._rk/CMass)
+         case default
+            call self%fatal_error('benthic_base_add_constituent','Unknown element "'//trim(name)//'".')
+      end select
+   end subroutine benthic_base_add_constituent
+   
 end module

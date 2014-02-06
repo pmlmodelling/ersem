@@ -18,9 +18,9 @@ module pml_ersem_mesozoo
       ! Variables
       type (type_model_id),         allocatable,dimension(:) :: id_prey
       type (type_model_id)                                   :: id_RP
-      type (type_dependency_id),    allocatable,dimension(:) :: id_preyc,id_preyn,id_preyp,id_preys,id_preyf
+      type (type_dependency_id),    allocatable,dimension(:) :: id_preyc,id_preyn,id_preyp,id_preys,id_preyf,id_preyl
       type (type_state_variable_id),allocatable,dimension(:) :: id_preyf_target
-      type (type_state_variable_id)      :: id_O3c,id_O2o
+      type (type_state_variable_id)      :: id_O3c,id_O2o,id_L2c
       type (type_state_variable_id)      :: id_R1c,id_R1p,id_R1n
       type (type_state_variable_id)      :: id_R2c
       type (type_state_variable_id)      :: id_R8c,id_R8p,id_R8n,id_R8s
@@ -37,6 +37,7 @@ module pml_ersem_mesozoo
       real(rk) :: sdZ4oX, sdZ4X, srsZ4X
       real(rk) :: puZ4X
       real(rk) :: pe_R1Z4X
+      real(rk) :: gutdiss
 
       real(rk) :: MinpreyX,Z4repwX,Z4mortX
 
@@ -91,6 +92,7 @@ contains
       call self%get_parameter(self%Z4repwX,   'Z4repwX')
       call self%get_parameter(self%Z4mortX,   'Z4mortX')
       call self%get_parameter(c0,             'c0')
+      call self%get_parameter(self%gutdiss,   'gutdiss')
 
       call self%get_parameter(self%R1R2X,   'R1R2X')
       call self%get_parameter(self%xR1pX,   'xR1pX')
@@ -113,6 +115,7 @@ contains
       allocate(self%id_preyp(self%nprey))
       allocate(self%id_preyf(self%nprey))
       allocate(self%id_preys(self%nprey))
+      allocate(self%id_preyl(self%nprey))
       allocate(self%id_preyf_target(self%nprey))
       allocate(self%suprey_Z4X(self%nprey))
       allocate(self%pu_eaZ4X(self%nprey))
@@ -124,6 +127,7 @@ contains
          call self%register_dependency(self%id_preyn(iprey), 'prey'//trim(index)//'n',  'mmol N m-3', 'Prey '//trim(index)//' N')    
          call self%register_dependency(self%id_preyp(iprey), 'prey'//trim(index)//'p',  'mmol P m-3', 'Prey '//trim(index)//' P')    
          call self%register_dependency(self%id_preys(iprey), 'prey'//trim(index)//'s',  'mmol Si m-3','Prey '//trim(index)//' Si')
+         call self%register_dependency(self%id_preyl(iprey), 'prey'//trim(index)//'l',  'mg C m-3','Prey '//trim(index)//' calcite')
 #ifdef IRON
          call self%register_dependency(self%id_preyf(iprey), 'prey'//trim(index)//'f',  'mmol Fe m-3','Prey '//trim(index)//' Fe')    
          call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe m-3','sink for Fe of prey '//trim(index),required=.false.)    
@@ -137,6 +141,7 @@ contains
 #ifdef IRON
          call self%request_coupling(self%id_preyf(iprey),'f',source=self%id_prey(iprey))
 #endif
+         call self%request_coupling(self%id_preyl(iprey),'l',source=self%id_prey(iprey))
 
          call child%add_component('prey'//trim(index)//'c',self%suprey_Z4X(iprey))
 
@@ -180,6 +185,8 @@ contains
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C m-3','Carbon Dioxide')    
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O m-3','Oxygen')    
 
+      call self%register_state_dependency(self%id_L2c,'L2c','mg C m-3','Calcite',required=.false.)
+
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
       call self%register_dependency(self%id_eO2mO2,standard_variables%fractional_saturation_of_oxygen)
@@ -195,7 +202,7 @@ contains
       integer  :: iprey,istate
       real(rk) :: ETW,eO2mO2
       real(rk) :: Z4c,Z4cP
-      real(rk),dimension(self%nprey) :: preycP,preypP,preynP,preysP
+      real(rk),dimension(self%nprey) :: preycP,preypP,preynP,preysP,preylP
       real(rk) :: SZ4c,SZ4n,SZ4p
       real(rk) :: etZ4,CORROX,eO2Z4
       real(rk),dimension(self%nprey) :: spreyZ4,rupreyZ4c,fpreyZ4c
@@ -234,6 +241,7 @@ contains
                _GET_(self%id_preyp(iprey),  preypP(iprey))
                _GET_(self%id_preyn(iprey),  preynP(iprey))
                _GET_(self%id_preys(iprey),  preysP(iprey))
+               _GET_(self%id_preyl(iprey),  preylP(iprey))
             end do
 
    !..Temperature effect :
@@ -285,10 +293,11 @@ contains
    !..Total respiration
             fZ4O3c = rrsZ4 + rraZ4
 
-#ifdef CALC
-            fO3L2c(I) = fO3L2c(I) + &
-               RainR(I) * gutdiss * (1._rk - puZ4X)* pu_eaZ4X * fP2Z4c
-#endif
+            if (_AVAILABLE_(self%id_L2c)) then
+               _SET_ODE_(self%id_L2c, (1.0_rk-self%gutdiss)*ineffZ4*sum(self%pu_eaZ4X*spreyZ4*preylP))
+               _SET_ODE_(self%id_O3c,-(1.0_rk-self%gutdiss)*ineffZ4*sum(self%pu_eaZ4X*spreyZ4*preylP)/CMass)
+            end if
+               
             rraZ4 = rugZ4*(1._rk - self%puZ4X)-retZ4
 
    !..Source equations

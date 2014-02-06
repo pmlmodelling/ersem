@@ -25,6 +25,9 @@ module pml_ersem_vphyt
 #endif
       type (type_dependency_id)          :: id_EIR,id_ETW
 
+      type (type_state_variable_id)      :: id_L2c
+      type (type_dependency_id)          :: id_RainR
+
       ! Identifiers for diagnostic variables
       type (type_diagnostic_variable_id) :: id_netP1
 
@@ -39,8 +42,9 @@ module pml_ersem_vphyt
       real(rk) :: qflP1cX,qfRP1cX,qurP1fX
 #endif
       real(rk) :: EPSP1X
+      real(rk) :: rP1mX
       integer :: LimnutX
-      logical :: use_Si
+      logical :: use_Si, calcify
    contains
 !     Model procedures
       procedure :: initialize
@@ -109,6 +113,8 @@ contains
 #endif
       call self%get_parameter(self%EPSP1X,   'EPSP1X')
       call self%get_parameter(c0,'c0',default=0.0_rk)
+      call self%get_parameter(self%calcify,'calcify',default=.false.)
+      call self%get_parameter(self%rP1mX,    'rP1mX',default=0.0_rk)
 
       ! Register state variables
       if (self%use_Si) then
@@ -153,14 +159,18 @@ contains
 #endif
 
       ! Register diagnostic variables
-      call self%register_diagnostic_variable(self%id_netP1,'netP1','mg C/m^3/d','net primary production',time_treatment=time_treatment_averaged)
+      call self%register_diagnostic_variable(self%id_netP1,'netP1','mg C/m^3/d','net primary production',output=output_time_step_averaged)
 
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_EIR,standard_variables%downwelling_shortwave_flux)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
+      if (self%calcify) then
+         call self%register_dependency(self%id_RainR,'RainR','-','Rain ratio')
+         call self%register_state_dependency(self%id_L2c,'L2c','mg C/m^3','Calcite')    
+      end if
 
    end subroutine
-   
+
    subroutine do(self,_ARGUMENTS_DO_)
 
       class (type_pml_ersem_vphyt),intent(in) :: self
@@ -174,7 +184,7 @@ contains
       real(rk) :: iNP1n,iNP1p,iNP1s,iNIP1
       real(rk) :: qpP1c,qnP1c
       real(rk) :: parEIR
-    
+
       real(rk) :: srsP1
       real(rk) :: fP1R6c,fP1RDc
       real(rk) :: fP1O3c,fO3P1c
@@ -198,6 +208,7 @@ contains
 #ifdef CENH
       real(rk) :: pco2a3,cenh
 #endif
+      real(rk) :: RainR, t
 
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
@@ -324,10 +335,17 @@ contains
          fP1R2c = fP1RDc*(1._rk-self%R1R2X)
 #endif
 
-#ifdef CALC
-! Calcified matter:
-      fO3L2c(I) = fO3L2c(I) + fP2R4c(I)*RainR(I)      !Jorn: flagellates only!
-#endif
+         if (self%calcify) then
+   ! Calcified matter:
+            _GET_(self%id_RainR,RainR)
+            t=max(0._rk,ETW)  ! this is to avoid funny values of rain ratio when ETW ~ -2 degrees
+            RainR = RainR * min((1._rk-iNP1p),iNP1n) * (t/(2._rk+t)) !* max(1.,P2c(I)/2.) removd as P2 is a broad class not just calicifiers
+            RainR = max(RainR,0.005_rk)
+            _SET_ODE_(self%id_O3c,-fP1R6c*RainR/Cmass)
+            _SET_ODE_(self%id_L2c, fP1R6c*RainR)
+            _SET_DIAG_(self%id_lD,RainR*P1cP)
+         end if
+
    !..Respiration..........................................................
 
    !..Rest respiration rate :
@@ -338,7 +356,7 @@ contains
 #ifndef CENH
 !..Total respiration flux :
          fP1O3c = srsP1*P1cP+sraP1*P1c
-      
+
 !..Gross production as flux from inorganic CO2 to P1 :
          fO3P1c = sumP1*P1c
 #else
@@ -359,7 +377,7 @@ contains
 #endif
 
    !..Carbon Source equations
-        
+
          rho = MIN(rho,0.1_rk)
          ! Chl changes (note that Chl is a component of PXc and not involved
          ! in mass balance)
@@ -375,7 +393,7 @@ contains
 
          _SET_ODE_(self%id_O3c,(fP1O3c - fO3P1c)/CMass)
          _SET_ODE_(self%id_O2o,(fO3P1c*self%uB1c_O2X - fP1O3c*self%urB1_O2X))
-         
+
    !..Phosphorus flux through P1...........................................
 
    !..Lysis loss of phosphorus
@@ -481,7 +499,7 @@ contains
       _LOOP_END_
 
    end subroutine do
-   
+
    function get_sinking_rate(self,_ARGUMENTS_LOCAL_) result(SDP1)
       class (type_pml_ersem_vphyt),intent(in) :: self
       _DECLARE_ARGUMENTS_LOCAL_
@@ -512,7 +530,7 @@ contains
       end if
 
 !..sedimentation and resting stages.....................................
-      SDP1 = self%resP1mX * MAX(0._rk, (self%esNIP1X - iNIP1))
+      SDP1 = self%resP1mX * MAX(0._rk, (self%esNIP1X - iNIP1)) + self%rP1mX
    end function
 
    subroutine get_vertical_movement(self,_ARGUMENTS_GET_VERTICAL_MOVEMENT_)

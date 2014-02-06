@@ -43,7 +43,7 @@ contains
 
       ! Register diagnostic variables
       call self%register_diagnostic_variable(self%id_EIR,'EIR','W m-2','shortwave radiation', &
-              time_treatment=time_treatment_averaged, standard_variable=standard_variables%downwelling_shortwave_flux)
+              standard_variable=standard_variables%downwelling_shortwave_flux)
 
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_I_0,standard_variables%surface_downwelling_shortwave_flux)

@@ -540,9 +540,9 @@ contains
          _SET_ODE_(self%id_R1C, + ruRPRD)
 #endif
          do iRP=1,self%nRP
-         _SET_ODE_(self%id_RPc(iRP), - fRPr1(iRP))
-         _SET_ODE_(self%id_RPp(iRP), - sRPr1(iRP)*RPpP(iRP))
-         _SET_ODE_(self%id_RPn(iRP), - sRPr1(iRP)*RPnP(iRP))
+            _SET_ODE_(self%id_RPc(iRP), - fRPr1(iRP))
+            _SET_ODE_(self%id_RPp(iRP), - sRPr1(iRP)*RPpP(iRP))
+            _SET_ODE_(self%id_RPn(iRP), - sRPr1(iRP)*RPnP(iRP))
          end do
          _SET_ODE_(self%id_R1p, + sum(sRPr1*RPpP) - fR1N1p)
          _SET_ODE_(self%id_R1n, + sum(sRPr1*RPnP) - fR1NIn)
