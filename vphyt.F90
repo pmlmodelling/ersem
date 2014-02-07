@@ -23,7 +23,7 @@ module pml_ersem_vphyt
 #ifdef CENH
       type (type_horizontal_dependency_id) :: id_pco2a3
 #endif
-      type (type_dependency_id)          :: id_EIR,id_ETW
+      type (type_dependency_id)          :: id_parEIR,id_ETW
 
       type (type_state_variable_id)      :: id_L2c
       type (type_dependency_id)          :: id_RainR
@@ -37,7 +37,7 @@ module pml_ersem_vphyt
       real(rk) :: xqcp1nX,xqnp1X,xqpp1X,qup1n3X,qup1n4X,qurp1pX,qsp1cX,esnip1X
       real(rk) :: resp1mX,sdop1X
       real(rk) :: alphaP1X,betaP1X,phimP1X,phiP1HX
-      real(rk) :: pEIR_eowX,R1R2X,uB1c_O2X,urB1_O2X
+      real(rk) :: R1R2X,uB1c_O2X,urB1_O2X
 #ifdef IRON
       real(rk) :: qflP1cX,qfRP1cX,qurP1fX
 #endif
@@ -101,7 +101,6 @@ contains
       call self%get_parameter(self%betaP1X,  'betaP1X')
       call self%get_parameter(self%phimP1X,  'phimP1X')
       call self%get_parameter(self%phiP1HX,  'phiP1HX')
-      call self%get_parameter(self%pEIR_eowX,'pEIR_eowX')
       call self%get_parameter(self%LimnutX,  'LimnutX')
       call self%get_parameter(self%R1R2X,    'R1R2X')
       call self%get_parameter(self%uB1c_O2X, 'uB1c_O2X')
@@ -162,7 +161,7 @@ contains
       call self%register_diagnostic_variable(self%id_netP1,'netP1','mg C/m^3/d','net primary production',output=output_time_step_averaged)
 
       ! Register environmental dependencies (temperature, shortwave radiation)
-      call self%register_dependency(self%id_EIR,standard_variables%downwelling_shortwave_flux)
+      call self%register_dependency(self%id_parEIR,standard_variables%downwelling_photosynthetic_radiative_flux)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
       if (self%calcify) then
          call self%register_dependency(self%id_RainR,'RainR','-','Rain ratio')
@@ -177,13 +176,12 @@ contains
       _DECLARE_ARGUMENTS_DO_
 
    ! !LOCAL VARIABLES:
-      real(rk) :: ETW,EIR
+      real(rk) :: ETW,parEIR
       real(rk) :: P1c, P1p, P1n, Chl1
       real(rk) :: P1cP,P1pP,P1nP,P1sP,Chl1P
       real(rk) :: N5s,N1pP,N3nP,N4nP
       real(rk) :: iNP1n,iNP1p,iNP1s,iNIP1
       real(rk) :: qpP1c,qnP1c
-      real(rk) :: parEIR
 
       real(rk) :: srsP1
       real(rk) :: fP1R6c,fP1RDc
@@ -240,7 +238,7 @@ contains
 
          ! Get environmental dependencies (water temperature, shortwave radation)
          _GET_(self%id_ETW,ETW)
-         _GET_(self%id_EIR,EIR)
+         _GET_(self%id_parEIR,parEIR)
 
 #ifdef CENH      
          ! Get atmospheric pCO2
@@ -296,7 +294,6 @@ contains
 #endif          
          phi = self%phiP1HX + (ChlCpp/self%phimP1X)*(self%phimP1X-self%phiP1HX)
 
-         parEIR = self%pEIR_eowX*EIR
          if (parEIR.gt.zeroX) THEN
             sumP1 = sumP1 * (1._rk-exp(-self%alphaP1X*parEIR*ChlCpp/sumP1)) * EXP(-self%betaP1X*parEIR*ChlCpp/sumP1)
             rho = (phi - ChlCmin) * (sumP1/(self%alphaP1X*parEIR*ChlCpp)) + ChlCmin

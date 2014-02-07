@@ -62,6 +62,8 @@ contains
       call self%register_dependency(self%id_om_cal,'om_cal','-','calcite saturation')
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m**3','total dissolved inorganic carbon')
       call self%register_bottom_state_dependency(self%id_bL2c,'bL2c','mg C m-3','benthic calcite')
+      call self%register_dependency(self%id_bedstress,standard_variables%bottom_stress)
+      call self%register_dependency(self%id_dens,     standard_variables%density)
    end subroutine
 
    subroutine do(self,_ARGUMENTS_DO_)

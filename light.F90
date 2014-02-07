@@ -10,12 +10,12 @@ module pml_ersem_light
 
    type,extends(type_base_model),public :: type_pml_ersem_light
       ! Identifiers for diagnostic variables
-      type (type_diagnostic_variable_id)   :: id_EIR
+      type (type_diagnostic_variable_id)   :: id_EIR, id_parEIR
       type (type_dependency_id)            :: id_dz, id_xEPS, id_ESS
       type (type_horizontal_dependency_id) :: id_I_0
 
       ! Parameters
-      real(rk) :: EPSESSX,EPS0X
+      real(rk) :: EPSESSX,EPS0X,pEIR_eowX
    contains
 !     Model procedures
       procedure :: initialize
@@ -38,12 +38,15 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%EPSESSX,'EPSESSX')
-      call self%get_parameter(self%EPS0X,  'EPS0Xr') 
+      call self%get_parameter(self%EPSESSX,  'EPSESSX')
+      call self%get_parameter(self%EPS0X,    'EPS0Xr') 
+      call self%get_parameter(self%pEIR_eowX,'pEIR_eowX') 
 
       ! Register diagnostic variables
       call self%register_diagnostic_variable(self%id_EIR,'EIR','W m-2','shortwave radiation', &
               standard_variable=standard_variables%downwelling_shortwave_flux)
+      call self%register_diagnostic_variable(self%id_parEIR,'parEIR','W m-2','photosynthetically active radiation', &
+              standard_variable=standard_variables%downwelling_photosynthetic_radiative_flux)
 
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_I_0,standard_variables%surface_downwelling_shortwave_flux)
@@ -68,6 +71,7 @@ contains
          EIR = buffer/xtnc*(1.0_rk-exp(-xtnc))
          buffer = buffer*exp(-xtnc)
          _SET_DIAGNOSTIC_(self%id_EIR,EIR)
+         _SET_DIAGNOSTIC_(self%id_parEIR,EIR*self%pEIR_eowX)
       _VERTICAL_LOOP_END_
 
    end subroutine get_light
