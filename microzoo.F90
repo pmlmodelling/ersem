@@ -13,6 +13,7 @@ module pml_ersem_microzoo
 
    type,extends(type_ersem_pelagic_base_model),public :: type_pml_ersem_microzoo
       ! Variables
+      type (type_model_id)                                   :: id_RP
       type (type_model_id),         allocatable,dimension(:) :: id_prey
       type (type_dependency_id),    allocatable,dimension(:) :: id_preyc,id_preyn,id_preyp,id_preys,id_preyf,id_preyl
       type (type_state_variable_id),allocatable,dimension(:) :: id_preyf_target
@@ -148,8 +149,15 @@ contains
 
       call self%register_state_dependency(self%id_L2c,'L2c','mg C m-3','Calcite',required=.false.)
 
+      ! Allow coupling of all required particulate organic matter variables to a single source model.
+      call self%register_model_dependency(self%id_RP,'RP')
+      call self%request_coupling(self%id_R6c,'c',source=self%id_RP)
+      call self%request_coupling(self%id_R6n,'n',source=self%id_RP)
+      call self%request_coupling(self%id_R6p,'p',source=self%id_RP)
+      call self%request_coupling(self%id_R6s,'s',source=self%id_RP)
+
    end subroutine
-   
+
    subroutine do(self,_ARGUMENTS_DO_)
 
       class (type_pml_ersem_microzoo),intent(in) :: self

@@ -16,10 +16,9 @@ module pml_ersem_vphyt
       ! Identifiers for model dependencies
       type (type_state_variable_id)      :: id_O3c,id_O2o
       type (type_state_variable_id)      :: id_N5s,id_N1p,id_N3n,id_N4n
-      type (type_state_variable_id)      :: id_R1c,id_R1p,id_R1n,id_R2c,id_R6c,id_R6p,id_R6n,id_R6s
-#ifdef IRON   
-      type (type_state_variable_id)      :: id_N7f,id_R6f
-#endif
+      type (type_state_variable_id)      :: id_R1c,id_R1p,id_R1n,id_R2c
+      type (type_state_variable_id)      :: id_R6c,id_R6p,id_R6n,id_R6s,id_R6f
+      type (type_state_variable_id)      :: id_N7f
 #ifdef CENH
       type (type_horizontal_dependency_id) :: id_pco2a3
 #endif
@@ -30,6 +29,8 @@ module pml_ersem_vphyt
 
       ! Identifiers for diagnostic variables
       type (type_diagnostic_variable_id) :: id_netP1
+
+      type (type_model_id) :: id_RP
 
       ! Parameters
       real(rk) :: sump1X
@@ -146,9 +147,17 @@ contains
       call self%register_state_dependency(self%id_R6p,'RPp','mmol P/m^3', 'POP')    
       call self%register_state_dependency(self%id_R6n,'RPn','mmol N/m^3', 'PON')    
       if (self%use_Si) call self%register_state_dependency(self%id_R6s,'RPs','mmol Si/m^3','POSi')    
-#ifdef IRON   
+#ifdef IRON
       call self%register_state_dependency(self%id_R6f,'RPf','umol Fe/m^3','POFe')    
 #endif
+
+      ! Automatically hook up all components of external particulate organic matter.
+      call self%register_model_dependency(self%id_RP,'RP')
+      call self%request_coupling(self%id_R6c,'c',source=self%id_RP)
+      call self%request_coupling(self%id_R6n,'n',source=self%id_RP)
+      call self%request_coupling(self%id_R6p,'p',source=self%id_RP)
+      if (_VARIABLE_REGISTERED_(self%id_R6s)) call self%request_coupling(self%id_R6s,'s',source=self%id_RP)
+      if (_VARIABLE_REGISTERED_(self%id_R6f)) call self%request_coupling(self%id_R6f,'f',source=self%id_RP)
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','Carbon Dioxide')    
