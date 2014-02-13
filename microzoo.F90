@@ -99,7 +99,7 @@ contains
       allocate(self%suprey_Z5X(self%nprey))
       do iprey=1,self%nprey
          write (index,'(i0)') iprey
-         call self%get_parameter(self%suprey_Z5X(iprey),'suprey'//trim(index)//'_Z5X')
+         call self%get_parameter(self%suprey_Z5X(iprey),'suprey'//trim(index))
          call self%register_dependency(self%id_preyc(iprey),  'prey'//trim(index)//'c',  'mg C m-3',   'Prey '//trim(index)//' C')
          call self%register_dependency(self%id_preyn(iprey),  'prey'//trim(index)//'n',  'mmol N m-3', 'Prey '//trim(index)//' N')
          call self%register_dependency(self%id_preyp(iprey),  'prey'//trim(index)//'p',  'mmol P m-3', 'Prey '//trim(index)//' P')
