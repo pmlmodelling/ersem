@@ -32,7 +32,7 @@ module pml_ersem_mesozoo
       integer  :: nprey
       real(rk) :: qpZIcX,qnZIcX
       real(rk) :: q10Z4X,chrZ4oX,minfoodZ4X,chuZ4cX
-      real(rk),allocatable :: suprey_Z4X(:),pu_eaZ4X(:)
+      real(rk),allocatable :: suprey(:),pu_eaZ4X(:)
       real(rk) :: sumZ4X
       real(rk) :: sdZ4oX, sdZ4X, srsZ4X
       real(rk) :: puZ4X
@@ -117,11 +117,11 @@ contains
       allocate(self%id_preys(self%nprey))
       allocate(self%id_preyl(self%nprey))
       allocate(self%id_preyf_target(self%nprey))
-      allocate(self%suprey_Z4X(self%nprey))
+      allocate(self%suprey(self%nprey))
       allocate(self%pu_eaZ4X(self%nprey))
       do iprey=1,self%nprey
          write (index,'(i0)') iprey
-         call self%get_parameter(self%suprey_Z4X(iprey),'suprey'//trim(index))
+         call self%get_parameter(self%suprey(iprey),'suprey'//trim(index))
          call self%get_parameter(preyispom,'prey'//trim(index)//'ispom',default=.false.)
          call self%register_dependency(self%id_preyc(iprey), 'prey'//trim(index)//'c',  'mg C m-3',   'Prey '//trim(index)//' C')    
          call self%register_dependency(self%id_preyn(iprey), 'prey'//trim(index)//'n',  'mmol N m-3', 'Prey '//trim(index)//' N')    
@@ -143,7 +143,7 @@ contains
 #endif
          call self%request_coupling(self%id_preyl(iprey),'l',source=self%id_prey(iprey))
 
-         call child%add_component('prey'//trim(index)//'c',self%suprey_Z4X(iprey))
+         call child%add_component('prey'//trim(index)//'c',self%suprey(iprey))
 
          if (preyispom) then
             self%pu_eaZ4X(iprey) = pu_eaRZ4X
@@ -253,7 +253,7 @@ contains
             eO2Z4 = MIN(1._rk,CORROX*(eO2mO2/(self%chrZ4oX + eO2mO2)))
 
    !..Available food :
-            spreyZ4 = self%suprey_Z4X*preycP/(preycP+self%minfoodZ4X)
+            spreyZ4 = self%suprey*preycP/(preycP+self%minfoodZ4X)
             rupreyZ4c = spreyZ4*preycP
             rumZ4 = sum(rupreyZ4c)
 

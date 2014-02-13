@@ -29,7 +29,7 @@ module pml_ersem_microzoo
       integer  :: nprey
       real(rk) :: chuz5cX,sumz5X,puz5X,pe_r1z5X,q10z5X,srsz5X,chrz5oX,pu_eaz5X
       real(rk) :: sdz5oX,sdz5X,qnz5cX,qpz5cX,minfoodz5X,stempz5nX,stempz5pX,gutdiss
-      real(rk),allocatable :: suprey_Z5X(:)
+      real(rk),allocatable :: suprey(:)
 
       ! ERSEM global parameters
       real(rk) :: R1R2X,urB1_O2X
@@ -96,10 +96,10 @@ contains
       allocate(self%id_preys(self%nprey))
       allocate(self%id_preyl(self%nprey))
       allocate(self%id_preyf_target(self%nprey))
-      allocate(self%suprey_Z5X(self%nprey))
+      allocate(self%suprey(self%nprey))
       do iprey=1,self%nprey
          write (index,'(i0)') iprey
-         call self%get_parameter(self%suprey_Z5X(iprey),'suprey'//trim(index))
+         call self%get_parameter(self%suprey(iprey),'suprey'//trim(index))
          call self%register_dependency(self%id_preyc(iprey),  'prey'//trim(index)//'c',  'mg C m-3',   'Prey '//trim(index)//' C')
          call self%register_dependency(self%id_preyn(iprey),  'prey'//trim(index)//'n',  'mmol N m-3', 'Prey '//trim(index)//' N')
          call self%register_dependency(self%id_preyp(iprey),  'prey'//trim(index)//'p',  'mmol P m-3', 'Prey '//trim(index)//' P')
@@ -218,7 +218,7 @@ contains
       eO2Z5 = MIN(1._rk,CORROX*(eO2mO2/(self%chrZ5oX + eO2mO2)))
 
 !..Available food :
-      spreyZ5 = self%suprey_Z5X*preycP/(preycP+self%minfoodZ5X)
+      spreyZ5 = self%suprey*preycP/(preycP+self%minfoodZ5X)
       rupreyZ5c = spreyZ5*preycP
       rumZ5 = sum(rupreyZ5c)
 
