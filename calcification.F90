@@ -113,7 +113,6 @@ contains
 
          ! From actual stress (Pa) to shear velocity (m/s)
          tbed = sqrt(tbed/density)
-         tbed = 0.0_rk
 !
 !     Bed characteristics - from Puls and Sundermann 1990
 !     Critical stress for deposition (m/s)

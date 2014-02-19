@@ -136,8 +136,7 @@ contains
          _GET_(self%id_dens,density)
 
          ! From actual stress (Pa) to shear velocity (m/s)
-         !bedstress = sqrt(bedstress/density)
-         bedstress = 0.0_rk
+         bedstress = sqrt(bedstress/density)
    !
          if(bedstress.gt.ter) then
    !     Inorganic sedment (could replace by transport model)
