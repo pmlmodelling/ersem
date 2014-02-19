@@ -225,11 +225,11 @@ contains
 
          fsd = self%get_sinking_rate(_ARGUMENTS_LOCAL_)
 
-         ! From actual stress (Pa) to shear velocity (m/s)
-         tbed = sqrt(tbed/density)
+         ! Divide actual stress (Pa) by density (kg m-3) to obtain square of bed shear velocity.
+         tbed = tbed/density
 !
 !     Bed characteristics - from Puls and Sundermann 1990
-!     Critical stress for deposition (m/s)
+!     Critical bed shear velocity = 0.01 m/s
 !
       tdep=0.01_rk**2
 !

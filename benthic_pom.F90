@@ -120,7 +120,8 @@ contains
       if (self%resuspension) then
          _HORIZONTAL_LOOP_BEGIN_
 
-   !     Critical stress for erosion (m/s)
+   !     Bed characteristics - from Puls and Sundermann 1990
+   !     Critical shear velocity for erosion = 0.02 m/s
    !
          ter=0.02_rk**2
    !
@@ -135,8 +136,8 @@ contains
          _GET_HORIZONTAL_(self%id_p,Q6pP)
          _GET_(self%id_dens,density)
 
-         ! From actual stress (Pa) to shear velocity (m/s)
-         bedstress = sqrt(bedstress/density)
+         ! Divide actual stress (Pa) by density (kg m-3) to obtain square of bed shear velocity.
+         bedstress = bedstress/density
    !
          if(bedstress.gt.ter) then
    !     Inorganic sedment (could replace by transport model)
