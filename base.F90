@@ -65,10 +65,10 @@ contains
       if (self%sedimentation) then
          call self%register_dependency(self%id_bedstress,standard_variables%bottom_stress)
          call self%register_dependency(self%id_dens,     standard_variables%density)
-         call self%get_parameter(self%xR1nX,'xR1nX')
-         call self%get_parameter(self%xR1pX,'xR1pX')
-         call self%get_parameter(self%xR7nX,'xR7nX')
-         call self%get_parameter(self%xR7pX,'xR7pX')
+         call self%get_parameter(self%xR1nX,'xR1n')
+         call self%get_parameter(self%xR1pX,'xR1p')
+         call self%get_parameter(self%xR7nX,'xR7n')
+         call self%get_parameter(self%xR7pX,'xR7p')
          call self%get_parameter(self%qQ1c, 'qQ1c')
          call self%get_parameter(self%qQ7c, 'qQ7c')
 

@@ -36,7 +36,7 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%ISWO2X,'ISWO2X')
+      call self%get_parameter(self%ISWO2X,'ISWO2')
 
       call self%register_state_variable(self%id_O2o,'o','mmol O/m^3','Oxygen',300._rk,minimum=0._rk)
    

@@ -38,7 +38,7 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%iswCO2X,'iswCO2X')
+      call self%get_parameter(self%iswCO2X,'iswCO2')
       call self%get_parameter(self%iswASFLUX,'iswASFLUX')
       call self%get_parameter(self%iswtalk,'iswtalk')
       if (self%iswtalk<1.or.self%iswtalk>5) call self%fatal_error('type_pml_ersem_carbonate::initialize','"iswtalk" out of bounds')

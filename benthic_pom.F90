@@ -40,7 +40,7 @@ contains
 !-----------------------------------------------------------------------
 !BOC
       call self%get_parameter(constituents,     'constituents',default='cnp')
-      call self%get_parameter(self%reminQIX,    'reminQIX',    default=0.0_rk)
+      call self%get_parameter(self%reminQIX,    'remin',    default=0.0_rk)
       call self%get_parameter(self%resuspension,'resuspension',default=.false.)
 
       call self%initialize_ersem_benthic_base()
@@ -67,7 +67,7 @@ contains
             call self%request_coupling(self%id_resuspension_n,'n',source=self%id_resuspension_target)
          end if
          if (self%reminQIX/=0.0_rk) then
-            call self%get_parameter(self%pQIN3X,'pQIN3X',default=0.0_rk)
+            call self%get_parameter(self%pQIN3X,'pN3',default=0.0_rk)
             call self%register_state_dependency(self%id_N3n,'N3n','mmol m-3','nitrate')
             call self%register_state_dependency(self%id_N4n,'N4n','mmol m-3','ammonium')
          end if

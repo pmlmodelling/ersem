@@ -38,9 +38,9 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%EPSESSX,  'EPSESSX')
-      call self%get_parameter(self%EPS0X,    'EPS0Xr') 
-      call self%get_parameter(self%pEIR_eowX,'pEIR_eowX') 
+      call self%get_parameter(self%EPSESSX,  'EPSESS')
+      call self%get_parameter(self%EPS0X,    'EPS0r') 
+      call self%get_parameter(self%pEIR_eowX,'pEIR_eow') 
 
       ! Register diagnostic variables
       call self%register_diagnostic_variable(self%id_EIR,'EIR','W m-2','shortwave radiation', &
@@ -63,15 +63,15 @@ contains
 
       _GET_HORIZONTAL_(self%id_I_0,buffer)
       _VERTICAL_LOOP_BEGIN_
-         _GET_(self%id_dz,dz)
-         _GET_(self%id_xEPS,xEPS)
-         _GET_(self%id_ESS,ESS)
+         _GET_(self%id_dz,dz)     ! Layer height (m)
+         _GET_(self%id_xEPS,xEPS) ! Extinction coefficient of shortwave radiation, due to particulate organic material (m-1)
+         _GET_(self%id_ESS,ESS)   ! Suspended silt
          xEPS = xEPS + self%EPS0X + self%EPSESSX*ESS
          xtnc = xEPS*dz
          EIR = buffer/xtnc*(1.0_rk-exp(-xtnc))
          buffer = buffer*exp(-xtnc)
-         _SET_DIAGNOSTIC_(self%id_EIR,EIR)
-         _SET_DIAGNOSTIC_(self%id_parEIR,EIR*self%pEIR_eowX)
+         _SET_DIAGNOSTIC_(self%id_EIR,EIR)                     ! Local shortwave radiation
+         _SET_DIAGNOSTIC_(self%id_parEIR,EIR*self%pEIR_eowX)   ! Local photosynthetically active radiation
       _VERTICAL_LOOP_END_
 
    end subroutine get_light

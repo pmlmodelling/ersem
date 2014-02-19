@@ -78,31 +78,31 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%iswBlimX,'iswBlimX')
-      call self%get_parameter(self%q10B1X,  'q10B1X')
-      call self%get_parameter(self%chdB1oX, 'chdB1oX')
-      call self%get_parameter(self%chB1nX,  'chB1nX')
-      call self%get_parameter(self%chB1pX,  'chB1pX')
-      call self%get_parameter(self%sdB1X,   'sdB1X')
-      call self%get_parameter(self%sumB1X,  'sumB1X')
-      call self%get_parameter(self%puB1X,   'puB1X')
-      call self%get_parameter(self%puB1oX,  'puB1oX')
-      call self%get_parameter(self%srsB1X,  'srsB1X')
-      call self%get_parameter(self%qpB1cX,  'qpB1cX')
-      call self%get_parameter(self%qnB1cX,  'qnB1cX')
-      call self%get_parameter(self%urB1_O2X,'urB1_O2X')
+      call self%get_parameter(self%iswBlimX,'iswBlim')
+      call self%get_parameter(self%q10B1X,  'q10')
+      call self%get_parameter(self%chdB1oX, 'chdo')
+      call self%get_parameter(self%chB1nX,  'chn')
+      call self%get_parameter(self%chB1pX,  'chp')
+      call self%get_parameter(self%sdB1X,   'sd')
+      call self%get_parameter(self%sumB1X,  'sum')
+      call self%get_parameter(self%puB1X,   'pu')
+      call self%get_parameter(self%puB1oX,  'puo')
+      call self%get_parameter(self%srsB1X,  'srs')
+      call self%get_parameter(self%qpB1cX,  'qpc')
+      call self%get_parameter(self%qnB1cX,  'qnc')
+      call self%get_parameter(self%urB1_O2X,'ur_O2')
 
       ! Remineralization parameters
-      call self%get_parameter(self%redfieldX,'redfieldX')
-      call self%get_parameter(self%sR1N1X,   'sR1N1X')
-      call self%get_parameter(self%sR1N4X,   'sR1N4X')
-      call self%get_parameter(self%fsinkX,   'fsinkX')
-      call self%get_parameter(self%ISWphx,   'ISWphx')
-      call self%get_parameter(self%sN4N3X,   'sN4N3X')
-      call self%get_parameter(self%cessX,    'cessX')
+      call self%get_parameter(self%redfieldX,'redfield')
+      call self%get_parameter(self%sR1N1X,   'sR1N1')
+      call self%get_parameter(self%sR1N4X,   'sR1N4')
+      call self%get_parameter(self%fsinkX,   'fsink')
+      call self%get_parameter(self%ISWphx,   'ISWph')
+      call self%get_parameter(self%sN4N3X,   'sN4N3')
+      call self%get_parameter(self%cessX,    'cess')
       
 #ifndef DOCDYN
-      call self%get_parameter(self%rR2R1X,   'rR2R1X')
+      call self%get_parameter(self%rR2R1X,   'rR2R1')
 #endif
 
       call self%get_parameter(c0,'c0')
@@ -152,17 +152,17 @@ contains
          call self%get_parameter(self%sRPR1(iRP),'sRP'//trim(index)//'R1')
       end do
 
-      call self%get_parameter(self%rR2B1X,'rR2B1X')
-      call self%get_parameter(self%rR3B1X,'rR3B1X')
-      call self%get_parameter(self%frB1R3,'frB1R3')
+      call self%get_parameter(self%rR2B1X,'rR2')
+      call self%get_parameter(self%rR3B1X,'rR3')
+      call self%get_parameter(self%frB1R3,'frR3')
 #else
       allocate(self%puRP_B1X(self%nRP))
       do iRP=1,self%nRP
          write (index,'(i0)') iRP
-         call self%get_parameter(self%puRP_B1X(iRP),'puRP'//trim(index)//'_B1X')
+         call self%get_parameter(self%puRP_B1X(iRP),'puRP'//trim(index))
       end do
 
-      call self%get_parameter(self%R1R2X,'R1R2X')
+      call self%get_parameter(self%R1R2X,'R1R2')
 #endif
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools

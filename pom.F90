@@ -35,8 +35,8 @@ contains
 !BOC
       call self%get_parameter(has_s,'has_s',default=.true.)
       call self%get_parameter(has_f,'has_f',default=.true.)
-      call self%get_parameter(rRPmX,'rRPmX',default=0.0_rk)
-      call self%get_parameter(self%EPSR6X,'EPSR6X',default=0.0_rk)
+      call self%get_parameter(rRPmX,'rm',default=0.0_rk)
+      call self%get_parameter(self%EPSR6X,'EPS',default=0.0_rk)
       call self%get_parameter(c0,'c0',default=0.0_rk)
 
       if (has_s.and.has_f) then
