@@ -22,6 +22,7 @@ module pml_ersem_bacteria
       type (type_state_variable_id) :: id_N1p,id_N3n,id_N4n,id_N7f
       type (type_dependency_id)     :: id_ETW,id_ESS,id_phx,id_eO2mO2
       type (type_state_variable_id),allocatable,dimension(:) :: id_RPc,id_RPp,id_RPn,id_RPf
+      type (type_model_id),         allocatable,dimension(:) :: id_RP
 
       ! Parameters
       integer  :: nRP
@@ -128,6 +129,7 @@ contains
 
       ! Register links to particulate organic matter pools.
       call self%get_parameter(self%nRP,'nRP',default=0)
+      allocate(self%id_RP(self%nRP))
       allocate(self%id_RPc(self%nRP))
       allocate(self%id_RPn(self%nRP))
       allocate(self%id_RPp(self%nRP))
@@ -137,8 +139,13 @@ contains
          call self%register_state_dependency(self%id_RPc(iRP),'RP'//trim(index)//'c','mg C/m^3',   'POC '//trim(index))    
          call self%register_state_dependency(self%id_RPn(iRP),'RP'//trim(index)//'n','mmol N/m^3', 'PON '//trim(index))    
          call self%register_state_dependency(self%id_RPp(iRP),'RP'//trim(index)//'p','mmol P/m^3', 'POP '//trim(index))    
+         call self%register_model_dependency(self%id_RP(iRP),'RP'//trim(index))
+         call self%request_coupling(self%id_RPc(iRP),'c',source=self%id_RP(iRP))
+         call self%request_coupling(self%id_RPn(iRP),'n',source=self%id_RP(iRP))
+         call self%request_coupling(self%id_RPp(iRP),'p',source=self%id_RP(iRP))
 #ifdef IRON
          call self%register_state_dependency(self%id_RPf(iRP),'RP'//trim(index)//'f','umol Fe/m^3','POFe '//trim(index),required=.false.)    
+         call self%request_coupling(self%id_RPf(iRP),'f',source=self%id_RP(iRP))
 #endif
       end do
       
