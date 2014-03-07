@@ -130,7 +130,7 @@ contains
       call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3', 'Nitrate')    
       call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3', 'Ammonium')    
       if (self%use_Si) call self%register_state_dependency(self%id_N5s,'N5s','mmol Si/m^3','Silicate')    
-#ifdef IRON   
+#ifdef IRON
       call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3', 'Inorganic Iron')    
 #endif
 
@@ -153,11 +153,11 @@ contains
 
       ! Automatically hook up all components of external particulate organic matter.
       call self%register_model_dependency(self%id_RP,'RP')
-      call self%request_coupling(self%id_R6c,'c',source=self%id_RP)
-      call self%request_coupling(self%id_R6n,'n',source=self%id_RP)
-      call self%request_coupling(self%id_R6p,'p',source=self%id_RP)
-      if (_VARIABLE_REGISTERED_(self%id_R6s)) call self%request_coupling(self%id_R6s,'s',source=self%id_RP)
-      if (_VARIABLE_REGISTERED_(self%id_R6f)) call self%request_coupling(self%id_R6f,'f',source=self%id_RP)
+      call self%request_coupling_to_model(self%id_R6c,self%id_RP,'c')
+      call self%request_coupling_to_model(self%id_R6n,self%id_RP,'n')
+      call self%request_coupling_to_model(self%id_R6p,self%id_RP,'p')
+      if (_VARIABLE_REGISTERED_(self%id_R6s)) call self%request_coupling_to_model(self%id_R6s,self%id_RP,'s')
+      if (_VARIABLE_REGISTERED_(self%id_R6f)) call self%request_coupling_to_model(self%id_R6f,self%id_RP,'f')
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','Carbon Dioxide')    

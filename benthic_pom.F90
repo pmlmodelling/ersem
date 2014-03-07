@@ -56,7 +56,7 @@ contains
          call self%add_constituent('c',0.0_rk)
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_c,'resuspension_target_c','mmol m-3','pelagic variable taking up resuspended carbon')
-            call self%request_coupling(self%id_resuspension_c,'c',source=self%id_resuspension_target)
+            call self%request_coupling_to_model(self%id_resuspension_c,self%id_resuspension_target,'c')
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_O3c,'O3c','mmol m-3','dissolved inorganic carbon')
       end if
@@ -64,7 +64,7 @@ contains
          call self%add_constituent('n',0.0_rk)
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_n,'resuspension_target_n','mmol m-3','pelagic variable taking up resuspended nitrogen')
-            call self%request_coupling(self%id_resuspension_n,'n',source=self%id_resuspension_target)
+            call self%request_coupling_to_model(self%id_resuspension_n,self%id_resuspension_target,'n')
          end if
          if (self%reminQIX/=0.0_rk) then
             call self%get_parameter(self%pQIN3X,'pN3',default=0.0_rk)
@@ -76,7 +76,7 @@ contains
          call self%add_constituent('p',0.0_rk)
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_p,'resuspension_target_p','mmol m-3','pelagic variable taking up resuspended phosphorus')
-            call self%request_coupling(self%id_resuspension_p,'p',source=self%id_resuspension_target)
+            call self%request_coupling_to_model(self%id_resuspension_p,self%id_resuspension_target,'p')
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N1p,'N1p','mmol m-3','phosphate')
       end if
@@ -84,7 +84,7 @@ contains
          call self%add_constituent('s',0.0_rk)
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_s,'resuspension_target_s','mmol m-3','pelagic variable taking up resuspended silicate')
-            call self%request_coupling(self%id_resuspension_s,'s',source=self%id_resuspension_target)
+            call self%request_coupling_to_model(self%id_resuspension_s,self%id_resuspension_target,'s')
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N5s,'N5s','mmol m-3','silicate')
       end if
@@ -93,7 +93,7 @@ contains
 #ifdef IRON
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_f,'resuspension_target_f','umol m-3','pelagic variable taking up resuspended iron')
-            call self%request_coupling(self%id_resuspension_f,'f',source=self%id_resuspension_target)
+            call self%request_coupling_to_model(self%id_resuspension_f,self%id_resuspension_target,'f')
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N7f,'N7f','umol m-3','dissolved iron')
 #endif
@@ -102,7 +102,7 @@ contains
          call self%add_constituent('l',0.0_rk)
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_l,'resuspension_target_l','mg m-3','pelagic variable taking up resuspended calcite')
-            call self%request_coupling(self%id_resuspension_l,'l',source=self%id_resuspension_target)
+            call self%request_coupling_to_model(self%id_resuspension_l,self%id_resuspension_target,'l')
          end if
          if (index(composition,'c')==0) call self%register_state_dependency(self%id_O3c,'O3c','umol m-3','dissolved inorganic carbon')
       end if

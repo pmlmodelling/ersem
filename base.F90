@@ -3,19 +3,22 @@
 module pml_ersem_base
 
    use fabm_types
+   use fabm_particle
    use fabm_expressions
 
    implicit none
 
 !  default: all is private.
    private
+   
+   public type_model_id
 
    real(rk),parameter,public :: CMass = 12.011_rk
    real(rk),parameter,public :: qnRPIcX = 1.26E-02_rk
    real(rk),parameter,public :: qpRPIcX = 7.86E-04_rk
    real(rk),parameter,public :: qsRPIcX=15._rk/106._rk/CMass
 
-   type,extends(type_base_model),public :: type_ersem_pelagic_base_model
+   type,extends(type_particle_model),public :: type_ersem_pelagic_base_model
       type (type_state_variable_id)      :: id_c,id_n,id_p,id_f,id_s,id_chl
       type (type_diagnostic_variable_id) :: id_cD,id_nD,id_pD,id_fD,id_sD,id_chlD,id_lD
       type (type_horizontal_dependency_id) :: id_bedstress,id_wdepth
@@ -37,7 +40,7 @@ module pml_ersem_base
       procedure :: get_sinking_rate
    end type
 
-   type,extends(type_base_model),public :: type_ersem_benthic_base_model
+   type,extends(type_particle_model),public :: type_ersem_benthic_base_model
       type (type_bottom_state_variable_id) :: id_c,id_n,id_p,id_f,id_s,id_l
       type (type_conserved_quantity_id)    :: id_totc,id_totn,id_totp,id_tots,id_totf
    contains
@@ -89,23 +92,23 @@ contains
 
          ! Retrieve external benthic states from individual benthic models
          call self%register_model_dependency(self%id_Q1,'Q1')
-         call self%request_coupling(self%id_Q1c,'c',source=self%id_Q1)
-         call self%request_coupling(self%id_Q1n,'n',source=self%id_Q1)
-         call self%request_coupling(self%id_Q1p,'p',source=self%id_Q1)
+         call self%request_coupling_to_model(self%id_Q1c,self%id_Q1,'c')
+         call self%request_coupling_to_model(self%id_Q1n,self%id_Q1,'n')
+         call self%request_coupling_to_model(self%id_Q1p,self%id_Q1,'p')
 
          call self%register_model_dependency(self%id_Q6,'Q6')
-         call self%request_coupling(self%id_Q6c,'c',source=self%id_Q6)
-         call self%request_coupling(self%id_Q6n,'n',source=self%id_Q6)
-         call self%request_coupling(self%id_Q6p,'p',source=self%id_Q6)
-         call self%request_coupling(self%id_Q6s,'s',source=self%id_Q6)
+         call self%request_coupling_to_model(self%id_Q6c,self%id_Q6,'c')
+         call self%request_coupling_to_model(self%id_Q6n,self%id_Q6,'n')
+         call self%request_coupling_to_model(self%id_Q6p,self%id_Q6,'p')
+         call self%request_coupling_to_model(self%id_Q6s,self%id_Q6,'s')
 #ifdef IRON   
-         call self%request_coupling(self%id_Q6f,'f',source=self%id_Q6)
+         call self%request_coupling_to_model(self%id_Q6f,self%id_Q6,'f')
 #endif
 
          call self%register_model_dependency(self%id_Q7,'Q7')
-         call self%request_coupling(self%id_Q7c,'c',source=self%id_Q7)
-         call self%request_coupling(self%id_Q7n,'n',source=self%id_Q7)
-         call self%request_coupling(self%id_Q7p,'p',source=self%id_Q7)
+         call self%request_coupling_to_model(self%id_Q7c,self%id_Q7,'c')
+         call self%request_coupling_to_model(self%id_Q7n,self%id_Q7,'n')
+         call self%request_coupling_to_model(self%id_Q7p,self%id_Q7,'p')
       end if
 
       ! Vertical velocity (positive: upwards, negative: downwards)

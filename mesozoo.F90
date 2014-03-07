@@ -134,14 +134,14 @@ contains
 #endif
 
          call self%register_model_dependency(self%id_prey(iprey),'prey'//trim(index))
-         call self%request_coupling(self%id_preyc(iprey),'c',source=self%id_prey(iprey))
-         call self%request_coupling(self%id_preyn(iprey),'n',source=self%id_prey(iprey))
-         call self%request_coupling(self%id_preyp(iprey),'p',source=self%id_prey(iprey))
-         call self%request_coupling(self%id_preys(iprey),'s',source=self%id_prey(iprey))
+         call self%request_coupling_to_model(self%id_preyc(iprey),self%id_prey(iprey),'c')
+         call self%request_coupling_to_model(self%id_preyn(iprey),self%id_prey(iprey),'n')
+         call self%request_coupling_to_model(self%id_preyp(iprey),self%id_prey(iprey),'p')
+         call self%request_coupling_to_model(self%id_preys(iprey),self%id_prey(iprey),'s')
 #ifdef IRON
-         call self%request_coupling(self%id_preyf(iprey),'f',source=self%id_prey(iprey))
+         call self%request_coupling_to_model(self%id_preyf(iprey),self%id_prey(iprey),'f')
 #endif
-         call self%request_coupling(self%id_preyl(iprey),'l',source=self%id_prey(iprey))
+         call self%request_coupling_to_model(self%id_preyl(iprey),self%id_prey(iprey),'l')
 
          call child%add_component('prey'//trim(index)//'c',self%suprey(iprey))
 
@@ -176,10 +176,10 @@ contains
 
       ! Allow coupling of all required particulate organic matter variables to a single source model.
       call self%register_model_dependency(self%id_RP,'RP')
-      call self%request_coupling(self%id_R8c,'c',source=self%id_RP)
-      call self%request_coupling(self%id_R8n,'n',source=self%id_RP)
-      call self%request_coupling(self%id_R8p,'p',source=self%id_RP)
-      call self%request_coupling(self%id_R8s,'s',source=self%id_RP)
+      call self%request_coupling_to_model(self%id_R8c,self%id_RP,'c')
+      call self%request_coupling_to_model(self%id_R8n,self%id_RP,'n')
+      call self%request_coupling_to_model(self%id_R8p,self%id_RP,'p')
+      call self%request_coupling_to_model(self%id_R8s,self%id_RP,'s')
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C m-3','Carbon Dioxide')    
@@ -366,9 +366,9 @@ contains
 
             ! Apply specific predation rates to all state variables of every prey.
             do iprey=1,self%nprey
-               do istate=1,size(self%id_prey(iprey)%model%state)
-                  _GET_(self%id_prey(iprey)%model%state(istate),preyP)
-                  _SET_ODE_(self%id_prey(iprey)%model%state(istate),-spreyZ4(iprey)*preyP)
+               do istate=1,size(self%id_prey(iprey)%state)
+                  _GET_(self%id_prey(iprey)%state(istate),preyP)
+                  _SET_ODE_(self%id_prey(iprey)%state(istate),-spreyZ4(iprey)*preyP)
                end do
             end do
          else

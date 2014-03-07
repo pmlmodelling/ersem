@@ -140,12 +140,12 @@ contains
          call self%register_state_dependency(self%id_RPn(iRP),'RP'//trim(index)//'n','mmol N/m^3', 'PON '//trim(index))    
          call self%register_state_dependency(self%id_RPp(iRP),'RP'//trim(index)//'p','mmol P/m^3', 'POP '//trim(index))    
          call self%register_model_dependency(self%id_RP(iRP),'RP'//trim(index))
-         call self%request_coupling(self%id_RPc(iRP),'c',source=self%id_RP(iRP))
-         call self%request_coupling(self%id_RPn(iRP),'n',source=self%id_RP(iRP))
-         call self%request_coupling(self%id_RPp(iRP),'p',source=self%id_RP(iRP))
+         call self%request_coupling_to_model(self%id_RPc(iRP),self%id_RP(iRP),'c')
+         call self%request_coupling_to_model(self%id_RPn(iRP),self%id_RP(iRP),'n')
+         call self%request_coupling_to_model(self%id_RPp(iRP),self%id_RP(iRP),'p')
 #ifdef IRON
          call self%register_state_dependency(self%id_RPf(iRP),'RP'//trim(index)//'f','umol Fe/m^3','POFe '//trim(index),required=.false.)    
-         call self%request_coupling(self%id_RPf(iRP),'f',source=self%id_RP(iRP))
+         call self%request_coupling_to_model(self%id_RPf(iRP),self%id_RP(iRP),'f')
 #endif
       end do
       
