@@ -38,9 +38,9 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%iswCO2X,'iswCO2')
-      call self%get_parameter(self%iswASFLUX,'iswASFLUX')
-      call self%get_parameter(self%iswtalk,'iswtalk')
+      call self%get_parameter(self%iswCO2X,'iswCO2',default=1)
+      call self%get_parameter(self%iswASFLUX,'iswASFLUX',default=0)
+      call self%get_parameter(self%iswtalk,'iswtalk',default=5)
       if (self%iswtalk<1.or.self%iswtalk>5) call self%fatal_error('type_pml_ersem_carbonate::initialize','"iswtalk" out of bounds')
 
       call self%register_state_variable(self%id_O3c,'c','mmol C/m^3','total dissolved inorganic carbon', 2200._rk,minimum=0._rk)
