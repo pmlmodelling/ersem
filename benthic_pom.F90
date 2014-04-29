@@ -115,17 +115,20 @@ contains
       class (type_pml_ersem_benthic_pom), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
       
-      real(rk) :: ter,er,density
-      real(rk) :: Q6cP,Q6nP,Q6pP,Q6sP,Q6fP,Q6lP,bedstress,wdepth
+      real(rk) :: bedstress,density,wdepth
+      real(rk) :: Q6cP,Q6nP,Q6pP,Q6sP,Q6fP,Q6lP
       real(rk) :: bedsedXc,bedsedXn,bedsedXp,bedsedXs
       real(rk) :: fac,FerC,FerN,FerP,FerS,FerF
 
+      ! Bed characteristics - from Puls and Sundermann 1990
+      ! Critical shear velocity for erosion = 0.02 m/s
+      real(rk),parameter :: ter=0.02_rk**2
+
+      ! erosion constant (g/m^2/s)
+      real(rk),parameter :: er=100._rk*Ter * 1000._rk*86400._rk  !convert to mg/day
+
       _HORIZONTAL_LOOP_BEGIN_
          if (self%resuspension) then
-            ! Bed characteristics - from Puls and Sundermann 1990
-            ! Critical shear velocity for erosion = 0.02 m/s
-            ter=0.02_rk**2
-
             _GET_HORIZONTAL_(self%id_bedstress,bedstress)
             _GET_(self%id_dens,density)
 
@@ -139,9 +142,6 @@ contains
          if (bedstress.gt.ter) then
             _GET_HORIZONTAL_(self%id_wdepth,wdepth)
             _GET_HORIZONTAL_(self%id_c,Q6cP)
-
-            ! erosion constant (g/m^2/s)
-            er=100._rk*Ter * 1000._rk*86400._rk  !convert to mg/day
 
             ! Inorganic sedment (could replace by transport model)
             ! for now assume 90% is a fixed inorganic component
