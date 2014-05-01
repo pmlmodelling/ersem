@@ -1,5 +1,5 @@
 #
-# Makefile to build the passive tracer model
+# Makefile to build ERSEM models
 #
 
 include ../../../Rules.make
