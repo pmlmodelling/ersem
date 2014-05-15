@@ -1,7 +1,18 @@
 #include "fabm_driver.h"
 
-!#define IRON
-!#define CENH
+! -----------------------------------------------------------------------------
+! This is a generic model for primary producers - P1, P2, P3, P4 in ERSEM.
+! -----------------------------------------------------------------------------
+! Silicate use (P1) is optional - it is activated by setting the "use_Si" flag 
+! in the run-time configuration.
+!
+! Calcification (P2) is optional - it is activated by setting the "calcify"
+! flag in the run-time configuration. Preprocessor symbol CALC is no longer
+! used.
+!
+! Preprocessor symbols IRON, DOCDYN, CENH are still used, but should be
+! replaced by run-time flags provided performance does not suffer.
+! -----------------------------------------------------------------------------
 
 module pml_ersem_primary_producer
 
