@@ -382,7 +382,7 @@ contains
          ! Total respiration flux :
          fP1O3c = srsP1*P1cP+sraP1*P1c
 
-         ! Gross production as flux from inorganic CO2 to P1 :
+         ! Gross production as flux from inorganic CO2 :
          fO3P1c = sumP1*P1c
 #else
          fO3P1c = sumP1*P1c*cenh
@@ -420,7 +420,7 @@ contains
          _SET_ODE_(self%id_O3c,(fP1O3c - fO3P1c)/CMass)
          _SET_ODE_(self%id_O2o,(fO3P1c*self%uB1c_O2X - fP1O3c*self%urB1_O2X))
 
-         ! Phosphorus flux through P1...........................................
+         ! Phosphorus flux...........................................
 
          ! Lysis loss of phosphorus
          fP1R6p = sP1R6 * min(self%qplP1cX*P1cP,P1pP)
@@ -438,7 +438,7 @@ contains
          _SET_ODE_(self%id_R6p,fP1R6p)
          _SET_ODE_(self%id_R1p,fP1RDp)
 
-         ! Nitrogen flux through P1.............................................
+         ! Nitrogen flux.............................................
 
          ! Nitrogen loss by lysis
          fP1R6n = sP1R6 * min(self%qnlP1cX*P1cP,P1nP)
@@ -470,7 +470,7 @@ contains
          _SET_ODE_(self%id_R1n,fP1RDn)
 
          if (self%use_Si) then
-            ! Silicate flux through P1.............................................
+            ! Silicate flux.............................................
             _GET_(self%id_s,P1sP)
 
             ! Excretion loss of silicate
@@ -492,7 +492,7 @@ contains
          end if
 
 #ifdef IRON
-         ! Iron flux through P1................................................
+         ! Iron flux................................................
 
          ! Obtain internal iron concentration (umol m-3, excludes background), and external biologically available iron.
          _GET_(self%id_f,P1fP)
