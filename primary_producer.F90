@@ -10,7 +10,12 @@
 ! flag in the run-time configuration. Preprocessor symbol CALC is no longer
 ! used.
 !
-! Preprocessor symbols IRON, DOCDYN, CENH are still used, but should be
+! The model can switch from a constant ratio between labile and semi-labile
+! dissolved organic matter production to a dynamic ratio by setting the
+! "docdyn" flag in the run-time configuration. Preprocessor symbol DOCDYN
+! is no longer used.
+!
+! Preprocessor symbols IRON, CENH are still used, but should be
 ! replaced by run-time flags provided performance does not suffer.
 ! -----------------------------------------------------------------------------
 
@@ -56,7 +61,7 @@ module pml_ersem_primary_producer
       real(rk) :: qflP1cX,qfRP1cX,qurP1fX
       real(rk) :: rP1mX
       integer :: LimnutX
-      logical :: use_Si, calcify
+      logical :: use_Si, calcify, docdyn
 
    contains
 
@@ -115,7 +120,8 @@ contains
       call self%get_parameter(self%phimP1X,  'phim', 'mg Chl/mg C','Maximal effective chlorophyll to carbon photosynthesis ratio')
       call self%get_parameter(self%phiP1HX,  'phiH', 'mg Chl/mg C','Minimal effective chlorophyll to carbon photosynthesis ratio')
       call self%get_parameter(self%LimnutX,  'Limnut','',          'Nitrogen-phosphorus colimitation formulation')
-      call self%get_parameter(self%R1R2X,    'R1R2')
+      call self%get_parameter(self%docdyn,   'docdyn','','use dynamic ratio of labile to semi-labile DOM production', default=.false.)
+      if (.not.self%docdyn) call self%get_parameter(self%R1R2X,'R1R2','-','Labile fraction of DOM production')
       call self%get_parameter(self%uB1c_O2X, 'uB1c_O2','mg C/mmol O2','Conversion of carbon into oxygen produced')
       call self%get_parameter(self%urB1_O2X, 'urB1_O2','mg C/mmol O2','Conversion of carbon into oxygen respired')
 #ifdef IRON
@@ -351,15 +357,17 @@ contains
          sP1R6 = pe_R6P1*sdoP1
          fP1R6c = sP1R6*P1cP
 
-#ifdef DOCDYN
-         fP1R1c=  (1._rk-pe_R6P1)*sdoP1*P1cP
-         fP1R2c=  (seoP1 + seaP1)*P1c
-         fP1RDc = fP1R1c+fP1R2c
-#else
-         fP1RDc = (1._rk-pe_R6P1)*sdoP1*P1cP + (seoP1 + seaP1)*P1c
-         fP1R1c = fP1RDc*self%R1R2X
-         fP1R2c = fP1RDc*(1._rk-self%R1R2X)
-#endif
+         if (self%docdyn) then
+            ! Lysis produces labile DOM, excretion produces semi-labile DOM.
+            fP1R1c = (1._rk-pe_R6P1)*sdoP1*P1cP
+            fP1R2c = (seoP1 + seaP1)*P1c
+            fP1RDc = fP1R1c+fP1R2c
+         else
+            ! Fixed ratio between production of labile and semi-labile DOM.
+            fP1RDc = (1._rk-pe_R6P1)*sdoP1*P1cP + (seoP1 + seaP1)*P1c
+            fP1R1c = fP1RDc*self%R1R2X
+            fP1R2c = fP1RDc*(1._rk-self%R1R2X)
+         end if
 
          ! Calcified matter:
          if (self%calcify) then
