@@ -10,8 +10,8 @@
 ! flag in the run-time configuration. Preprocessor symbol CALC is no longer
 ! used.
 !
-! The model can switch from a constant ratio between labile and semi-labile
-! dissolved organic matter production to a dynamic ratio by setting the
+! The model can be switched from a constant ratio between labile and semi-
+! labile dissolved organic matter production to a dynamic ratio by setting the
 ! "docdyn" flag in the run-time configuration. Preprocessor symbol DOCDYN
 ! is no longer used.
 !
@@ -46,7 +46,7 @@ module pml_ersem_primary_producer
 
       ! Identifiers for diagnostic variables
       type (type_diagnostic_variable_id) :: id_netP1   ! Net primary production
-      type (type_diagnostic_variable_id) :: id_lD      ! Cell-bound calcite
+      type (type_diagnostic_variable_id) :: id_lD      ! Cell-bound calcite - used by calcifiers only
 
       ! Identifiers for coupled models
       type (type_model_id) :: id_RP   ! Model that provides all POM constituents

@@ -182,7 +182,7 @@ contains
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','Carbon Dioxide')
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O/m^3','Oxygen')
 
-      ! Register environmental dependencies (temperature, shortwave radiation)
+      ! Register environmental dependencies (temperature, suspendend sediment, pH, oxygen saturation)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
       call self%register_dependency(self%id_ESS,type_bulk_standard_variable(name='mass_concentration_of_silt'))
       if (self%ISWphx==1) call self%register_dependency(self%id_phx,standard_variables%ph_reported_on_total_scale)
