@@ -16,48 +16,49 @@ module pml_ersem_primary_producer
    private
 
    type,extends(type_ersem_pelagic_base_model),public :: type_pml_ersem_primary_producer
-      ! Identifiers for model dependencies
-      type (type_state_variable_id)      :: id_O3c,id_O2o
-      type (type_state_variable_id)      :: id_N5s,id_N1p,id_N3n,id_N4n
-      type (type_state_variable_id)      :: id_R1c,id_R1p,id_R1n,id_R2c
-      type (type_state_variable_id)      :: id_R6c,id_R6p,id_R6n,id_R6s,id_R6f
-      type (type_state_variable_id)      :: id_N7f
-#ifdef CENH
-      type (type_horizontal_dependency_id) :: id_pco2a3
-#endif
-      type (type_dependency_id)          :: id_parEIR,id_ETW
+      ! Identifiers for links to state variables of other models
+      type (type_state_variable_id) :: id_O3c,id_O2o                        ! Oxygen and DIC
+      type (type_state_variable_id) :: id_N5s,id_N1p,id_N3n,id_N4n,id_N7f   ! Nutrients
+      type (type_state_variable_id) :: id_R1c,id_R1p,id_R1n,id_R2c          ! DOM
+      type (type_state_variable_id) :: id_R6c,id_R6p,id_R6n,id_R6s,id_R6f   ! POM
+      type (type_state_variable_id) :: id_L2c                               ! Free calcite (liths) - used by calcifiers only
 
-      type (type_state_variable_id)      :: id_L2c
-      type (type_dependency_id)          :: id_RainR
+      ! Environmental dependencies
+      type (type_dependency_id)            :: id_parEIR,id_ETW   ! PAR and temperature
+      type (type_dependency_id)            :: id_RainR           ! Rain ratio - used by calcifiers only
+      type (type_horizontal_dependency_id) :: id_pco2a3          ! Atmospheric pCO2 - used only if CENH is active
 
       ! Identifiers for diagnostic variables
-      type (type_diagnostic_variable_id) :: id_netP1
-      type (type_diagnostic_variable_id) :: id_lD
+      type (type_diagnostic_variable_id) :: id_netP1   ! Net primary production
+      type (type_diagnostic_variable_id) :: id_lD      ! Cell-bound calcite
 
-      type (type_model_id) :: id_RP
+      ! Identifiers for coupled models
+      type (type_model_id) :: id_RP   ! Model that provides all POM constituents
 
-      ! Parameters
+      ! Parameters (described in subroutine initialize, below)
       real(rk) :: sump1X
       real(rk) :: q10p1X,srsp1X,pu_eap1X,pu_rap1X,chp1sX,qnlp1cX,qplp1cX,xqcp1pX
       real(rk) :: xqcp1nX,xqnp1X,xqpp1X,qup1n3X,qup1n4X,qurp1pX,qsp1cX,esnip1X
       real(rk) :: resp1mX,sdop1X
       real(rk) :: alphaP1X,betaP1X,phimP1X,phiP1HX
       real(rk) :: R1R2X,uB1c_O2X,urB1_O2X
-#ifdef IRON
       real(rk) :: qflP1cX,qfRP1cX,qurP1fX
-#endif
       real(rk) :: rP1mX
       integer :: LimnutX
       logical :: use_Si, calcify
+
    contains
+
 !     Model procedures
       procedure :: initialize
       procedure :: do
       procedure :: get_vertical_movement
       procedure :: get_sinking_rate
+
    end type type_pml_ersem_primary_producer
 
-   real(rk),parameter :: ChlCmin     = 0.0067_rk
+   ! Constants
+   real(rk),parameter :: ChlCmin = 0.0067_rk
 
 contains
 
@@ -67,7 +68,7 @@ contains
 !
 ! !INPUT PARAMETERS:
       class (type_pml_ersem_primary_producer),intent(inout),target :: self
-      integer,                     intent(in)           :: configunit
+      integer,                                intent(in)           :: configunit
 !
 ! !REVISION HISTORY:
 !
@@ -76,52 +77,52 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%use_Si,   'use_Si',  default=.true.)
-      call self%get_parameter(self%sump1X,   'sum')
-      call self%get_parameter(self%q10p1X,   'q10')
-      call self%get_parameter(self%srsp1X,   'srs')
-      call self%get_parameter(self%pu_eap1X, 'pu_ea')
-      call self%get_parameter(self%pu_rap1X, 'pu_ra')
-      call self%get_parameter(self%qnlp1cX,  'qnlc')
-      call self%get_parameter(self%qplp1cX,  'qplc')
-      call self%get_parameter(self%xqcp1pX,  'xqcp')
-      call self%get_parameter(self%xqcp1nX,  'xqcn')
-      call self%get_parameter(self%xqnp1X,   'xqn')
-      call self%get_parameter(self%xqpp1X,   'xqp')
-      call self%get_parameter(self%qup1n3X,  'qun3')
-      call self%get_parameter(self%qup1n4X,  'qun4')
-      call self%get_parameter(self%qurp1pX,  'qurp')
+      call self%get_parameter(self%use_Si,   'use_Si', default=.true.)
+      call self%get_parameter(self%sump1X,   'sum',  '1/d',        'Specific maximal productivity at reference temperature')
+      call self%get_parameter(self%q10p1X,   'q10',  '-',          'Regulating temperature factor Q10')
+      call self%get_parameter(self%srsp1X,   'srs',  '1/d',        'Specific rest respiration at reference temperature')
+      call self%get_parameter(self%pu_eap1X, 'pu_ea','-',          'Excreted fraction of primary production')
+      call self%get_parameter(self%pu_rap1X, 'pu_ra','-',          'Respired fraction of primary production')
+      call self%get_parameter(self%qnlp1cX,  'qnlc', 'mmol N/mg C','Minimal nitrogen to carbon ratio')
+      call self%get_parameter(self%qplp1cX,  'qplc', 'mmol P/mg C','Minimal phosphorus to carbon ratio')
+      call self%get_parameter(self%xqcp1pX,  'xqcp', '-',          'Threshold for phosphorus limitation (relative to Redfield ratio)')
+      call self%get_parameter(self%xqcp1nX,  'xqcn', '-',          'Threshold for nitrogen limitation (relative to Redfield ratio)')
+      call self%get_parameter(self%xqpp1X,   'xqp',  '-',          'Maximal phosphorus to carbon ratio (relative to Redfield ratio)')
+      call self%get_parameter(self%xqnp1X,   'xqn',  '-',          'Maximal nitrogen to carbon ratio (relative to Redfield ratio)')
+      call self%get_parameter(self%qup1n3X,  'qun3', 'm^3/mg C/d', 'Nitrate affinity')
+      call self%get_parameter(self%qup1n4X,  'qun4', 'm^3/mg C/d', 'Ammonium affinity')
+      call self%get_parameter(self%qurp1pX,  'qurp', 'm^3/mg C/d', 'Phosphate affinity')
       if (self%use_Si) then
-         call self%get_parameter(self%qsp1cX,'qsc')
-         call self%get_parameter(self%chp1sX,'chs')
+         call self%get_parameter(self%qsp1cX,'qsc', 'mmol Si/mg C','Maximal silicon to carbon ratio')
+         call self%get_parameter(self%chp1sX,'chs', 'mmol/m^3',    'Michaelis-Menten constant for silicate limitation')
       end if
-      call self%get_parameter(self%esnip1X,  'esni')
-      call self%get_parameter(self%resp1mX,  'resm')
-      call self%get_parameter(self%sdop1X,   'sdo')
-      call self%get_parameter(self%alphaP1X, 'alpha')
-      call self%get_parameter(self%betaP1X,  'beta')
-      call self%get_parameter(self%phimP1X,  'phim')
-      call self%get_parameter(self%phiP1HX,  'phiH')
-      call self%get_parameter(self%LimnutX,  'Limnut')
+      call self%get_parameter(self%esnip1X,  'esni', '-',          'Level of nutrient limitation at which sinking commences')
+      call self%get_parameter(self%resp1mX,  'resm', 'm/d',        'Maximal sinking velocity')
+      call self%get_parameter(self%sdop1X,   'sdo',  '1/d',        '1.1 of minimal specific lysis rate')
+      call self%get_parameter(self%alphaP1X, 'alpha','mg C m^2/mg Chl/W/d', 'Initial slope of PI-curve')
+      call self%get_parameter(self%betaP1X,  'beta', 'mg C m^2 /mg Chl/W/d','Photo-inhibition parameter')
+      call self%get_parameter(self%phimP1X,  'phim', 'mg Chl/mg C','Maximal effective chlorophyll to carbon photosynthesis ratio')
+      call self%get_parameter(self%phiP1HX,  'phiH', 'mg Chl/mg C','Minimal effective chlorophyll to carbon photosynthesis ratio')
+      call self%get_parameter(self%LimnutX,  'Limnut','',          'Nitrogen-phosphorus colimitation formulation')
       call self%get_parameter(self%R1R2X,    'R1R2')
-      call self%get_parameter(self%uB1c_O2X, 'uB1c_O2')
-      call self%get_parameter(self%urB1_O2X, 'urB1_O2')
+      call self%get_parameter(self%uB1c_O2X, 'uB1c_O2','mg C/mmol O2','Conversion of carbon into oxygen produced')
+      call self%get_parameter(self%urB1_O2X, 'urB1_O2','mg C/mmol O2','Conversion of carbon into oxygen respired')
 #ifdef IRON
-      call self%get_parameter(self%qflP1cX,  'qflc')
-      call self%get_parameter(self%qfRP1cX,  'qfRc')
-      call self%get_parameter(self%qurP1fX,  'qurf')
+      call self%get_parameter(self%qflP1cX,  'qflc','umol Fe/mg C','Minimal iron to carbon ratio')
+      call self%get_parameter(self%qfRP1cX,  'qfRc','umol Fe/mg C','Maximal/optimal iron to carbon ratio')
+      call self%get_parameter(self%qurP1fX,  'qurf','m^3/mg C/d',  'Specific affinity for iron')
 #endif
-      call self%get_parameter(EPS,           'EPS')
-      call self%get_parameter(c0,'c0',default=0.0_rk)
-      call self%get_parameter(self%calcify,'calcify',default=.false.)
-      call self%get_parameter(self%rP1mX,    'rm',default=0.0_rk)
+      call self%get_parameter(EPS,           'EPS', 'm"2/mg C', 'specific extinction coefficient')
+      call self%get_parameter(c0,            'c0',  'mg C/m^3', 'background concentration', default=0.0_rk)
+      call self%get_parameter(self%calcify,  'calcify',default=.false.)
+      call self%get_parameter(self%rP1mX,    'rm',  'm/d',      'background sinking velocity',default=0.0_rk)
 
       ! Register state variables
       call self%initialize_ersem_base(sedimentation=.true.)
       call self%add_constituent('c',1.e-4_rk,   c0)
       call self%add_constituent('n',1.26e-6_rk, c0*qnrpicX)
       call self%add_constituent('p',4.288e-8_rk,c0*qprpicX)
-      call self%add_constituent('f',5.e-6_rk,   0.0_rk)
+      call self%add_constituent('f',5.e-6_rk,   0.0_rk)  ! NB this does nothing if iron support is disabled.
       call self%add_constituent('chl',3.e-6_rk, c0*self%phimP1X)
       if (self%use_Si) call self%add_constituent('s',1.e-6_rk,c0*self%qsp1cX)
 
@@ -142,7 +143,8 @@ contains
       ! Register links to external semi-labile dissolved organic matter pool.
       call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','Semi-labile DOC')    
 
-      ! Register links to external particulate organic matter (medium-size) pools.
+      ! Register links to external particulate organic matter pools.
+      ! At run-time, these can be coupled to any available pools (e.g., R4, R6, R8 in ERSEM)
       call self%register_state_dependency(self%id_R6c,'RPc','mg C/m^3',   'POC')    
       call self%register_state_dependency(self%id_R6p,'RPp','mmol P/m^3', 'POP')    
       call self%register_state_dependency(self%id_R6n,'RPn','mmol N/m^3', 'PON')    
@@ -151,7 +153,9 @@ contains
       call self%register_state_dependency(self%id_R6f,'RPf','umol Fe/m^3','POFe')    
 #endif
 
-      ! Automatically hook up all components of external particulate organic matter.
+      ! Automatically hook up all components of external particulate organic matter,
+      ! by obtaining them from a single named model "RP". This takes away the need to couple each RP?
+      ! variable individually.
       call self%register_model_dependency(self%id_RP,'RP')
       call self%request_coupling_to_model(self%id_R6c,self%id_RP,'c')
       call self%request_coupling_to_model(self%id_R6n,self%id_RP,'n')
@@ -162,24 +166,31 @@ contains
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','Carbon Dioxide')    
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O/m^3','Oxygen')    
-#ifdef CENH   
-      call self%register_dependency(self%id_pco2a3,standard_variables%mole_fraction_of_carbon_dioxide_in_air)    
-#endif
 
-      ! Register diagnostic variables
+      ! Register diagnostic variables (i.e., model outputs)
       call self%register_diagnostic_variable(self%id_netP1,'netP1','mg C/m^3/d','net primary production',output=output_time_step_averaged)
 
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_parEIR,standard_variables%downwelling_photosynthetic_radiative_flux)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
       if (self%calcify) then
+         ! Link to rain ratio (set by calcification module; excludes effect of nutrient limitation)
          call self%register_dependency(self%id_RainR,'RainR','-','Rain ratio')
-         call self%register_state_dependency(self%id_L2c,'L2c','mg C/m^3','Free calcite')    
+
+         ! Link to external detached liths (sink for calcite of dying phytoplankton)
+         call self%register_state_dependency(self%id_L2c,'L2c','mg C/m^3','Free calcite')
+
+         ! Create diagnostic variable for cell-bound calcite, and register its contribution to the known quantity "total_calcite_in_biota".
+         ! This quantity can be used by other models (e.g., predators) to determine how much calcite is released when phytoplankton is broken down.
          call self%register_diagnostic_variable(self%id_lD,'l','mg C m-3','Bound calcite',missing_value=0._rk,output=output_none)
          call self%add_to_aggregate_variable(type_bulk_standard_variable(name='total_calcite_in_biota',aggregate_variable=.true.),self%id_lD)
       end if
+#ifdef CENH
+      ! Link to atmospheric CO2 if using CO2-enhanced primary production.
+      call self%register_dependency(self%id_pco2a3,standard_variables%mole_fraction_of_carbon_dioxide_in_air)    
+#endif
 
-      ! Contribute to light extinction
+      ! Register contribution to light extinction
       call self%add_to_aggregate_variable(standard_variables%attenuation_coefficient_of_photosynthetic_radiative_flux, &
          self%id_c,scale_factor=EPS,include_background=.true.)
 
@@ -195,7 +206,7 @@ contains
       real(rk) :: P1c, P1p, P1n, Chl1
       real(rk) :: P1cP,P1pP,P1nP,P1sP,Chl1P
       real(rk) :: N5s,N1pP,N3nP,N4nP
-      real(rk) :: iNP1n,iNP1p,iNP1s,iNIP1
+      real(rk) :: iNP1n,iNP1p,iNP1s,iNP1f,iNIP1
       real(rk) :: qpP1c,qnP1c
 
       real(rk) :: srsP1
@@ -213,7 +224,7 @@ contains
       real(rk) :: rho,Chl_inc,Chl_loss
       real(rk) :: phi,ChlCpp
 #ifdef IRON
-      real(rk) :: N7fP,P1f,P1fP,qfP1c,iNP1f
+      real(rk) :: N7fP,P1f,P1fP,qfP1c
       real(rk) :: runP1f,rumP1f,misP1f
       real(rk) :: fN7P1f,fP1R6f
 #endif
@@ -226,54 +237,48 @@ contains
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
 
-         ! First retrieve local state.
-         ! NB: _GET_ retrieves the value of the state variable, minus an offset
-         ! (if any) specified by the owning model during registration of the state variable.
-         ! If the returned value would be negative, 0.0 is returned instead.
+         ! Retrieve local state (carbon, phosphorus, nitrogen, chlorophyll concentrations).
 
+         ! Concentrations including background (used in source terms)
          _GET_WITH_BACKGROUND_(self%id_c,P1c)
          _GET_WITH_BACKGROUND_(self%id_p,P1p)
          _GET_WITH_BACKGROUND_(self%id_n,P1n)
-#ifdef IRON      
-         _GET_WITH_BACKGROUND_(self%id_f,P1f)
-#endif
          _GET_WITH_BACKGROUND_(self%id_chl,chl1)
 
+         ! Concentrations excluding background (used in sink terms)
          _GET_(self%id_c,P1cP)
          _GET_(self%id_p,P1pP)
          _GET_(self%id_n,P1nP)
          _GET_(self%id_chl,chl1P)
+
+         ! Retrieve ambient nutrient concentrations
          _GET_(self%id_N1p,N1pP)
          _GET_(self%id_N3n,N3nP)
          _GET_(self%id_N4n,N4nP)
-#ifdef IRON      
-         _GET_(self%id_f,P1fP)
-         _GET_(self%id_N7f,N7fP)
-#endif
 
-         ! Get environmental dependencies (water temperature, shortwave radation)
+         ! Retrieve environmental dependencies (water temperature, photosynthetically active radation)
          _GET_(self%id_ETW,ETW)
          _GET_(self%id_parEIR,parEIR)
 
-#ifdef CENH      
-         ! Get atmospheric pCO2
-         _GET_HORIZONTAL_(self%id_pco2a3,pco2a3)
-#endif
-
          qpP1c = P1p/P1c
          qnP1c = P1n/P1c
-#ifdef IRON
-         qfP1c = P1f/P1c
-#endif
+            
+         ! Regulation factors...................................................
 
          iNP1p = MIN(1._rk,  &
                  MAX(0._rk, (qpP1c-self%qplP1cX) / (self%xqcP1pX*qpRPIcX-self%qplP1cX) ))
          iNP1n = MIN(1._rk,  &
                  MAX(0._rk, (qnP1c-self%qnlP1cX) / (self%xqcP1nX*qnRPIcX-self%qnlP1cX) ))
+
 #ifdef IRON
+         _GET_WITH_BACKGROUND_(self%id_f,P1f)
+         qfP1c = P1f/P1c
          iNP1f = MIN(1._rk,  &
                  MAX(ZeroX, (qfP1c-self%qflP1cX) / (self%qfRP1cX-self%qflP1cX) ))
+#else
+         iNP1f = 1.0_rk
 #endif
+
          if (self%use_Si) then
             _GET_WITH_BACKGROUND_(self%id_N5s,N5s) ! Jorn: kept identical to legacy ersem, but should likely exclude background
             iNP1s = MIN(1._rk, N5s/(N5s+self%chP1sX))
@@ -281,32 +286,26 @@ contains
             iNP1s = 1.0_rk
          end if
 
-         if (self%LimnutX==0) then  ! NB select case would be cleaner but makes vectorization impossible for ifort 14
+         if (self%LimnutX==0) then  ! Jorn: select case would be cleaner but makes vectorization impossible for ifort 14
             iNIP1 = (iNP1p * iNP1n)**0.5_rk
          elseif (self%LimnutX==1) then
             iNIP1 = MIN(iNP1p, iNP1n)
          else
             iNIP1 = 2.0_rk / (1._rk/iNP1p + 1._rk/iNP1n)
          end if
-            
-   !..Regulation factors...................................................
 
-   !..Temperature response
+         ! Temperature response
          etP1 = self%q10P1X**((ETW-10._rk)/10._rk) - self%q10P1X**((ETW-32._rk)/3._rk)
 
-   !..Production...........................................................
+         ! Production...........................................................
 
-   !..calculate chl to C ratio.............................................
+         ! calculate chl to C ratio.............................................
 
          !ChlCpp = max(min(phimP1X,chl1(I)/(p1c(I)-chl1(I)+zeroX)),ChlCmin)
          ChlCpp = chl1/p1c
 
-   !..Gross photosynthetic activity :
-#ifdef IRON
+         ! Gross photosynthetic activity :
          sumP1 = self%sumP1X*etP1*iNP1s*iNP1f
-#else
-         sumP1 = self%sumP1X*etP1*iNP1s
-#endif          
          phi = self%phiP1HX + (ChlCpp/self%phimP1X)*(self%phimP1X-self%phiP1HX)
 
          if (parEIR.gt.zeroX) THEN
@@ -316,26 +315,30 @@ contains
             sumP1 = 0._rk
             rho = ChlCmin
          end if
+
 #ifdef CENH
-   ! Enhancement factor (from MEECE D1.5) 379.48 = pco2a @ 2005
+         ! Retrieve atmospheric pCO2 if using CO2-enhanced primary production.
+         _GET_HORIZONTAL_(self%id_pco2a3,pco2a3)
+
+         ! Enhancement factor (from MEECE D1.5) 379.48 = pco2a @ 2005
          cenh=1.+(pco2a3-379.48_rk)*0.0005_rk
 #endif
 
-   !..Nutrient-stress lysis rate :
+         ! Nutrient-stress lysis rate :
          sdoP1 = (1._rk/(MIN( iNP1s, iNIP1 )+0.1_rk))*self%sdoP1X
 
-   !..Excretion rate, as regulated by nutrient-stress
+         ! Excretion rate, as regulated by nutrient-stress
          seoP1 = sumP1*(1._rk-iNIP1)*(1._rk-self%pu_eaP1X)
 
-   !..activity-dependent excretion :
+         ! Activity-dependent excretion :
          seaP1 = sumP1*self%pu_eaP1X
          sugP1 = sumP1-seoP1-seaP1
 
-   !..Apportioning of LOC- and DET- fraction of excretion/lysis fluxes:
+         ! Apportioning of LOC- and DET- fraction of excretion/lysis fluxes:
          pe_R6P1 = MIN(self%qplP1cX/(qpP1c+ZeroX),self%qnlP1cX/(qnP1c+ZeroX))
 
-         sP1R6 = pe_R6P1*sdoP1   !Jorn: R4 for flagellates
-         fP1R6c = sP1R6*P1cP     !Jorn: R4 for flagellates
+         sP1R6 = pe_R6P1*sdoP1
+         fP1R6c = sP1R6*P1cP
 
 #ifdef DOCDYN
          fP1R1c=  (1._rk-pe_R6P1)*sdoP1*P1cP
@@ -347,9 +350,8 @@ contains
          fP1R2c = fP1RDc*(1._rk-self%R1R2X)
 #endif
 
+         ! Calcified matter:
          if (self%calcify) then
-   ! Calcified matter:
-
             _GET_(self%id_RainR,RainR)
 
             ! Calculate nutrient limitation impact on rain ratio:
@@ -369,79 +371,80 @@ contains
 
          end if
 
-   !..Respiration..........................................................
+         ! Respiration..........................................................
 
-   !..Rest respiration rate :
+         ! Rest respiration rate :
          srsP1 = etP1*self%srsP1X 
 
-   !..Activity respiration rate :
+         ! Activity respiration rate :
          sraP1 = sugP1*self%pu_raP1X
 #ifndef CENH
-!..Total respiration flux :
+         ! Total respiration flux :
          fP1O3c = srsP1*P1cP+sraP1*P1c
 
-!..Gross production as flux from inorganic CO2 to P1 :
+         ! Gross production as flux from inorganic CO2 to P1 :
          fO3P1c = sumP1*P1c
 #else
-         fO3P1c = fO3P1c*cenh !Jorn: a bug? where is fO3P1c set?
+         fO3P1c = sumP1*P1c*cenh
          fP1O3c = srsP1*P1cP+sraP1*P1c*cenh
 #endif
          rugP1 = fO3P1c
 
-   !..Production and productivity
+         ! Production and productivity
          sunP1 = sumP1-(seoP1+seaP1+sraP1)  ! net productivity
          runP1 = sunP1*P1c-srsP1*P1cP       ! net production
 
-   !..To save net production
+         ! To save net production
 #ifndef CENH
          _SET_DIAGNOSTIC_(self%id_netP1,runP1)
 #else
          _SET_DIAGNOSTIC_(self%id_netP1,(sumP1*cenh-seoP1-seaP1-sraP1*cenh)*P1c-srsP1*P1cP)
 #endif
 
-   !..Carbon Source equations
+         ! Carbon Source equations
 
          rho = MIN(rho,0.1_rk)
+
          ! Chl changes (note that Chl is a component of PXc and not involved
          ! in mass balance)
          Chl_inc = rho*(sumP1-sraP1)*P1c
          Chl_loss = (sdoP1+srsP1)*Chl1P + (seoP1+seaP1)*Chl1
 
-         _SET_ODE_(self%id_c,(fO3P1c-fP1O3c-fP1R6c-fP1RDc)) ! Jorn: R4 in flagellates
+         _SET_ODE_(self%id_c,(fO3P1c-fP1O3c-fP1R6c-fP1RDc))
 
          _SET_ODE_(self%id_R1c,fP1R1c)
          _SET_ODE_(self%id_R2c,fP1R2c)
-         _SET_ODE_(self%id_R6c,fP1R6c) ! Jorn: R4 in flagellates
+         _SET_ODE_(self%id_R6c,fP1R6c)
          _SET_ODE_(self%id_chl,(Chl_inc - Chl_loss))
 
          _SET_ODE_(self%id_O3c,(fP1O3c - fO3P1c)/CMass)
          _SET_ODE_(self%id_O2o,(fO3P1c*self%uB1c_O2X - fP1O3c*self%urB1_O2X))
 
-   !..Phosphorus flux through P1...........................................
+         ! Phosphorus flux through P1...........................................
 
-   !..Lysis loss of phosphorus
-         fP1R6p = sP1R6 * min(self%qplP1cX*P1cP,P1pP) ! Jorn: R4 for flagellates
-         fP1RDp = sdoP1 * P1pP - fP1R6p               ! Jorn: R4 for flagellates
+         ! Lysis loss of phosphorus
+         fP1R6p = sP1R6 * min(self%qplP1cX*P1cP,P1pP)
+         fP1RDp = sdoP1 * P1pP - fP1R6p
 
-   !..Net phosphorus uptake
+         ! Net phosphorus uptake
          rumP1p = self%qurP1pX * N1pP * P1c
          misP1p = self%xqpP1X * qpRPIcX*P1cP - P1pP
          runP1p = sunP1*P1c * qpRPIcX*self%xqpP1X - srsP1*P1pP
          fN1P1p = MIN(rumP1p, runP1p+misP1p)
 
-   !..Source equations
-         _SET_ODE_(self%id_p,(fN1P1p-fP1RDp-fP1R6p)) ! Jorn: R4 for flagellates
+         ! Source equations
+         _SET_ODE_(self%id_p,(fN1P1p-fP1RDp-fP1R6p))
          _SET_ODE_(self%id_N1p,-fN1P1p)
-         _SET_ODE_(self%id_R6p,fP1R6p) ! Jorn: R4 for flagellates
+         _SET_ODE_(self%id_R6p,fP1R6p)
          _SET_ODE_(self%id_R1p,fP1RDp)
 
-   !..Nitrogen flux through P1.............................................
+         ! Nitrogen flux through P1.............................................
 
-   !..Nitrogen loss by lysis
+         ! Nitrogen loss by lysis
          fP1R6n = sP1R6 * min(self%qnlP1cX*P1cP,P1nP)
-         fP1RDn = sdoP1 * P1nP - fP1R6n ! Jorn: R4 for flagellates
+         fP1RDn = sdoP1 * P1nP - fP1R6n
 
-   !..Net nitrogen uptake
+         ! Net nitrogen uptake
          rumP1n3 = self%quP1n3X * N3nP * P1c
          rumP1n4 = self%quP1n4X * N4nP * P1c
          rumP1n = rumP1n3 + rumP1n4
@@ -450,7 +453,7 @@ contains
          runP1n = sunP1*P1c * qnRPIcX*self%xqnP1X - srsP1*P1nP
          fNIP1n = MIN(rumP1n, runP1n + misP1n)
 
-   !..Partitioning over NH4 and NO3 uptake
+         ! Partitioning over NH4 and NO3 uptake
          IF (fNIP1n .gt. 0._rk) THEN
             fN3P1n = fNIP1n * rumP1n3 / rumP1n
             fN4P1n = fNIP1n * rumP1n4 / rumP1n
@@ -459,64 +462,59 @@ contains
             fN4P1n = fNIP1n
          ENDIF
 
-   !..Source equations
+         ! Source equations
          _SET_ODE_(self%id_n,(fN4P1n+fN3P1n-fP1RDn-fP1R6n))
          _SET_ODE_(self%id_N3n,-fN3P1n)
          _SET_ODE_(self%id_N4n,-fN4P1n)
-         _SET_ODE_(self%id_R6n,fP1R6n) ! Jorn: R4 for flagellates
+         _SET_ODE_(self%id_R6n,fP1R6n)
          _SET_ODE_(self%id_R1n,fP1RDn)
 
          if (self%use_Si) then
+            ! Silicate flux through P1.............................................
             _GET_(self%id_s,P1sP)
-   !..Silicate flux through P1.............................................
 
-   !..Excretion loss of silicate
+            ! Excretion loss of silicate
             fP1R6s = sdoP1 * P1sP
 
-   !..Loss of excess silicate (qsP1c > qsP1cX)
+            ! Loss of excess silicate (qsP1c > qsP1cX)
             fP1N5s = MAX ( 0._rk, P1sP-self%qsP1cX * P1cP)
 
-   !..Net silicate uptake
+            ! Net silicate uptake
             fN5P1s = MAX ( 0._rk, self%qsP1cX*runP1) - fP1N5s
 #ifdef SAVEFLX
             fN5PXs(I) = fN5P1s
 #endif
 
-   !..Source equations
+            ! Source equations
             _SET_ODE_(self%id_s,(fN5P1s - fP1R6s))
             _SET_ODE_(self%id_N5s,-fN5P1s)
             _SET_ODE_(self%id_R6s, fP1R6s)
          end if
 
 #ifdef IRON
-   !..Iron flux through P1................................................
+         ! Iron flux through P1................................................
 
-   !..Iron loss by lysis
-   !  Because its high affinity with particles all the iron lost from phytoplankton by lysis is supposed to be 
-   !  associated to organic particulate detritus. (luca)
+         ! Obtain internal iron concentration (umol m-3, excludes background), and external biologically available iron.
+         _GET_(self%id_f,P1fP)
+         _GET_(self%id_N7f,N7fP)
 
-         fP1R6f = sdoP1 * P1fP   ! Jorn: R4 for flagellates
+         ! Iron loss by lysis
+         !  Because its high affinity with particles all the iron lost from phytoplankton by lysis is supposed to be 
+         !  associated to organic particulate detritus. (luca)
 
-   !..net iron uptake
+         fP1R6f = sdoP1 * P1fP
+
+         ! Net iron uptake
          rumP1f = self%qurP1fX * N7fP * P1c
          misP1f = self%qfRP1cX*P1cP - P1fP
          runP1f = sunP1*P1c * self%qfRP1cX - srsP1*P1fP
          fN7P1f = MIN(rumP1f, runP1f+misP1f)
 
-   !..Source equations
-         _SET_ODE_(self%id_f,(fN7P1f-fP1R6f)) ! Jorn: R4 for flagellates
+         ! Source equations
+         _SET_ODE_(self%id_f,(fN7P1f-fP1R6f))
          _SET_ODE_(self%id_N7f,-fN7P1f)
-         _SET_ODE_(self%id_R6f,fP1R6f) ! Jorn: R4 for flagellates
+         _SET_ODE_(self%id_R6f,fP1R6f)
 #endif
-
-   !..add dia 
-   !      IF ((P1c(I) .LT. 0.2).AND. (parEIR .GT. 0.5)) THEN 
-   !       SP1c(I) = SP1c(I) + (0.2 - P1c(I)) 
-   !       SP1n(I) = SP1n(I) + (0.2 - P1c(I))*16.0/106.0 
-   !       SP1p(I) = SP1p(I) + (0.2 - P1c(I))/106.0 
-   !       SP1s(I) = SP1s(I) + (0.2 - P1c(I))*16.0/106.0 
-   !       SChl1(I) = SChl1(I) + (0.2 - P1c(I))*ChlCpp 
-   !      END IF 
 
       ! Leave spatial loops (if any)
       _LOOP_END_
@@ -552,7 +550,7 @@ contains
          iNIP1 = 2.0_rk / (1._rk/iNP1p + 1._rk/iNP1n)
       end if
 
-!..sedimentation and resting stages.....................................
+      ! Sedimentation and resting stages.....................................
       SDP1 = self%resP1mX * MAX(0._rk, (self%esNIP1X - iNIP1)) + self%rP1mX
    end function
 

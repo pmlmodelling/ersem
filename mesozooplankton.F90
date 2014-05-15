@@ -67,7 +67,7 @@ contains
 ! !LOCAL VARIABLES:
       integer           :: iprey
       character(len=16) :: index
-      type (type_weighted_sum),pointer :: child
+      type (type_weighted_sum),pointer :: total_prey_calculator
       real(rk)          :: pu_eaZ4X,pu_eaRZ4X
       logical           :: preyispom
       real(rk)          :: c0
@@ -105,12 +105,13 @@ contains
       call self%add_constituent('c',1.e-4_rk,c0,qn=self%qnZIcX,qp=self%qpZIcX)
 
       ! Create an expression that will compute the total prey
-      ! (wil be depth integrated to determine overwintering)
-      allocate(child)
-      child%output_name = 'totprey'
-      child%output_units = 'mg C m-3'
+      ! (will be depth integrated to determine overwintering)
+      allocate(total_prey_calculator)
+      total_prey_calculator%output_name = 'totprey'
+      total_prey_calculator%output_units = 'mg C m-3'
 
-      ! Register links to carbon contents of prey.
+      ! Now that we know the number of prey, allocate arrays with prey properties,
+      ! such as variable identifiers and prey-specific parameters.
       allocate(self%id_prey(self%nprey))
       allocate(self%id_preyc(self%nprey))
       allocate(self%id_preyn(self%nprey))
@@ -146,7 +147,7 @@ contains
          call self%request_coupling_to_model(self%id_preyl(iprey),self%id_prey(iprey), &
                                              type_bulk_standard_variable(name='total_calcite_in_biota',aggregate_variable=.true.))
 
-         call child%add_component('prey'//trim(index)//'c',self%suprey(iprey))
+         call total_prey_calculator%add_component('prey'//trim(index)//'c',self%suprey(iprey))
 
          if (preyispom) then
             self%pu_eaZ4X(iprey) = pu_eaRZ4X
@@ -155,7 +156,8 @@ contains
          end if
       end do
 
-      call self%add_child(child,'totprey',configunit=-1)
+      ! Add the submodel that will compute total prey for us, and create a variable that will contain its depth integral.
+      call self%add_child(total_prey_calculator,'totprey',configunit=-1)
       call self%register_dependency(self%id_totprey,'totprey')
       call self%register_expression_dependency(self%id_inttotprey,vertical_integral(self%id_totprey))
 
