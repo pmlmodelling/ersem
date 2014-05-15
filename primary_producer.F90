@@ -3,16 +3,19 @@
 !#define IRON
 !#define CENH
 
-module pml_ersem_vphyt
+module pml_ersem_primary_producer
 
    use fabm_types
-   use pml_ersem_base
+   use fabm_particle
+
+   use pml_ersem_shared
+   use pml_ersem_pelagic_base
 
    implicit none
 
    private
 
-   type,extends(type_ersem_pelagic_base_model),public :: type_pml_ersem_vphyt
+   type,extends(type_ersem_pelagic_base_model),public :: type_pml_ersem_primary_producer
       ! Identifiers for model dependencies
       type (type_state_variable_id)      :: id_O3c,id_O2o
       type (type_state_variable_id)      :: id_N5s,id_N1p,id_N3n,id_N4n
@@ -29,6 +32,7 @@ module pml_ersem_vphyt
 
       ! Identifiers for diagnostic variables
       type (type_diagnostic_variable_id) :: id_netP1
+      type (type_diagnostic_variable_id) :: id_lD
 
       type (type_model_id) :: id_RP
 
@@ -42,7 +46,6 @@ module pml_ersem_vphyt
 #ifdef IRON
       real(rk) :: qflP1cX,qfRP1cX,qurP1fX
 #endif
-      real(rk) :: EPSP1X
       real(rk) :: rP1mX
       integer :: LimnutX
       logical :: use_Si, calcify
@@ -52,11 +55,8 @@ module pml_ersem_vphyt
       procedure :: do
       procedure :: get_vertical_movement
       procedure :: get_sinking_rate
-      procedure :: get_light_extinction
-   end type type_pml_ersem_vphyt
+   end type type_pml_ersem_primary_producer
 
-   real(rk),parameter :: ZeroX       = 1e-8_rk
-   real(rk),parameter :: secs_pr_day = 86400.0_rk
    real(rk),parameter :: ChlCmin     = 0.0067_rk
 
 contains
@@ -66,13 +66,13 @@ contains
 ! !DESCRIPTION:
 !
 ! !INPUT PARAMETERS:
-      class (type_pml_ersem_vphyt),intent(inout),target :: self
+      class (type_pml_ersem_primary_producer),intent(inout),target :: self
       integer,                     intent(in)           :: configunit
 !
 ! !REVISION HISTORY:
 !
 ! !LOCAL VARIABLES:
-      real(rk) :: c0
+      real(rk) :: c0,EPS
 !EOP
 !-----------------------------------------------------------------------
 !BOC
@@ -111,19 +111,19 @@ contains
       call self%get_parameter(self%qfRP1cX,  'qfRc')
       call self%get_parameter(self%qurP1fX,  'qurf')
 #endif
-      call self%get_parameter(self%EPSP1X,   'EPS')
+      call self%get_parameter(EPS,           'EPS')
       call self%get_parameter(c0,'c0',default=0.0_rk)
       call self%get_parameter(self%calcify,'calcify',default=.false.)
       call self%get_parameter(self%rP1mX,    'rm',default=0.0_rk)
 
       ! Register state variables
-      if (self%use_Si) then
-         call self%initialize_ersem_base(c_ini=1.e-4_rk,n_ini=1.26e-6_rk,p_ini=4.288e-8_rk,chl_ini=3.e-6_rk,s_ini=1.e-6_rk,f_ini=5.e-6_rk, &
-                                         c0=c0,n0=qnrpicX*c0,p0=qprpicX*c0,s0=self%qsp1cX*c0,chl0=self%phimP1X*c0,sedimentation=.true.)
-      else
-         call self%initialize_ersem_base(c_ini=1.e-4_rk,n_ini=1.26e-6_rk,p_ini=4.288e-8_rk,chl_ini=3.e-6_rk,f_ini=5.e-6_rk, &
-                                         c0=c0,n0=qnrpicX*c0,p0=qprpicX*c0,chl0=self%phimP1X*c0,sedimentation=.true.)
-      end if
+      call self%initialize_ersem_base(sedimentation=.true.)
+      call self%add_constituent('c',1.e-4_rk,   c0)
+      call self%add_constituent('n',1.26e-6_rk, c0*qnrpicX)
+      call self%add_constituent('p',4.288e-8_rk,c0*qprpicX)
+      call self%add_constituent('f',5.e-6_rk,   0.0_rk)
+      call self%add_constituent('chl',3.e-6_rk, c0*self%phimP1X)
+      if (self%use_Si) call self%add_constituent('s',1.e-6_rk,c0*self%qsp1cX)
 
       ! Register links to external nutrient pools.
       call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3', 'Phosphate')    
@@ -174,14 +174,20 @@ contains
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
       if (self%calcify) then
          call self%register_dependency(self%id_RainR,'RainR','-','Rain ratio')
-         call self%register_state_dependency(self%id_L2c,'L2c','mg C/m^3','Calcite')    
+         call self%register_state_dependency(self%id_L2c,'L2c','mg C/m^3','Free calcite')    
+         call self%register_diagnostic_variable(self%id_lD,'l','mg C m-3','Bound calcite',missing_value=0._rk,output=output_none)
+         call self%add_to_aggregate_variable(type_bulk_standard_variable(name='total_calcite_in_biota',aggregate_variable=.true.),self%id_lD)
       end if
+
+      ! Contribute to light extinction
+      call self%add_to_aggregate_variable(standard_variables%attenuation_coefficient_of_photosynthetic_radiative_flux, &
+         self%id_c,scale_factor=EPS,include_background=.true.)
 
    end subroutine
 
    subroutine do(self,_ARGUMENTS_DO_)
 
-      class (type_pml_ersem_vphyt),intent(in) :: self
+      class (type_pml_ersem_primary_producer),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_
 
    ! !LOCAL VARIABLES:
@@ -343,13 +349,24 @@ contains
 
          if (self%calcify) then
    ! Calcified matter:
+
             _GET_(self%id_RainR,RainR)
+
+            ! Calculate nutrient limitation impact on rain ratio:
             t=max(0._rk,ETW)  ! this is to avoid funny values of rain ratio when ETW ~ -2 degrees
             RainR = RainR * min((1._rk-iNP1p),iNP1n) * (t/(2._rk+t)) !* max(1.,P2c(I)/2.) removd as P2 is a broad class not just calicifiers
             RainR = max(RainR,0.005_rk)
+
+            ! Compute virtual calcite attached to live cells. It is virtual in the sense that it has not been subtracted
+            ! from the DIC budget yet. Thus, its carbon is not yet allocated. When consumed by predators, this is (partially)
+            ! transformed into free liths. At that time, carbon used to form liths is subtracted from the DIC pool.
+            _SET_DIAGNOSTIC_(self%id_lD,RainR*P1cP)
+
+            ! For dying cells: convert virtual cell-attached calcite to actual calcite in free liths.
+            ! Update DIC and lith balances accordingly (only now take away the DIC needed to form the calcite)
             _SET_ODE_(self%id_O3c,-fP1R6c*RainR/Cmass)
             _SET_ODE_(self%id_L2c, fP1R6c*RainR)
-            _SET_DIAG_(self%id_lD,RainR*P1cP)
+
          end if
 
    !..Respiration..........................................................
@@ -507,7 +524,7 @@ contains
    end subroutine do
 
    function get_sinking_rate(self,_ARGUMENTS_LOCAL_) result(SDP1)
-      class (type_pml_ersem_vphyt),intent(in) :: self
+      class (type_pml_ersem_primary_producer),intent(in) :: self
       _DECLARE_ARGUMENTS_LOCAL_
 
       real(rk) :: P1c,P1p,P1n
@@ -540,7 +557,7 @@ contains
    end function
 
    subroutine get_vertical_movement(self,_ARGUMENTS_GET_VERTICAL_MOVEMENT_)
-      class (type_pml_ersem_vphyt),intent(in) :: self
+      class (type_pml_ersem_primary_producer),intent(in) :: self
       _DECLARE_ARGUMENTS_GET_VERTICAL_MOVEMENT_
 
       real(rk) :: SDP1
@@ -561,17 +578,5 @@ contains
       _LOOP_END_
 
    end subroutine get_vertical_movement
-
-   subroutine get_light_extinction(self,_ARGUMENTS_GET_EXTINCTION_)
-      class (type_pml_ersem_vphyt),intent(in) :: self
-      _DECLARE_ARGUMENTS_GET_EXTINCTION_
-
-      real(rk) :: c
-
-      _LOOP_BEGIN_
-         _GET_WITH_BACKGROUND_(self%id_c,c)
-         _SET_EXTINCTION_(self%EPSP1X*c)
-      _LOOP_END_
-   end subroutine
 
 end module

@@ -2,16 +2,19 @@
 
 !#define IRON
 
-module pml_ersem_microzoo
+module pml_ersem_microzooplankton
 
    use fabm_types
-   use pml_ersem_base
+   use fabm_particle
+
+   use pml_ersem_shared
+   use pml_ersem_pelagic_base
 
    implicit none
 
    private
 
-   type,extends(type_ersem_pelagic_base_model),public :: type_pml_ersem_microzoo
+   type,extends(type_ersem_pelagic_base_model),public :: type_pml_ersem_microzooplankton
       ! Variables
       type (type_model_id)                                   :: id_RP
       type (type_model_id),         allocatable,dimension(:) :: id_prey
@@ -46,7 +49,7 @@ contains
 ! !DESCRIPTION:
 !
 ! !INPUT PARAMETERS:
-      class (type_pml_ersem_microzoo),intent(inout),target :: self
+      class (type_pml_ersem_microzooplankton),intent(inout),target :: self
       integer,                        intent(in)           :: configunit
 !
 ! !REVISION HISTORY:
@@ -85,7 +88,10 @@ contains
       call self%get_parameter(self%gutdiss,'gutdiss')
 
       ! Register state variables
-      call self%initialize_ersem_base(c_ini=1.e-4_rk,p_ini=4.288e-8_rk,n_ini=1.26e-6_rk,c0=c0,n0=qnRPIcX*c0,p0=qpRPIcX*c0)
+      call self%initialize_ersem_base(sedimentation=.false.)
+      call self%add_constituent('c',1.e-4_rk,   c0)
+      call self%add_constituent('n',1.26e-6_rk, qnRPIcX*c0)
+      call self%add_constituent('p',4.288e-8_rk,qpRPIcX*c0)
 
       ! Register links to carbon contents of prey.
       allocate(self%id_prey(self%nprey))
@@ -100,25 +106,26 @@ contains
       do iprey=1,self%nprey
          write (index,'(i0)') iprey
          call self%get_parameter(self%suprey(iprey),'suprey'//trim(index))
-         call self%register_dependency(self%id_preyc(iprey),  'prey'//trim(index)//'c',  'mg C m-3',   'Prey '//trim(index)//' C')
-         call self%register_dependency(self%id_preyn(iprey),  'prey'//trim(index)//'n',  'mmol N m-3', 'Prey '//trim(index)//' N')
-         call self%register_dependency(self%id_preyp(iprey),  'prey'//trim(index)//'p',  'mmol P m-3', 'Prey '//trim(index)//' P')
-         call self%register_dependency(self%id_preys(iprey),  'prey'//trim(index)//'s',  'mmol Si m-3','Prey '//trim(index)//' Si')
-         call self%register_dependency(self%id_preyl(iprey), 'prey'//trim(index)//'l',  'mg C m-3','Prey '//trim(index)//' calcite')
+         call self%register_dependency(self%id_preyc(iprey),'prey'//trim(index)//'c','mmol C m-3', 'Prey '//trim(index)//' C')
+         call self%register_dependency(self%id_preyn(iprey),'prey'//trim(index)//'n','mmol N m-3', 'Prey '//trim(index)//' N')
+         call self%register_dependency(self%id_preyp(iprey),'prey'//trim(index)//'p','mmol P m-3', 'Prey '//trim(index)//' P')
+         call self%register_dependency(self%id_preys(iprey),'prey'//trim(index)//'s','mmol Si m-3','Prey '//trim(index)//' Si')
+         call self%register_dependency(self%id_preyl(iprey),'prey'//trim(index)//'l','mg C m-3',   'Prey '//trim(index)//' calcite')
 #ifdef IRON
-         call self%register_dependency(self%id_preyf(iprey),  'prey'//trim(index)//'f',  'mmol Fe m-3','Prey '//trim(index)//' Fe')
+         call self%register_dependency(self%id_preyf(iprey),'prey'//trim(index)//'f','mmol Fe m-3','Prey '//trim(index)//' Fe')
          call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe m-3','sink for Fe of prey '//trim(index),required=.false.)
 #endif
 
          call self%register_model_dependency(self%id_prey(iprey),'prey'//trim(index))
-         call self%request_coupling_to_model(self%id_preyc(iprey),self%id_prey(iprey),'c')
-         call self%request_coupling_to_model(self%id_preyn(iprey),self%id_prey(iprey),'n')
-         call self%request_coupling_to_model(self%id_preyp(iprey),self%id_prey(iprey),'p')
-         call self%request_coupling_to_model(self%id_preys(iprey),self%id_prey(iprey),'s')
+         call self%request_coupling_to_model(self%id_preyc(iprey),self%id_prey(iprey),standard_variables%total_carbon)
+         call self%request_coupling_to_model(self%id_preyn(iprey),self%id_prey(iprey),standard_variables%total_nitrogen)
+         call self%request_coupling_to_model(self%id_preyp(iprey),self%id_prey(iprey),standard_variables%total_phosphorus)
+         call self%request_coupling_to_model(self%id_preys(iprey),self%id_prey(iprey),standard_variables%total_silicate)
 #ifdef IRON
-         call self%request_coupling_to_model(self%id_preyf(iprey),self%id_prey(iprey),'f')
+         call self%request_coupling_to_model(self%id_preyf(iprey),self%id_prey(iprey),standard_variables%total_iron)
 #endif
-         call self%request_coupling_to_model(self%id_preyl(iprey),self%id_prey(iprey),'l')
+         call self%request_coupling_to_model(self%id_preyl(iprey),self%id_prey(iprey), &
+                                             type_bulk_standard_variable(name='total_calcite_in_biota',aggregate_variable=.true.))
       end do
 
       ! Register links to external nutrient pools.
@@ -160,7 +167,7 @@ contains
 
    subroutine do(self,_ARGUMENTS_DO_)
 
-      class (type_pml_ersem_microzoo),intent(in) :: self
+      class (type_pml_ersem_microzooplankton),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_
 
    ! !LOCAL VARIABLES:
@@ -200,12 +207,13 @@ contains
       _GET_(self%id_p,Z5pP)
 
       do iprey=1,self%nprey
-         _GET_(self%id_preyc(iprey),preycP(iprey))
-         _GET_(self%id_preyn(iprey),preynP(iprey))
-         _GET_(self%id_preyp(iprey),preypP(iprey))
-         _GET_(self%id_preys(iprey),preysP(iprey))
-         _GET_(self%id_preyl(iprey),preylP(iprey))
+         _GET_(self%id_preyc(iprey), preycP(iprey))
+         _GET_(self%id_preyn(iprey), preynP(iprey))
+         _GET_(self%id_preyp(iprey), preypP(iprey))
+         _GET_(self%id_preys(iprey), preysP(iprey))
+         _GET_(self%id_preyl(iprey), preylP(iprey))
       end do
+      preycP = preycP*CMass
 
       qpZ5c = Z5p/Z5c
       qnZ5c = Z5n/Z5c

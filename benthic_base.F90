@@ -3,28 +3,40 @@
 ! Benthic variable that supports resuspension and remineralization.
 ! Both processes return material to the pelagic.
 
-module pml_ersem_benthic_pom
+module pml_ersem_benthic_base
 
    use fabm_types
-   use pml_ersem_base
+   use fabm_particle
+
+   use pml_ersem_shared
 
    implicit none
 
 !  default: all is private.
    private
 
-   type,extends(type_ersem_benthic_base_model),public :: type_pml_ersem_benthic_pom
-      type (type_state_variable_id)        :: id_resuspension_c,id_resuspension_n,id_resuspension_p,id_resuspension_s,id_resuspension_f,id_resuspension_l
-      type (type_state_variable_id)        :: id_O3c,id_N1p,id_N3n,id_N4n,id_N5s,id_N7f
+   type,extends(type_particle_model),public :: type_ersem_benthic_base_model
+      ! Own state variables
+      type (type_bottom_state_variable_id) :: id_c,id_n,id_p,id_f,id_s,id_l
+
+      ! Coupled state variables for resuspension and remineralization
+      type (type_state_variable_id) :: id_resuspension_c,id_resuspension_n,id_resuspension_p,id_resuspension_s,id_resuspension_f,id_resuspension_l
+      type (type_state_variable_id) :: id_O3c,id_N1p,id_N3n,id_N4n,id_N5s,id_N7f
+      type (type_model_id)          :: id_resuspension_target
+
+      ! Dependencies for resuspension
       type (type_horizontal_dependency_id) :: id_bedstress,id_wdepth
       type (type_dependency_id)            :: id_dens
-      type (type_model_id)                 :: id_resuspension_target
 
+      ! Parameters
       real(rk) :: reminQIX,pQIN3X
       logical  :: resuspension
    contains
       procedure :: initialize
       procedure :: do_bottom
+
+      procedure :: initialize_ersem_benthic_base
+      procedure :: add_constituent => benthic_base_add_constituent
    end type
 
 contains
@@ -34,7 +46,7 @@ contains
 ! !DESCRIPTION:
 !
 ! !INPUT PARAMETERS:
-   class (type_pml_ersem_benthic_pom), intent(inout), target :: self
+   class (type_ersem_benthic_base_model), intent(inout), target :: self
    integer,                            intent(in)            :: configunit
 !
 ! !LOCAL VARIABLES:
@@ -42,8 +54,8 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(composition,     'composition',default='cnp')
-      call self%get_parameter(self%reminQIX,    'remin',    default=0.0_rk)
+      call self%get_parameter(composition,      'composition', default='cnp')
+      call self%get_parameter(self%reminQIX,    'remin',       default=0.0_rk)
       call self%get_parameter(self%resuspension,'resuspension',default=.false.)
 
       call self%initialize_ersem_benthic_base()
@@ -111,8 +123,54 @@ contains
       end if
    end subroutine
 
+   subroutine initialize_ersem_benthic_base(self,c_ini,n_ini,p_ini,s_ini,f_ini)
+      class (type_ersem_benthic_base_model), intent(inout), target :: self
+      real(rk),optional,                     intent(in)            :: c_ini,n_ini,p_ini,s_ini,f_ini
+
+      ! Set time unit to d-1
+      ! This implies that all rates (sink/source terms, vertical velocities) are givne in d-1.
+      self%dt = 86400._rk
+
+      if (present(c_ini)) call self%add_constituent('c',c_ini)
+      if (present(n_ini)) call self%add_constituent('n',n_ini)
+      if (present(p_ini)) call self%add_constituent('p',p_ini)
+      if (present(s_ini)) call self%add_constituent('s',s_ini)
+      if (present(f_ini)) call self%add_constituent('f',f_ini)
+   end subroutine
+
+   subroutine benthic_base_add_constituent(self,name,initial_value)
+      class (type_ersem_benthic_base_model), intent(inout), target :: self
+      character(len=*),                      intent(in)            :: name
+      real(rk),                              intent(in)            :: initial_value
+
+      select case (name)
+         case ('c')
+            call self%register_state_variable(self%id_c,'c','mg C m-2','carbon',initial_value,minimum=0._rk)
+            call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_c,scale_factor=1._rk/CMass)
+         case ('n')
+            call self%register_state_variable(self%id_n, 'n', 'mmol N m-2', 'nitrogen', initial_value, minimum=0._rk)
+            call self%add_to_aggregate_variable(standard_variables%total_nitrogen,self%id_n)
+         case ('p')
+            call self%register_state_variable(self%id_p, 'p', 'mmol P m-2', 'phosphorus', initial_value, minimum=0._rk)
+            call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_p)
+         case ('s')
+            call self%register_state_variable(self%id_s,'s','mmol Si m-2','silicate',initial_value,minimum=0._rk)
+            call self%add_to_aggregate_variable(standard_variables%total_silicate,self%id_s)
+         case ('f')
+#ifdef IRON   
+            call self%register_state_variable(self%id_f,'f','umol Fe m-2','iron',initial_value,minimum=0._rk)
+            call self%add_to_aggregate_variable(standard_variables%total_iron,self%id_f)
+#endif
+         case ('l')
+            call self%register_state_variable(self%id_l,'l','mg C m-2','calcite',initial_value,minimum=0._rk)
+            call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_l,scale_factor=1._rk/CMass)
+         case default
+            call self%fatal_error('benthic_base_add_constituent','Unknown constituent "'//trim(name)//'".')
+      end select
+   end subroutine benthic_base_add_constituent
+
    subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
-      class (type_pml_ersem_benthic_pom), intent(in) :: self
+      class (type_ersem_benthic_base_model), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
       
       real(rk) :: bedstress,density,wdepth

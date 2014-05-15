@@ -4,18 +4,28 @@
 
 include ../../../Rules.make
 
-DOCSRC	= base.F90 nutrients.F90 dom.F90 pom.F90 oxygen.F90 carbonate.F90 vphyt.F90 microzoo.F90 mesozoo.F90 bacteria.F90 benthic_pom.F90 light.F90 calcification.F90
+DOCSRC	= shared.F90 pelagic_base.F90 benthic_base.F90 oxygen.F90 carbonate.F90 light.F90 primary_producer.F90 microzooplankton.F90 mesozooplankton.F90 bacteria.F90 calcification.F90
 
-OBJS    = ${LIBFABM}(nutrients.o) ${LIBFABM}(dom.o) ${LIBFABM}(pom.o) ${LIBFABM}(oxygen.o) ${LIBFABM}(carbonate.o) ${LIBFABM}(vphyt.o) ${LIBFABM}(microzoo.o) ${LIBFABM}(mesozoo.o) ${LIBFABM}(bacteria.o) ${LIBFABM}(benthic_pom.o) ${LIBFABM}(light.o) ${LIBFABM}(calcification.o)
+# Objects that derive from pelagic_base:
+PELAGIC_OBJS = ${LIBFABM}(primary_producer.o) ${LIBFABM}(microzooplankton.o) ${LIBFABM}(mesozooplankton.o) ${LIBFABM}(bacteria.o) ${LIBFABM}(calcification.o)
+
+# Objects that derive from pelagic_base:
+BENTHIC_OBJS = 
+
+# All objects
+OBJS = ${LIBFABM}(pelagic_base.o) ${LIBFABM}(benthic_base.o) ${LIBFABM}(oxygen.o) ${LIBFABM}(carbonate.o) ${LIBFABM}(light.o) ${PELAGIC_OBJS} ${BENTHIC_OBJS}
 
 all: objs
 
-${OBJS}: $(FABMBASE) ${LIBFABM}(base.o)
+${PELAGIC_OBJS}: ${LIBFABM}(pelagic_base.o)
 
-${LIBFABM}(base.o): $(FABMBASE)
+${BENTHIC_OBJS}: ${LIBFABM}(benthic_base.o)
+
+${OBJS}: ${LIBFABM}(shared.o) $(FABMBASE)
+
+${LIBFABM}(shared.o): $(FABMBASE)
 
 objs: ${OBJS}
-	$(MOVE_MODULES_COMMAND)
 
 doc:    $(DOCSRC)
 	$(PROTEX) $(DOCSRC) > ../../../../doc/pml_ersem.tex

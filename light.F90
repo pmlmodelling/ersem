@@ -10,8 +10,8 @@ module pml_ersem_light
 
    type,extends(type_base_model),public :: type_pml_ersem_light
       ! Identifiers for diagnostic variables
-      type (type_diagnostic_variable_id)   :: id_EIR, id_parEIR
-      type (type_dependency_id)            :: id_dz, id_xEPS, id_ESS
+      type (type_diagnostic_variable_id)   :: id_EIR, id_parEIR, id_xEPS
+      type (type_dependency_id)            :: id_dz, id_xEPSp, id_ESS
       type (type_horizontal_dependency_id) :: id_I_0
 
       ! Parameters
@@ -47,11 +47,12 @@ contains
               standard_variable=standard_variables%downwelling_shortwave_flux)
       call self%register_diagnostic_variable(self%id_parEIR,'parEIR','W m-2','photosynthetically active radiation', &
               standard_variable=standard_variables%downwelling_photosynthetic_radiative_flux)
+      call self%register_diagnostic_variable(self%id_xEPS,'xEPS','m-1','attenuation coefficient of shortwave flux')
 
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_I_0,standard_variables%surface_downwelling_shortwave_flux)
       call self%register_dependency(self%id_dz, standard_variables%cell_thickness)
-      call self%register_dependency(self%id_xEPS,standard_variables%attenuation_coefficient_of_photosynthetic_radiative_flux)
+      call self%register_dependency(self%id_xEPSp,standard_variables%attenuation_coefficient_of_photosynthetic_radiative_flux)
       call self%register_dependency(self%id_ESS, type_bulk_standard_variable(name='mass_concentration_of_silt'))
    end subroutine
    
@@ -64,14 +65,15 @@ contains
       _GET_HORIZONTAL_(self%id_I_0,buffer)
       _VERTICAL_LOOP_BEGIN_
          _GET_(self%id_dz,dz)     ! Layer height (m)
-         _GET_(self%id_xEPS,xEPS) ! Extinction coefficient of shortwave radiation, due to particulate organic material (m-1)
+         _GET_(self%id_xEPSp,xEPS) ! Extinction coefficient of shortwave radiation, due to particulate organic material (m-1)
          _GET_(self%id_ESS,ESS)   ! Suspended silt
          xEPS = xEPS + self%EPS0X + self%EPSESSX*ESS
          xtnc = xEPS*dz
-         EIR = buffer/xtnc*(1.0_rk-exp(-xtnc))
+         EIR = buffer/xtnc*(1.0_rk-exp(-xtnc))  ! Note: this computes the vertical average, not the value at the layer centre.
          buffer = buffer*exp(-xtnc)
          _SET_DIAGNOSTIC_(self%id_EIR,EIR)                     ! Local shortwave radiation
          _SET_DIAGNOSTIC_(self%id_parEIR,EIR*self%pEIR_eowX)   ! Local photosynthetically active radiation
+         _SET_DIAGNOSTIC_(self%id_xEPS,xEPS)                   ! Vertical attenuation of shortwave radiation
       _VERTICAL_LOOP_END_
 
    end subroutine get_light

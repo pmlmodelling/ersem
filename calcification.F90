@@ -2,7 +2,9 @@
 module pml_ersem_calcification
 
    use fabm_types
-   use pml_ersem_base
+
+   use pml_ersem_shared
+   use pml_ersem_pelagic_base
 
    implicit none
 
@@ -54,8 +56,9 @@ contains
       call self%get_parameter(self%Rain0,'Rain0')
       call self%get_parameter(sedL2,'sedL2')
       call self%get_parameter(c0,'c0',default=0.0_rk)
-   
-      call self%initialize_ersem_base(c_ini=0._rk,w=-sedL2,c0=c0)
+
+      call self%initialize_ersem_base(rm=sedL2)
+      call self%add_constituent('c',0.0_rk,c0)
 
       call self%register_diagnostic_variable(self%id_RainR,'RainR','1','rain ratio')
 

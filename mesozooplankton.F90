@@ -2,19 +2,22 @@
 
 !#define IRON
 
-module pml_ersem_mesozoo
+module pml_ersem_mesozooplankton
 
 ! Jorn TODO: overwintering, deal with implicit N and P in some prey [esp. when cannibalizing]
 
    use fabm_types
+   use fabm_particle
    use fabm_expressions
-   use pml_ersem_base
+
+   use pml_ersem_shared
+   use pml_ersem_pelagic_base
 
    implicit none
 
    private
 
-   type,extends(type_ersem_pelagic_base_model),public :: type_pml_ersem_mesozoo
+   type,extends(type_ersem_pelagic_base_model),public :: type_pml_ersem_mesozooplankton
       ! Variables
       type (type_model_id),         allocatable,dimension(:) :: id_prey
       type (type_model_id)                                   :: id_RP
@@ -49,8 +52,6 @@ module pml_ersem_mesozoo
       procedure :: do
    end type
 
-   real(rk),parameter :: ZeroX = 1e-8_rk
-
 contains
 
    subroutine initialize(self,configunit)
@@ -58,7 +59,7 @@ contains
 ! !DESCRIPTION:
 !
 ! !INPUT PARAMETERS:
-      class (type_pml_ersem_mesozoo),intent(inout),target :: self
+      class (type_pml_ersem_mesozooplankton),intent(inout),target :: self
       integer,                       intent(in)           :: configunit
 !
 ! !REVISION HISTORY:
@@ -100,7 +101,8 @@ contains
       call self%get_parameter(self%urB1_O2X,'urB1_O2')
 
       ! Register state variables
-      call self%initialize_ersem_base(c_ini=1.e-4_rk,qn=self%qnZIcX,qp=self%qpZIcX,c0=c0)
+      call self%initialize_ersem_base(sedimentation=.false.)
+      call self%add_constituent('c',1.e-4_rk,c0,qn=self%qnZIcX,qp=self%qpZIcX)
 
       ! Create an expression that will compute the total prey
       ! (wil be depth integrated to determine overwintering)
@@ -123,25 +125,26 @@ contains
          write (index,'(i0)') iprey
          call self%get_parameter(self%suprey(iprey),'suprey'//trim(index))
          call self%get_parameter(preyispom,'prey'//trim(index)//'ispom',default=.false.)
-         call self%register_dependency(self%id_preyc(iprey), 'prey'//trim(index)//'c',  'mg C m-3',   'Prey '//trim(index)//' C')    
-         call self%register_dependency(self%id_preyn(iprey), 'prey'//trim(index)//'n',  'mmol N m-3', 'Prey '//trim(index)//' N')    
-         call self%register_dependency(self%id_preyp(iprey), 'prey'//trim(index)//'p',  'mmol P m-3', 'Prey '//trim(index)//' P')    
-         call self%register_dependency(self%id_preys(iprey), 'prey'//trim(index)//'s',  'mmol Si m-3','Prey '//trim(index)//' Si')
-         call self%register_dependency(self%id_preyl(iprey), 'prey'//trim(index)//'l',  'mg C m-3','Prey '//trim(index)//' calcite')
+         call self%register_dependency(self%id_preyc(iprey), 'prey'//trim(index)//'c','mmol C m-3', 'Prey '//trim(index)//' C')    
+         call self%register_dependency(self%id_preyn(iprey), 'prey'//trim(index)//'n','mmol N m-3', 'Prey '//trim(index)//' N')    
+         call self%register_dependency(self%id_preyp(iprey), 'prey'//trim(index)//'p','mmol P m-3', 'Prey '//trim(index)//' P')    
+         call self%register_dependency(self%id_preys(iprey), 'prey'//trim(index)//'s','mmol Si m-3','Prey '//trim(index)//' Si')
+         call self%register_dependency(self%id_preyl(iprey), 'prey'//trim(index)//'l','mg C m-3',   'Prey '//trim(index)//' calcite')
 #ifdef IRON
-         call self%register_dependency(self%id_preyf(iprey), 'prey'//trim(index)//'f',  'mmol Fe m-3','Prey '//trim(index)//' Fe')    
+         call self%register_dependency(self%id_preyf(iprey), 'prey'//trim(index)//'f','mmol Fe m-3','Prey '//trim(index)//' Fe')    
          call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe m-3','sink for Fe of prey '//trim(index),required=.false.)    
 #endif
 
          call self%register_model_dependency(self%id_prey(iprey),'prey'//trim(index))
-         call self%request_coupling_to_model(self%id_preyc(iprey),self%id_prey(iprey),'c')
-         call self%request_coupling_to_model(self%id_preyn(iprey),self%id_prey(iprey),'n')
-         call self%request_coupling_to_model(self%id_preyp(iprey),self%id_prey(iprey),'p')
-         call self%request_coupling_to_model(self%id_preys(iprey),self%id_prey(iprey),'s')
+         call self%request_coupling_to_model(self%id_preyc(iprey),self%id_prey(iprey),standard_variables%total_carbon)
+         call self%request_coupling_to_model(self%id_preyn(iprey),self%id_prey(iprey),standard_variables%total_nitrogen)
+         call self%request_coupling_to_model(self%id_preyp(iprey),self%id_prey(iprey),standard_variables%total_phosphorus)
+         call self%request_coupling_to_model(self%id_preys(iprey),self%id_prey(iprey),standard_variables%total_silicate)
 #ifdef IRON
-         call self%request_coupling_to_model(self%id_preyf(iprey),self%id_prey(iprey),'f')
+         call self%request_coupling_to_model(self%id_preyf(iprey),self%id_prey(iprey),standard_variables%total_iron)
 #endif
-         call self%request_coupling_to_model(self%id_preyl(iprey),self%id_prey(iprey),'l')
+         call self%request_coupling_to_model(self%id_preyl(iprey),self%id_prey(iprey), &
+                                             type_bulk_standard_variable(name='total_calcite_in_biota',aggregate_variable=.true.))
 
          call child%add_component('prey'//trim(index)//'c',self%suprey(iprey))
 
@@ -195,7 +198,7 @@ contains
    
    subroutine do(self,_ARGUMENTS_DO_)
 
-      class (type_pml_ersem_mesozoo),intent(in) :: self
+      class (type_pml_ersem_mesozooplankton),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_
 
    ! !LOCAL VARIABLES:
@@ -222,6 +225,7 @@ contains
       _LOOP_BEGIN_
 
          _GET_HORIZONTAL_(self%id_inttotprey,intprey)
+         intprey = intprey*CMass
 
          if (intprey>self%MinpreyX) then
             ! Enough prey available - not overwintering
@@ -237,12 +241,13 @@ contains
 
             ! Get prey concentrations
             do iprey=1,self%nprey
-               _GET_(self%id_preyc(iprey),  preycP(iprey))
-               _GET_(self%id_preyp(iprey),  preypP(iprey))
-               _GET_(self%id_preyn(iprey),  preynP(iprey))
-               _GET_(self%id_preys(iprey),  preysP(iprey))
-               _GET_(self%id_preyl(iprey),  preylP(iprey))
+               _GET_(self%id_preyc(iprey), preycP(iprey))
+               _GET_(self%id_preyp(iprey), preypP(iprey))
+               _GET_(self%id_preyn(iprey), preynP(iprey))
+               _GET_(self%id_preys(iprey), preysP(iprey))
+               _GET_(self%id_preyl(iprey), preylP(iprey))
             end do
+            preycP = preycP*CMass
 
    !..Temperature effect :
 

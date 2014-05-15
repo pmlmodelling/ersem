@@ -7,7 +7,10 @@
 module pml_ersem_bacteria
 
    use fabm_types
-   use pml_ersem_base
+   use fabm_particle
+
+   use pml_ersem_shared
+   use pml_ersem_pelagic_base
 
    implicit none
 
@@ -109,7 +112,10 @@ contains
       call self%get_parameter(c0,'c0')
 
       ! Allow ERSEM base model to declare our own state variables.
-      call self%initialize_ersem_base(c_ini=1.e-4_rk,n_ini=1.26e-6_rk,p_ini=4.288e-8_rk,c0=c0,n0=self%qnB1cX*c0,p0=self%qpB1cX*c0)
+      call self%initialize_ersem_base(sedimentation=.false.)
+      call self%add_constituent('c',1.e-4_rk,   c0)
+      call self%add_constituent('n',1.26e-6_rk, self%qnB1cX*c0)
+      call self%add_constituent('p',4.288e-8_rk,self%qpB1cX*c0)
 
       ! Register links to nutrient pools.
       call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3', 'Phosphate')
