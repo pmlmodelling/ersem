@@ -137,7 +137,7 @@ contains
       call self%get_parameter(self%calcify,  'calcify',default=.false.)
       call self%get_parameter(self%rP1mX,    'rm',  'm/d',      'background sinking velocity',default=0.0_rk)
 
-      ! Register state variables
+      ! Register state variables (handled by type_ersem_pelagic_base_model)
       call self%initialize_ersem_base(sedimentation=.true.)
       call self%add_constituent('c',1.e-4_rk,   c0)
       call self%add_constituent('n',1.26e-6_rk, c0*qnrpicX)
