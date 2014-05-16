@@ -65,7 +65,7 @@ module pml_ersem_primary_producer
 
    contains
 
-!     Model procedures
+      ! Model procedures
       procedure :: initialize
       procedure :: do
       procedure :: get_vertical_movement
@@ -93,6 +93,9 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
+      ! Obtain the values of all model parameters from FABM.
+      ! Specify the long name and units of the parameters, which could be used by FABM (or its host)
+      ! to present parameters to the user for configuration (e.g., through a GUI)
       call self%get_parameter(self%use_Si,   'use_Si', default=.true.)
       call self%get_parameter(self%sump1X,   'sum',  '1/d',        'Specific maximal productivity at reference temperature')
       call self%get_parameter(self%q10p1X,   'q10',  '-',          'Regulating temperature factor Q10')
@@ -191,7 +194,7 @@ contains
       call self%register_dependency(self%id_parEIR,standard_variables%downwelling_photosynthetic_radiative_flux)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
       if (self%calcify) then
-         ! Link to rain ratio (set by calcification module; excludes effect of nutrient limitation)
+         ! Link to rain ratio (set by calcification module; excludes effect of nutrient limitation, which is computed below)
          call self%register_dependency(self%id_RainR,'RainR','-','Rain ratio')
 
          ! Link to external detached liths (sink for calcite of dying phytoplankton)
@@ -203,7 +206,7 @@ contains
          call self%add_to_aggregate_variable(type_bulk_standard_variable(name='total_calcite_in_biota',aggregate_variable=.true.),self%id_lD)
       end if
 #ifdef CENH
-      ! Link to atmospheric CO2 if using CO2-enhanced primary production.
+      ! Link to atmospheric CO2 (only if using CO2-enhanced primary production).
       call self%register_dependency(self%id_pco2a3,standard_variables%mole_fraction_of_carbon_dioxide_in_air)    
 #endif
 
