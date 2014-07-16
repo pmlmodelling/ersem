@@ -38,9 +38,9 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%EPSESSX,  'EPSESS')
-      call self%get_parameter(self%EPS0X,    'EPS0r') 
-      call self%get_parameter(self%pEIR_eowX,'pEIR_eow') 
+      call self%get_parameter(self%EPSESSX,  'EPSESS',  'm^2/mg','specific light attenuation of silt')
+      call self%get_parameter(self%EPS0X,    'EPS0r',   'm^-1',  'background light attenuation') 
+      call self%get_parameter(self%pEIR_eowX,'pEIR_eow','-',     'photosynthetically active fraction of shortwave radiaton') 
 
       ! Register diagnostic variables
       call self%register_diagnostic_variable(self%id_EIR,'EIR','W m-2','shortwave radiation', &

@@ -38,12 +38,12 @@ contains
 !BOC
       call self%get_parameter(self%ISWO2X,'ISWO2')
 
-      call self%register_state_variable(self%id_O2o,'o','mmol O/m^3','Oxygen',300._rk,minimum=0._rk)
+      call self%register_state_variable(self%id_O2o,'o','mmol O_2/m^3','Oxygen',300._rk,minimum=0._rk)
    
       call self%register_diagnostic_variable(self%id_eO2mO2,'eO2mO2','1','relative oxygen saturation', &
          standard_variable=standard_variables%fractional_saturation_of_oxygen)
-      call self%register_diagnostic_variable(self%id_osat,'osat','mmol O/m^3','oxygen saturation concentration')
-      call self%register_diagnostic_variable(self%id_aou,'AOU','mmol O/m^3','apparent oxygen utilisation')
+      call self%register_diagnostic_variable(self%id_osat,'osat','mmol O_2/m^3','oxygen saturation concentration')
+      call self%register_diagnostic_variable(self%id_aou,'AOU','mmol O_2/m^3','apparent oxygen utilisation')
 
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
       call self%register_dependency(self%id_X1X,standard_variables%practical_salinity)

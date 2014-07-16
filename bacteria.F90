@@ -82,34 +82,34 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%iswBlimX,'iswBlim')
-      call self%get_parameter(self%q10B1X,  'q10')
-      call self%get_parameter(self%chdB1oX, 'chdo')
-      call self%get_parameter(self%chB1nX,  'chn')
-      call self%get_parameter(self%chB1pX,  'chp')
-      call self%get_parameter(self%sdB1X,   'sd')
-      call self%get_parameter(self%sumB1X,  'sum')
-      call self%get_parameter(self%puB1X,   'pu')
-      call self%get_parameter(self%puB1oX,  'puo')
-      call self%get_parameter(self%srsB1X,  'srs')
-      call self%get_parameter(self%qpB1cX,  'qpc')
-      call self%get_parameter(self%qnB1cX,  'qnc')
-      call self%get_parameter(self%urB1_O2X,'ur_O2')
+      call self%get_parameter(self%iswBlimX,'iswBlim', '',           'nutrient limitation (0=minimum of inorganic and organic availability,1=additive availability)')
+      call self%get_parameter(self%q10B1X,  'q10',     '-',          'Q_10 temperature coefficient')
+      call self%get_parameter(self%chdB1oX, 'chdo',    '-',          'Michaelis-Menten constant for oxygen limitation')
+      call self%get_parameter(self%chB1nX,  'chn',     'mmol N/m^3', 'Michaelis-Menten constant for nitrate limitation')
+      call self%get_parameter(self%chB1pX,  'chp',     'mmol P/m^3', 'Michaelis-Menten constant for phosphate limitation')
+      call self%get_parameter(self%sdB1X,   'sd',      '1/d',        'specific mortality at reference temperature')
+      call self%get_parameter(self%sumB1X,  'sum',     '1/d',        'maximum specific uptake at reference temperature')
+      call self%get_parameter(self%puB1X,   'pu',      '-',          'efficiency at high oxygen levels')
+      call self%get_parameter(self%puB1oX,  'puo',     '-',          'efficiency at low oxygen levels')
+      call self%get_parameter(self%srsB1X,  'srs',     '1/d',        'specific rest respiration at reference temperature')
+      call self%get_parameter(self%qpB1cX,  'qpc',     'mmol P/mg C','maximum phophorus to carbon ratio')
+      call self%get_parameter(self%qnB1cX,  'qnc',     'mmol N/mg C','maximum nitrogen to carbon ratio')
+      call self%get_parameter(self%urB1_O2X,'ur_O2',   'mmol O_2/mg C','oxygen consumed per carbon respired')
 
       ! Remineralization parameters
-      call self%get_parameter(self%redfieldX,'redfield')
-      call self%get_parameter(self%sR1N1X,   'sR1N1')
-      call self%get_parameter(self%sR1N4X,   'sR1N4')
-      call self%get_parameter(self%fsinkX,   'fsink')
-      call self%get_parameter(self%ISWphx,   'ISWph')
-      call self%get_parameter(self%sN4N3X,   'sN4N3')
-      call self%get_parameter(self%cessX,    'cess')
+      call self%get_parameter(self%redfieldX,'redfield','mol/mol','Redfield carbon to nitogen ratio')
+      call self%get_parameter(self%sR1N1X,   'sR1N1',   '1/d',    'mineralisation rate of labile dissolved organic phosphorus')
+      call self%get_parameter(self%sR1N4X,   'sR1N4',   '1/d',    'mineralisation rate of labile dissolved organic nitrogen')
+      call self%get_parameter(self%fsinkX,   'fsink',   '1/d',    'scavenging rate for iron')
+      call self%get_parameter(self%ISWphx,   'ISWph',   '',       'switch for pH impact on nitrification')
+      call self%get_parameter(self%sN4N3X,   'sN4N3',   '1/d',    'specific nitrification rate')
+      call self%get_parameter(self%cessX,    'cess',    'mg/m^3', 'silt concentration at which relative rate of nitrification is 1')
       
 #ifndef DOCDYN
-      call self%get_parameter(self%rR2R1X,   'rR2R1')
+      call self%get_parameter(self%rR2R1X,   'rR2R1', '1/d', 'specific rate of breakdown of semi-labile to labile DOC')
 #endif
 
-      call self%get_parameter(c0,'c0')
+      call self%get_parameter(c0,'c0','mg C/m^3','background carbon concentration')
 
       ! Allow ERSEM base model to declare our own state variables.
       call self%initialize_ersem_base(sedimentation=.false.)
@@ -134,7 +134,7 @@ contains
       call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','Semi-labile DOC')    
 
       ! Register links to particulate organic matter pools.
-      call self%get_parameter(self%nRP,'nRP',default=0)
+      call self%get_parameter(self%nRP,'nRP','','number of substrates',default=0)
       allocate(self%id_RP(self%nRP))
       allocate(self%id_RPc(self%nRP))
       allocate(self%id_RPn(self%nRP))
@@ -162,20 +162,20 @@ contains
       allocate(self%sRPR1(self%nRP))
       do iRP=1,self%nRP
          write (index,'(i0)') iRP
-         call self%get_parameter(self%sRPR1(iRP),'sRP'//trim(index)//'R1')
+         call self%get_parameter(self%sRPR1(iRP),'sRP'//trim(index)//'R1','1/d','remineralisation of substrate '//trim(index)//' to DOM')
       end do
 
-      call self%get_parameter(self%rR2B1X,'rR2')
-      call self%get_parameter(self%rR3B1X,'rR3')
-      call self%get_parameter(self%frB1R3,'frR3')
+      call self%get_parameter(self%rR2B1X,'rR2','-','fraction of semi-labile DOC available to bacteria')
+      call self%get_parameter(self%rR3B1X,'rR3','-','fraction of semi-refractory DOC available to bacteria')
+      call self%get_parameter(self%frB1R3,'frR3','-','fraction of activity respiration converted to semi-refractory DOC')
 #else
       allocate(self%puRP_B1X(self%nRP))
       do iRP=1,self%nRP
          write (index,'(i0)') iRP
-         call self%get_parameter(self%puRP_B1X(iRP),'puRP'//trim(index))
+         call self%get_parameter(self%puRP_B1X(iRP),'puRP'//trim(index),'-','fraction of substrate '//trim(index)//' available to bacteria')
       end do
 
-      call self%get_parameter(self%R1R2X,'R1R2')
+      call self%get_parameter(self%R1R2X,'R1R2','-','labile fraction of produced DOM')
 #endif
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools

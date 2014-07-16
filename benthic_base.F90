@@ -54,9 +54,11 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(composition,      'composition', default='cnp')
-      call self%get_parameter(self%reminQIX,    'remin',       default=0.0_rk)
-      call self%get_parameter(self%resuspension,'resuspension',default=.false.)
+      call self%get_parameter(composition,      'composition', '',   'elemental composition',default='cnp')
+      call self%get_parameter(self%reminQIX,    'remin',       '1/d','remineralisation rate',default=0.0_rk)
+      if (index(composition,'n')/=0 .and. self%reminQIX/=0.0_rk) &
+         call self%get_parameter(self%pQIN3X,'pN3','-','nitrate fraction of remineralised nitrogen (remainder is ammonia)',default=0.0_rk)
+      call self%get_parameter(self%resuspension,'resuspension','',   'enable resuspension',  default=.false.)
 
       call self%initialize_ersem_benthic_base()
 
@@ -70,21 +72,20 @@ contains
       if (index(composition,'c')/=0) then
          call self%add_constituent('c',0.0_rk)
          if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_c,'resuspension_target_c','mmol m-3','pelagic variable taking up resuspended carbon')
+            call self%register_state_dependency(self%id_resuspension_c,'resuspension_target_c','mmol/m^3','pelagic variable taking up resuspended carbon')
             call self%request_coupling_to_model(self%id_resuspension_c,self%id_resuspension_target,'c')
          end if
-         if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_O3c,'O3c','mmol m-3','dissolved inorganic carbon')
+         if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_O3c,'O3c','mmol/m^3','dissolved inorganic carbon')
       end if
       if (index(composition,'n')/=0) then
          call self%add_constituent('n',0.0_rk)
          if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_n,'resuspension_target_n','mmol m-3','pelagic variable taking up resuspended nitrogen')
+            call self%register_state_dependency(self%id_resuspension_n,'resuspension_target_n','mmol/m^3','pelagic variable taking up resuspended nitrogen')
             call self%request_coupling_to_model(self%id_resuspension_n,self%id_resuspension_target,'n')
          end if
          if (self%reminQIX/=0.0_rk) then
-            call self%get_parameter(self%pQIN3X,'pN3',default=0.0_rk)
-            call self%register_state_dependency(self%id_N3n,'N3n','mmol m-3','nitrate')
-            call self%register_state_dependency(self%id_N4n,'N4n','mmol m-3','ammonium')
+            call self%register_state_dependency(self%id_N3n,'N3n','mmol/m^3','nitrate')
+            call self%register_state_dependency(self%id_N4n,'N4n','mmol/m^3','ammonium')
          end if
       end if
       if (index(composition,'p')/=0) then
@@ -145,24 +146,24 @@ contains
 
       select case (name)
          case ('c')
-            call self%register_state_variable(self%id_c,'c','mg C m-2','carbon',initial_value,minimum=0._rk)
+            call self%register_state_variable(self%id_c,'c','mg C/m^2','carbon',initial_value,minimum=0._rk)
             call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_c,scale_factor=1._rk/CMass)
          case ('n')
-            call self%register_state_variable(self%id_n, 'n', 'mmol N m-2', 'nitrogen', initial_value, minimum=0._rk)
+            call self%register_state_variable(self%id_n, 'n', 'mmol N/m^2', 'nitrogen', initial_value, minimum=0._rk)
             call self%add_to_aggregate_variable(standard_variables%total_nitrogen,self%id_n)
          case ('p')
-            call self%register_state_variable(self%id_p, 'p', 'mmol P m-2', 'phosphorus', initial_value, minimum=0._rk)
+            call self%register_state_variable(self%id_p, 'p', 'mmol P/m^2', 'phosphorus', initial_value, minimum=0._rk)
             call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_p)
          case ('s')
-            call self%register_state_variable(self%id_s,'s','mmol Si m-2','silicate',initial_value,minimum=0._rk)
+            call self%register_state_variable(self%id_s,'s','mmol Si/m^2','silicate',initial_value,minimum=0._rk)
             call self%add_to_aggregate_variable(standard_variables%total_silicate,self%id_s)
          case ('f')
 #ifdef IRON   
-            call self%register_state_variable(self%id_f,'f','umol Fe m-2','iron',initial_value,minimum=0._rk)
+            call self%register_state_variable(self%id_f,'f','umol Fe/m^2','iron',initial_value,minimum=0._rk)
             call self%add_to_aggregate_variable(standard_variables%total_iron,self%id_f)
 #endif
          case ('l')
-            call self%register_state_variable(self%id_l,'l','mg C m-2','calcite',initial_value,minimum=0._rk)
+            call self%register_state_variable(self%id_l,'l','mg C/m^2','calcite',initial_value,minimum=0._rk)
             call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_l,scale_factor=1._rk/CMass)
          case default
             call self%fatal_error('benthic_base_add_constituent','Unknown constituent "'//trim(name)//'".')

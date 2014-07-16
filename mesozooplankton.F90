@@ -74,31 +74,30 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%nprey,     'nprey',default=0)
-      call self%get_parameter(self%qpZIcX,    'qpc')
-      call self%get_parameter(self%qnZIcX,    'qnc')
-      call self%get_parameter(self%q10z4X,    'q10')
-      call self%get_parameter(self%chrZ4oX,   'chro')
-      call self%get_parameter(self%minfoodZ4X,'minfood')
-      call self%get_parameter(self%chuZ4cX,   'chuc')
-      call self%get_parameter(self%sumZ4X,    'sum')
-      call self%get_parameter(self%sdZ4oX,    'sdo')
-      call self%get_parameter(self%sdZ4X,     'sd')
-      call self%get_parameter(self%srsZ4X,    'srs')
-      call self%get_parameter(self%puZ4X,     'pu')
-      call self%get_parameter(pu_eaZ4X,       'pu_ea')
-      call self%get_parameter(pu_eaRZ4X,      'pu_eaR')
-      call self%get_parameter(self%pe_R1Z4X,  'pe_R1')
-      call self%get_parameter(self%MinpreyX,  'Minprey')
-      call self%get_parameter(self%Z4repwX,   'repw')
-      call self%get_parameter(self%Z4mortX,   'mort')
-      call self%get_parameter(c0,             'c0')
-      call self%get_parameter(self%gutdiss,   'gutdiss')
+      call self%get_parameter(self%qpZIcX,    'qpc',    'mmol P/mg C','phosphorous to carbon ratio')
+      call self%get_parameter(self%qnZIcX,    'qnc',    'mmol N/mg C','nitrogen to carbon ratio')
+      call self%get_parameter(self%q10z4X,    'q10',    '-','Q_10 temperature coefficient')
+      call self%get_parameter(self%chrZ4oX,   'chro',   '','Michaelis Menten constant for oxygen limitation')
+      call self%get_parameter(self%minfoodZ4X,'minfood','mg C/m^3','Michaelis-Menten constant to perceive food')
+      call self%get_parameter(self%chuZ4cX,   'chuc',   'mg C/m^3','Michaelis Menten constant for food uptake')
+      call self%get_parameter(self%sumZ4X,    'sum',    '1/d','maximum specific uptake at reference temperature')
+      call self%get_parameter(self%sdZ4oX,    'sdo',    '1/d','specific mortality due to oxygen limitation')
+      call self%get_parameter(self%sdZ4X,     'sd',     '1/d','specific basal mortality')
+      call self%get_parameter(self%srsZ4X,    'srs',    '1/d','specific rest respiration at reference temperature')
+      call self%get_parameter(self%puZ4X,     'pu',     '-', 'relative assimilation efficiency')
+      call self%get_parameter(pu_eaZ4X,       'pu_ea',  '-','excreted fraction of prey uptake')
+      call self%get_parameter(pu_eaRZ4X,      'pu_eaR', '-','excreted fraction of POM uptake')
+      call self%get_parameter(self%pe_R1Z4X,  'pe_R1',  '-','DOM fraction of excreted matter')
+      call self%get_parameter(self%MinpreyX,  'Minprey','mg C/m^2','food treshold for overwintering state')
+      call self%get_parameter(self%Z4repwX,   'repw',   '1/d','specific overwintering respiration')
+      call self%get_parameter(self%Z4mortX,   'mort',   '1/d','specific overwintering mortality')
+      call self%get_parameter(c0,             'c0',     'mg C/m^3','background concentration')
+      call self%get_parameter(self%gutdiss,   'gutdiss','-','fraction of prey calcite that is dissolved after ingestion')
 
-      call self%get_parameter(self%R1R2X,   'R1R2')
-      call self%get_parameter(self%xR1pX,   'xR1p')
-      call self%get_parameter(self%xR1nX,   'xR1n')
-      call self%get_parameter(self%urB1_O2X,'urB1_O2')
+      call self%get_parameter(self%R1R2X,   'R1R2','-','labile fraction of produced DOM')
+      call self%get_parameter(self%xR1pX,   'xR1p','-','transfer of phosphorus to DOM, relative to POM')
+      call self%get_parameter(self%xR1nX,   'xR1n','-','transfer of nitrogen to DOM, relative to POM')
+      call self%get_parameter(self%urB1_O2X,'urB1_O2','mmol O_2/mg C','oxygen consumed per carbon respired')
 
       ! Register state variables
       call self%initialize_ersem_base(sedimentation=.false.)
@@ -112,6 +111,7 @@ contains
 
       ! Now that we know the number of prey, allocate arrays with prey properties,
       ! such as variable identifiers and prey-specific parameters.
+      call self%get_parameter(self%nprey,'nprey','','number of prey types',default=0)
       allocate(self%id_prey(self%nprey))
       allocate(self%id_preyc(self%nprey))
       allocate(self%id_preyn(self%nprey))
@@ -124,8 +124,8 @@ contains
       allocate(self%pu_eaZ4X(self%nprey))
       do iprey=1,self%nprey
          write (index,'(i0)') iprey
-         call self%get_parameter(self%suprey(iprey),'suprey'//trim(index))
-         call self%get_parameter(preyispom,'prey'//trim(index)//'ispom',default=.false.)
+         call self%get_parameter(self%suprey(iprey),'suprey'//trim(index),'-','relative affinity for prey type '//trim(index))
+         call self%get_parameter(preyispom,'prey'//trim(index)//'ispom','','prey type '//trim(index)//' is POM',default=.false.)
          call self%register_dependency(self%id_preyc(iprey), 'prey'//trim(index)//'c','mmol C m-3', 'Prey '//trim(index)//' C')    
          call self%register_dependency(self%id_preyn(iprey), 'prey'//trim(index)//'n','mmol N m-3', 'Prey '//trim(index)//' N')    
          call self%register_dependency(self%id_preyp(iprey), 'prey'//trim(index)//'p','mmol P m-3', 'Prey '//trim(index)//' P')    

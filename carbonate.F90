@@ -53,10 +53,10 @@ contains
       end if
 
       call self%register_diagnostic_variable(self%id_ph,    'pH',    '-',      'pH',standard_variable=standard_variables%ph_reported_on_total_scale)
-      call self%register_diagnostic_variable(self%id_pco2,  'pCO2',  'ppm',    'partial pressure of CO2')
-      call self%register_diagnostic_variable(self%id_CarbA, 'CarbA', 'mmol/m3','carbonic acid concentration')
-      call self%register_diagnostic_variable(self%id_BiCarb,'BiCarb','mmol/m3','bicarbonate concentration')
-      call self%register_diagnostic_variable(self%id_Carb,  'Carb',  'mmol/m3','carbonate concentration',standard_variable=standard_variables%mole_concentration_of_carbonate_expressed_as_carbon)
+      call self%register_diagnostic_variable(self%id_pco2,  'pCO2',  '1e-6',    'partial pressure of CO2')
+      call self%register_diagnostic_variable(self%id_CarbA, 'CarbA', 'mmol/m^3','carbonic acid concentration')
+      call self%register_diagnostic_variable(self%id_BiCarb,'BiCarb','mmol/m^3','bicarbonate concentration')
+      call self%register_diagnostic_variable(self%id_Carb,  'Carb',  'mmol/m^3','carbonate concentration',standard_variable=standard_variables%mole_concentration_of_carbonate_expressed_as_carbon)
 
       call self%register_diagnostic_variable(self%id_Om_cal,'Om_cal','-','calcite saturation')
       call self%register_diagnostic_variable(self%id_Om_arg,'Om_arg','-','aragonite saturation')

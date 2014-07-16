@@ -41,23 +41,23 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%iswcal,'iswcal')
+      call self%get_parameter(self%iswcal,'iswcal','','type of calcification dynamics')
       if (self%iswcal<0.or.self%iswcal>2) then
          call self%log_message('ISWcal set to 1')
          self%iswcal = 1
       end if
       select case (self%iswcal)
          case (1)
-            call self%get_parameter(self%ncalc,'ncalc')
-            call self%get_parameter(self%ndiss,'ndiss')
+            call self%get_parameter(self%ncalc,'ncalc','-','power of the calcification law (Ridgwell et al. 2007, mineral calcite)')
+            call self%get_parameter(self%ndiss,'ndiss','-','power of the dissolution law (Keir 1980)')
          case (2)
-            call self%get_parameter(self%KcalomX,'KcalomX')
+            call self%get_parameter(self%KcalomX,'KcalomX','-','half-saturation constant for calcification limitation from saturation state')
       end select
-      call self%get_parameter(self%Rain0,'Rain0')
-      call self%get_parameter(sedL2,'sedL2')
-      call self%get_parameter(c0,'c0',default=0.0_rk)
+      call self%get_parameter(self%Rain0,'Rain0','-','maximum rain ratio from PISCES')
+      call self%get_parameter(sedL2,'sedL2','m/d','sinking velocity')
+      call self%get_parameter(c0,'c0','mg C m^-3','background concentration',default=0.0_rk)
 
-      call self%initialize_ersem_base(rm=sedL2)
+      call self%initialize_ersem_base(rm=sedL2,sedimentation=.false.)
       call self%add_constituent('c',0.0_rk,c0)
 
       call self%register_diagnostic_variable(self%id_RainR,'RainR','1','rain ratio')
