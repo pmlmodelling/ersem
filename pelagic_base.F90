@@ -45,13 +45,13 @@ contains
       character(len=10) :: composition
       real(rk)          :: c0,s0,rRPmX,EPS
 
-      call self%get_parameter(composition,'composition','','elemental composition',default='')
-      call self%get_parameter(rRPmX,'rm', 'm/d',   'sinking velocity',default=0.0_rk)
-      call self%get_parameter(EPS,  'EPS','m^2/mg','specific light attenuation',default=0.0_rk)
+      call self%get_parameter(composition,'composition','',        'elemental composition',     default='')
+      call self%get_parameter(rRPmX,      'rm',         'm/d',     'sinking velocity',          default=0.0_rk)
+      call self%get_parameter(EPS,        'EPS',        'm^2/mg C','specific shortwave attenuation',default=0.0_rk)
 
       call self%initialize_ersem_base(rm=rRPmX)
       
-      call self%get_parameter(c0,'c0','mg/m^3','background carbon concentration',default=0.0_rk)
+      call self%get_parameter(c0,'c0','mg C/m^3','background carbon concentration',default=0.0_rk)
       if (index(composition,'c')/=0) call self%add_constituent('c',0.0_rk,c0)
       if (index(composition,'n')/=0) call self%add_constituent('n',0.0_rk,qnRPIcX*c0)
       if (index(composition,'p')/=0) call self%add_constituent('p',0.0_rk,qpRPIcX*c0)
@@ -143,7 +143,7 @@ contains
 
       select case (name)
          case ('c')
-            call self%register_state_variable(self%id_c,'c','mg/m^3','carbon',initial_value,minimum=0._rk,vertical_movement=-self%rm/self%dt,background_value=background_value)
+            call self%register_state_variable(self%id_c,'c','mg C/m^3','carbon',initial_value,minimum=0._rk,vertical_movement=-self%rm/self%dt,background_value=background_value)
             call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_c,scale_factor=1._rk/CMass)
             if (present(qn)) call self%add_to_aggregate_variable(standard_variables%total_nitrogen,  self%id_c,scale_factor=qn)
             if (present(qp)) call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_c,scale_factor=qp)

@@ -97,7 +97,7 @@ contains
       call self%get_parameter(self%urB1_O2X,'ur_O2',   'mmol O_2/mg C','oxygen consumed per carbon respired')
 
       ! Remineralization parameters
-      call self%get_parameter(self%redfieldX,'redfield','mol/mol','Redfield carbon to nitogen ratio')
+      call self%get_parameter(self%redfieldX,'redfield','mol/mol','Redfield carbon to nitrogen ratio')
       call self%get_parameter(self%sR1N1X,   'sR1N1',   '1/d',    'mineralisation rate of labile dissolved organic phosphorus')
       call self%get_parameter(self%sR1N4X,   'sR1N4',   '1/d',    'mineralisation rate of labile dissolved organic nitrogen')
       call self%get_parameter(self%fsinkX,   'fsink',   '1/d',    'scavenging rate for iron')

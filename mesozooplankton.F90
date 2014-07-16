@@ -109,9 +109,27 @@ contains
       total_prey_calculator%output_name = 'totprey'
       total_prey_calculator%output_units = 'mg C m-3'
 
-      ! Now that we know the number of prey, allocate arrays with prey properties,
-      ! such as variable identifiers and prey-specific parameters.
+      ! Determine number of prey types.
       call self%get_parameter(self%nprey,'nprey','','number of prey types',default=0)
+
+      ! Get prey-specific parameters.
+      allocate(self%suprey(self%nprey))
+      allocate(self%pu_eaZ4X(self%nprey))
+      do iprey=1,self%nprey
+         write (index,'(i0)') iprey
+         call self%get_parameter(self%suprey(iprey),'suprey'//trim(index),'-','relative affinity for prey type '//trim(index))
+      end do
+      do iprey=1,self%nprey
+         write (index,'(i0)') iprey
+         call self%get_parameter(preyispom,'prey'//trim(index)//'ispom','','prey type '//trim(index)//' is POM',default=.false.)
+         if (preyispom) then
+            self%pu_eaZ4X(iprey) = pu_eaRZ4X
+         else
+            self%pu_eaZ4X(iprey) = pu_eaZ4X
+         end if
+      end do
+
+      ! Get prey-specific coupling links.
       allocate(self%id_prey(self%nprey))
       allocate(self%id_preyc(self%nprey))
       allocate(self%id_preyn(self%nprey))
@@ -120,12 +138,8 @@ contains
       allocate(self%id_preys(self%nprey))
       allocate(self%id_preyl(self%nprey))
       allocate(self%id_preyf_target(self%nprey))
-      allocate(self%suprey(self%nprey))
-      allocate(self%pu_eaZ4X(self%nprey))
       do iprey=1,self%nprey
          write (index,'(i0)') iprey
-         call self%get_parameter(self%suprey(iprey),'suprey'//trim(index),'-','relative affinity for prey type '//trim(index))
-         call self%get_parameter(preyispom,'prey'//trim(index)//'ispom','','prey type '//trim(index)//' is POM',default=.false.)
          call self%register_dependency(self%id_preyc(iprey), 'prey'//trim(index)//'c','mmol C m-3', 'Prey '//trim(index)//' C')    
          call self%register_dependency(self%id_preyn(iprey), 'prey'//trim(index)//'n','mmol N m-3', 'Prey '//trim(index)//' N')    
          call self%register_dependency(self%id_preyp(iprey), 'prey'//trim(index)//'p','mmol P m-3', 'Prey '//trim(index)//' P')    
@@ -148,12 +162,6 @@ contains
                                              type_bulk_standard_variable(name='total_calcite_in_biota',aggregate_variable=.true.))
 
          call total_prey_calculator%add_component('prey'//trim(index)//'c',self%suprey(iprey))
-
-         if (preyispom) then
-            self%pu_eaZ4X(iprey) = pu_eaRZ4X
-         else
-            self%pu_eaZ4X(iprey) = pu_eaZ4X
-         end if
       end do
 
       ! Add the submodel that will compute total prey for us, and create a variable that will contain its depth integral.

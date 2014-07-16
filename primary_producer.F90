@@ -97,7 +97,7 @@ contains
       ! Specify the long name and units of the parameters, which could be used by FABM (or its host)
       ! to present parameters to the user for configuration (e.g., through a GUI)
       call self%get_parameter(self%use_Si,   'use_Si','',          'use silicate',default=.true.)
-      call self%get_parameter(self%sump1X,   'sum',  '1/d',        'specific maximum productivity at reference temperature')
+      call self%get_parameter(self%sump1X,   'sum',  '1/d',        'maximum specific productivity at reference temperature')
       call self%get_parameter(self%q10p1X,   'q10',  '-',          'Q_10 temperature coefficient')
       call self%get_parameter(self%srsp1X,   'srs',  '1/d',        'specific rest respiration at reference temperature')
       call self%get_parameter(self%pu_eap1X, 'pu_ea','-',          'excreted fraction of primary production')
