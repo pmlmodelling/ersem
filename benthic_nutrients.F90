@@ -122,10 +122,10 @@ contains
 ! treated as first order reaction for NH4 in the oxygenated layer
 ! Average nitrate density (mmol/m3): MU_m
         
-      MU_m = K3n/(D1m+(D2m-D1m)/3.0_rk)
+      MU_m = max(0.0_rk,K3n)/(D1m+(D2m-D1m)/3.0_rk)
 
       eT = EXP(LOG(self%q10nitX)*(ETW-10._rk)/10._rk)
-      eN = max(0.0_rk,MU_m/(self%hM4M3X+MU_m))
+      eN = self%hM4M3X/(self%hM4M3X+MU_m)
 !Ph influence on nitrification - empirical equation
       if(self%ISWphx.eq.1)then
         Fph = MIN(2._rk,MAX(0._rk,0.6111_rk*phx-3.8889_rk))
