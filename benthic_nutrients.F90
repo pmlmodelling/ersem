@@ -358,95 +358,100 @@ contains
 
    end subroutine
 
-   subroutine compute_parabola(H,D,y0,sms_int,flux_bot,y_bot,y_int)
-      real(rk),intent(in)  :: H,D,y0,sms_int,flux_bot
-      real(rk),intent(out) :: y_bot,y_int
+   subroutine compute_parabola(D,sigma,c0,P,flux_bot,c_bot,c_int)
+      real(rk),intent(in)  :: D,sigma,c0,P,flux_bot
+      real(rk),intent(out) :: c_bot,c_int
       real(rk) :: a,b,c
       ! ----------------------------------------------------------------------------------------------------
-      ! Determine equilibrium distribution from:
-      ! - layer height (m)
-      ! - diffusivity (m2/d)
-      ! - top concentration (#/m3)
-      ! - layer-integrated source terms (#/m2/d)
-      ! - bottom flux (#/m2/d)
-      ! Returns equilibrium concentration at bottom interface (#/m3), depth integral of layer contents (#/m2)
+      ! Determine equilibrium distribution in pore water from:
+      ! - D:        layer thickness D (m)
+      ! - sigma:    diffusivity  (m2/d)
+      ! - c0:       concentration at layer surface (#/m3)
+      ! - P:        layer-integrated source-sink terms (#/m2/d)
+      ! - flux_bot: bottom flux (#/m2/d)
+      ! Returns:
+      ! - c_bot:    equilibrium concentration at bottom interface (#/m3)
+      ! - c_int:    depth integral of concentration (#/m2)
       ! ----------------------------------------------------------------------------------------------------
-      ! Governing equation: dy/dt = D d2y/dz2 + sms
-      ! Assumption: diffusivity D and sources-minus-sinks sms are independent of z within the layer.
-      ! Thus, sms can be written as layer integral divided by layer height: sms = sms_int/H
-      ! At equilibrium: D d^2y/dz^2 + sms_int/H = 0
-      ! Thus, d^2y/dz^2 = -sms_int/H/D
-      ! Solution is a quadratic equation: y(z) = a z^2 + b z + c
-      ! From second derivative: d^2y/dz^2 = 2a = -sms_int/H/D. Thus, a = -sms_int/H/D/2.
+      ! Governing equation: dy/dt = sigma d2y/dz2 + sms
+      ! Assumption: diffusivity sigma and sources-minus-sinks sms are independent of z within the layer.
+      ! Thus, sms can be written as layer integred source-sink terms, divided by layer height: sms = P/D
+      ! At equilibrium: sigma d^2y/dz^2 + P/D = 0
+      ! Thus, d^2y/dz^2 = -P/D/sigma
+      ! Solution is a quadratic equation: c(z) = a z^2 + b z + c
+      ! From second derivative: d^2y/dz^2 = 2a = -P/D/sigma. Thus, a = -P/D/sigma/2.
       ! ----------------------------------------------------------------------------------------------------
-      ! y(z) = -sms_int/H/D/2 z^2 + b z + c
+      ! c(z) = -P/D/sigma/2 z^2 + b z + c
       !
-      ! Lets adopt a bottom-to-top coordinate system, with the bottom interface at z=0 and the top interface at z=H.
+      ! Lets adopt a bottom-to-top coordinate system, with the bottom interface at z=0 and the top interface at z=D.
       !
       ! Constraint 1: flux over bottom interface is known: flux_bot
       ! (typically chosen to balance demand depth-integrated sinks-sources in deeper layers)
-      ! For consistency, this flux must equal that produced by diffusion at the boundary, i.e., D*dy/dz
+      ! For consistency, this flux must equal that produced by diffusion at the boundary, i.e., sigma*dy/dz
       ! Note: gradient (bottom to top!) must be positive when deeper layers are a sink (i.e., sms_int_deep<0)
-      ! D*dy/dz(0) = D*b = -flux_bot -> b = -flux_bot/D
+      ! sigma*dy/dz(0) = sigma*b = -flux_bot -> b = -flux_bot/sigma
       !
-      ! Constraint 2: top concentration y(H)=y0 is known.
-      ! y(H) = -sms_int/D/2 H - flux_bot/D H + c = y0
-      ! -> c = y0 + (sms_int/2 + flux_bot)/D H
-      ! This is also the concentration at bottom interface: y(0) = c
+      ! Constraint 2: top concentration c(D)=c0 is known.
+      ! c(D) = -P/sigma/2 D - flux_bot/sigma D + c = c0
+      ! -> c = c0 + (P/2 + flux_bot)/sigma D
+      ! This is also the concentration at bottom interface: c(0) = c
       !
-      ! Depth-integrated layer contents is found by integrating the parabola between 0 and H:
-      !    \int{a * z^2 + b z + c} = [a/3 z^3 + b/2 z^2 + c z]_0^H = a/3 H^3 + b/2 H^2 + c Z
+      ! Depth-integrated layer contents is found by integrating the parabola between 0 and D:
+      !    \int{a * z^2 + b z + c} = [a/3 z^3 + b/2 z^2 + c z]_0^D = a/3 D^3 + b/2 D^2 + c Z
       ! ----------------------------------------------------------------------------------------------------
-      a = -sms_int/H/D/2
-      b = -flux_bot/D
-      c = y0 + H*(sms_int/2 + flux_bot)/D
+      a = -P/D/sigma/2
+      b = -flux_bot/sigma
+      c = c0 + D*(P/2 + flux_bot)/sigma
 
-      y_bot = c
-      y_int = (a/3*H*H + b/2*H + c)*H
+      c_bot = c
+      c_int = (a/3*D*D + b/2*D + c)*D
    end subroutine
 
-   subroutine compute_parabola_end(D,y0,sms_int,Hmax,H,y_int)
-      real(rk),intent(in)  :: D,y0,sms_int,Hmax
-      real(rk),intent(out) :: H,y_int
-      real(rk) :: y_bot
+   subroutine compute_parabola_end(sigma,c0,P,Dmax,D,c_int)
+      real(rk),intent(in)  :: sigma,c0,P,Dmax
+      real(rk),intent(out) :: D,c_int
+      real(rk) :: c_bot
       ! ----------------------------------------------------------------------------------------------------
-      ! Determine steady-state layer depth and equilibrium distribution from:
-      ! - diffusivity (m2/d)
-      ! - top concentration (#/m3)
-      ! - layer-integrated source terms (#/m2/d)
-      ! - concentration and flux at bottom interface must be zero
+      ! Determine steady-state layer depth and equilibrium distribution in pore water from:
+      ! - sigma:    diffusivity (m2/d)
+      ! - c0:       concentration at layer surface (#/m3)
+      ! - P:        layer-integrated source-sink terms (#/m2/d)
+      ! Constraint: concentration and flux at bottom interface must be zero.
+      ! Returns:
+      ! - D:        layer thickness (m)
+      ! - c_int:    depth integral of concentration (#/m2)
       ! ----------------------------------------------------------------------------------------------------
-      ! Governing equation in 1st layer: dy/dt = D d2y/dz2 + sms
-      ! Assumption: diffusivity D and sink-minus-source sms are independent of z within the layer.
-      ! Thus, sms can be written as layer integral divided by layer height: sms = sms_int/H
-      ! At equilibrium: D d^2y/dz^2 + sms_int/H = 0
-      ! Thus, d^2y/dz^2 = -sms_int/H/D
-      ! Solution is a quadratic equation: y(z) = a z^2 + b z + c
-      ! From second derivative: d^2y/dz^2 = 2a = -sms_int/H/D. Thus, a = -sms_int/H/D/2.
+      ! Governing equation in 1st layer: dy/dt = sigma d2y/dz2 + sms
+      ! Assumption: diffusivity sigma and sink-minus-source sms are independent of z within the layer.
+      ! Thus, sms can be written as layer integral divided by layer height: sms = P/D
+      ! At equilibrium: sigma d^2y/dz^2 + P/D = 0
+      ! Thus, d^2y/dz^2 = -P/D/sigma
+      ! Solution is a quadratic equation: c(z) = a z^2 + b z + c
+      ! From second derivative: d^2y/dz^2 = 2a = -P/D/sigma. Thus, a = -P/D/sigma/2.
       ! ----------------------------------------------------------------------------------------------------
       ! Task 1: find layer height
-      !   Bottom-to-top coordinate system, bottom interface at z=0, top interface at z=H
-      !   Bottom constraint: concentration y(0) = 0, flux dy/dz = 0 (i.e., minimum of parabola)
-      !   Thus, b=0 and c=0, and y(z) = -sms_int/H/D/2 z^2
-      !   Top constraint: concentration y(H) is known: y0
-      !   Thus y(H) = -sms_int/D/2 H = y0 -> layer height H = -2 D y0/sms_int
-      !   Note that H>=0 for sms_int<0 only: this solution is valid only if the layer is a sink.
-      !   Also, if the layer is neither sink nor source (sms_int=0), H->infinity. That is,
-      !   the solution is a flat profile, with surface concentration y0 extending forever downward.
+      !   Bottom-to-top coordinate system, bottom interface at z=0, top interface at z=D
+      !   Bottom constraint: concentration c(0) = 0, flux dy/dz = 0 (i.e., minimum of parabola)
+      !   Thus, b=0 and c=0, and c(z) = -P/D/sigma/2 z^2
+      !   Top constraint: concentration c(D) is known: c0
+      !   Thus c(D) = -P/sigma/2 D = c0 -> layer height D = -2 sigma c0/P
+      !   Note that D>=0 for P<0 only: this solution is valid only if the layer is a sink.
+      !   Also, if the layer is neither sink nor source (P=0), D->infinity. That is,
+      !   the solution is a flat profile, with surface concentration c0 extending forever downward.
       ! Task 2: compute depth-integrated layer contents:
-      !   \int{-sms_int/H/D/2 z^2} = [-sms_int/H/D/6 z^3]_0^H = -sms_int/D/6 H^2
-      ! Check consistency: flux at top interface is D*dy/dz = -sms_int
+      !   \int{-P/D/sigma/2 z^2} = [-P/D/sigma/6 z^3]_0^D = -P/sigma/6 D^2
+      ! Check consistency: flux at top interface is sigma*dy/dz = -P
       !    [OK: in steady state, surface exchange compensates internal loss]
       ! ----------------------------------------------------------------------------------------------------
-      if (Hmax*sms_int>-2*D*y0) then   ! Hmax<-2 D y0/sms_int, rearranged for sms_int<0 close to 0. Result also picks up sms_int>0.
-         ! Loss rate within layer is too low (or layer experiences net production, i.e., sms_int>0).
+      if (Dmax*P>-2*sigma*c0) then   ! Dmax<-2 sigma c0/P, rearranged for P<0 close to 0. Result also picks up P>0.
+         ! Loss rate within layer is too low (or layer experiences net production, i.e., P>0).
          ! Layer would extend beyond maximum depth. Fix depth at maximum depth and
          ! use parabola with zero flux but non-zero concentration at bottom interface.
-         H = Hmax
-         call compute_parabola(H,D,y0,sms_int,0.0_rk,y_bot,y_int)
+         D = Dmax
+         call compute_parabola(D,sigma,c0,P,0.0_rk,c_bot,c_int)
       else
-         H = -2*D*y0/sms_int
-         y_int = -sms_int/D/6*H*H
+         D = -2*sigma*c0/P
+         c_int = -P/sigma/6*D*D
       end if
    end subroutine
 
