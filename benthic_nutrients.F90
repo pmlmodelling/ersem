@@ -251,8 +251,6 @@ contains
 
       cmix   = self%EDZ_mixX
 
-! oxygen
-
       ! -----------------------------------------------------------------------------------
       ! Oxygen
       ! -----------------------------------------------------------------------------------
@@ -260,10 +258,12 @@ contains
       call compute_parabola_end(diff1,modconc(O2oP,jMU(4),cmix),jMU(4),self%d_totX,H1_eq,c_int1_eq)
 
       !CALL EndProfile(O2oP,G2oP,profO2,jMN(4),cmix,d1,d2,d3,diff1,diff2,diff3)
+      !jMN(4) = jMN(4) - profO2(14)/self%relax_oX
+      !_SET_ODE_BEN_(self%id_D1m,(max(D1m0,profO2(15))-D1m)/self%relax_oX)
 
-      ! Relax benthic oxygen towards equilibrium value
+      ! Relax benthic oxygen towards equilibrium value by updating surface exchange (>0 for into pelagic!)
       c_int_eq = c_int1_eq*poro
-      jMN(4) = jMN(4) + (c_int_eq-G2oP)/self%relax_oX
+      jMN(4) = jMN(4) + (G2oP-c_int_eq)/self%relax_oX
 
       ! Relax depth of first/oxygenated layer towards equilibrium value (H1_eq)
       _SET_ODE_BEN_(self%id_D1m,(max(D1m0,H1_eq)-D1m)/self%relax_oX)
@@ -276,16 +276,16 @@ contains
       ! Layer 2: compute steady-state layer height and layer integral
       call compute_parabola_end(diff2,c_bot_eq,jMI(4),self%d_totX-d1,H2_eq,c_int2_eq)
 
-! nitrate
-
       !CALL EndProfile(N3nP,K3nP,profNO3,jMN(6),cmix,d1,d2,d3,diff1,diff2,diff3)
+      !jMN(6) = jMN(6) - profNO3(14)/self%relax_mX
+      !_SET_ODE_BEN_(self%id_D2m,(max(D2m0,profNO3(15))-D2m)/self%relax_mX)
 
       ! Relax benthic nitrate towards equilibrium value
       c_int_eq = (c_int1_eq+c_int2_eq)*poro
-      jMN(6) = jMN(6) + (c_int_eq-K3nP)/self%relax_mX
+      jMN(6) = jMN(6) + (K3nP-c_int_eq)/self%relax_mX
 
-      ! Relax depth of bottom interface of second/oxidised layer towards equilibrium value (H1_eq+H2_eq)
-      _SET_ODE_BEN_(self%id_D2m,(max(D2m0,H1_eq+H2_eq)-D2m)/self%relax_mX)
+      ! Relax depth of bottom interface of second/oxidised layer towards equilibrium value (d1+H2_eq)
+      _SET_ODE_BEN_(self%id_D2m,(max(D2m0,d1+H2_eq)-D2m)/self%relax_mX)
 
 ! ammonium
 
