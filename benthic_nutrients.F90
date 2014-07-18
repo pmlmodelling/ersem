@@ -119,16 +119,21 @@ contains
       D1m0 = 0.0_rk
       D2m0 = 0.0_rk
 
-!* Nitrification:
-! Reaction: (NH4+,OH-) + 2*O2 -> (NO3-,H+) + 2*H2O
-! treated as first order reaction for NH4 in the oxygenated layer
-! Average nitrate density (mmol/m3): MU_m
-        
+      !* Nitrification (layer 1 only):
+      ! Reaction: (NH4+,OH-) + 2*O2 -> (NO3-,H+) + 2*H2O
+      ! treated as first order reaction for NH4 in the oxygenated layer
+      ! Average nitrate density (mmol/m3): MU_m
+
+      ! Compute average nitrate density in first/oxygenated layer, assuming
+      ! that the nitrate concentration is vertically homogenous in layer 1, and
+      ! drops quadratically towards 0 in layer 2.
       MU_m = max(0.0_rk,K3n)/(D1m+(D2m-D1m)/3.0_rk)
 
-      eT = EXP(LOG(self%q10nitX)*(ETW-10._rk)/10._rk)
+      ! Limitation factors for temperature (Q_10) and nitrate (hyperbolic, drops to 0 at high nitrate).
+      eT = self%q10nitX**(ETW-10._rk)/10._rk)
       eN = self%hM4M3X/(self%hM4M3X+MU_m)
-!Ph influence on nitrification - empirical equation
+
+      ! Ph influence on nitrification - empirical equation
       if(self%ISWphx.eq.1)then
         Fph = MIN(2._rk,MAX(0._rk,0.6111_rk*phx-3.8889_rk))
         jM4M3n = Fph * self%sM4M3X * K4nP * (D1m/self%d_totX) * eT * eN
@@ -136,6 +141,7 @@ contains
         jM4M3n = self%sM4M3X*K4nP*(D1m/self%d_totX)*eT*eN
       endif
 
+      ! Impose nitrification source-sink terms for benthic ammonium, nitrate, oxygen.
       _SET_ODE_BEN_(self%id_K4n, -jM4M3n)
       _SET_ODE_BEN_(self%id_K3n,  jM4M3n)
       _SET_ODE_BEN_(self%id_G2o, -self%xno3X*jM4M3n)
@@ -280,7 +286,7 @@ contains
       !jMN(6) = jMN(6) - profNO3(14)/self%relax_mX
       !_SET_ODE_BEN_(self%id_D2m,(max(D2m0,profNO3(15))-D2m)/self%relax_mX)
 
-      ! Relax benthic nitrate towards equilibrium value
+      ! Relax benthic nitrate towards equilibrium value by updating surface exchange (>0 for into pelagic!)
       c_int_eq = (c_int1_eq+c_int2_eq)*poro
       jMN(6) = jMN(6) + (K3nP-c_int_eq)/self%relax_mX
 
