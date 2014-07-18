@@ -130,7 +130,7 @@ contains
       MU_m = max(0.0_rk,K3n)/(D1m+(D2m-D1m)/3.0_rk)
 
       ! Limitation factors for temperature (Q_10) and nitrate (hyperbolic, drops to 0 at high nitrate).
-      eT = self%q10nitX**(ETW-10._rk)/10._rk)
+      eT = self%q10nitX**((ETW-10._rk)/10._rk)
       eN = self%hM4M3X/(self%hM4M3X+MU_m)
 
       ! Ph influence on nitrification - empirical equation
@@ -438,7 +438,7 @@ contains
       ! Check consistency: flux at top interface is D*dy/dz = -sms_int
       !    [OK: in steady state, surface exchange compensates internal loss]
       ! ----------------------------------------------------------------------------------------------------
-      if (Hmax*sms_int>-2*D*y0) then
+      if (Hmax*sms_int>-2*D*y0) then   ! Hmax<-2 D y0/sms_int, rearranged for sms_int<0 close to 0. Result also picks up sms_int>0.
          ! Loss rate within layer is too low (or layer experiences net production, i.e., sms_int>0).
          ! Layer would extend beyond maximum depth. Fix depth at maximum depth and
          ! use parabola with zero flux but non-zero concentration at bottom interface.
