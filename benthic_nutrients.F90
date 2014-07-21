@@ -90,7 +90,8 @@ contains
       real(rk) :: D1m0,D2m0
       real(rk) :: dum
       real(rk) :: H1_eq,H2_eq
-      real(rk) :: c_bot_eq, c_int1_eq, c_int2_eq, c_int_eq
+      real(rk) :: c_bot1_eq, c_bot2_eq, c_bot3_eq, c_int1_eq, c_int2_eq, c_int3_eq, c_int_eq
+      real(rk) :: norm_res_int,P_res_int
    
       _HORIZONTAL_LOOP_BEGIN_
 
@@ -142,10 +143,11 @@ contains
       endif
 
       ! Impose nitrification source-sink terms for benthic ammonium, nitrate, oxygen.
-      _SET_ODE_BEN_(self%id_K4n, -jM4M3n)
-      _SET_ODE_BEN_(self%id_K3n,  jM4M3n)
-      _SET_ODE_BEN_(self%id_G2o, -self%xno3X*jM4M3n)
+      !_SET_ODE_BEN_(self%id_K4n, -jM4M3n)
+      !_SET_ODE_BEN_(self%id_K3n,  jM4M3n)
+      !_SET_ODE_BEN_(self%id_G2o, -self%xno3X*jM4M3n)
 
+      ! Save nitrification source-sink terms for benthic ammonium, nitrate, oxygen.
       jMU(1) = jMU(1) - jM4M3n
       jMU(6) = jMU(6) + jM4M3n
       jMU(4) = jMU(4) - self%xno3X*jM4M3n
@@ -239,6 +241,8 @@ contains
 
       jmun = jmu(1)
       IF (jmun<0._rk) THEN
+         ! To prevent ammonium in layer 1 from becoming negative under high nitrification rates,
+         ! fulfil part of the ammonium demand in nitrification by taking ammonium from layer 2.
          jmu(1) = jmun*N4n/(N4n+0.5_rk)
          jmi(1) = jmi(1) + (jmun - jmu(1))
       ENDIF
@@ -260,16 +264,20 @@ contains
       ! -----------------------------------------------------------------------------------
       ! Oxygen
       ! -----------------------------------------------------------------------------------
-      ! Layer 1: compute steady-state layer height and layer integral
-      call compute_parabola_end(diff1,modconc(O2oP,jMU(4),cmix),jMU(4),self%d_totX,H1_eq,c_int1_eq)
+      ! Layer 1: compute steady-state layer height H1_eq and layer integral c_int1_eq
+      call compute_final_equilibrium_profile(diff1,modconc(O2oP,jMU(4),cmix),jMU(4),self%d_totX,H1_eq,c_int1_eq)
 
       !CALL EndProfile(O2oP,G2oP,profO2,jMN(4),cmix,d1,d2,d3,diff1,diff2,diff3)
       !jMN(4) = jMN(4) - profO2(14)/self%relax_oX
       !_SET_ODE_BEN_(self%id_D1m,(max(D1m0,profO2(15))-D1m)/self%relax_oX)
 
-      ! Relax benthic oxygen towards equilibrium value by updating surface exchange (>0 for into pelagic!)
+      ! Benthic oxygen dynamics: relax towards equilibrium value
       c_int_eq = c_int1_eq*poro
-      jMN(4) = jMN(4) + (G2oP-c_int_eq)/self%relax_oX
+      _SET_ODE_BEN_(self%id_G2o,(c_int_eq-G2oP)/self%relax_oX)
+
+      ! Net change in benthos must equal local production - surface exchange.
+      ! Thus, surface exchange = local production - net change (net change = relaxation)
+      _SET_SURFACE_EXCHANGE_(self%id_O2o,jMU(4)-(c_int_eq-G2oP)/self%relax_oX)
 
       ! Relax depth of first/oxygenated layer towards equilibrium value (H1_eq)
       _SET_ODE_BEN_(self%id_D1m,(max(D1m0,H1_eq)-D1m)/self%relax_oX)
@@ -277,29 +285,71 @@ contains
       ! -----------------------------------------------------------------------------------
       ! Nitrate
       ! -----------------------------------------------------------------------------------
-      ! Layer 1: compute steady-state concentration at bottom interface and layer integral
-      call compute_parabola(d1,diff1,modconc(N3nP,jMU(6)+jMI(6),cmix),jMU(6),jMI(6),c_bot_eq,c_int1_eq)
-      ! Layer 2: compute steady-state layer height and layer integral
-      call compute_parabola_end(diff2,c_bot_eq,jMI(4),self%d_totX-d1,H2_eq,c_int2_eq)
+      ! Layer 1: compute steady-state concentration at bottom interface c_bot1_eq and layer integral c_int1_eq
+      call compute_equilibrium_profile(d1,diff1,modconc(N3nP,jMU(6)+jMI(6),cmix),jMU(6),jMI(6),c_bot1_eq,c_int1_eq)
+      ! Layer 2: compute steady-state layer height H2_eq and layer integral c_int2_eq
+      call compute_final_equilibrium_profile(diff2,c_bot1_eq,jMI(4),self%d_totX-d1,H2_eq,c_int2_eq)
 
       !CALL EndProfile(N3nP,K3nP,profNO3,jMN(6),cmix,d1,d2,d3,diff1,diff2,diff3)
       !jMN(6) = jMN(6) - profNO3(14)/self%relax_mX
       !_SET_ODE_BEN_(self%id_D2m,(max(D2m0,profNO3(15))-D2m)/self%relax_mX)
 
-      ! Relax benthic nitrate towards equilibrium value by updating surface exchange (>0 for into pelagic!)
+      ! Benthic nitrate dynamics: relax towards equilibrium value
       c_int_eq = (c_int1_eq+c_int2_eq)*poro
-      jMN(6) = jMN(6) + (K3nP-c_int_eq)/self%relax_mX
+      _SET_ODE_BEN_(self%id_K3n,(c_int_eq-K3nP)/self%relax_mX)
 
+      ! Net change in benthos must equal local production - surface exchange.
+      ! Thus, surface exchange = local production - net change (net change = relaxation)
+      _SET_SURFACE_EXCHANGE_(self%id_N3n,jMU(6)+jMI(6)-(c_int_eq-K3nP)/self%relax_mX)
+      
       ! Relax depth of bottom interface of second/oxidised layer towards equilibrium value (d1+H2_eq)
       _SET_ODE_BEN_(self%id_D2m,(max(D2m0,d1+H2_eq)-D2m)/self%relax_mX)
 
-! ammonium
+      ! -----------------------------------------------------------------------------------
+      ! Ammonium
+      ! -----------------------------------------------------------------------------------
 
       CALL EquProfile(N4nP,K4nP,profN,jMN(1),cmix,d1,d2,d3,diff1,diff2,diff3)
       ! Non-equilibrium correction:
       CALL NonEquFlux(profN,profD,jMN(1))
       jMN(1) = profN(1) + profN(2) + profN(3)
 
+      ! Layer 1: compute steady-state concentration at bottom interface c_bot1_eq and layer integral c_int1_eq
+      call compute_equilibrium_profile(d1,diff1,modconc(N4nP,jMU(1)+jMI(1),cmix),jMU(1),jMI(1),c_bot1_eq,c_int1_eq)
+      ! Layer 2: compute steady-state concentration at bottom interface c_bot2_eq and layer integral c_int2_eq
+      call compute_equilibrium_profile(d2-d1,diff2,c_bot1_eq,jMI(1),0.0_rk,c_bot2_eq,c_int2_eq)
+      ! Layer 3: no sources or sinks: homogeneous equilibrium concentration c_bot2_eq
+      c_int3_eq = (d3-d2)*c_bot2_eq
+      c_int_eq = poro*self%M4adsX*(c_int1_eq+c_int2_eq+c_int3_eq)
+
+      ! The equilibrium depth-integrated mass c_int_eq usually differs from the current depth-integrated mass K4nP.
+      ! We can view the actual [unknown] pore water concentration profile as the sum of the equilibrium profile
+      ! and a residual profile. The latter has a vertical integral equal to the difference between actual mass and equilibrium mass.
+      ! The rate at which the residual mass is exchanged over the benthic-pelagic interface is equal to the product of
+      ! the diffusivity and gradient in the residual mass at this interface. We do not know this gradient since we do not
+      ! know the shape of the residual profile. Let's make some simple assumptions to infer this.
+      ! Constraints: diffusion of the residual across bottom of benthic column must be zero (i.e., zero gradient), and at the surface of the benthic
+      ! column the concentration of the residual must equal zero (i.e., equilibrium holds at the very surface of the column).
+      ! Since we do not know anything about the processes responsible for the residual, let's assume their contribution
+      ! in the past was a constant production or destruction per unit sediment volume thoughout the entire column.
+      ! That is, production (#/m^2/d) in the three layers was P_int*d1/d3, P_int(d2-d1)/d3, P_int(d3-d2)/d3.
+      ! If we would know P_int, we could supply those rates along with zero surface concentration to "compute_equilibrium_profile"
+      ! to derive the residual profile. By checking the equations in compute_equilibrium_profile, we can verify that the resulting bottom concentration
+      ! and layer integral are both proportional to P_int. Thus, can can simply supply d1, d2-d1, d3-d2 to
+      ! "compute_equilibrium_profile", and find the additional scale factor P_int/d3 by demanding that the sum of layer integrals is
+      ! equal to the known residual mass. That is, P_int/d3 equals the ratio of residual mass to the sum of normalized layer integrals
+      ! computed for layer production terms d1, d2-d1, d3-d2. As we are assuming the residual profile was previously an equilibrium
+      ! profile, the necessary depth-integrted production rate P_int must equal the exchnage across the surface, i.e., diffusivity*gradient.
+      ! Thus, we can now simply add the P_int as a additional surface exchange term, accounting for the move towards equilibrium.
+      call compute_equilibrium_profile(d1,   diff1,0.0_rk,   d1,   d3-d1, c_bot1_eq,c_int1_eq)
+      call compute_equilibrium_profile(d2-d1,diff2,c_bot1_eq,d2-d1,d3-d2, c_bot2_eq,c_int2_eq)
+      call compute_equilibrium_profile(d3-d2,diff3,c_bot2_eq,d3-d2,0.0_rk,c_bot3_eq,c_int3_eq)
+      norm_res_int = poro*self%M4adsX*(c_int1_eq+c_int2_eq+c_int3_eq)
+      P_res_int = (K4nP-c_int_eq)/norm_res_int*d3
+      ! 
+      ! Together with zero concentration at the surface and zero gradient at the bottom, this implies the profile of the
+      ! residual must be a parabola. Exchange across the surface must balance the column-integrated production or destruction 
+      ! of the residual.
 !! phospate
 !
 !      CALL EquProfile(N1pP(I),K1pP(K),profP,jMN(2),k)
@@ -346,26 +396,26 @@ contains
       !_SET_BOTTOM_EXCHANGE_(self%id_N1p, + jMN(2))
       !_SET_ODE_BEN_(self%id_K5s, - jMN(3))
       !_SET_BOTTOM_EXCHANGE_(self%id_N5s, + jMN(3))
-      _SET_ODE_BEN_(self%id_G2o, - jMN(4))
-      _SET_BOTTOM_EXCHANGE_(self%id_O2o, + jMN(4))
+      !_SET_ODE_BEN_(self%id_G2o, - jMN(4))
+      !_SET_BOTTOM_EXCHANGE_(self%id_O2o, + jMN(4))
       !_SET_ODE_BEN_(self%id_G3c, - jMN(5))
       !_SET_BOTTOM_EXCHANGE_(self%id_O3c, + jMN(5))
-      _SET_ODE_BEN_(self%id_K3n, - jMN(6))
-      _SET_BOTTOM_EXCHANGE_(self%id_N3n,jMN(6))
+      !_SET_ODE_BEN_(self%id_K3n, - jMN(6))
+      !_SET_BOTTOM_EXCHANGE_(self%id_N3n,jMN(6))
       !_SET_ODE_BEN_(self%id_G4n, - jMN(7))
 
       _HORIZONTAL_LOOP_END_
 
    end subroutine
 
-   subroutine compute_parabola(D,sigma,c0,P,flux_bot,c_bot,c_int)
+   subroutine compute_equilibrium_profile(D,sigma,c0,P,flux_bot,c_bot,c_int)
       real(rk),intent(in)  :: D,sigma,c0,P,flux_bot
       real(rk),intent(out) :: c_bot,c_int
       real(rk) :: a,b,c
       ! ----------------------------------------------------------------------------------------------------
-      ! Determine equilibrium distribution in pore water from:
-      ! - D:        layer thickness D (m)
-      ! - sigma:    diffusivity  (m2/d)
+      ! Determine equilibrium concentration profile in pore water from:
+      ! - D:        layer thickness (m)
+      ! - sigma:    diffusivity (m2/d)
       ! - c0:       concentration at layer surface (#/m3)
       ! - P:        layer-integrated source-sink terms (#/m2/d)
       ! - flux_bot: bottom flux (#/m2/d)
@@ -375,7 +425,7 @@ contains
       ! ----------------------------------------------------------------------------------------------------
       ! Governing equation: dy/dt = sigma d2y/dz2 + sms
       ! Assumption: diffusivity sigma and sources-minus-sinks sms are independent of z within the layer.
-      ! Thus, sms can be written as layer integred source-sink terms, divided by layer height: sms = P/D
+      ! Thus, sms can be written as layer integrated source-sink terms, divided by layer height: sms = P/D
       ! At equilibrium: sigma d^2y/dz^2 + P/D = 0
       ! Thus, d^2y/dz^2 = -P/D/sigma
       ! Solution is a quadratic equation: c(z) = a z^2 + b z + c
@@ -407,12 +457,12 @@ contains
       c_int = (a/3*D*D + b/2*D + c)*D
    end subroutine
 
-   subroutine compute_parabola_end(sigma,c0,P,Dmax,D,c_int)
+   subroutine compute_final_equilibrium_profile(sigma,c0,P,Dmax,D,c_int)
       real(rk),intent(in)  :: sigma,c0,P,Dmax
       real(rk),intent(out) :: D,c_int
       real(rk) :: c_bot
       ! ----------------------------------------------------------------------------------------------------
-      ! Determine steady-state layer depth and equilibrium distribution in pore water from:
+      ! Determine layer depth and concentration profile in pore water at equilibrium from:
       ! - sigma:    diffusivity (m2/d)
       ! - c0:       concentration at layer surface (#/m3)
       ! - P:        layer-integrated source-sink terms (#/m2/d)
@@ -448,7 +498,7 @@ contains
          ! Layer would extend beyond maximum depth. Fix depth at maximum depth and
          ! use parabola with zero flux but non-zero concentration at bottom interface.
          D = Dmax
-         call compute_parabola(D,sigma,c0,P,0.0_rk,c_bot,c_int)
+         call compute_equilibrium_profile(D,sigma,c0,P,0.0_rk,c_bot,c_int)
       else
          D = -2*sigma*c0/P
          c_int = -P/sigma/6*D*D
