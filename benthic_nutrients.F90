@@ -346,10 +346,9 @@ contains
       call compute_equilibrium_profile(d3-d2,diff3,c_bot2_eq,d3-d2,0.0_rk,c_bot3_eq,c_int3_eq)
       norm_res_int = poro*self%M4adsX*(c_int1_eq+c_int2_eq+c_int3_eq)
       P_res_int = (K4nP-c_int_eq)/norm_res_int*d3
-      ! 
-      ! Together with zero concentration at the surface and zero gradient at the bottom, this implies the profile of the
-      ! residual must be a parabola. Exchange across the surface must balance the column-integrated production or destruction 
-      ! of the residual.
+      _SET_SURFACE_EXCHANGE_(self%id_N4n,jMU(1)+jMI(1)+P_res_int) ! Equilibrium flux = jMU(1)+jMI(1), residual flux = P_res_int
+      _SET_ODE_BEN_(self%id_K4n,-P_res_int)
+
 !! phospate
 !
 !      CALL EquProfile(N1pP(I),K1pP(K),profP,jMN(2),k)
