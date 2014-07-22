@@ -339,7 +339,7 @@ contains
       ! "compute_equilibrium_profile", and find the additional scale factor P_int/d3 by demanding that the sum of layer integrals is
       ! equal to the known residual mass. That is, P_int/d3 equals the ratio of residual mass to the sum of normalized layer integrals
       ! computed for layer production terms d1, d2-d1, d3-d2. As we are assuming the residual profile was previously an equilibrium
-      ! profile, the necessary depth-integrted production rate P_int must equal the exchnage across the surface, i.e., diffusivity*gradient.
+      ! profile, the necessary depth-integrated production rate P_int must equal the exchange across the surface, i.e., diffusivity*gradient.
       ! Thus, we can now simply add the P_int as a additional surface exchange term, accounting for the move towards equilibrium.
       call compute_equilibrium_profile(d1,   diff1,0.0_rk,   d1,   d3-d1, c_bot1_eq,c_int1_eq)
       call compute_equilibrium_profile(d2-d1,diff2,c_bot1_eq,d2-d1,d3-d2, c_bot2_eq,c_int2_eq)
@@ -389,8 +389,8 @@ contains
 !! Diffusion
 !!-----------
 !
-      _SET_ODE_BEN_(self%id_K4n, - jMN(1))
-      _SET_BOTTOM_EXCHANGE_(self%id_N4n, + jMN(1))
+      !_SET_ODE_BEN_(self%id_K4n, - jMN(1))
+      !_SET_BOTTOM_EXCHANGE_(self%id_N4n, + jMN(1))
       !_SET_ODE_BEN_(self%id_K1p, - jMN(2))
       !_SET_BOTTOM_EXCHANGE_(self%id_N1p, + jMN(2))
       !_SET_ODE_BEN_(self%id_K5s, - jMN(3))
