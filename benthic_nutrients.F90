@@ -11,8 +11,8 @@ module pml_ersem_benthic_nutrients
    private
 
    type,extends(type_base_model),public :: type_pml_ersem_benthic_nutrients
-      type (type_bottom_state_variable_id) :: id_K3n,id_K4n,id_G2o,id_D1m,id_D2m
-      type (type_state_variable_id)        :: id_N3n,id_N4n,id_O2o
+      type (type_bottom_state_variable_id) :: id_K1p,id_K3n,id_K4n,id_G2o,id_D1m,id_D2m
+      type (type_state_variable_id)        :: id_N1p,id_N3n,id_N4n,id_O2o
       type (type_dependency_id) :: id_ETW,id_phx
       
       real(rk) :: q10nitX,hM4M3X,sM4M3X,xno3X
@@ -49,16 +49,17 @@ contains
       call self%get_parameter(self%relax_mX,'relax_mX','1/d','nitrate diffusion time scale for benthic/pelagic interface')
       call self%get_parameter(self%EDZ_mixX,'EDZ_mixX','d/m','equilibrium diffusive speed between sediment surface water')
       call self%get_parameter(self%d_totX,'d_totX','m','depth of sediment column')
-      
+      call self%register_state_variable(self%id_K1p,'K1p','mmol/m^2','benthic phosphate') 
       call self%register_state_variable(self%id_K3n,'K3n','mmol/m^2','benthic nitrate')
       call self%register_state_variable(self%id_K4n,'K4n','mmol/m^2','benthic ammonium')
       call self%register_state_variable(self%id_G2o,'G2o','mmol O_2/m^2','benthic oxygen')
+      call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_K1p)
       call self%add_to_aggregate_variable(standard_variables%total_nitrogen,self%id_K3n)
       call self%add_to_aggregate_variable(standard_variables%total_nitrogen,self%id_K4n)
 
       call self%register_state_variable(self%id_D1m,'D1m','m','depth of bottom interface of 1st layer')
       call self%register_state_variable(self%id_D2m,'D2m','m','depth of bottom interface of 2nd layer')
-
+      call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
       call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3','nitrate')
       call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','ammonium')
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen')
@@ -73,8 +74,8 @@ contains
    class (type_pml_ersem_benthic_nutrients),intent(in) :: self
    _DECLARE_ARGUMENTS_DO_BOTTOM_
    
-      real(rk) :: K3n,K3nP,K4nP,G2oP
-      real(rk) :: N4n,N3nP,N4nP,O2oP
+      real(rk) :: K1p,K1pP,K3n,K3nP,K4nP,G2oP
+      real(rk) :: N1pP,N4n,N3nP,N4nP,O2oP
       real(rk) :: ETW,phx
       real(rk) :: D1m,D2m
       real(rk) :: irrenh
@@ -95,6 +96,8 @@ contains
    
       _HORIZONTAL_LOOP_BEGIN_
 
+      _GET_HORIZONTAL_(self%id_K1p,K1p)
+      _GET_HORIZONTAL_(self%id_K1p,K1pP)
       _GET_HORIZONTAL_(self%id_K3n,K3n) !TODO background
       _GET_HORIZONTAL_(self%id_K3n,K3nP)
       _GET_HORIZONTAL_(self%id_K4n,K4nP)
@@ -102,7 +105,8 @@ contains
 
       _GET_HORIZONTAL_(self%id_D1m,D1m)
       _GET_HORIZONTAL_(self%id_D2m,D2m)
-
+      
+      _GET_(self%id_N1p,N1pP)
       _GET_(self%id_N3n,N3nP)
       _GET_(self%id_N4n,N4nP)
       _GET_WITH_BACKGROUND_(self%id_N4n,N4n)
@@ -110,7 +114,7 @@ contains
 
       _GET_(self%id_ETW,ETW)
       _GET_(self%id_phx,phx)
-      
+   
       jmu = 0.0_rk
       jmi = 0.0_rk
       jmn = 0.0_rk
@@ -148,7 +152,8 @@ contains
       !_SET_ODE_BEN_(self%id_G2o, -self%xno3X*jM4M3n)
 
       ! Save nitrification source-sink terms for benthic ammonium, nitrate, oxygen.
-      jMU(1) = jMU(1) - jM4M3n
+    !!!Temporarily commented due to lack of ammonium production  
+    !!! jMU(1) = jMU(1) - jM4M3n
       jMU(6) = jMU(6) + jM4M3n
       jMU(4) = jMU(4) - self%xno3X*jM4M3n
 
@@ -309,18 +314,18 @@ contains
       ! Ammonium
       ! -----------------------------------------------------------------------------------
 
-      CALL EquProfile(N4nP,K4nP,profN,jMN(1),cmix,d1,d2,d3,diff1,diff2,diff3)
+     !!!GL CALL EquProfile(N4nP,K4nP,profN,jMN(1),cmix,d1,d2,d3,diff1,diff2,diff3)
       ! Non-equilibrium correction:
-      CALL NonEquFlux(profN,profD,jMN(1))
-      jMN(1) = profN(1) + profN(2) + profN(3)
+     !!!GL CALL NonEquFlux(profN,profD,jMN(1))
+     !!!GL jMN(1) = profN(1) + profN(2) + profN(3)
 
       ! Layer 1: compute steady-state concentration at bottom interface c_bot1_eq and layer integral c_int1_eq
-      call compute_equilibrium_profile(d1,diff1,modconc(N4nP,jMU(1)+jMI(1),cmix),jMU(1),jMI(1),c_bot1_eq,c_int1_eq)
+     call compute_equilibrium_profile(d1,diff1,modconc(N4nP,jMU(1)+jMI(1),cmix),jMU(1),jMI(1),c_bot1_eq,c_int1_eq)
       ! Layer 2: compute steady-state concentration at bottom interface c_bot2_eq and layer integral c_int2_eq
-      call compute_equilibrium_profile(d2-d1,diff2,c_bot1_eq,jMI(1),0.0_rk,c_bot2_eq,c_int2_eq)
+     call compute_equilibrium_profile(d2-d1,diff2,c_bot1_eq,jMI(1),0.0_rk,c_bot2_eq,c_int2_eq)
       ! Layer 3: no sources or sinks: homogeneous equilibrium concentration c_bot2_eq
-      c_int3_eq = (d3-d2)*c_bot2_eq
-      c_int_eq = poro*self%M4adsX*(c_int1_eq+c_int2_eq+c_int3_eq)
+     c_int3_eq = (d3-d2)*c_bot2_eq
+     c_int_eq = poro*self%M4adsX*(c_int1_eq+c_int2_eq+c_int3_eq)
 
       ! The equilibrium depth-integrated mass c_int_eq usually differs from the current depth-integrated mass K4nP.
       ! We can view the actual [unknown] pore water concentration profile as the sum of the equilibrium profile
@@ -349,21 +354,33 @@ contains
       _SET_SURFACE_EXCHANGE_(self%id_N4n,jMU(1)+jMI(1)+P_res_int) ! Equilibrium flux = jMU(1)+jMI(1), residual flux = P_res_int
       _SET_ODE_BEN_(self%id_K4n,-P_res_int)
 
+!------------------------------------------------------------------------------
 !! phospate
+!------------------------------------------------------------------------------
 !
 !      CALL EquProfile(N1pP(I),K1pP(K),profP,jMN(2),k)
 !      ! Non-equilibrium correction:
 !      CALL NonEquFlux(profP,profD,jMN(2))
 !      jMN(2) = profP(1) + profP(2) + profP(3)
+     ! Layer 1: compute steady-state concentration at bottom interface c_bot1_eq
+     ! and layer integral c_int1_eq
+     call compute_equilibrium_profile(d1,diff1,modconc(N1pP,jMU(2)+jMI(2),cmix),jMU(2),jMI(2),c_bot1_eq,c_int1_eq)
+      ! Layer 2: compute steady-state concentration at bottom interface
+      ! c_bot2_eq and layer integral c_int2_eq
+     call compute_equilibrium_profile(d2-d1,diff2,c_bot1_eq,jMI(2),0.0_rk,c_bot2_eq,c_int2_eq)
+      ! Layer 3: no sources or sinks: homogeneous equilibrium concentration
+      ! c_bot2_eq
+     c_int3_eq = (d3-d2)*c_bot2_eq
+     c_int_eq = poro*(self%M1adsX*(c_int1_eq+c_int2_eq)+self%M11adsX*c_int3_eq)
+     call compute_equilibrium_profile(d1,   diff1,0.0_rk,   d1,   d3-d1, c_bot1_eq,c_int1_eq)
+     call compute_equilibrium_profile(d2-d1,diff2,c_bot1_eq,d2-d1,d3-d2, c_bot2_eq,c_int2_eq)
+     call compute_equilibrium_profile(d3-d2,diff3,c_bot2_eq,d3-d2,0.0_rk,c_bot3_eq,c_int3_eq)
+      norm_res_int = poro*(self%M1adsX*(c_int1_eq+c_int2_eq)+self%M11adsX*c_int3_eq)
+      P_res_int = (K1pP-c_int_eq)/norm_res_int*d3
+      _SET_SURFACE_EXCHANGE_(self%id_N1p,jMU(2)+jMI(2)+P_res_int) ! Equilibrium flux = jMU(2)+jMI(2), residual flux = P_res_int
+      _SET_ODE_BEN_(self%id_K1p,-P_res_int)
+
 !
-!#ifdef ERSEMDEBUG
-!      if(ersem_debugger.gt.0 .and. k .eq. kp_dbg) then
-!        PPWRITEDBGALLPRCS 'jmn(`2)',jmn(2)
-!        PPWRITEDBGALLPRCS profP(1)
-!        PPWRITEDBGALLPRCS profP(2)
-!        PPWRITEDBGALLPRCS profP(3)
-!        PPWRITEDBGALLPRCS N1pP(I)
-!        PPWRITEDBGALLPRCS K1pP(K)
 !      endif
 !#endif
 !
