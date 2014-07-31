@@ -11,8 +11,8 @@ module pml_ersem_benthic_nutrients
    private
 
    type,extends(type_base_model),public :: type_pml_ersem_benthic_nutrients
-      type (type_bottom_state_variable_id) :: id_K1p,id_K3n,id_K4n,id_G2o,id_D1m,id_D2m
-      type (type_state_variable_id)        :: id_N1p,id_N3n,id_N4n,id_O2o
+      type (type_bottom_state_variable_id) :: id_K1p,id_K3n,id_K4n,id_G2o,id_G3c,id_D1m,id_D2m
+      type (type_state_variable_id)        :: id_N1p,id_N3n,id_N4n,id_O2o,id_O3c
       type (type_dependency_id) :: id_ETW,id_phx
       
       real(rk) :: q10nitX,hM4M3X,sM4M3X,xno3X
@@ -53,17 +53,18 @@ contains
       call self%register_state_variable(self%id_K3n,'K3n','mmol/m^2','benthic nitrate')
       call self%register_state_variable(self%id_K4n,'K4n','mmol/m^2','benthic ammonium')
       call self%register_state_variable(self%id_G2o,'G2o','mmol O_2/m^2','benthic oxygen')
+      call self%register_state_variable(self%id_G3c,'G3c','mmol/m^2','benthic carbonate')
       call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_K1p)
       call self%add_to_aggregate_variable(standard_variables%total_nitrogen,self%id_K3n)
       call self%add_to_aggregate_variable(standard_variables%total_nitrogen,self%id_K4n)
-
+      call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_G3c)
       call self%register_state_variable(self%id_D1m,'D1m','m','depth of bottom interface of 1st layer')
       call self%register_state_variable(self%id_D2m,'D2m','m','depth of bottom interface of 2nd layer')
       call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
       call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3','nitrate')
       call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','ammonium')
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen')
-      
+      call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbonate')
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
       call self%register_dependency(self%id_phx,standard_variables%ph_reported_on_total_scale)
    end subroutine
@@ -74,8 +75,8 @@ contains
    class (type_pml_ersem_benthic_nutrients),intent(in) :: self
    _DECLARE_ARGUMENTS_DO_BOTTOM_
    
-      real(rk) :: K1p,K1pP,K3n,K3nP,K4nP,G2oP
-      real(rk) :: N1pP,N4n,N3nP,N4nP,O2oP
+      real(rk) :: K1p,K1pP,K3n,K3nP,K4nP,G2oP,G3cP
+      real(rk) :: N1pP,N4n,N3nP,N4nP,O2oP,O3cP
       real(rk) :: ETW,phx
       real(rk) :: D1m,D2m
       real(rk) :: irrenh
@@ -102,6 +103,7 @@ contains
       _GET_HORIZONTAL_(self%id_K3n,K3nP)
       _GET_HORIZONTAL_(self%id_K4n,K4nP)
       _GET_HORIZONTAL_(self%id_G2o,G2oP)
+      _GET_HORIZONTAL_(self%id_G3c,G3cP)
 
       _GET_HORIZONTAL_(self%id_D1m,D1m)
       _GET_HORIZONTAL_(self%id_D2m,D2m)
@@ -111,6 +113,7 @@ contains
       _GET_(self%id_N4n,N4nP)
       _GET_WITH_BACKGROUND_(self%id_N4n,N4n)
       _GET_(self%id_O2o,O2oP)
+      _GET_(self%id_O3c,O3cP)
 
       _GET_(self%id_ETW,ETW)
       _GET_(self%id_phx,phx)
@@ -251,7 +254,7 @@ contains
          jmu(1) = jmun*N4n/(N4n+0.5_rk)
          jmi(1) = jmi(1) + (jmun - jmu(1))
       ENDIF
-      jmu(5) = 0.0_rk !TODO: SG3c(K)
+      jmu(5) = 0.0_rk !TODO: Add flux of benthic carbonate SG3c(K) here
       jmi(5) = 0._rk
 
       CALL Prof_Parameter(profO2,  jMU(4), jMI(4), 0._rk, vG2,vG2,vG2)
@@ -391,12 +394,33 @@ contains
 !      CALL NonEquFlux(profS,profD,jMN(3))
 !      jMN(3) = profS(1) + profS(2) + profS(3)
 !
+!-------------------------------------------------------------------------
 !! carbon dioxide
+!-------------------------------------------------------------------------
 !     
 !      CALL EquProfile(O3cP(I),G3cP(K),profCO2,jMN(5),k)
 !      ! Non-equilibrium correction:
 !      CALL NonEquFlux(profCO2,profD,jMN(5))
 !      jMN(5) = profCO2(1) + profCO2(2) + profCO2(3)
+
+ ! Layer 1: compute steady-state concentration at bottom interface c_bot1_eq
+     ! and layer integral c_int1_eq
+     call compute_equilibrium_profile(d1,diff1,modconc(O3cP,jMU(5)+jMI(5),cmix),jMU(5),jMI(5),c_bot1_eq,c_int1_eq)
+      ! Layer 2: compute steady-state concentration at bottom interface
+      ! c_bot2_eq and layer integral c_int2_eq
+     call compute_equilibrium_profile(d2-d1,diff2,c_bot1_eq,jMI(5),0.0_rk,c_bot2_eq,c_int2_eq)
+      ! Layer 3: no sources or sinks: homogeneous equilibrium concentration
+      ! c_bot2_eq
+     c_int3_eq = (d3-d2)*c_bot2_eq
+     c_int_eq = poro*(c_int1_eq+c_int2_eq+c_int3_eq)
+     call compute_equilibrium_profile(d1,   diff1,0.0_rk,   d1,   d3-d1, c_bot1_eq,c_int1_eq)
+     call compute_equilibrium_profile(d2-d1,diff2,c_bot1_eq,d2-d1,d3-d2, c_bot2_eq,c_int2_eq)
+     call compute_equilibrium_profile(d3-d2,diff3,c_bot2_eq,d3-d2,0.0_rk,c_bot3_eq,c_int3_eq)
+      norm_res_int = poro*(c_int1_eq+c_int2_eq+c_int3_eq)
+      P_res_int = (G3cP-c_int_eq)/norm_res_int*d3
+      _SET_SURFACE_EXCHANGE_(self%id_O3c,jMU(5)+jMI(5)+P_res_int) ! Equilibrium flux = jMU(2)+jMI(2), residual flux = P_res_int
+      _SET_ODE_BEN_(self%id_G3c,-P_res_int)
+
 !
 !! nitrate gas:
 !      
