@@ -9,6 +9,7 @@ module pml_ersem_mesozooplankton
    use fabm_types
    use fabm_particle
    use fabm_expressions
+   use fabm_builtin_models
 
    use pml_ersem_shared
    use pml_ersem_pelagic_base
@@ -106,7 +107,6 @@ contains
       ! Create an expression that will compute the total prey
       ! (will be depth integrated to determine overwintering)
       allocate(total_prey_calculator)
-      total_prey_calculator%output_name = 'totprey'
       total_prey_calculator%output_units = 'mg C m-3'
 
       ! Determine number of prey types.
@@ -165,8 +165,9 @@ contains
       end do
 
       ! Add the submodel that will compute total prey for us, and create a variable that will contain its depth integral.
-      call self%add_child(total_prey_calculator,'totprey',configunit=-1)
+      call self%add_child(total_prey_calculator,'totprey_calculator',configunit=-1)
       call self%register_dependency(self%id_totprey,'totprey')
+      call self%request_coupling(self%id_totprey,'totprey_calculator/result')
       call self%register_expression_dependency(self%id_inttotprey,vertical_integral(self%id_totprey))
 
       ! Register links to external nutrient pools.
