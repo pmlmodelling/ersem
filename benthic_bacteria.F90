@@ -56,8 +56,8 @@ contains
       call self%get_parameter(self%sdHX,'sdHX','1/d','Specific maximal mortality of benthic bacteria')
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
       call self%register_state_dependency(self%id_Dm,'Dm','m','depth interval available to bacteria')
-      call self%register_state_dependency(self%id_K4a,'K4a','m','depth interval available to bacteria')
-      call self%register_state_dependency(self%id_K4a,'K4a','m','depth interval available to bacteria')
+      call self%register_state_dependency(self%id_K4a,'K4a','m','ammonium available at Dm')
+      call self%register_state_dependency(self%id_K1a,'K1a','m','phosphate available at Dm')
    end subroutine
 
    subroutine do_benthic_bacteria(self,_ARGUMENTS_DO_BOTTOM_)
