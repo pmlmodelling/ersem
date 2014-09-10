@@ -11,13 +11,27 @@ module pml_ersem_benthic_bacteria
    private
 
    type,extends(type_base_model),public :: type_pml_ersem_benthic_bacteria
-      type (type_bottom_state_variable_id) :: id_H1c,id_Q6c,id_Q6n,id_Q6p,id_Q6s,id_Q7c,id_Q7n,id_Q7p,id_Q1c,id_Q1n,id_Q1p
+      type (type_bottom_state_variable_id) :: id_Hc
+      type (type_bottom_state_variable_id) :: id_Dm,id_K4a,id_K1a
       type (type_dependency_id) :: id_ETW
+      type (type_bottom_state_variable_id) :: id_AQ6c,id_AQ6n,id_AQ6p,id_AQ7c,id_AQ7n,id_AQ7p,id_Q1c,id_Q1n,id_Q1p
+      type (type_bottom_state_variable_id) :: id_G2o,id_G3c
 
       real(rk) :: qnHIcX,qpHIcX
+      real(rk) :: q10HX
+      real(rk) :: ddHX
+      real(rk) :: suQ7HX
+      real(rk) :: suQ6fHX
+      real(rk) :: suQ6sHX
+      real(rk) :: suQ1HX
+      real(rk) :: puincHX
+      real(rk) :: p_ex7ox,p_ex6ox
+      real(rk) :: purHX,srHX
+      real(rk) :: pdHQ1X
+      real(rk) :: sdHX
    contains
       procedure :: initialize
-      procedure :: do_aerobic_bacteria
+      procedure :: do_benthic_bacteria
    end type
 
 contains
@@ -27,130 +41,179 @@ contains
       integer,                                 intent(in)           :: configunit
       call self%get_parameter(self%qnHIcX,'qnHIcX','mmol N/mg C','Maximal nitrogen to carbon ratio of benthic bacteria')
       call self%get_parameter(self%qpHIcX,'qpHIcX','mmol P/mg C','Maximal phosphorus to carbon ratio of benthic bacteria')
-      call self%get_parameter(self%q10H1X,'q10H1X','-','Regulating temperature factor Q10 for benthic aerobic bacteria')
-      call self%get_parameter(self%ddH1X,'ddH1X','1/m','Michaelis-Menten constant for oxygen limitation through aerobic layer depth')
-      call self%get_parameter(self%suQ7H1X,'suQ7H1X','1/d','Specific not nutrient limited refractory matter uptake by benthic aerobic bacteria')
-      call self%get_parameter(self%suQ6fH1X,'suQ6fH1X','1/d','Specific nutrient limited detritus uptake by benthic aerobic bacteria')
-      call self%get_parameter(self%suQ6sH1X,'suQ6sH1X','1/d','Specific not nutrient limited detritus uptake by benthic aerobic bacteria')
-      call self%get_parameter(self%suQ1H1X,'suQ1H1X','1/d','Specific DOC uptake by benthic aerobic bacteria')
-      call self%get_parameter(self%puincH1X,'puincH1X','1/d','Preference factor of nutrient content by benthic aerobic bacteria')
+      call self%get_parameter(self%q10HX,'q10HX','-','Regulating temperature factor Q10 for benthic bacteria')
+      call self%get_parameter(self%ddHX,'ddHX','1/m','Michaelis-Menten constant for limitation through layer thickness')
+      call self%get_parameter(self%suQ7HX,'suQ7HX','1/d','Specific not nutrient limited refractory matter uptake by benthic bacteria')
+      call self%get_parameter(self%suQ6fHX,'suQ6fHX','1/d','Specific nutrient limited detritus uptake by benthic bacteria')
+      call self%get_parameter(self%suQ6sHX,'suQ6sHX','1/d','Specific not nutrient limited detritus uptake by benthic bacteria')
+      call self%get_parameter(self%suQ1HX,'suQ1HX','1/d','Specific DOC uptake by benthic aerobic bacteria')
+      call self%get_parameter(self%puincHX,'puincHX','1/d','Preference factor of nutrient content by benthic bacteria')
+      call self%get_parameter(self%p_ex7ox,'p_ex7ox','-','Excreted fraction of uptake of refractory matter by benthic bacteria')
+      call self%get_parameter(self%p_ex6ox,'p_ex6ox','-','Excreted fraction of uptake of POM by benthic bacteria')
+      call self%get_parameter(self%purHX,'purHX','1/d','Fraction of carbon uptake respired by benthic bacetria')
+      call self%get_parameter(self%srHX,'srHX','1/d','Specific rest respiration of benthic bacetria')
+      call self%get_parameter(self%pdHQ1X,'pdHQ1X','-','DOM-fraction of benthic bacteria mortality')
+      call self%get_parameter(self%sdHX,'sdHX','1/d','Specific maximal mortality of benthic bacteria')
+      call self%register_dependency(self%id_ETW,standard_variables%temperature)
+      call self%register_state_dependency(self%id_Dm,'Dm','m','depth interval available to bacteria')
+      call self%register_state_dependency(self%id_K4a,'K4a','m','ammonium available at Dm')
+      call self%register_state_dependency(self%id_K1a,'K1a','m','phosphate available at Dm')
    end subroutine
 
-   subroutine do_aerobic_bacteria(self,_ARGUMENTS_DO_BOTTOM_)
+   subroutine do_benthic_bacteria(self,_ARGUMENTS_DO_BOTTOM_)
 
 ! !INPUT PARAMETERS:
  class (type_pml_ersem_benthic_bacteria),intent(in) :: self
   _DECLARE_ARGUMENTS_DO_BOTTOM_
      
-     real(rk) :: H1c,Q6c,Q6n,Q6p,Q6s,Q7c,Q7n,Q7p, Q1cP, Q1nP, Q1pP
-     real(rk) :: D1m, D2m
-     real(rk) :: ETW, eT, eOx, eN, Limit
-     real(rk) :: H1n, H1p
-     real(rk) :: fH1Q6(4), fH1Q7(4)
-     real(rk) :: AQ6c,AQ6n,AQ6p,AQ7c,AQ7n,AQ7p
-     real(rk) :: sfQ7H1,sfQ6H1,fQ7H1c,fQ6H1c,fQ1H1c,fQIH1c,fQ7H1n,fQ7H1p,fQ6H1n,fQ6H1p,fQ1H1n,fQ1H1p
+     real(rk) :: Hc,Hn,Hp,fHc,fHn,fHp,fHn1,fHp1
+     real(rk) :: Q1cP,Q1nP,Q1pP,Dm,SK4a,SK1a,SQ6c
+     real(rk) :: ETW,eT,eOx,eN,Limit
+     real(rk) :: K4a,K1a,AQ6c,AQ6n,AQ6p,AQ7c,AQ7n,AQ7p,G3c,G2o
+     real(rk) :: sfQ7H,sfQ6H,fQ7Hc,fQ6Hc,fQ1Hc,fQIHc,fQ7Hn,fQ7Hp,fQ6Hn,fQ6Hp
+     real(rk) :: fQ1Hn,fQ1Hp,fK1Hn,fK1Hp,fHG3c,fK4Hn,fK4Hp,sfHQ1,sfHQI,sfHQ6
 
      _HORIZONTAL_LOOP_BEGIN_
 
-     _GET_HORIZONTAL_(self%id_H1c,H1c)
-     _GET_HORIZONTAL_(self%id_Q6c,Q6c)
-     _GET_HORIZONTAL_(self%id_Q6n,Q6n)
-     _GET_HORIZONTAL_(self%id_Q6p,Q6p)
-     _GET_HORIZONTAL_(self%id_Q6s,Q6s)
-     _GET_HORIZONTAL_(self%id_Q7c,Q7c)
-     _GET_HORIZONTAL_(self%id_Q7n,Q7n)
-     _GET_HORIZONTAL_(self%id_Q7p,Q7p)
+     _GET_HORIZONTAL_(self%id_Hc,Hc)
+
      _GET_HORIZONTAL_(self%id_Q1c,Q1cP)
      _GET_HORIZONTAL_(self%id_Q1n,Q1nP)
-     _GET_HORIZONTAL_(self%id_Q1n,Q1nP)
-     _GET_HORIZONTAL_(self%id_D1m,D1m)
-     _GET_HORIZONTAL_(self%id_D2m,D2m)
+     _GET_HORIZONTAL_(self%id_Q1p,Q1pP)
+
+     _GET_HORIZONTAL_(self%id_Dm,Dm)
 
      _GET_(self%id_ETW,ETW)
-     
-      H1n = H1c * self%qnHIcX
-      H1p = H1c * self%qpHIcX
+
+     _GET_HORIZONTAL_(self%id_AQ6c,AQ6c)
+     _GET_HORIZONTAL_(self%id_AQ6n,AQ6n)
+     _GET_HORIZONTAL_(self%id_AQ6p,AQ6p)
+     _GET_HORIZONTAL_(self%id_AQ7c,AQ7c)
+     _GET_HORIZONTAL_(self%id_AQ7n,AQ7n)
+     _GET_HORIZONTAL_(self%id_AQ7p,AQ7p)
+     _GET_HORIZONTAL_(self%id_K4a,K4a)
+     _GET_HORIZONTAL_(self%id_K1a,K1a)
+
+     _GET_HORIZONTAL_(self%id_G2o,G2o)
+     _GET_HORIZONTAL_(self%id_G3c,G3c)
+
+      Hn = Hc * self%qnHIcX
+      Hp = Hc * self%qpHIcX
+
+      eT   = self%q10HX**((ETW-10._rk)/10._rk) - self%q10HX**((ETW-32._rk)/3._rk)
+      eOx  = Dm/(self%ddHX+Dm)
+      eN   = min(1._rk,max(0._rk,AQ6n/(self%qnHIcX*AQ6c))) * min(1._rk,max(0._rk,AQ6p/(self%qpHIcX*AQ6c)))
+
+      Limit = eT * eOX * Hc
    
-      fH1Q6(1) = Q6c
-      fH1Q6(2) = Q6n
-      fH1Q6(3) = Q6p
-      fH1Q6(4) = Q6s
+   sfQ7H = ( self%suQ7HX * Limit )
+   sfQ6H = ( self%suQ6fHX * Limit * eN ) + ( self%suQ6sHX * Limit )
+   fQ7Hc = sfQ7H * AQ7c
+   fQ6Hc = sfQ6H * AQ6c
+   fQ1Hc = self%suQ1HX  * Limit * Q1cP
+   fQIHc = fQ7Hc + fQ6Hc + fQ1Hc
 
-      fH1Q7(1) = Q7c
-      fH1Q7(2) = Q7n
-      fH1Q7(3) = Q7p
-      fH1Q7(4) = 0.0_rk
+   fQ7Hn = sfQ7H * AQ7n
+   fQ7Hp = sfQ7H * AQ7p
+   fQ6Hn = sfQ6H * AQ6n * self%puincHX
+   fQ6Hp = sfQ6H * AQ6p * self%puincHX
 
-      CALL AvQ6( 0.0_rk, D1m, AQ6c, AQ6n, AQ6p )
-      CALL AvQ7( 0.0_rk, D1m, AQ7c, AQ7n, AQ7p )
+   fQ1Hn = self%suQ1HX * Limit * Q1nP
+   fQ1Hp = self%suQ1HX * Limit * Q1pP
 
-      eT   = self%q10H1X**((ETW(I)-10._rk)/10._rk) - self%q10H1X**((ETW(I)-32._rk)/3._rk)
-      eOx  = D1m/(self%ddH1X+D1m)
-      eN   = eramp(AQ6n, self%qnHIcX*AQ6c) * eramp(AQ6p, self%qpHIcX*AQ6c)
+   fK4Hn = fQIHc * self%qnHIcX
+   fK4Hn = fK4Hn * K4a/(K4a+fK4Hn)
+   fK1Hp = fQIHc * self%qpHIcX
+   fK1Hp = fK1Hp * K1a/(K1a+fK1Hp)
 
-      Limit = eT * eOX * H1c
+   !Respiration
+
+   fHG3c = self%purHX * fQIHc + self%srHX * Hc * eT
+   _SET_ODE_BEN_(self%id_Hc, - fHG3c)
+   !Oxygen or reduction equivalent
+   _SET_ODE_BEN_(self%id_G2o, - fHG3c / 12.011_rk)
+   _SET_ODE_BEN_(self%id_G3c, fHG3c / 12.011_rk)
+  
+   !Mortality
+
+   sfHQI = self%sdHX * (1._rk - eOx)
+   sfHQ6 = sfHQI * (1._rk - self%pdHQ1X)
+   sfHQ1 = sfHQI * self%pdHQ1X
    
-   sfQ7H1 = ( self%suQ7H1X * Limit )
-   sfQ6H1 = ( self%suQ6fH1X * Limit * eN ) + ( self%suQ6sH1X * Limit )
-   fQ7H1c = sfQ7H1 * AQ7c
-   fQ6H1c = sfQ6H1 * AQ6c
-   fQ1H1c = self%suQ1H1X  * Limit * Q1cP
-   fQIH1c = fQ7h1c + fQ6H1c + fQ1H1c
+   _SET_ODE_BEN_(self%id_AQ6c, sfHQ6 * Hc)
+   _SET_ODE_BEN_(self%id_AQ6n, sfHQ6 * Hc * self%qnHIcX)
+   _SET_ODE_BEN_(self%id_AQ6p, sfHQ6 * Hc * self%qpHIcX)
 
-   fQ7H1n = sfQ7H1 * AQ7n
-   fQ7H1p = sfQ7H1 * AQ7p
-   fQ6H1n = sfQ6H1 * AQ6n * self%puincH1X
-   fQ6H1p = sfQ6H1 * AQ6p * self%puincH1X
+   _SET_ODE_BEN_(self%id_Q1c, sfHQ1 * Hc)
+   _SET_ODE_BEN_(self%id_Q1n, sfHQ1 * Hc * self%qnHIcX)
+   _SET_ODE_BEN_(self%id_Q1p, sfHQ1 * Hc * self%qpHIcX)
 
-   fQ1H1n = self%suQ1H1X * Limit * Q1nP
-   fQ1H1p = self%suQ1H1X * Limit * Q1pP
+   _SET_ODE_BEN_(self%id_Hc,- (sfHQ6 + sfHQ1) * Hc )
 
-   fK4H1n = fQIH1c * self%qnHIcX
-   fK4H1n = fK4H1n * eMM(K4/calculate_adsorption(4,K,0._rk,D1m),fK4H1n)
-   fK1H1p = fQIH1c * self%qpHIcX
-   fK1H1p = fK1H1p * eMM(K1/calculate_adsorption(1,K,0._rk,D1m),fK1H1p)
+   fHn1 = - (sfHQ6 + sfHQ1) * Hc * self%qnHIcX
+   fHp1 = - (sfHQ6 + sfHQ1) * Hc * self%qpHIcX
+
+   !Uptake and excretion
+
+   fHc = fQ7Hc * (1._rk-self%p_ex7ox) + fQ6Hc * (1._rk-self%p_ex6ox) + fQ1Hc
+   fHn = fHn1 + (fQ7Hn * (1._rk-self%p_ex7ox) + fQ6Hn * (1._rk-self%p_ex6ox) + fQ1Hn + fK4Hn)
+   fHp = fHp1 + (fQ7Hp * (1._rk-self%p_ex7ox) + fQ6Hp * (1._rk-self%p_ex6ox) + fQ1Hp + fK1Hp)
+  
+   CALL Adjust_fixed_nutrients(fHc,fHn,fHp,self%qnHIcX,self%qpHIcX,SK4a,SK1a,SQ6c)
+
+   _SET_ODE_BEN_(self%id_Hc,fHc)
+
+   _SET_ODE_BEN_(self%id_AQ6c,-fQ6Hc + SQ6c)
+   _SET_ODE_BEN_(self%id_AQ6n,-fQ6Hn)
+   _SET_ODE_BEN_(self%id_AQ6p,-fQ6Hp)
+
+   _SET_ODE_BEN_(self%id_AQ7c,-fQ7Hc)
+   _SET_ODE_BEN_(self%id_AQ7n,-fQ7Hn)
+   _SET_ODE_BEN_(self%id_AQ7p,-fQ7Hp)
+
+   _SET_ODE_BEN_(self%id_Q1c,fQ7Hc*self%p_ex7ox + fQ6Hc*self%p_ex6ox - fQ1Hc)
+   _SET_ODE_BEN_(self%id_Q1n,fQ7Hn*self%p_ex7ox + fQ6Hn*self%p_ex6ox - fQ1Hn)
+   _SET_ODE_BEN_(self%id_Q1p,fQ7Hp*self%p_ex7ox + fQ6Hp*self%p_ex6ox - fQ1Hp)
+
+   _SET_ODE_BEN_(self%id_K4a,-fK4Hn + SK4a)
+   _SET_ODE_BEN_(self%id_K1a,-fK1Hp + SK1a)
 
      _HORIZONTAL_LOOP_END_
 
    end subroutine
+
 !-----------------------------------------------------------------------
 !BOP
 !
-! !IROUTINE: Calculate available detritus (Q6)
+! !IROUTINE: Adjust_fixed_nutrients \label{sec:AdjustFixedNutrients}
 !
 ! !DESCRIPTION:
-!  Calculates the detritus available in the layer between the depths
-!  d\_top and d\_bot.
+!  TODO - description
 !
+!  This routine determines the amount of excess c,n or p in the
+!  source terms and excretes the appropriate amount(s) to Q6 and
+!  nutrients, so that the fixed nutrient ratio is re-established
+!
+!  IN:  Source terms of fixed quota bio-state.(cnp)......SXx
+!       Fixed quota values (np)..........................qx
+!
+!  INT: Excess nutrient in bio-state (np)................ExcessX
+!
+!  OUT: Source terms for Predator (SX), Q6 and nutrients
+!\\
+!\\
 ! !INTERFACE:
-   subroutine AvQ6( d_top, d_bot, AQ6c, AQ6n, AQ6p )
+      SUBROUTINE Adjust_fixed_nutrients ( SXc, SXn, SXp,qn, qp, SKn, SKp, SQc )
 !
-! !USES:
-   use benthic_variables, only: Q6cP,Q6nP,Q6pP,D6m,D7m,D8m
-   use benthic_parameters, only: d_totx
+! !INPUT/OUTPUT PARAMETERS:
+       real(rk), intent(inout)  :: SXc, SXn, SXp, SKn, SKp, SQc
+       real(rk), intent(in)     :: qn, qp
 !
-! !INPUT PARAMETERS:
-!  Compartment identifier
-   integer,intent(in) :: k
-
-!  Top limit of detritus utilisation
-   real(rk),intent(in) :: d_top
-
-!  Bottom limit of detritus utilisation
-   real(rk),intent(in) :: d_bot
-!
-! !OUTPUT PARAMETERS:
-!  Available detrital carbon
-   real(rk),intent(out) :: AQ6c
-
-!  Available detrital nitrogen
-   real(rk),intent(out) :: AQ6n
-
-!  Available detrital phosphorous
-   real(rk),intent(out) :: AQ6p
+! !LOCAL PARAMETERS:
+       real(rk) :: ExcessN, ExcessP, ExcessC
 !
 ! !REVISION HISTORY:
-!  Original author(s): The ERSEM development team
+!  Original author(s) TODO
 !
 !EOP
 !-----------------------------------------------------------------------
@@ -158,291 +221,29 @@ contains
 !-----------------------------------------------------------------------
 !BOC
 !
-   AQ6c = Q6cP * partQ( D6m, d_top, d_bot, d_totX )
-   AQ6n = Q6nP * partQ( D7m, d_top, d_bot, d_totX )
-   AQ6p = Q6pP * partQ( D8m, d_top, d_bot, d_totX )
+       ExcessC = max(max(SXc - SXp/qp,SXc - SXn/qn),0._rk)
+!
+       IF ( ExcessC .GT. 0.0_rk ) THEN
+         SXc = SXc - ExcessC
+         SQc = SQc + ExcessC
+       END If
 
-   end subroutine AvQ6
+       ExcessN = max(SXn - SXc*qn,0._rk)
+       ExcessP = max(SXp - SXc*qp,0._rk)
+
+       IF ( ExcessN .GT. 0.0_rk ) THEN
+         SXn = SXn - ExcessN
+         SKn = SKn + ExcessN
+       END If
+
+       IF ( ExcessP .GT. 0.0_rk ) THEN
+         SXp = SXp - EXcessP
+         SKp = SKp + ExcessP
+       END If
+
+       END SUBROUTINE Adjust_fixed_nutrients
 !
 !EOC
 !-----------------------------------------------------------------------
-
-!-----------------------------------------------------------------------
-!BOP
-!
-! !IROUTINE: Compute available detritus (Q7)
-!
-! !DESCRIPTION:
-!  Calculates the detritus available in the layer between the depths
-!  d\_top and d\_bot.
-!
-! !INTERFACE:
-   subroutine AvQ7( d_top, d_bot, AQ7c, AQ7n, AQ7p )
-!
-! !USES:
-   use benthic_variables, only: Q7cP,Q7nP,Q7pP,d3m,d4m,d5m
-   use benthic_parameters, only: d_totx
-!
-! !INPUT PARAMETERS:
-!  Compartment identifier
-   integer,intent(in) :: k
-
-!  Top limit of detritus utilisation
-   real(rk),intent(in) :: d_top
-
-!  Bottom limit of detritus utilisation
-   real(rk),intent(in) :: d_bot
-!
-! !OUTPUT PARAMETERS:
-!  Available detrital carbon
-   real(rk),intent(out) :: AQ7c
-
-!  Available detrital nitrogen
-   real(rk),intent(out) :: AQ7n
-
-!  Available detrital phosphorous
-   real(rk),intent(out) :: AQ7p
-
-!
-! !REVISION HISTORY:
-!  Original author(s): The ERSEM development team
-!
-!EOP
-!-----------------------------------------------------------------------
-
-!-----------------------------------------------------------------------
-!BOC
-!
-   AQ7c = Q7cP * partQ( D3m, d_top, d_bot, d_totX )
-   AQ7n = Q7nP * partQ( D4m, d_top, d_bot, d_totX )
-   AQ7p = Q7pP * partQ( D5m, d_top, d_bot, d_totX )
-
-   return
-
-   end subroutine AvQ7
-!
-!EOC
-!-----------------------------------------------------------------------
-
-!-----------------------------------------------------------------------
-!BOP
-!
-! !IROUTINE: Compute fraction of detritus between depth levels
-!
-! !DESCRIPTION:
-!  Computes the fraction of detritus between d\_top and d\_bot. NOTE 1: 
-!  Does not treat silicate. NOTE 2: Factor 13.8. This mystic factor 
-!  takes care that exp(-..) won't become too
-!  small so that the simulation crashes.  -13.8 is the smallest
-!  number so that exp(-13.8) is evaluated correctly. It depends
-!  on the accuracy of the implemented FORTRAN. 
-!
-! !INTERFACE:
-   real(fp8) function partQ( d_pen, d_top, d_bot, d_max )
-!
-! !INPUT PARAMETERS:
-!  Penetration depth of detrital component
-   real(rk), intent(in) :: d_pen
-
-!  Top of detrital layer
-   real(rk), intent(in) ::  d_top
-
-!  Bottom of detrital layer
-   real(rk), intent(in) ::  d_bot
-
-!  Maximum depth of detrital layer
-   real(rk), intent(in) ::  d_max
-!
-! !LOCAL VARIABLES:
-   real(rk) :: norm
-
-   real(rk) ::  d_top1
-
-   real(rk) ::  d_bot1
-
-   real(rk) ::  d_max1
-!
-! !REVISION HISTORY:
-!  Original author(s): The ERSEM development team
-!
-!EOP
-!-----------------------------------------------------------------------
-
-!-----------------------------------------------------------------------
-!BOC
-!
-   ! Code...................................................
-   d_max1 = MIN( d_pen*13.8_rk, d_max )
-   d_bot1 = MIN( d_bot, d_max1 )
-   d_top1 = MIN( d_top, d_bot1 )
-
-   if ( d_max1 .gt. 0._rk ) then
-      norm = 1._rk -EXP( -d_max1/d_pen )
-      partQ = ( EXP( -d_top1/d_pen ) -EXP( -d_bot1/d_pen )) / norm
-   else
-      if ( d_top .eq. 0._rk ) then
-         partQ = 1._rk
-      else
-         partQ = 0._rk
-      end if
-   end if
-
-   return
-
-   end function partQ
-!
-!EOC
-!-----------------------------------------------------------------------
-
-!-----------------------------------------------------------------------
-!BOP
-!
-! !IROUTINE: Ratio constrained to $[0,1]$
-!
-! !DESCRIPTION:
-!  Ratio of two variables constrained to the interval $[0,1]$.
-!
-! !INTERFACE:
-   real(rk) function eramp(x,m)
-!
-! !USES:
-!
-! !INPUT PARAMETERS:
-   real(rk), intent(in) ::  x,m
-!
-! !REVISION HISTORY:
-!  Original author(s): The ERSEM development team
-!
-!EOP
-!-----------------------------------------------------------------------
-
-!-----------------------------------------------------------------------
-!BOC
-!
-   if (x.lt.0._fp8) then
-      eramp = 0._rk
-   else
-      if (x.lt.m) then
-         eramp = x/m
-      else
-         eramp = 1._rk
-      end if
-   end if
-
-   return
-
-   end function eramp
-!
-!EOC
-!-----------------------------------------------------------------------
-
-!-----------------------------------------------------------------------
-!BOP
-!
-! !IROUTINE: Calculate absorption
-!
-! !DESCRIPTION:
-!  Calculate average adsorption from depth 'from' to depth 'to' for box i
-!  This routine is used to calculate the adsorption according the distribution
-!  of detritus. The distribution of the detritus determines the distribution
-!  of the bacteria.\\[\baselineskip]
-!
-! !INTERFACE:
-   real(rk) function calculate_adsorption(mode,K,from,to)
-!
-! !USES:
-   use ersem_constants, only: zeroX
-   use benthic_variables
-   use pelagic_variables, only: n_comp, n_upperX
-!
-! !INPUT PARAMETERS:
-   integer, intent(in) :: mode,K
-   real(fp8), intent(in) :: from,to
-!
-! !LOCAL VARIABLES:
-   real(fp8) :: r,s,a,b,alfa6c,alfa7c,pM_1,pM_2
-!
-! !REVISION HISTORY:
-!  Original author(s): The ERSEM development team
-!
-!EOP
-!-----------------------------------------------------------------------
-
-!-----------------------------------------------------------------------
-!BOC
-!
-   if (mode.eq.1) then
-      pM_1=25._rk      +1._rk
-      if (N_COMP-N_UPPERX.gt.1) pM_1=benthic_morfology(2,K)+1
-      pM_2=2._rk +1._rk
-   else
-      pM_1=3._rk +1._rk
-      pM_2=3._rk +1._rk
-   end if
-!
-   alfa6c=1._rk/D6m(K)
-   alfa7c=1._rk/D3m(K)
-   a=0._rk
-   b=0._rk
-   calculate_adsorption=.5_rk*(pM_1+pM_2)
-!
-   if (from .lt. D2m(K)) then
-      s=min(to,D2m(K))
-      r=integral_exp(-alfa6c,s-from)+integral_exp(-alfa7c,s-from)
-      a=a+r
-      b=b+r*pM_1
-   end if
-
-   if (to .gt. D2m(K)) then
-      s=max(from,D2m(K))
-      r=exp(-alfa6c*(s-from))* integral_exp(-alfa6c,to-s)&
-        +exp(-alfa7c*(s-from))* integral_exp(-alfa7c,to-s)
-        a=a+r
-        b=b+r*pM_2
-   end if
-
-   if (a.ge.ZeroX) calculate_adsorption=b/a
-
-   return
-
-   end function calculate_adsorption
-!
-!EOC
-!-----------------------------------------------------------------------
-!-----------------------------------------------------------------------
-!BOP
-!
-! !IROUTINE: Integral exp
-!
-! !DESCRIPTION:
-!  \begin{equation}
-!     f(x)=\frac{\textrm{exp}(\alpha x)-1}{\alpha}
-!  \end{equation}
-!  \\[\baselineskip]
-!
-! !INTERFACE:
-   real(rk) function integral_exp(alfa,d)
-!
-! !INPUT PARAMETERS:
-   real(rk),intent(in) :: alfa,d
-!
-! !REVISION HISTORY:
-!  Original author(s): The ERSEM development team
-!
-!EOP
-!-----------------------------------------------------------------------
-
-!-----------------------------------------------------------------------
-!BOC
-!
-   integral_exp= (exp(alfa*d)-1._rk)/alfa
-
-   return
-
-   end function integral_exp
-!
-!EOC
-!-----------------------------------------------------------------------
-
+   
 end module
-
