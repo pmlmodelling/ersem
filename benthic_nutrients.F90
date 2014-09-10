@@ -285,7 +285,7 @@ contains
 
       ! Net change in benthos must equal local production - surface exchange.
       ! Thus, surface exchange = local production - net change (net change = relaxation)
-      _SET_SURFACE_EXCHANGE_(self%id_O2o,jMU(4)-(c_int_eq-G2oP)/self%relax_oX)
+      _SET_BOTTOM_EXCHANGE_(self%id_O2o,jMU(4)-(c_int_eq-G2oP)/self%relax_oX)
 
       ! Relax depth of first/oxygenated layer towards equilibrium value (H1_eq)
       _SET_ODE_BEN_(self%id_D1m,(max(D1m0,H1_eq)-D1m)/self%relax_oX)
@@ -308,7 +308,7 @@ contains
 
       ! Net change in benthos must equal local production - surface exchange.
       ! Thus, surface exchange = local production - net change (net change = relaxation)
-      _SET_SURFACE_EXCHANGE_(self%id_N3n,jMU(6)+jMI(6)-(c_int_eq-K3nP)/self%relax_mX)
+      _SET_BOTTOM_EXCHANGE_(self%id_N3n,jMU(6)+jMI(6)-(c_int_eq-K3nP)/self%relax_mX)
       
       ! Relax depth of bottom interface of second/oxidised layer towards equilibrium value (d1+H2_eq)
       _SET_ODE_BEN_(self%id_D2m,(max(D2m0,d1+H2_eq)-D2m)/self%relax_mX)
@@ -354,7 +354,7 @@ contains
       call compute_equilibrium_profile(d3-d2,diff3,c_bot2_eq,d3-d2,0.0_rk,c_bot3_eq,c_int3_eq)
       norm_res_int = poro*self%M4adsX*(c_int1_eq+c_int2_eq+c_int3_eq)
       P_res_int = (K4nP-c_int_eq)/norm_res_int*d3
-      _SET_SURFACE_EXCHANGE_(self%id_N4n,jMU(1)+jMI(1)+P_res_int) ! Equilibrium flux = jMU(1)+jMI(1), residual flux = P_res_int
+      _SET_BOTTOM_EXCHANGE_(self%id_N4n,jMU(1)+jMI(1)+P_res_int) ! Equilibrium flux = jMU(1)+jMI(1), residual flux = P_res_int
       _SET_ODE_BEN_(self%id_K4n,-P_res_int)
 
 !------------------------------------------------------------------------------
@@ -380,7 +380,7 @@ contains
      call compute_equilibrium_profile(d3-d2,diff3,c_bot2_eq,d3-d2,0.0_rk,c_bot3_eq,c_int3_eq)
       norm_res_int = poro*(self%M1adsX*(c_int1_eq+c_int2_eq)+self%M11adsX*c_int3_eq)
       P_res_int = (K1pP-c_int_eq)/norm_res_int*d3
-      _SET_SURFACE_EXCHANGE_(self%id_N1p,jMU(2)+jMI(2)+P_res_int) ! Equilibrium flux = jMU(2)+jMI(2), residual flux = P_res_int
+      _SET_BOTTOM_EXCHANGE_(self%id_N1p,jMU(2)+jMI(2)+P_res_int) ! Equilibrium flux = jMU(2)+jMI(2), residual flux = P_res_int
       _SET_ODE_BEN_(self%id_K1p,-P_res_int)
 
 !
@@ -418,7 +418,7 @@ contains
      call compute_equilibrium_profile(d3-d2,diff3,c_bot2_eq,d3-d2,0.0_rk,c_bot3_eq,c_int3_eq)
       norm_res_int = poro*(c_int1_eq+c_int2_eq+c_int3_eq)
       P_res_int = (G3cP-c_int_eq)/norm_res_int*d3
-      _SET_SURFACE_EXCHANGE_(self%id_O3c,jMU(5)+jMI(5)+P_res_int) ! Equilibrium flux = jMU(2)+jMI(2), residual flux = P_res_int
+      _SET_BOTTOM_EXCHANGE_(self%id_O3c,jMU(5)+jMI(5)+P_res_int) ! Equilibrium flux = jMU(2)+jMI(2), residual flux = P_res_int
       _SET_ODE_BEN_(self%id_G3c,-P_res_int)
 
 !
