@@ -131,7 +131,7 @@ contains
       !sdrate = min(fsd*fac,pdepth(I)/timestep) ! Jorn: CFL criterion disabled because FABM does not provide timestep
       sdrate = fsd*fac
 
-      _SET_ODE_BEN_(self%id_bL2c, sdrate*L2c)
+      _SET_BOTTOM_ODE_(self%id_bL2c, sdrate*L2c)
       _SET_BOTTOM_EXCHANGE_(self%id_c,-sdrate*L2c)
 
       _HORIZONTAL_LOOP_END_

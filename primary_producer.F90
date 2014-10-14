@@ -45,7 +45,9 @@ module pml_ersem_primary_producer
       type (type_horizontal_dependency_id) :: id_pco2a3          ! Atmospheric pCO2 - used only if CENH is active
 
       ! Identifiers for diagnostic variables
-      type (type_diagnostic_variable_id) :: id_netP1   ! Net primary production
+      type (type_diagnostic_variable_id) :: id_fO3P1c  ! Gross primary production rate
+      type (type_diagnostic_variable_id) :: id_fP1O3c  ! Respiration rate
+      type (type_diagnostic_variable_id) :: id_netP1   ! Net primary production rate
       type (type_diagnostic_variable_id) :: id_lD      ! Cell-bound calcite - used by calcifiers only
 
       ! Identifiers for coupled models
@@ -189,6 +191,12 @@ contains
 
       ! Register diagnostic variables (i.e., model outputs)
       call self%register_diagnostic_variable(self%id_netP1,'netP1','mg C/m^3/d','net primary production',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fO3P1c,'fO3PIc','mg C/m^3/d','gross primary production',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fP1O3c,'fPIO3c','mg C/m^3/d','respiration',output=output_time_step_averaged)
+
+      ! Contribute to aggregate fluxes.
+      call self%add_to_aggregate_variable(phytoplankton_respiration_rate,self%id_fP1O3c)
+      call self%add_to_aggregate_variable(photosynthesis_rate,self%id_fO3P1c)
 
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_parEIR,standard_variables%downwelling_photosynthetic_radiative_flux)
@@ -441,6 +449,10 @@ contains
 
          _SET_ODE_(self%id_O3c,(fP1O3c - fO3P1c)/CMass)
          _SET_ODE_(self%id_O2o,(fO3P1c*self%uB1c_O2X - fP1O3c*self%urB1_O2X))
+
+         ! Save rates of photosynthesis (a.k.a., gross primary production) and respiration
+         _SET_DIAGNOSTIC_(self%id_fP1O3c,fP1O3c)
+         _SET_DIAGNOSTIC_(self%id_fO3P1c,fO3P1c)
 
          ! Phosphorus flux...........................................
 

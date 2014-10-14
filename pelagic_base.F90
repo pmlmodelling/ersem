@@ -226,18 +226,18 @@ contains
       fsdp = sdrate*Pp
       fsds = sdrate*Ps
 
-      _SET_ODE_BEN_(self%id_Q6c, fsdc * (1._rk - self%qQ1c - self%qQ7c))
-      _SET_ODE_BEN_(self%id_Q6n, fsdn * (1._rk - MIN(1._rk, self%qQ1c * self%xR1nX) - MIN(1._rk, self%qQ7c * self%xR7nX)))
-      _SET_ODE_BEN_(self%id_Q6p, fsdp * (1._rk - MIN(1._rk, self%qQ1c * self%xR1pX) - MIN(1._rk, self%qQ7c * self%xR7pX)))
-      _SET_ODE_BEN_(self%id_Q6s, fsds)
+      _SET_BOTTOM_ODE_(self%id_Q6c, fsdc * (1._rk - self%qQ1c - self%qQ7c))
+      _SET_BOTTOM_ODE_(self%id_Q6n, fsdn * (1._rk - MIN(1._rk, self%qQ1c * self%xR1nX) - MIN(1._rk, self%qQ7c * self%xR7nX)))
+      _SET_BOTTOM_ODE_(self%id_Q6p, fsdp * (1._rk - MIN(1._rk, self%qQ1c * self%xR1pX) - MIN(1._rk, self%qQ7c * self%xR7pX)))
+      _SET_BOTTOM_ODE_(self%id_Q6s, fsds)
       
-      _SET_ODE_BEN_(self%id_Q1c, fsdc * self%qQ1c)
-      _SET_ODE_BEN_(self%id_Q1n, fsdn * MIN(1._rk, self%qQ1c * self%xR1nX))
-      _SET_ODE_BEN_(self%id_Q1p, fsdp * MIN(1._rk, self%qQ1c * self%xR1pX))
+      _SET_BOTTOM_ODE_(self%id_Q1c, fsdc * self%qQ1c)
+      _SET_BOTTOM_ODE_(self%id_Q1n, fsdn * MIN(1._rk, self%qQ1c * self%xR1nX))
+      _SET_BOTTOM_ODE_(self%id_Q1p, fsdp * MIN(1._rk, self%qQ1c * self%xR1pX))
       
-      _SET_ODE_BEN_(self%id_Q7c, fsdc * self%qQ7c)
-      _SET_ODE_BEN_(self%id_Q7n, fsdn * MIN(1._rk, self%qQ7c * self%xR7nX))
-      _SET_ODE_BEN_(self%id_Q7p, fsdp * MIN(1._rk, self%qQ7c * self%xR7pX))
+      _SET_BOTTOM_ODE_(self%id_Q7c, fsdc * self%qQ7c)
+      _SET_BOTTOM_ODE_(self%id_Q7n, fsdn * MIN(1._rk, self%qQ7c * self%xR7nX))
+      _SET_BOTTOM_ODE_(self%id_Q7p, fsdp * MIN(1._rk, self%qQ7c * self%xR7pX))
       
       _SET_BOTTOM_EXCHANGE_(self%id_c,-fsdc)
       _SET_BOTTOM_EXCHANGE_(self%id_n,-fsdn)

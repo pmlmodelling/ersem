@@ -28,6 +28,8 @@ module pml_ersem_microzooplankton
       type (type_state_variable_id)      :: id_N1p,id_N4n
       type (type_dependency_id)          :: id_ETW,id_eO2mO2
 
+      type (type_diagnostic_variable_id) :: id_fZ5O3c
+
       ! Parameters
       integer  :: nprey
       real(rk) :: chuz5cX,sumz5X,puz5X,pe_r1z5X,q10z5X,srsz5X,chrz5oX,pu_eaz5X
@@ -163,6 +165,12 @@ contains
       call self%request_coupling_to_model(self%id_R6p,self%id_RP,'p')
       call self%request_coupling_to_model(self%id_R6s,self%id_RP,'s')
 
+      ! Register diagnostics.
+      call self%register_diagnostic_variable(self%id_fZ5O3c,'fZIO3c','mg C/m^3/d','respiration',output=output_time_step_averaged)
+
+      ! Contribute to aggregate fluxes.
+      call self%add_to_aggregate_variable(zooplankton_respiration_rate,self%id_fZ5O3c)
+
    end subroutine
 
    subroutine do(self,_ARGUMENTS_DO_)
@@ -265,6 +273,7 @@ contains
 
 !..Total respiration
       fZ5O3c = rrsZ5 + rraZ5
+      _SET_DIAGNOSTIC_(self%id_fZ5O3c,fZ5O3c)
 
       if (_AVAILABLE_(self%id_L2c)) then
          _SET_ODE_(self%id_L2c, (1.0_rk-self%gutdiss)*ineffZ5*self%pu_eaZ5X*sum(spreyZ5*preylP))

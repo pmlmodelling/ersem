@@ -22,6 +22,7 @@ module pml_ersem_benthic_base
       ! Coupled state variables for resuspension and remineralization
       type (type_state_variable_id) :: id_resuspension_c,id_resuspension_n,id_resuspension_p,id_resuspension_s,id_resuspension_f,id_resuspension_l
       type (type_state_variable_id) :: id_O3c,id_N1p,id_N3n,id_N4n,id_N5s,id_N7f
+      type (type_state_variable_id) :: id_penetration_c,id_penetration_n,id_penetration_p,id_penetration_s
       type (type_model_id)          :: id_resuspension_target
 
       ! Dependencies for resuspension
@@ -47,10 +48,11 @@ contains
 !
 ! !INPUT PARAMETERS:
    class (type_ersem_benthic_base_model), intent(inout), target :: self
-   integer,                            intent(in)            :: configunit
+   integer,                               intent(in)            :: configunit
 !
 ! !LOCAL VARIABLES:
    character(len=10) :: composition
+   logical           :: track_penetration
 !EOP
 !-----------------------------------------------------------------------
 !BOC
@@ -59,6 +61,7 @@ contains
       if (index(composition,'n')/=0 .and. self%reminQIX/=0.0_rk) &
          call self%get_parameter(self%pQIN3X,'pN3','-','nitrate fraction of remineralised nitrogen (remainder is ammonia)',default=0.0_rk)
       call self%get_parameter(self%resuspension,'resuspension','',   'enable resuspension',  default=.false.)
+      call self%get_parameter(track_penetration,'track_penetration', '', 'track penetration depth',default=.false.)
 
       call self%initialize_ersem_benthic_base()
 
@@ -76,6 +79,7 @@ contains
             call self%request_coupling_to_model(self%id_resuspension_c,self%id_resuspension_target,'c')
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_O3c,'O3c','mmol/m^3','dissolved inorganic carbon')
+         if (track_penetration) call self%register_state_variable(self%id_penetration_c,'c_pen','cm','penetration depth of carbon')
       end if
       if (index(composition,'n')/=0) then
          call self%add_constituent('n',0.0_rk)
@@ -87,6 +91,7 @@ contains
             call self%register_state_dependency(self%id_N3n,'N3n','mmol/m^3','nitrate')
             call self%register_state_dependency(self%id_N4n,'N4n','mmol/m^3','ammonium')
          end if
+         if (track_penetration) call self%register_state_variable(self%id_penetration_n,'n_pen','cm','penetration depth of nitrogen')
       end if
       if (index(composition,'p')/=0) then
          call self%add_constituent('p',0.0_rk)
@@ -95,6 +100,7 @@ contains
             call self%request_coupling_to_model(self%id_resuspension_p,self%id_resuspension_target,'p')
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N1p,'N1p','mmol m-3','phosphate')
+         if (track_penetration) call self%register_state_variable(self%id_penetration_p,'p_pen','cm','penetration depth of phosphorus')
       end if
       if (index(composition,'s')/=0) then
          call self%add_constituent('s',0.0_rk)
@@ -103,6 +109,7 @@ contains
             call self%request_coupling_to_model(self%id_resuspension_s,self%id_resuspension_target,'s')
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N5s,'N5s','mmol m-3','silicate')
+         if (track_penetration) call self%register_state_variable(self%id_penetration_s,'s_pen','cm','penetration depth of silicate')
       end if
       if (index(composition,'f')/=0) then
          call self%add_constituent('f',0.0_rk)
@@ -217,7 +224,7 @@ contains
             FerC=fac*Q6cP
             !FerC=max(min(FerC,Q6cP(k)/timestep+ &
             !       min(SQ6c(k)-wsoQ6c(k),0._rk)),0._rk)
-            _SET_ODE_BEN_(self%id_c,-FerC)
+            _SET_BOTTOM_ODE_(self%id_c,-FerC)
             _SET_BOTTOM_EXCHANGE_(self%id_resuspension_c,FerC)
             
             ! Nitrogen
@@ -227,7 +234,7 @@ contains
                FerN=fac*Q6nP
                !FerN=max(min(FerN,Q6nP(k)/timestep+ &
                !       min(SQ6n(k)-wsoQ6n(k),0._rk)),0._rk)
-               _SET_ODE_BEN_(self%id_n,-FerN)
+               _SET_BOTTOM_ODE_(self%id_n,-FerN)
                _SET_BOTTOM_EXCHANGE_(self%id_resuspension_n,FerN)
             end if
 
@@ -238,7 +245,7 @@ contains
                FerP=fac*Q6pP
                !FerP=max(min(FerP,Q6pP(k)/timestep+ &
                !       min(SQ6p(k)-wsoQ6p(k),0._rk)),0._rk)
-               _SET_ODE_BEN_(self%id_p,-FerP)
+               _SET_BOTTOM_ODE_(self%id_p,-FerP)
                _SET_BOTTOM_EXCHANGE_(self%id_resuspension_p,FerP)
             end if
             
@@ -249,7 +256,7 @@ contains
                FerS=fac*Q6sP
                !FerS=max(min(FerS,Q6sP(k)/timestep+ &
                !       min(SQ6s(k)-wsoQ6s(k),0._rk)),0._rk)
-               _SET_ODE_BEN_(self%id_s,-FerS)
+               _SET_BOTTOM_ODE_(self%id_s,-FerS)
                _SET_BOTTOM_EXCHANGE_(self%id_resuspension_s,FerS)
             end if
 
@@ -259,7 +266,7 @@ contains
                FerF=fac*Q6fP
                !FerF=max(min(FerF,Q6fP(k)/timestep+ &
                !       min(SQ6f(k)-wsoQ6f(k),0._rk)),0._rk)
-               _SET_ODE_BEN_(self%id_f,-FerF)
+               _SET_BOTTOM_ODE_(self%id_f,-FerF)
                _SET_BOTTOM_EXCHANGE_(self%id_resuspension_f,FerF)
             end if
          end if   ! Resuspension
@@ -268,33 +275,33 @@ contains
          if (self%reminQIX/=0.0_rk) then
             if (_VARIABLE_REGISTERED_(self%id_c)) then
                _GET_HORIZONTAL_(self%id_c,Q6cP)
-               _SET_ODE_BEN_(self%id_c,-self%reminQIX*Q6cP)
+               _SET_BOTTOM_ODE_(self%id_c,-self%reminQIX*Q6cP)
                _SET_BOTTOM_EXCHANGE_(self%id_O3c,self%reminQIX*Q6cP/CMass)
             end if
             if (_VARIABLE_REGISTERED_(self%id_p)) then
                _GET_HORIZONTAL_(self%id_p,Q6pP)
-               _SET_ODE_BEN_(self%id_p,-self%reminQIX*Q6pP)
+               _SET_BOTTOM_ODE_(self%id_p,-self%reminQIX*Q6pP)
                _SET_BOTTOM_EXCHANGE_(self%id_N1p,self%reminQIX*Q6pP)
             end if
             if (_VARIABLE_REGISTERED_(self%id_n)) then
                _GET_HORIZONTAL_(self%id_n,Q6nP)
-               _SET_ODE_BEN_(self%id_n,-self%reminQIX*Q6nP)
+               _SET_BOTTOM_ODE_(self%id_n,-self%reminQIX*Q6nP)
                _SET_BOTTOM_EXCHANGE_(self%id_N3n,self%pQIN3X*self%reminQIX*Q6nP)
                _SET_BOTTOM_EXCHANGE_(self%id_N4n,(1.0_rk-self%pQIN3X)*self%reminQIX*Q6nP)
             end if
             if (_VARIABLE_REGISTERED_(self%id_s)) then
                _GET_HORIZONTAL_(self%id_s,Q6sP)
-               _SET_ODE_BEN_(self%id_s,-self%reminQIX*Q6sP)
+               _SET_BOTTOM_ODE_(self%id_s,-self%reminQIX*Q6sP)
                _SET_BOTTOM_EXCHANGE_(self%id_N5s,self%reminQIX*Q6sP)
             end if
             if (_VARIABLE_REGISTERED_(self%id_f)) then
                _GET_HORIZONTAL_(self%id_f,Q6fP)
-               _SET_ODE_BEN_(self%id_f,-self%reminQIX*Q6fP)
+               _SET_BOTTOM_ODE_(self%id_f,-self%reminQIX*Q6fP)
                _SET_BOTTOM_EXCHANGE_(self%id_N7f,self%reminQIX*Q6fP)
             end if
             if (_VARIABLE_REGISTERED_(self%id_l)) then
                _GET_HORIZONTAL_(self%id_l,Q6lP)
-               _SET_ODE_BEN_(self%id_l,-self%reminQIX*Q6lP)
+               _SET_BOTTOM_ODE_(self%id_l,-self%reminQIX*Q6lP)
                _SET_BOTTOM_EXCHANGE_(self%id_O3c,self%reminQIX*Q6lP/CMass)
             end if
          end if   ! Remineralization (benthic return)

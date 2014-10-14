@@ -26,6 +26,7 @@ module pml_ersem_bacteria
       type (type_dependency_id)     :: id_ETW,id_ESS,id_phx,id_eO2mO2
       type (type_state_variable_id),allocatable,dimension(:) :: id_RPc,id_RPp,id_RPn,id_RPf
       type (type_model_id),         allocatable,dimension(:) :: id_RP
+      type (type_diagnostic_variable_id) :: id_fB1O3c
 
       ! Parameters
       integer  :: nRP
@@ -188,6 +189,12 @@ contains
       if (self%ISWphx==1) call self%register_dependency(self%id_phx,standard_variables%ph_reported_on_total_scale)
       call self%register_dependency(self%id_eO2mO2,standard_variables%fractional_saturation_of_oxygen)
 
+      ! Register diagnostics.
+      call self%register_diagnostic_variable(self%id_fB1O3c,'fB1O3c','mg C/m^3/d','respiration',output=output_time_step_averaged)
+
+      ! Contribute to aggregate fluxes.
+      call self%add_to_aggregate_variable(bacterial_respiration_rate,self%id_fB1O3c)
+
    end subroutine
    
    subroutine do(self,_ARGUMENTS_DO_)
@@ -320,6 +327,7 @@ contains
           fB1O3c = rraB1 + self%srsB1X * B1cP * etB1
 !      fB1O3c(I) = ( 1._fp8 - puB1X*eO2mO2  - puB1oX*( 1._fp8 - eO2mO2 ) )&
 !                * rugB1  + srsB1X * B1cP(I) * etB1
+          _SET_DIAGNOSTIC_(self%id_fB1O3c,fB1O3c)
 
 #ifdef DOCDYN
 ! specific release of semilabile DOC 
@@ -507,6 +515,7 @@ contains
 !..mineralisation of DOC to CO2
 
          fB1O3c = self%sR1N1X * R1cP*etB1
+          _SET_DIAGNOSTIC_(self%id_fB1O3c,fB1O3c)
 
 !..mineralisation of DOP to PO4
 

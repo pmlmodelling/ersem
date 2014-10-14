@@ -32,6 +32,8 @@ module pml_ersem_mesozooplankton
       type (type_dependency_id)          :: id_ETW,id_eO2mO2,id_totprey
       type (type_horizontal_dependency_id) :: id_inttotprey
 
+      type (type_diagnostic_variable_id) :: id_fZ4O3c
+
       ! Parameters
       integer  :: nprey
       real(rk) :: qpZIcX,qnZIcX
@@ -205,6 +207,12 @@ contains
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
       call self%register_dependency(self%id_eO2mO2,standard_variables%fractional_saturation_of_oxygen)
 
+      ! Register diagnostics
+      call self%register_diagnostic_variable(self%id_fZ4O3c,'fZIO3c','mg C/m^3/d','respiration',output=output_time_step_averaged)
+
+      ! Contribute to aggregate fluxes.
+      call self%add_to_aggregate_variable(zooplankton_respiration_rate,self%id_fZ4O3c)
+
    end subroutine
    
    subroutine do(self,_ARGUMENTS_DO_)
@@ -308,6 +316,7 @@ contains
 
    !..Total respiration
             fZ4O3c = rrsZ4 + rraZ4
+            _SET_DIAGNOSTIC_(self%id_fZ4O3c,fZ4O3c)
 
             if (_AVAILABLE_(self%id_L2c)) then
                _SET_ODE_(self%id_L2c, (1.0_rk-self%gutdiss)*ineffZ4*sum(self%pu_eaZ4X*spreyZ4*preylP))
