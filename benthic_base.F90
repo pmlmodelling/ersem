@@ -18,11 +18,11 @@ module pml_ersem_benthic_base
    type,extends(type_particle_model),public :: type_ersem_benthic_base_model
       ! Own state variables
       type (type_bottom_state_variable_id) :: id_c,id_n,id_p,id_f,id_s,id_l
+      type (type_bottom_state_variable_id) :: id_penetration_c,id_penetration_n,id_penetration_p,id_penetration_s
 
       ! Coupled state variables for resuspension and remineralization
       type (type_state_variable_id) :: id_resuspension_c,id_resuspension_n,id_resuspension_p,id_resuspension_s,id_resuspension_f,id_resuspension_l
       type (type_state_variable_id) :: id_O3c,id_N1p,id_N3n,id_N4n,id_N5s,id_N7f
-      type (type_state_variable_id) :: id_penetration_c,id_penetration_n,id_penetration_p,id_penetration_s
       type (type_model_id)          :: id_resuspension_target
 
       ! Dependencies for resuspension
@@ -79,7 +79,7 @@ contains
             call self%request_coupling_to_model(self%id_resuspension_c,self%id_resuspension_target,'c')
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_O3c,'O3c','mmol/m^3','dissolved inorganic carbon')
-         if (track_penetration) call self%register_state_variable(self%id_penetration_c,'c_pen','cm','penetration depth of carbon')
+         if (track_penetration) call self%register_state_variable(self%id_penetration_c,'pen_depth_c','m','penetration depth of carbon')
       end if
       if (index(composition,'n')/=0) then
          call self%add_constituent('n',0.0_rk)
@@ -91,7 +91,7 @@ contains
             call self%register_state_dependency(self%id_N3n,'N3n','mmol/m^3','nitrate')
             call self%register_state_dependency(self%id_N4n,'N4n','mmol/m^3','ammonium')
          end if
-         if (track_penetration) call self%register_state_variable(self%id_penetration_n,'n_pen','cm','penetration depth of nitrogen')
+         if (track_penetration) call self%register_state_variable(self%id_penetration_n,'pen_depth_n','m','penetration depth of nitrogen')
       end if
       if (index(composition,'p')/=0) then
          call self%add_constituent('p',0.0_rk)
@@ -100,7 +100,7 @@ contains
             call self%request_coupling_to_model(self%id_resuspension_p,self%id_resuspension_target,'p')
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N1p,'N1p','mmol m-3','phosphate')
-         if (track_penetration) call self%register_state_variable(self%id_penetration_p,'p_pen','cm','penetration depth of phosphorus')
+         if (track_penetration) call self%register_state_variable(self%id_penetration_p,'pen_depth_p','m','penetration depth of phosphorus')
       end if
       if (index(composition,'s')/=0) then
          call self%add_constituent('s',0.0_rk)
@@ -109,7 +109,7 @@ contains
             call self%request_coupling_to_model(self%id_resuspension_s,self%id_resuspension_target,'s')
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N5s,'N5s','mmol m-3','silicate')
-         if (track_penetration) call self%register_state_variable(self%id_penetration_s,'s_pen','cm','penetration depth of silicate')
+         if (track_penetration) call self%register_state_variable(self%id_penetration_s,'pen_depth_s','m','penetration depth of silicate')
       end if
       if (index(composition,'f')/=0) then
          call self%add_constituent('f',0.0_rk)
@@ -136,7 +136,7 @@ contains
       real(rk),optional,                     intent(in)            :: c_ini,n_ini,p_ini,s_ini,f_ini
 
       ! Set time unit to d-1
-      ! This implies that all rates (sink/source terms, vertical velocities) are givne in d-1.
+      ! This implies that all rates (sink/source terms, vertical velocities) are given in d-1.
       self%dt = 86400._rk
 
       if (present(c_ini)) call self%add_constituent('c',c_ini)
@@ -146,15 +146,18 @@ contains
       if (present(f_ini)) call self%add_constituent('f',f_ini)
    end subroutine
 
-   subroutine benthic_base_add_constituent(self,name,initial_value)
+   subroutine benthic_base_add_constituent(self,name,initial_value,qn,qp)
       class (type_ersem_benthic_base_model), intent(inout), target :: self
       character(len=*),                      intent(in)            :: name
       real(rk),                              intent(in)            :: initial_value
+      real(rk),optional,                     intent(in)            :: qn,qp
 
       select case (name)
          case ('c')
             call self%register_state_variable(self%id_c,'c','mg C/m^2','carbon',initial_value,minimum=0._rk)
             call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_c,scale_factor=1._rk/CMass)
+            if (present(qn)) call self%add_to_aggregate_variable(standard_variables%total_nitrogen,  self%id_c,scale_factor=qn)
+            if (present(qp)) call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_c,scale_factor=qp)
          case ('n')
             call self%register_state_variable(self%id_n, 'n', 'mmol N/m^2', 'nitrogen', initial_value, minimum=0._rk)
             call self%add_to_aggregate_variable(standard_variables%total_nitrogen,self%id_n)

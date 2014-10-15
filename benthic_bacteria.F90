@@ -13,7 +13,7 @@ module pml_ersem_benthic_bacteria
    private
 
    type,extends(type_ersem_benthic_base_model),public :: type_pml_ersem_benthic_bacteria
-      type (type_bottom_state_variable_id) :: id_K4n,id_K1n
+      type (type_bottom_state_variable_id) :: id_K1p,id_K4n
       type (type_bottom_state_variable_id) :: id_Q1c,id_Q1n,id_Q1p
       type (type_bottom_state_variable_id) :: id_Q6c,id_Q6n,id_Q6p
       type (type_bottom_state_variable_id) :: id_Q7c,id_Q7n,id_Q7p
@@ -47,8 +47,11 @@ contains
       class (type_pml_ersem_benthic_bacteria),intent(inout),target :: self
       integer,                                 intent(in)           :: configunit
 
-      call self%initialize_ersem_benthic_base(c_ini=0.0_rk)
+      ! Set time unit to d-1
+      ! This implies that all rates (sink/source terms, vertical velocities) are given in d-1.
+      self%dt = 86400._rk
 
+      ! Register parameters
       call self%get_parameter(self%qnHIcX, 'qnc',  'mmol N/mg C','Maximum nitrogen to carbon ratio')
       call self%get_parameter(self%qpHIcX, 'qpc',  'mmol P/mg C','Maximum phosphorus to carbon ratio')
       call self%get_parameter(self%q10HX,  'q10',  '-',          'Q_10 temperature coefficient')
@@ -65,11 +68,15 @@ contains
       call self%get_parameter(self%pdHQ1X, 'pdQ1', '-',          'DOM-fraction of mortality')
       call self%get_parameter(self%sdHX,   'sd',   '1/d',        'Specific maximum mortality')
 
-      call self%register_dependency(self%id_ETW,standard_variables%temperature)
+      call self%add_constituent('c',0.0_rk,qn=self%qnHIcX,qp=self%qpHIcX)
 
+      ! Environmental dependencies
+      call self%register_dependency(self%id_ETW,standard_variables%temperature)
       call self%register_dependency(self%id_Dm,'Dm','m','depth interval available to bacteria')
+
+      ! Dependencies on state variables of external modules.
       call self%register_state_dependency(self%id_K4n,'K4n','mmol N/m^2','ammonium')
-      call self%register_state_dependency(self%id_K1n,'K1p','mmol N/m^2','phosphate')
+      call self%register_state_dependency(self%id_K1p,'K1p','mmol N/m^2','phosphate')
       call self%register_state_dependency(self%id_G2o,'G2o','mmol O2/m^2','oxygen')
       call self%register_state_dependency(self%id_G3c,'G3c','mmol C/m^2','dissolved inorganic carbon')
       call self%register_state_dependency(self%id_Q1c,'Q1c','mg C/m^2',  'dissolved organic carbon')
@@ -82,7 +89,8 @@ contains
       call self%register_state_dependency(self%id_Q7n,'Q7n','mmol N/m^2','refractory particulate organic nitrogen')
       call self%register_state_dependency(self%id_Q7p,'Q7p','mmol P/m^2','refractory particulate organic phosphorus')
 
-      ! Allow the user to hook up substrate constituents by coupling to whole models (e.g., Q1 rather than Q1c, Q1n, Q1p).
+      ! Allow the user to hook up substrate constituents by bulk coupling to entire models.
+      ! This allows one to couple e.g. Q1 as a whole, rather than Q1c, Q1n, Q1p.
       call self%register_model_dependency(self%id_Q1,'Q1')
       call self%register_model_dependency(self%id_Q6,'Q6')
       call self%register_model_dependency(self%id_Q7,'Q7')
@@ -99,128 +107,139 @@ contains
 
    subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
 
-! !INPUT PARAMETERS:
- class (type_pml_ersem_benthic_bacteria),intent(in) :: self
-  _DECLARE_ARGUMENTS_DO_BOTTOM_
+      class (type_pml_ersem_benthic_bacteria),intent(in) :: self
+      _DECLARE_ARGUMENTS_DO_BOTTOM_
      
-     real(rk) :: Hc,Hn,Hp,fHc,fHn,fHp,fHn1,fHp1
-     real(rk) :: Dm,SK4a,SK1a,SQ6c
-     real(rk) :: ETW,eT,eOx,eN,Limit
-     real(rk) :: K4a,K1a
-     real(rk) :: Q1cP,Q1nP,Q1pP
-     real(rk) :: AQ6c,AQ6n,AQ6p
-     real(rk) :: AQ7c,AQ7n,AQ7p
-     real(rk) :: sfQ7H,sfQ6H,fQ7Hc,fQ6Hc,fQ1Hc,fQIHc,fQ7Hn,fQ7Hp,fQ6Hn,fQ6Hp
-     real(rk) :: fQ1Hn,fQ1Hp,fK1Hn,fK1Hp,fHG3c,fK4Hn,fK4Hp,sfHQ1,sfHQI,sfHQ6
+      real(rk) :: Hc,Hn,Hp,fHc,fHn,fHp,fHn1,fHp1
+      real(rk) :: Dm,SK4a,SK1a,SQ6c
+      real(rk) :: ETW,eT,eOx,eN,Limit
+      real(rk) :: K4a,K1a
+      real(rk) :: Q1cP,Q1nP,Q1pP
+      real(rk) :: AQ6c,AQ6n,AQ6p
+      real(rk) :: AQ7c,AQ7n,AQ7p
+      real(rk) :: sfQ7H,sfQ6H,sfQ1H,fQ7Hc,fQ6Hc,fQ1Hc,fQIHc,fQ7Hn,fQ7Hp,fQ6Hn,fQ6Hp
+      real(rk) :: fQ1Hn,fQ1Hp,fK1Hn,fK1Hp,fHG3c,fK4Hn,fK4Hp,sfHQ1,sfHQI,sfHQ6
 
-     _HORIZONTAL_LOOP_BEGIN_
+      _HORIZONTAL_LOOP_BEGIN_
 
-     _GET_HORIZONTAL_(self%id_c,Hc)
+         ! Retrieve bacterial carbon
+         _GET_HORIZONTAL_(self%id_c,Hc)
 
-     _GET_HORIZONTAL_(self%id_Dm,Dm)
+         ! Retrieve environmental conditions
+         _GET_(self%id_ETW,ETW)            ! temperature (of lowermost pelagic layer)
+         _GET_HORIZONTAL_(self%id_Dm,Dm)   ! depth of sediment layer
 
-     _GET_(self%id_ETW,ETW)
+         ! Retrieve organic carbon substrates
+         _GET_HORIZONTAL_(self%id_Q1c,Q1cP)
+         _GET_HORIZONTAL_(self%id_Q1n,Q1nP)
+         _GET_HORIZONTAL_(self%id_Q1p,Q1pP)
+         _GET_HORIZONTAL_(self%id_Q6c,AQ6c)
+         _GET_HORIZONTAL_(self%id_Q6n,AQ6n)
+         _GET_HORIZONTAL_(self%id_Q6p,AQ6p)
+         _GET_HORIZONTAL_(self%id_Q7c,AQ7c)
+         _GET_HORIZONTAL_(self%id_Q7n,AQ7n)
+         _GET_HORIZONTAL_(self%id_Q7p,AQ7p)
 
-     _GET_HORIZONTAL_(self%id_Q1c,Q1cP)
-     _GET_HORIZONTAL_(self%id_Q1n,Q1nP)
-     _GET_HORIZONTAL_(self%id_Q1p,Q1pP)
-     _GET_HORIZONTAL_(self%id_Q6c,AQ6c)
-     _GET_HORIZONTAL_(self%id_Q6n,AQ6n)
-     _GET_HORIZONTAL_(self%id_Q6p,AQ6p)
-     _GET_HORIZONTAL_(self%id_Q7c,AQ7c)
-     _GET_HORIZONTAL_(self%id_Q7n,AQ7n)
-     _GET_HORIZONTAL_(self%id_Q7p,AQ7p)
+         ! Retrieve dissolved nutrients (phosphate, ammonium)
+         _GET_HORIZONTAL_(self%id_K1p,K1a)
+         _GET_HORIZONTAL_(self%id_K4n,K4a)
 
-     _GET_HORIZONTAL_(self%id_K4n,K4a)
-     _GET_HORIZONTAL_(self%id_K1n,K1a)
+         ! Infer bacterial nitrogen and phosphorus from carbon and prescribed fixed stoichiometry.
+         Hn = Hc*self%qnHIcX
+         Hp = Hc*self%qpHIcX
 
-      Hn = Hc * self%qnHIcX
-      Hp = Hc * self%qpHIcX
+         ! Limitation by temperature, oxygen, nutrient availability.
+         eT  = self%q10HX**((ETW-10._rk)/10._rk) - self%q10HX**((ETW-32._rk)/3._rk)
+         eOx = Dm/(self%ddHX+Dm)
+         if (AQ6c<=0) then
+            ! Avoid division by zero: no carbon in substrate means no nutrient limitation
+            eN = 1.0_rk
+         else
+            eN = min(1._rk,max(0._rk,AQ6n/(self%qnHIcX*AQ6c))) * min(1._rk,max(0._rk,AQ6p/(self%qpHIcX*AQ6c)))
+         end if
 
-      eT   = self%q10HX**((ETW-10._rk)/10._rk) - self%q10HX**((ETW-32._rk)/3._rk)
-      eOx  = Dm/(self%ddHX+Dm)
-      eN   = min(1._rk,max(0._rk,AQ6n/(self%qnHIcX*AQ6c))) * min(1._rk,max(0._rk,AQ6p/(self%qpHIcX*AQ6c)))
+         ! Combined limitation factor
+         Limit = eT * eOX * Hc
 
-      Limit = eT * eOX * Hc
-   
-   sfQ7H = ( self%suQ7HX * Limit )
-   sfQ6H = ( self%suQ6fHX * Limit * eN ) + ( self%suQ6sHX * Limit )
-   fQ7Hc = sfQ7H * AQ7c
-   fQ6Hc = sfQ6H * AQ6c
-   fQ1Hc = self%suQ1HX  * Limit * Q1cP
-   fQIHc = fQ7Hc + fQ6Hc + fQ1Hc
+         ! Determine effective uptake rates
+         sfQ7H = ( self%suQ7HX * Limit )
+         sfQ6H = ( self%suQ6fHX * Limit * eN ) + ( self%suQ6sHX * Limit )
+         sfQ1H = ( self%suQ1HX * Limit )
 
-   fQ7Hn = sfQ7H * AQ7n
-   fQ7Hp = sfQ7H * AQ7p
-   fQ6Hn = sfQ6H * AQ6n * self%puincHX
-   fQ6Hp = sfQ6H * AQ6p * self%puincHX
+         ! Uptake of substrate carbon
+         fQ7Hc = sfQ7H * AQ7c
+         fQ6Hc = sfQ6H * AQ6c
+         fQ1Hc = sfQ1H * Q1cP
+         fQIHc = fQ7Hc + fQ6Hc + fQ1Hc
 
-   fQ1Hn = self%suQ1HX * Limit * Q1nP
-   fQ1Hp = self%suQ1HX * Limit * Q1pP
+         ! Uptake of substrate nitrogen and phosphorus
+         ! (note on Q6: affinity for n and p differs from affinity for c if puincHX/=1)
+         fQ7Hn = sfQ7H * AQ7n
+         fQ7Hp = sfQ7H * AQ7p
+         fQ6Hn = sfQ6H * AQ6n * self%puincHX
+         fQ6Hp = sfQ6H * AQ6p * self%puincHX
+         fQ1Hn = sfQ1H * Q1nP
+         fQ1Hp = sfQ1H * Q1pP
 
-   fK4Hn = fQIHc * self%qnHIcX
-   fK4Hn = fK4Hn * K4a/(K4a+fK4Hn)
-   fK1Hp = fQIHc * self%qpHIcX
-   fK1Hp = fK1Hp * K1a/(K1a+fK1Hp)
+         ! (JB: code below seems to want to infer nutrient requirement/flux,
+         ! but it makes no sense since K?a and fK?Hn are summed while they have different units)
+         fK4Hn = fQIHc * self%qnHIcX
+         fK4Hn = fK4Hn * K4a/(K4a+fK4Hn)
+         fK1Hp = fQIHc * self%qpHIcX
+         fK1Hp = fK1Hp * K1a/(K1a+fK1Hp)
 
-   !Respiration
+         ! Respiration (reduction in bacterial carbon and dissolved oxygen, increase in 
+         ! dissolved inorganic carbon, ammonium, phosphate)
+         fHG3c = self%purHX * fQIHc + self%srHX * Hc * eT
+         fHc = -fHG3c
+         _SET_BOTTOM_ODE_(self%id_G2o,-fHG3c/CMass)  ! oxygen or reduction equivalent
+         _SET_BOTTOM_ODE_(self%id_G3c, fHG3c/CMass)
 
-   fHG3c = self%purHX * fQIHc + self%srHX * Hc * eT
-   _SET_BOTTOM_ODE_(self%id_c, - fHG3c)
-   ! Below, G2o is oxygen or reduction equivalent
-   _SET_BOTTOM_ODE_(self%id_G2o, - fHG3c / 12.011_rk)
-   _SET_BOTTOM_ODE_(self%id_G3c, fHG3c / 12.011_rk)
-  
-   !Mortality
+         ! Mortality (distribute over dissolved organics Q1 and particulate organics Q6)
+         sfHQI = self%sdHX * (1._rk - eOx)
+         sfHQ6 = sfHQI * (1._rk - self%pdHQ1X)
+         sfHQ1 = sfHQI * self%pdHQ1X
 
-   sfHQI = self%sdHX * (1._rk - eOx)
-   sfHQ6 = sfHQI * (1._rk - self%pdHQ1X)
-   sfHQ1 = sfHQI * self%pdHQ1X
-   
-   _SET_BOTTOM_ODE_(self%id_Q6c, sfHQ6 * Hc)
-   _SET_BOTTOM_ODE_(self%id_Q6n, sfHQ6 * Hc * self%qnHIcX)
-   _SET_BOTTOM_ODE_(self%id_Q6p, sfHQ6 * Hc * self%qpHIcX)
+         _SET_BOTTOM_ODE_(self%id_Q6c, sfHQ6 * Hc)
+         _SET_BOTTOM_ODE_(self%id_Q6n, sfHQ6 * Hc * self%qnHIcX)
+         _SET_BOTTOM_ODE_(self%id_Q6p, sfHQ6 * Hc * self%qpHIcX)
 
-   _SET_BOTTOM_ODE_(self%id_Q1c, sfHQ1 * Hc)
-   _SET_BOTTOM_ODE_(self%id_Q1n, sfHQ1 * Hc * self%qnHIcX)
-   _SET_BOTTOM_ODE_(self%id_Q1p, sfHQ1 * Hc * self%qpHIcX)
+         _SET_BOTTOM_ODE_(self%id_Q1c, sfHQ1 * Hc)
+         _SET_BOTTOM_ODE_(self%id_Q1n, sfHQ1 * Hc * self%qnHIcX)
+         _SET_BOTTOM_ODE_(self%id_Q1p, sfHQ1 * Hc * self%qpHIcX)
 
-   _SET_BOTTOM_ODE_(self%id_c,- (sfHQ6 + sfHQ1) * Hc )
+         _SET_BOTTOM_ODE_(self%id_c, -(sfHQ6 + sfHQ1) * Hc)
 
-   fHn1 = - (sfHQ6 + sfHQ1) * Hc * self%qnHIcX
-   fHp1 = - (sfHQ6 + sfHQ1) * Hc * self%qpHIcX
+         ! Uptake and excretion
+         fHc = fHc + fQ7Hc * (1._rk-self%p_ex7ox) + fQ6Hc * (1._rk-self%p_ex6ox) + fQ1Hc
+         fHn = fQ7Hn * (1._rk-self%p_ex7ox) + fQ6Hn * (1._rk-self%p_ex6ox) + fQ1Hn + fK4Hn
+         fHp = fQ7Hp * (1._rk-self%p_ex7ox) + fQ6Hp * (1._rk-self%p_ex6ox) + fQ1Hp + fK1Hp
 
-   !Uptake and excretion
+         ! Preserve fixed bacterial stoichiometry by selectively excreting part of N,P,C biomass fluxes
+         ! to ammonia, phosphate and particulate carbon, respectively.
+         SK4a = 0.0_rk
+         SK1a = 0.0_rk
+         SQ6c = 0.0_rk
+         CALL adjust_fixed_nutrients(fHc,fHn,fHp,self%qnHIcX,self%qpHIcX,SK4a,SK1a,SQ6c)
 
-   fHc = fQ7Hc * (1._rk-self%p_ex7ox) + fQ6Hc * (1._rk-self%p_ex6ox) + fQ1Hc
-   fHn = fHn1 + fQ7Hn * (1._rk-self%p_ex7ox) + fQ6Hn * (1._rk-self%p_ex6ox) + fQ1Hn + fK4Hn
-   fHp = fHp1 + fQ7Hp * (1._rk-self%p_ex7ox) + fQ6Hp * (1._rk-self%p_ex6ox) + fQ1Hp + fK1Hp
+         _SET_BOTTOM_ODE_(self%id_c,fHc)
 
-   ! Preserve fixed bacterial stoichiometry by selectively redirecting part of N,P,C biomass fluxes
-   ! to ammonia, phosphate and particulate carbon, respectively.
-   SK4a = 0.0_rk
-   SK1a = 0.0_rk
-   SQ6c = 0.0_rk
-   CALL Adjust_fixed_nutrients(fHc,fHn,fHp,self%qnHIcX,self%qpHIcX,SK4a,SK1a,SQ6c)
+         _SET_BOTTOM_ODE_(self%id_Q6c,-fQ6Hc + SQ6c)
+         _SET_BOTTOM_ODE_(self%id_Q6n,-fQ6Hn)
+         _SET_BOTTOM_ODE_(self%id_Q6p,-fQ6Hp)
 
-   _SET_BOTTOM_ODE_(self%id_c,fHc)
+         _SET_BOTTOM_ODE_(self%id_Q7c,-fQ7Hc)
+         _SET_BOTTOM_ODE_(self%id_Q7n,-fQ7Hn)
+         _SET_BOTTOM_ODE_(self%id_Q7p,-fQ7Hp)
 
-   _SET_BOTTOM_ODE_(self%id_Q6c,-fQ6Hc + SQ6c)
-   _SET_BOTTOM_ODE_(self%id_Q6n,-fQ6Hn)
-   _SET_BOTTOM_ODE_(self%id_Q6p,-fQ6Hp)
+         _SET_BOTTOM_ODE_(self%id_Q1c,-fQ1Hc + fQ7Hc*self%p_ex7ox + fQ6Hc*self%p_ex6ox)
+         _SET_BOTTOM_ODE_(self%id_Q1n,-fQ1Hn + fQ7Hn*self%p_ex7ox + fQ6Hn*self%p_ex6ox)
+         _SET_BOTTOM_ODE_(self%id_Q1p,-fQ1Hp + fQ7Hp*self%p_ex7ox + fQ6Hp*self%p_ex6ox)
 
-   _SET_BOTTOM_ODE_(self%id_Q7c,-fQ7Hc)
-   _SET_BOTTOM_ODE_(self%id_Q7n,-fQ7Hn)
-   _SET_BOTTOM_ODE_(self%id_Q7p,-fQ7Hp)
+         _SET_BOTTOM_ODE_(self%id_K4n,-fK4Hn + SK4a)
+         _SET_BOTTOM_ODE_(self%id_K1p,-fK1Hp + SK1a)
 
-   _SET_BOTTOM_ODE_(self%id_Q1c,fQ7Hc*self%p_ex7ox + fQ6Hc*self%p_ex6ox - fQ1Hc)
-   _SET_BOTTOM_ODE_(self%id_Q1n,fQ7Hn*self%p_ex7ox + fQ6Hn*self%p_ex6ox - fQ1Hn)
-   _SET_BOTTOM_ODE_(self%id_Q1p,fQ7Hp*self%p_ex7ox + fQ6Hp*self%p_ex6ox - fQ1Hp)
-
-   _SET_BOTTOM_ODE_(self%id_K4n,-fK4Hn + SK4a)
-   _SET_BOTTOM_ODE_(self%id_K1n,-fK1Hp + SK1a)
-
-     _HORIZONTAL_LOOP_END_
+      _HORIZONTAL_LOOP_END_
 
    end subroutine do_bottom
 
@@ -245,7 +264,7 @@ contains
 !\\
 !\\
 ! !INTERFACE:
-      SUBROUTINE Adjust_fixed_nutrients ( SXc, SXn, SXp,qn, qp, SKn, SKp, SQc )
+      subroutine adjust_fixed_nutrients ( SXc, SXn, SXp,qn, qp, SKn, SKp, SQc )
 !
 ! !INPUT/OUTPUT PARAMETERS:
        real(rk), intent(inout)  :: SXc, SXn, SXp, SKn, SKp, SQc
@@ -265,25 +284,25 @@ contains
 !
        ExcessC = max(max(SXc - SXp/qp,SXc - SXn/qn),0._rk)
 !
-       IF ( ExcessC .GT. 0.0_rk ) THEN
+       if (ExcessC>0.0_rk) then
          SXc = SXc - ExcessC
          SQc = SQc + ExcessC
-       END If
+       end if
 
        ExcessN = max(SXn - SXc*qn,0._rk)
        ExcessP = max(SXp - SXc*qp,0._rk)
 
-       IF ( ExcessN .GT. 0.0_rk ) THEN
+       if (ExcessN>0.0_rk) then
          SXn = SXn - ExcessN
          SKn = SKn + ExcessN
-       END If
+       end if
 
-       IF ( ExcessP .GT. 0.0_rk ) THEN
-         SXp = SXp - EXcessP
+       if (ExcessP>0.0_rk) then
+         SXp = SXp - ExcessP
          SKp = SKp + ExcessP
-       END If
+       end if
 
-       END SUBROUTINE Adjust_fixed_nutrients
+       end subroutine adjust_fixed_nutrients
 !
 !EOC
 !-----------------------------------------------------------------------
