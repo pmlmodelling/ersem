@@ -21,7 +21,7 @@ module ersem_benthic_column_dissolved_matter
 
       real(rk) :: ads(3)
       real(rk) :: relax, minD
-      integer :: type
+      integer :: last_layer
    contains
       procedure :: initialize => benthic_dissolved_matter_initialize
       procedure :: do_bottom  => benthic_dissolved_matter_do_bottom
@@ -34,7 +34,7 @@ module ersem_benthic_column_dissolved_matter
       type (type_horizontal_diagnostic_variable_id) :: id_layers(3)
 
       real(rk) :: ads(3)
-      integer :: type
+      integer :: last_layer
    contains
       procedure :: do_bottom => dissolved_matter_per_layer_do_bottom
    end type
@@ -72,12 +72,12 @@ contains
       end select
 
       ! Obtain parameter values
-      call self%get_parameter(self%type,  'type','-','layer presence',default=3)
+      call self%get_parameter(self%last_layer,  'last_layer','-','layer presence',default=3)
       self%ads = 1.0_rk
       call self%get_parameter(self%ads(1),'ads1','-','adsorption in layer 1 (total:dissolved)',default=1.0_rk)
-      if (self%type>1) call self%get_parameter(self%ads(2),'ads2','-','adsorption in layer 2 (total:dissolved)',default=1.0_rk)
-      if (self%type>2) call self%get_parameter(self%ads(3),'ads3','-','adsorption in layer 3 (total:dissolved)',default=1.0_rk)
-      if (self%type/=3) then
+      if (self%last_layer>1) call self%get_parameter(self%ads(2),'ads2','-','adsorption in layer 2 (total:dissolved)',default=1.0_rk)
+      if (self%last_layer>2) call self%get_parameter(self%ads(3),'ads3','-','adsorption in layer 3 (total:dissolved)',default=1.0_rk)
+      if (self%last_layer/=3) then
          call self%get_parameter(self%relax,'relax','/d','diffusion time scale for benthic/pelagic interface')
          call self%get_parameter(self%minD, 'minD','m',  'minimum depth of bottom interface of controlled layer')
       end if
@@ -99,7 +99,7 @@ contains
       allocate(profile)
       call self%add_child(profile,'per_layer',configunit=configunit)
       profile%ads = self%ads
-      profile%type = self%type
+      profile%last_layer = self%last_layer
       call profile%register_diagnostic_variable(profile%id_layers(1),trim(composition)//'1','mmol/m^2',trim(long_name)//' in layer 1')
       call profile%register_diagnostic_variable(profile%id_layers(2),trim(composition)//'2','mmol/m^2',trim(long_name)//' in layer 2')
       call profile%register_diagnostic_variable(profile%id_layers(3),trim(composition)//'3','mmol/m^2',trim(long_name)//' in layer 3')
@@ -178,7 +178,7 @@ contains
          c_pel = c_pel*c_pel/(c_pel - cmix*sms)
       end if
 
-      if (self%type==1) then
+      if (self%last_layer==1) then
          ! Layer 1: compute steady-state layer height H1_eq and layer integral c_int1_eq
          call compute_final_equilibrium_profile(diff1,c_pel,sms_l1,d3,H1_eq,c_int1_eq)
 
@@ -192,7 +192,7 @@ contains
 
          ! Relax depth of layer towards equilibrium value (H1_eq)
          _SET_BOTTOM_ODE_(self%id_D1m,(max(self%minD,H1_eq)-d1)/self%relax)
-      elseif (self%type==2) then
+      elseif (self%last_layer==2) then
          ! Layer 1: compute steady-state concentration at bottom interface c_bot1_eq and layer integral c_int1_eq
          call compute_equilibrium_profile(d1,diff1,c_pel,sms_l1,sms_l2,c_bot1_eq,c_int1_eq)
          ! Layer 2: compute steady-state layer height H2_eq and layer integral c_int2_eq
@@ -368,13 +368,13 @@ contains
          d(2) = D2m-d(1)
          d(3) = d_totX-D2m
 
-         if (self%type==1) then
+         if (self%last_layer==1) then
             ! All in layer 1
             ! Typically used for oxygen
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(1),c_int)
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(2),0.0_rk)
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(3),0.0_rk)
-         elseif (self%type==2) then
+         elseif (self%last_layer==2) then
             ! Vertically homogeneous in layer 1, quadratically decreasing in layer 2 (zero concentration at bottom interface)
             ! Typically used for nitrate
 
