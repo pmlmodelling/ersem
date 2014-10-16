@@ -1,18 +1,18 @@
 #include "fabm_driver.h"
 
-module pml_ersem_benthic_bacteria
+module ersem_benthic_bacteria
 
    use fabm_types
 
    use fabm_particle
    use pml_ersem_shared
-   use pml_ersem_benthic_base
+   use ersem_benthic_base
 
    implicit none
 
    private
 
-   type,extends(type_ersem_benthic_base_model),public :: type_pml_ersem_benthic_bacteria
+   type,extends(type_ersem_benthic_base),public :: type_ersem_benthic_bacteria
       type (type_bottom_state_variable_id) :: id_K1p,id_K4n
       type (type_bottom_state_variable_id) :: id_Q1c,id_Q1n,id_Q1p
       type (type_bottom_state_variable_id) :: id_Q6c,id_Q6n,id_Q6p
@@ -44,7 +44,7 @@ module pml_ersem_benthic_bacteria
 contains
 
    subroutine initialize(self,configunit)
-      class (type_pml_ersem_benthic_bacteria),intent(inout),target :: self
+      class (type_ersem_benthic_bacteria),intent(inout),target :: self
       integer,                                 intent(in)           :: configunit
 
       ! Set time unit to d-1
@@ -107,7 +107,7 @@ contains
 
    subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
 
-      class (type_pml_ersem_benthic_bacteria),intent(in) :: self
+      class (type_ersem_benthic_bacteria),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
      
       real(rk) :: Hc,Hn,Hp,fHc,fHn,fHp,fHn1,fHp1

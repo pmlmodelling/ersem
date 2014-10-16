@@ -1,8 +1,14 @@
 #include "fabm_driver.h"
 
-! Density of particulate organic matter with idealized profile, within a user-specified depth interval.
+module ersem_benthic_column_particulate_matter
+
+! Particulate organic matter with idealized [exponential] profile.
 !
-! The profile is defined only in terms of its density (quantity/m^2) and its penetration depth.
+! This file contains two modules that can be instantiated by the user (from fabm.yaml):
+! type_ersem_benthic_column_particulate_matter: describes particulate organic matter in terms of column-integrated mass and penetration depth
+! type_ersem_benthic_pom_layer:        describes particulate organic matter within a user-specified depth interval
+!
+! The idealized profile is defined only in terms of its density (quantity/m^2) and its penetration depth.
 ! By assuming an exponential distribution of matter (constant positive concentration
 ! at sediment surface, tending to zero at infinite depth), these two variables suffice
 ! to specify the concentration profile.
@@ -12,14 +18,14 @@
 ! but also provide their rate of change. We finally retrieve these rates of change, and convert them
 ! into a change in total depth-integrated matter *and* a change in penetration depth.
 !
-! Functionality is partitioned over two modules:
+! The "within a single depth interval" functionality is partitioned over two modules:
 !
 ! type_ersem_benthic_pom_layer is the master module that describes everything there is to know about
-! the POM contents in a single depth interval. This is the module that can be instantiated from the FABM
-! configuration file. Its function is to collect interval-specific sink-source terms and translate those
-! into the change in column-integrated POM and penetration depth.
+! the POM contents in a single depth interval. This is the module that can be instantiated from fabm.yaml.
+! Its function is to collect interval-specific sink-source terms and translate those into the change in
+! column-integrated POM and penetration depth.
 !
-! type_layer_content_calculator simply computes the layer-specific POM density.
+! type_layer_content_calculator simply computes the mass with the specified depth interval.
 ! It is created automatically as a submodel of type_ersem_benthic_pom_layer, and does not
 ! interact with the user.
 !
@@ -32,18 +38,25 @@
 !   -> 3 change in column-integrated mass and penetration depth (type_ersem_benthic_pom_layer)
 ! Putting 1 and 3 in the same module creates a circular dependency [that's BAD].
 
-module pml_ersem_benthic_pom_profile
-
    use fabm_types
    use fabm_particle
 
-   use pml_ersem_shared
+   use ersem_shared
+   use ersem_benthic_base
 
    implicit none
 
 !  default: all is private.
    private
 
+   ! Module for particulate organic matter class with idealized profile (e.g., Q6 Q7)
+   type,extends(type_ersem_benthic_base),public :: type_ersem_benthic_column_particulate_matter
+      type (type_bottom_state_variable_id) :: id_penetration_c,id_penetration_n,id_penetration_p,id_penetration_s
+   contains
+      procedure :: initialize
+   end type
+
+   ! Module for particulate organic matter within a single, user-specified depth interval.
    type,extends(type_particle_model),public :: type_ersem_benthic_pom_layer
       type (type_bottom_state_variable_id) :: id_c_int,id_n_int,id_p_int,id_s_int
       type (type_bottom_state_variable_id) :: id_pen_depth_c,id_pen_depth_n,id_pen_depth_p,id_pen_depth_s
@@ -59,8 +72,8 @@ module pml_ersem_benthic_pom_profile
       type (type_horizontal_dependency_id) :: id_surface_boundary_depth ! only used if surface_boundary_type==1
       type (type_horizontal_dependency_id) :: id_bottom_boundary_depth  ! only used if bottom_boundary_type==1
    contains
-      procedure :: initialize
-      procedure :: do_bottom
+      procedure :: initialize => layer_initialize
+      procedure :: do_bottom  => layer_do_bottom
    end type
 
    type,extends(type_base_model) :: type_layer_content_calculator
@@ -79,8 +92,35 @@ module pml_ersem_benthic_pom_profile
    end type
 
 contains
-
+   
    subroutine initialize(self,configunit)
+      class (type_ersem_benthic_column_particulate_matter), intent(inout), target :: self
+      integer,                                     intent(in)            :: configunit
+
+      class (type_ersem_benthic_pom_layer),pointer :: single_layer
+
+      ! Perform normal benthic initialization (i.e., for POM without profile or penentration depth)
+      call self%type_ersem_benthic_base%initialize(configunit)
+
+      ! Add penetration depths for all active constituents.
+      if (_VARIABLE_REGISTERED_(self%id_c)) call self%register_state_variable(self%id_penetration_c,'pen_depth_c','m','penetration depth of carbon')
+      if (_VARIABLE_REGISTERED_(self%id_n)) call self%register_state_variable(self%id_penetration_n,'pen_depth_n','m','penetration depth of nitrogen')
+      if (_VARIABLE_REGISTERED_(self%id_p)) call self%register_state_variable(self%id_penetration_p,'pen_depth_p','m','penetration depth of phosphorus')
+      if (_VARIABLE_REGISTERED_(self%id_s)) call self%register_state_variable(self%id_penetration_s,'pen_depth_s','m','penetration depth of silicate')
+
+      ! Create a submodel for particulate organic matter at the sediment surface
+      ! This will receive sinks and sources associated with benthic-pelagic exchange - sedimentation, resuspension.
+      allocate(single_layer)
+      call single_layer%parameters%set('surface_boundary_type',0)
+      call single_layer%parameters%set('bottom_boundary_type',0)
+      call single_layer%parameters%set('surface_boundary_depth',0.0_rk)
+      call single_layer%parameters%set('bottom_boundary_depth',0.0_rk)
+      call single_layer%parameters%set('composition',self%composition)
+      call single_layer%request_coupling('Q',self%name)
+      call self%add_child(single_layer,'surface',configunit=configunit)
+   end subroutine initialize
+
+   subroutine layer_initialize(self,configunit)
    class (type_ersem_benthic_pom_layer), intent(inout), target :: self
    integer,                              intent(in)            :: configunit
 
@@ -103,14 +143,14 @@ contains
       end if
 
       call self%register_model_dependency(self%id_Q,'Q')
-      if (index(composition,'c')/=0) call add_constituent(self,'c','mg C','carbon',    self%id_c_int,self%id_pen_depth_c,self%id_c_sms)
-      if (index(composition,'n')/=0) call add_constituent(self,'n','mmol','nitrogen',  self%id_n_int,self%id_pen_depth_n,self%id_n_sms)
-      if (index(composition,'p')/=0) call add_constituent(self,'p','mmol','phosphorus',self%id_p_int,self%id_pen_depth_p,self%id_p_sms)
-      if (index(composition,'s')/=0) call add_constituent(self,'s','mmol','silicate',  self%id_s_int,self%id_pen_depth_s,self%id_s_sms)
+      if (index(composition,'c')/=0) call layer_add_constituent(self,'c','mg C','carbon',    self%id_c_int,self%id_pen_depth_c,self%id_c_sms)
+      if (index(composition,'n')/=0) call layer_add_constituent(self,'n','mmol','nitrogen',  self%id_n_int,self%id_pen_depth_n,self%id_n_sms)
+      if (index(composition,'p')/=0) call layer_add_constituent(self,'p','mmol','phosphorus',self%id_p_int,self%id_pen_depth_p,self%id_p_sms)
+      if (index(composition,'s')/=0) call layer_add_constituent(self,'s','mmol','silicate',  self%id_s_int,self%id_pen_depth_s,self%id_s_sms)
 
-   end subroutine initialize
+   end subroutine layer_initialize
 
-   subroutine add_constituent(self,name,units,long_name,id_c_int,id_pen_depth,id_sms)
+   subroutine layer_add_constituent(self,name,units,long_name,id_c_int,id_pen_depth,id_sms)
       class (type_ersem_benthic_pom_layer), intent(inout),target :: self
       character(len=*),                     intent(in)           :: name,units,long_name
       type (type_bottom_state_variable_id), intent(inout),target :: id_c_int,id_pen_depth
@@ -165,9 +205,9 @@ contains
       ! Create an alias in the master model for the layer-integrated density computed by layer_content_calculator.
       call self%add_horizontal_variable(name,trim(units)//'m^2','layer-integrated '//trim(long_name),domain=domain_bottom,act_as_state_variable=.true.)
       call self%request_coupling(name,'content_calculator_'//trim(name)//'/c')
-   end subroutine add_constituent
+   end subroutine layer_add_constituent
 
-   subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
+   subroutine layer_do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
       class (type_ersem_benthic_pom_layer), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
@@ -198,14 +238,14 @@ contains
          d_sms = (d_top+d_bot)/2
 
          ! For each constituent: contribute to depth-integrated sink-source terms, contribute to change in penetration depth.
-         if (_VARIABLE_REGISTERED_(self%id_c_int)) call process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,self%id_c_int,self%id_pen_depth_c,self%id_c_sms)
-         if (_VARIABLE_REGISTERED_(self%id_n_int)) call process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,self%id_n_int,self%id_pen_depth_n,self%id_n_sms)
-         if (_VARIABLE_REGISTERED_(self%id_p_int)) call process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,self%id_p_int,self%id_pen_depth_p,self%id_p_sms)
-         if (_VARIABLE_REGISTERED_(self%id_s_int)) call process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,self%id_s_int,self%id_pen_depth_s,self%id_s_sms)
+         if (_VARIABLE_REGISTERED_(self%id_c_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,self%id_c_int,self%id_pen_depth_c,self%id_c_sms)
+         if (_VARIABLE_REGISTERED_(self%id_n_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,self%id_n_int,self%id_pen_depth_n,self%id_n_sms)
+         if (_VARIABLE_REGISTERED_(self%id_p_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,self%id_p_int,self%id_pen_depth_p,self%id_p_sms)
+         if (_VARIABLE_REGISTERED_(self%id_s_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,self%id_s_int,self%id_pen_depth_s,self%id_s_sms)
       _HORIZONTAL_LOOP_END_
-   end subroutine do_bottom
+   end subroutine layer_do_bottom
 
-   subroutine process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,id_c_int,id_pen_depth,id_sms)
+   subroutine layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,id_c_int,id_pen_depth,id_sms)
       class (type_ersem_benthic_pom_layer), intent(in) :: self
       _DECLARE_ARGUMENTS_LOCAL_
       type (type_bottom_state_variable_id),intent(in) :: id_c_int,id_pen_depth
@@ -230,7 +270,7 @@ contains
       ! Apply sinks-sources to depth-integrated mass, compute change in penetration depth.
       _SET_BOTTOM_ODE_(id_c_int,sms)
       _SET_BOTTOM_ODE_(id_pen_depth, (d_sms-d_pen)*sms/c_int)
-   end subroutine process_constituent_changes
+   end subroutine layer_process_constituent_changes
 
    subroutine layer_content_calculator_do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
       class (type_layer_content_calculator), intent(in) :: self
@@ -301,8 +341,6 @@ contains
 
 !-----------------------------------------------------------------------
 !BOC
-!
-
       d_bot1 = min(d_bot, d_max)
       d_top1 = min(d_top, d_bot1)
 

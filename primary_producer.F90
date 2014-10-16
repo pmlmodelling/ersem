@@ -19,19 +19,19 @@
 ! replaced by run-time flags provided performance does not suffer.
 ! -----------------------------------------------------------------------------
 
-module pml_ersem_primary_producer
+module ersem_primary_producer
 
    use fabm_types
    use fabm_particle
 
-   use pml_ersem_shared
-   use pml_ersem_pelagic_base
+   use ersem_shared
+   use ersem_pelagic_base
 
    implicit none
 
    private
 
-   type,extends(type_ersem_pelagic_base_model),public :: type_pml_ersem_primary_producer
+   type,extends(type_ersem_pelagic_base),public :: type_ersem_primary_producer
       ! Identifiers for links to state variables of other models
       type (type_state_variable_id) :: id_O3c,id_O2o                        ! Oxygen and DIC
       type (type_state_variable_id) :: id_N5s,id_N1p,id_N3n,id_N4n,id_N7f   ! Nutrients
@@ -73,7 +73,7 @@ module pml_ersem_primary_producer
       procedure :: get_vertical_movement
       procedure :: get_sinking_rate
 
-   end type type_pml_ersem_primary_producer
+   end type type_ersem_primary_producer
 
    ! Constants
    real(rk),parameter :: ChlCmin = 0.0067_rk
@@ -85,8 +85,8 @@ contains
 ! !DESCRIPTION:
 !
 ! !INPUT PARAMETERS:
-      class (type_pml_ersem_primary_producer),intent(inout),target :: self
-      integer,                                intent(in)           :: configunit
+      class (type_ersem_primary_producer),intent(inout),target :: self
+      integer,                            intent(in)           :: configunit
 !
 ! !REVISION HISTORY:
 !
@@ -139,7 +139,7 @@ contains
       call self%get_parameter(self%resp1mX,  'resm', 'm/d',     'maximum sinking velocity',        default=0.0_rk)
       call self%get_parameter(self%esnip1X,  'esni','-','level of nutrient limitation at which sinking commences')
 
-      ! Register state variables (handled by type_ersem_pelagic_base_model)
+      ! Register state variables (handled by type_ersem_pelagic_base)
       call self%initialize_ersem_base(sedimentation=.true.)
       call self%add_constituent('c',1.e-4_rk,   c0)
       call self%add_constituent('n',1.26e-6_rk, c0*qnrpicX)
@@ -149,35 +149,35 @@ contains
       if (self%use_Si) call self%add_constituent('s',1.e-6_rk,c0*self%qsp1cX)
 
       ! Register links to external nutrient pools.
-      call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3', 'Phosphate')    
-      call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3', 'Nitrate')    
-      call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3', 'Ammonium')    
-      if (self%use_Si) call self%register_state_dependency(self%id_N5s,'N5s','mmol Si/m^3','Silicate')    
+      call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3', 'phosphate')    
+      call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3', 'nitrate')    
+      call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3', 'ammonium')    
+      if (self%use_Si) call self%register_state_dependency(self%id_N5s,'N5s','mmol Si/m^3','silicate')    
 #ifdef IRON
-      call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3', 'Inorganic Iron')    
+      call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3', 'inorganic iron')    
 #endif
 
-      ! Register links to external labile dissolved organic matter pools.
-      call self%register_state_dependency(self%id_R1c,'R1c','mg C/m^3',  'DOC')
-      call self%register_state_dependency(self%id_R1p,'R1p','mmol P/m^3','DOP')    
-      call self%register_state_dependency(self%id_R1n,'R1n','mmol N/m^3','DON')    
+      ! Register links to external labile dissolved organic matter pools (sink for excretion and lysis).
+      call self%register_state_dependency(self%id_R1c,'R1c','mg C/m^3',  'dissolved organic carbon')
+      call self%register_state_dependency(self%id_R1p,'R1p','mmol P/m^3','dissolved organic phosphorus')    
+      call self%register_state_dependency(self%id_R1n,'R1n','mmol N/m^3','dissolved organic nitrogen')    
 
-      ! Register links to external semi-labile dissolved organic matter pool.
-      call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','Semi-labile DOC')    
+      ! Register links to external semi-labile dissolved organic matter pool (sink for excretion and lysis).
+      call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','semi-labile dissolved organic carbon')    
 
-      ! Register links to external particulate organic matter pools.
+      ! Register links to external particulate organic matter pools (sink for dead phytoplankton).
       ! At run-time, these can be coupled to any available pools (e.g., R4, R6, R8 in ERSEM)
-      call self%register_state_dependency(self%id_R6c,'RPc','mg C/m^3',   'POC')    
-      call self%register_state_dependency(self%id_R6p,'RPp','mmol P/m^3', 'POP')    
-      call self%register_state_dependency(self%id_R6n,'RPn','mmol N/m^3', 'PON')    
-      if (self%use_Si) call self%register_state_dependency(self%id_R6s,'RPs','mmol Si/m^3','POSi')    
+      call self%register_state_dependency(self%id_R6c,'RPc','mg C/m^3',   'particulate organic carbon')    
+      call self%register_state_dependency(self%id_R6p,'RPp','mmol P/m^3', 'particulate organic phosphorus')    
+      call self%register_state_dependency(self%id_R6n,'RPn','mmol N/m^3', 'particulate organic nitrogen')    
+      if (self%use_Si) call self%register_state_dependency(self%id_R6s,'RPs','mmol Si/m^3','particulate organic silicate')    
 #ifdef IRON
-      call self%register_state_dependency(self%id_R6f,'RPf','umol Fe/m^3','POFe')    
+      call self%register_state_dependency(self%id_R6f,'RPf','umol Fe/m^3','particulate organic iron')    
 #endif
 
       ! Automatically hook up all components of external particulate organic matter,
       ! by obtaining them from a single named model "RP". This takes away the need to couple each RP?
-      ! variable individually.
+      ! constituent individually.
       call self%register_model_dependency(self%id_RP,'RP')
       call self%request_coupling_to_model(self%id_R6c,self%id_RP,'c')
       call self%request_coupling_to_model(self%id_R6n,self%id_RP,'n')
@@ -186,8 +186,8 @@ contains
       if (_VARIABLE_REGISTERED_(self%id_R6f)) call self%request_coupling_to_model(self%id_R6f,self%id_RP,'f')
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
-      call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','Carbon Dioxide')    
-      call self%register_state_dependency(self%id_O2o,'O2o','mmol O/m^3','Oxygen')    
+      call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide')    
+      call self%register_state_dependency(self%id_O2o,'O2o','mmol O/m^3','oxygen')    
 
       ! Register diagnostic variables (i.e., model outputs)
       call self%register_diagnostic_variable(self%id_netP1,'netP1','mg C/m^3/d','net primary production',output=output_time_step_averaged)
@@ -206,7 +206,7 @@ contains
          call self%register_dependency(self%id_RainR,'RainR','-','Rain ratio')
 
          ! Link to external detached liths (sink for calcite of dying phytoplankton)
-         call self%register_state_dependency(self%id_L2c,'L2c','mg C/m^3','Free calcite')
+         call self%register_state_dependency(self%id_L2c,'L2c','mg C/m^3','free calcite')
 
          ! Create diagnostic variable for cell-bound calcite, and register its contribution to the known quantity "total_calcite_in_biota".
          ! This quantity can be used by other models (e.g., predators) to determine how much calcite is released when phytoplankton is broken down.
@@ -226,7 +226,7 @@ contains
 
    subroutine do(self,_ARGUMENTS_DO_)
 
-      class (type_pml_ersem_primary_producer),intent(in) :: self
+      class (type_ersem_primary_producer),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_
 
    ! !LOCAL VARIABLES:
@@ -265,7 +265,7 @@ contains
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
 
-         ! Retrieve local state (carbon, phosphorus, nitrogen, chlorophyll concentrations).
+         ! Retrieve local biomass (carbon, phosphorus, nitrogen, chlorophyll concentrations).
 
          ! Concentrations including background (used in source terms)
          _GET_WITH_BACKGROUND_(self%id_c,P1c)
@@ -556,7 +556,7 @@ contains
    end subroutine do
 
    function get_sinking_rate(self,_ARGUMENTS_LOCAL_) result(SDP1)
-      class (type_pml_ersem_primary_producer),intent(in) :: self
+      class (type_ersem_primary_producer),intent(in) :: self
       _DECLARE_ARGUMENTS_LOCAL_
 
       real(rk) :: P1c,P1p,P1n
@@ -589,7 +589,7 @@ contains
    end function
 
    subroutine get_vertical_movement(self,_ARGUMENTS_GET_VERTICAL_MOVEMENT_)
-      class (type_pml_ersem_primary_producer),intent(in) :: self
+      class (type_ersem_primary_producer),intent(in) :: self
       _DECLARE_ARGUMENTS_GET_VERTICAL_MOVEMENT_
 
       real(rk) :: SDP1

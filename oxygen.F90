@@ -1,5 +1,5 @@
 #include "fabm_driver.h"
-module pml_ersem_oxygen
+module ersem_oxygen
 
    use fabm_types
 
@@ -10,7 +10,7 @@ module pml_ersem_oxygen
 ! !REVISION HISTORY:!
 !  Original author(s): Jorn Bruggeman
 
-   type,extends(type_base_model),public :: type_pml_ersem_oxygen
+   type,extends(type_base_model),public :: type_ersem_oxygen
 !     Variable identifiers
       type (type_state_variable_id)     :: id_O2o
       type (type_dependency_id)         :: id_ETW, id_X1X
@@ -30,7 +30,7 @@ contains
    subroutine initialize(self,configunit)
 !
 ! !INPUT PARAMETERS:
-      class (type_pml_ersem_oxygen), intent(inout), target :: self
+      class (type_ersem_oxygen), intent(inout), target :: self
       integer,                       intent(in)            :: configunit
 !
 !EOP
@@ -54,7 +54,7 @@ contains
    end subroutine
 
    subroutine do(self,_ARGUMENTS_DO_)
-      class (type_pml_ersem_oxygen), intent(in) :: self
+      class (type_ersem_oxygen), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_
 
       real(rk) :: O2o,ETW,X1X,OSAT
@@ -71,7 +71,7 @@ contains
    end subroutine
 
    subroutine do_surface(self,_ARGUMENTS_DO_SURFACE_)
-      class (type_pml_ersem_oxygen), intent(in) :: self
+      class (type_ersem_oxygen), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_SURFACE_
 
       real(rk) :: O2o,ETW,X1X,wnd
@@ -99,7 +99,7 @@ contains
    end subroutine
 
    function oxygen_saturation_concentration(self,ETW,X1X) result(OSAT)
-      class (type_pml_ersem_oxygen), intent(in) :: self
+      class (type_ersem_oxygen), intent(in) :: self
       real(rk),                      intent(in) :: ETW,X1X
       real(rk)                                  :: OSAT
 

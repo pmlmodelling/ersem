@@ -1,6 +1,6 @@
 #include "fabm_driver.h"
 
-module pml_ersem_light
+module ersem_light
 
    use fabm_types
 
@@ -8,7 +8,7 @@ module pml_ersem_light
 
    private
 
-   type,extends(type_base_model),public :: type_pml_ersem_light
+   type,extends(type_base_model),public :: type_ersem_light
       ! Identifiers for diagnostic variables
       type (type_diagnostic_variable_id)   :: id_EIR, id_parEIR, id_xEPS
       type (type_dependency_id)            :: id_dz, id_xEPSp, id_ESS
@@ -20,7 +20,7 @@ module pml_ersem_light
 !     Model procedures
       procedure :: initialize
       procedure :: get_light
-   end type type_pml_ersem_light
+   end type type_ersem_light
 
 contains
 
@@ -29,7 +29,7 @@ contains
 ! !DESCRIPTION:
 !
 ! !INPUT PARAMETERS:
-      class (type_pml_ersem_light),intent(inout),target :: self
+      class (type_ersem_light),intent(inout),target :: self
       integer,                     intent(in)           :: configunit
 !
 ! !REVISION HISTORY:
@@ -57,7 +57,7 @@ contains
    end subroutine
    
    subroutine get_light(self,_ARGUMENTS_VERT_)
-      class (type_pml_ersem_light),intent(in) :: self
+      class (type_ersem_light),intent(in) :: self
       _DECLARE_ARGUMENTS_VERT_
 
       real(rk) :: buffer,dz,xEPS,xtnc,EIR,ESS

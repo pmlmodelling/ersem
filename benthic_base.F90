@@ -3,7 +3,7 @@
 ! Benthic variable that supports resuspension and remineralization.
 ! Both processes return material to the pelagic.
 
-module pml_ersem_benthic_base
+module ersem_benthic_base
 
    use fabm_types
    use fabm_particle
@@ -15,10 +15,9 @@ module pml_ersem_benthic_base
 !  default: all is private.
    private
 
-   type,extends(type_particle_model),public :: type_ersem_benthic_base_model
+   type,extends(type_particle_model),public :: type_ersem_benthic_base
       ! Own state variables
       type (type_bottom_state_variable_id) :: id_c,id_n,id_p,id_f,id_s,id_l
-      type (type_bottom_state_variable_id) :: id_penetration_c,id_penetration_n,id_penetration_p,id_penetration_s
 
       ! Coupled state variables for resuspension and remineralization
       type (type_state_variable_id) :: id_resuspension_c,id_resuspension_n,id_resuspension_p,id_resuspension_s,id_resuspension_f,id_resuspension_l
@@ -30,6 +29,7 @@ module pml_ersem_benthic_base
       type (type_dependency_id)            :: id_dens
 
       ! Parameters
+      character(len=10) :: composition
       real(rk) :: reminQIX,pQIN3X
       logical  :: resuspension
    contains
@@ -47,21 +47,18 @@ contains
 ! !DESCRIPTION:
 !
 ! !INPUT PARAMETERS:
-   class (type_ersem_benthic_base_model), intent(inout), target :: self
+   class (type_ersem_benthic_base), intent(inout), target :: self
    integer,                               intent(in)            :: configunit
 !
-! !LOCAL VARIABLES:
-   character(len=10) :: composition
-   logical           :: track_penetration
+
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(composition,      'composition', '',   'elemental composition',default='cnp')
+      call self%get_parameter(self%composition, 'composition', '',   'elemental composition',default='cnp')
       call self%get_parameter(self%reminQIX,    'remin',       '1/d','remineralisation rate',default=0.0_rk)
-      if (index(composition,'n')/=0 .and. self%reminQIX/=0.0_rk) &
+      if (index(self%composition,'n')/=0 .and. self%reminQIX/=0.0_rk) &
          call self%get_parameter(self%pQIN3X,'pN3','-','nitrate fraction of remineralised nitrogen (remainder is ammonia)',default=0.0_rk)
       call self%get_parameter(self%resuspension,'resuspension','',   'enable resuspension',  default=.false.)
-      call self%get_parameter(track_penetration,'track_penetration', '', 'track penetration depth',default=.false.)
 
       call self%initialize_ersem_benthic_base()
 
@@ -72,16 +69,15 @@ contains
          call self%register_dependency(self%id_dens,     standard_variables%density)
       end if
 
-      if (index(composition,'c')/=0) then
+      if (index(self%composition,'c')/=0) then
          call self%add_constituent('c',0.0_rk)
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_c,'resuspension_target_c','mmol/m^3','pelagic variable taking up resuspended carbon')
             call self%request_coupling_to_model(self%id_resuspension_c,self%id_resuspension_target,'c')
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_O3c,'O3c','mmol/m^3','dissolved inorganic carbon')
-         if (track_penetration) call self%register_state_variable(self%id_penetration_c,'pen_depth_c','m','penetration depth of carbon')
       end if
-      if (index(composition,'n')/=0) then
+      if (index(self%composition,'n')/=0) then
          call self%add_constituent('n',0.0_rk)
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_n,'resuspension_target_n','mmol/m^3','pelagic variable taking up resuspended nitrogen')
@@ -91,27 +87,24 @@ contains
             call self%register_state_dependency(self%id_N3n,'N3n','mmol/m^3','nitrate')
             call self%register_state_dependency(self%id_N4n,'N4n','mmol/m^3','ammonium')
          end if
-         if (track_penetration) call self%register_state_variable(self%id_penetration_n,'pen_depth_n','m','penetration depth of nitrogen')
       end if
-      if (index(composition,'p')/=0) then
+      if (index(self%composition,'p')/=0) then
          call self%add_constituent('p',0.0_rk)
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_p,'resuspension_target_p','mmol m-3','pelagic variable taking up resuspended phosphorus')
             call self%request_coupling_to_model(self%id_resuspension_p,self%id_resuspension_target,'p')
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N1p,'N1p','mmol m-3','phosphate')
-         if (track_penetration) call self%register_state_variable(self%id_penetration_p,'pen_depth_p','m','penetration depth of phosphorus')
       end if
-      if (index(composition,'s')/=0) then
+      if (index(self%composition,'s')/=0) then
          call self%add_constituent('s',0.0_rk)
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_s,'resuspension_target_s','mmol m-3','pelagic variable taking up resuspended silicate')
             call self%request_coupling_to_model(self%id_resuspension_s,self%id_resuspension_target,'s')
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N5s,'N5s','mmol m-3','silicate')
-         if (track_penetration) call self%register_state_variable(self%id_penetration_s,'pen_depth_s','m','penetration depth of silicate')
       end if
-      if (index(composition,'f')/=0) then
+      if (index(self%composition,'f')/=0) then
          call self%add_constituent('f',0.0_rk)
 #ifdef IRON
          if (self%resuspension) then
@@ -121,18 +114,18 @@ contains
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N7f,'N7f','umol m-3','dissolved iron')
 #endif
       end if
-      if (index(composition,'l')/=0) then
+      if (index(self%composition,'l')/=0) then
          call self%add_constituent('l',0.0_rk)
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_l,'resuspension_target_l','mg m-3','pelagic variable taking up resuspended calcite')
             call self%request_coupling_to_model(self%id_resuspension_l,self%id_resuspension_target,'l')
          end if
-         if (index(composition,'c')==0) call self%register_state_dependency(self%id_O3c,'O3c','umol m-3','dissolved inorganic carbon')
+         if (index(self%composition,'c')==0) call self%register_state_dependency(self%id_O3c,'O3c','umol m-3','dissolved inorganic carbon')
       end if
    end subroutine
 
    subroutine initialize_ersem_benthic_base(self,c_ini,n_ini,p_ini,s_ini,f_ini)
-      class (type_ersem_benthic_base_model), intent(inout), target :: self
+      class (type_ersem_benthic_base), intent(inout), target :: self
       real(rk),optional,                     intent(in)            :: c_ini,n_ini,p_ini,s_ini,f_ini
 
       ! Set time unit to d-1
@@ -147,7 +140,7 @@ contains
    end subroutine
 
    subroutine benthic_base_add_constituent(self,name,initial_value,qn,qp)
-      class (type_ersem_benthic_base_model), intent(inout), target :: self
+      class (type_ersem_benthic_base), intent(inout), target :: self
       character(len=*),                      intent(in)            :: name
       real(rk),                              intent(in)            :: initial_value
       real(rk),optional,                     intent(in)            :: qn,qp
@@ -181,7 +174,7 @@ contains
    end subroutine benthic_base_add_constituent
 
    subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
-      class (type_ersem_benthic_base_model), intent(in) :: self
+      class (type_ersem_benthic_base), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
       
       real(rk) :: bedstress,density,wdepth

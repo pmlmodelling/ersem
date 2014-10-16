@@ -1,5 +1,5 @@
 #include "fabm_driver.h"
-module pml_ersem_carbonate
+module ersem_carbonate
 
    use fabm_types
 
@@ -10,7 +10,7 @@ module pml_ersem_carbonate
 ! !REVISION HISTORY:!
 !  Original author(s): Jorn Bruggeman
 
-   type,extends(type_base_model),public :: type_pml_ersem_carbonate
+   type,extends(type_base_model),public :: type_ersem_carbonate
 !     Variable identifiers
       type (type_state_variable_id)     :: id_O3c,id_TA
       type (type_dependency_id)         :: id_ETW, id_X1X, id_dens, id_pres
@@ -32,7 +32,7 @@ contains
    subroutine initialize(self,configunit)
 !
 ! !INPUT PARAMETERS:
-      class (type_pml_ersem_carbonate), intent(inout), target :: self
+      class (type_ersem_carbonate), intent(inout), target :: self
       integer,                          intent(in)            :: configunit
 !
 !EOP
@@ -41,7 +41,7 @@ contains
       call self%get_parameter(self%iswCO2X,'iswCO2',default=1)
       call self%get_parameter(self%iswASFLUX,'iswASFLUX',default=1)
       call self%get_parameter(self%iswtalk,'iswtalk',default=5)
-      if (self%iswtalk<1.or.self%iswtalk>5) call self%fatal_error('type_pml_ersem_carbonate::initialize','"iswtalk" out of bounds')
+      if (self%iswtalk<1.or.self%iswtalk>5) call self%fatal_error('type_ersem_carbonate::initialize','"iswtalk" out of bounds')
 
       call self%register_state_variable(self%id_O3c,'c','mmol C/m^3','total dissolved inorganic carbon', 2200._rk,minimum=0._rk)
       call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_O3c)
@@ -104,7 +104,7 @@ contains
    end function
 
    subroutine do(self,_ARGUMENTS_DO_)
-      class (type_pml_ersem_carbonate), intent(in) :: self
+      class (type_ersem_carbonate), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_
 
       real(rk) :: O3c,ETW,X1X,density,pres
@@ -163,7 +163,7 @@ contains
    end subroutine
 
    subroutine do_surface(self,_ARGUMENTS_DO_SURFACE_)
-      class (type_pml_ersem_carbonate), intent(in) :: self
+      class (type_ersem_carbonate), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_SURFACE_
 
       real(rk) :: O3c,T,S,PRSS,density

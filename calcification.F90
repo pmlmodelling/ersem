@@ -1,10 +1,10 @@
 #include "fabm_driver.h"
-module pml_ersem_calcification
+module ersem_calcification
 
    use fabm_types
 
-   use pml_ersem_shared
-   use pml_ersem_pelagic_base
+   use ersem_shared
+   use ersem_pelagic_base
 
    implicit none
 
@@ -13,7 +13,7 @@ module pml_ersem_calcification
 ! !REVISION HISTORY:!
 !  Original author(s): Jorn Bruggeman
 
-   type,extends(type_ersem_pelagic_base_model),public :: type_pml_ersem_calcification
+   type,extends(type_ersem_pelagic_base),public :: type_ersem_calcification
 !     Variable identifiers
       type (type_diagnostic_variable_id)   :: id_RainR
       type (type_state_variable_id)        :: id_O3c
@@ -34,7 +34,7 @@ contains
    subroutine initialize(self,configunit)
 !
 ! !INPUT PARAMETERS:
-      class (type_pml_ersem_calcification), intent(inout), target :: self
+      class (type_ersem_calcification), intent(inout), target :: self
       integer,                              intent(in)            :: configunit
 !
       real(rk) :: sedL2,c0
@@ -70,7 +70,7 @@ contains
    end subroutine
 
    subroutine do(self,_ARGUMENTS_DO_)
-      class (type_pml_ersem_calcification), intent(in) :: self
+      class (type_ersem_calcification), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_
 
       real(rk) :: om_cal,L2c
@@ -98,7 +98,7 @@ contains
    end subroutine
 
    subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
-      class (type_pml_ersem_calcification), intent(in) :: self
+      class (type_ersem_calcification), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
       real(rk) :: tbed,density

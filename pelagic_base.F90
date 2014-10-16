@@ -1,18 +1,18 @@
 #include "fabm_driver.h"
 !#define IRON
-module pml_ersem_pelagic_base
+module ersem_pelagic_base
 
    use fabm_types
    use fabm_particle
 
-   use pml_ersem_shared
+   use ersem_shared
 
    implicit none
 
 !  default: all is private.
    private
 
-   type,extends(type_particle_model),public :: type_ersem_pelagic_base_model
+   type,extends(type_particle_model),public :: type_ersem_pelagic_base
       type (type_state_variable_id)        :: id_c,id_n,id_p,id_f,id_s,id_chl
       type (type_horizontal_dependency_id) :: id_bedstress,id_wdepth
       type (type_dependency_id)            :: id_dens
@@ -39,7 +39,7 @@ module pml_ersem_pelagic_base
 contains
 
    subroutine initialize(self,configunit)
-      class (type_ersem_pelagic_base_model), intent(inout), target :: self
+      class (type_ersem_pelagic_base), intent(inout), target :: self
       integer,                               intent(in)            :: configunit
 
       character(len=10) :: composition
@@ -67,7 +67,7 @@ contains
    end subroutine
       
    subroutine initialize_ersem_base(self,rm,sedimentation)
-      class (type_ersem_pelagic_base_model), intent(inout), target :: self
+      class (type_ersem_pelagic_base), intent(inout), target :: self
       real(rk),optional,                     intent(in)            :: rm
       logical, optional,                     intent(in)            :: sedimentation
 
@@ -136,7 +136,7 @@ contains
    end subroutine
 
    subroutine add_constituent(self,name,initial_value,background_value,qn,qp)
-      class (type_ersem_pelagic_base_model), intent(inout), target :: self
+      class (type_ersem_pelagic_base), intent(inout), target :: self
       character(len=*),                      intent(in)            :: name
       real(rk),                              intent(in)            :: initial_value
       real(rk),optional,                     intent(in)            :: background_value,qn,qp
@@ -170,7 +170,7 @@ contains
 
    function get_sinking_rate(self,_ARGUMENTS_LOCAL_) result(rm)
       ! Returns sinking rate in m/d, positive for downward movement [sinking]
-      class (type_ersem_pelagic_base_model),intent(in) :: self
+      class (type_ersem_pelagic_base),intent(in) :: self
       _DECLARE_ARGUMENTS_LOCAL_
       real(rk) :: rm
 
@@ -178,7 +178,7 @@ contains
    end function
 
    subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
-      class (type_ersem_pelagic_base_model), intent(in) :: self
+      class (type_ersem_pelagic_base), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
       real(rk) :: tbed,density

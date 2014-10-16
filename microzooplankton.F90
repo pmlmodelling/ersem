@@ -2,19 +2,19 @@
 
 !#define IRON
 
-module pml_ersem_microzooplankton
+module ersem_microzooplankton
 
    use fabm_types
    use fabm_particle
 
-   use pml_ersem_shared
-   use pml_ersem_pelagic_base
+   use ersem_shared
+   use ersem_pelagic_base
 
    implicit none
 
    private
 
-   type,extends(type_ersem_pelagic_base_model),public :: type_pml_ersem_microzooplankton
+   type,extends(type_ersem_pelagic_base),public :: type_ersem_microzooplankton
       ! Variables
       type (type_model_id)                                   :: id_RP
       type (type_model_id),         allocatable,dimension(:) :: id_prey
@@ -51,7 +51,7 @@ contains
 ! !DESCRIPTION:
 !
 ! !INPUT PARAMETERS:
-      class (type_pml_ersem_microzooplankton),intent(inout),target :: self
+      class (type_ersem_microzooplankton),intent(inout),target :: self
       integer,                        intent(in)           :: configunit
 !
 ! !REVISION HISTORY:
@@ -175,7 +175,7 @@ contains
 
    subroutine do(self,_ARGUMENTS_DO_)
 
-      class (type_pml_ersem_microzooplankton),intent(in) :: self
+      class (type_ersem_microzooplankton),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_
 
    ! !LOCAL VARIABLES:

@@ -2,23 +2,21 @@
 
 !#define IRON
 
-module pml_ersem_mesozooplankton
-
-! Jorn TODO: overwintering, deal with implicit N and P in some prey [esp. when cannibalizing]
+module ersem_mesozooplankton
 
    use fabm_types
    use fabm_particle
    use fabm_expressions
    use fabm_builtin_models
 
-   use pml_ersem_shared
-   use pml_ersem_pelagic_base
+   use ersem_shared
+   use ersem_pelagic_base
 
    implicit none
 
    private
 
-   type,extends(type_ersem_pelagic_base_model),public :: type_pml_ersem_mesozooplankton
+   type,extends(type_ersem_pelagic_base),public :: type_ersem_mesozooplankton
       ! Variables
       type (type_model_id),         allocatable,dimension(:) :: id_prey
       type (type_model_id)                                   :: id_RP
@@ -62,7 +60,7 @@ contains
 ! !DESCRIPTION:
 !
 ! !INPUT PARAMETERS:
-      class (type_pml_ersem_mesozooplankton),intent(inout),target :: self
+      class (type_ersem_mesozooplankton),intent(inout),target :: self
       integer,                       intent(in)           :: configunit
 !
 ! !REVISION HISTORY:
@@ -217,7 +215,7 @@ contains
    
    subroutine do(self,_ARGUMENTS_DO_)
 
-      class (type_pml_ersem_mesozooplankton),intent(in) :: self
+      class (type_ersem_mesozooplankton),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_
 
    ! !LOCAL VARIABLES:

@@ -4,19 +4,19 @@
 !#define NOBAC
 !#define IRON
 
-module pml_ersem_bacteria
+module ersem_bacteria
 
    use fabm_types
    use fabm_particle
 
-   use pml_ersem_shared
-   use pml_ersem_pelagic_base
+   use ersem_shared
+   use ersem_pelagic_base
 
    implicit none
 
    private
 
-   type,extends(type_ersem_pelagic_base_model),public :: type_pml_ersem_bacteria
+   type,extends(type_ersem_pelagic_base),public :: type_ersem_bacteria
       ! Variables
       type (type_state_variable_id) :: id_O3c, id_O2o
       type (type_state_variable_id) :: id_R1c, id_R2c, id_R3c
@@ -71,7 +71,7 @@ contains
 ! !DESCRIPTION:
 !
 ! !INPUT PARAMETERS:
-      class (type_pml_ersem_bacteria),intent(inout),target :: self
+      class (type_ersem_bacteria),intent(inout),target :: self
       integer,                        intent(in)           :: configunit
 !
 ! !REVISION HISTORY:
@@ -199,7 +199,7 @@ contains
    
    subroutine do(self,_ARGUMENTS_DO_)
 
-      class (type_pml_ersem_bacteria),intent(in) :: self
+      class (type_ersem_bacteria),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_
 
    ! !LOCAL VARIABLES:
@@ -437,7 +437,7 @@ contains
    
    subroutine remineralization(self,_ARGUMENTS_DO_)
 
-      class (type_pml_ersem_bacteria),intent(in) :: self
+      class (type_ersem_bacteria),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_
       
       integer :: iRP
