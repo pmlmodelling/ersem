@@ -314,7 +314,6 @@ contains
 
    !..Total respiration
             fZ4O3c = rrsZ4 + rraZ4
-            _SET_DIAGNOSTIC_(self%id_fZ4O3c,fZ4O3c)
 
             if (_AVAILABLE_(self%id_L2c)) then
                _SET_ODE_(self%id_L2c, (1.0_rk-self%gutdiss)*ineffZ4*sum(self%pu_eaZ4X*spreyZ4*preylP))
@@ -415,6 +414,8 @@ contains
             _SET_ODE_(self%id_c,- fZ4R8c - fZ4O3c)
 
          end if
+
+         _SET_DIAGNOSTIC_(self%id_fZ4O3c,fZ4O3c)
 
       ! Leave spatial loops (if any)
       _LOOP_END_
