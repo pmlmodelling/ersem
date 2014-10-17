@@ -44,10 +44,11 @@ contains
 
       ! Register diagnostic variables
       call self%register_diagnostic_variable(self%id_EIR,'EIR','W/m^-2','shortwave radiation', &
-              standard_variable=standard_variables%downwelling_shortwave_flux)
+              standard_variable=standard_variables%downwelling_shortwave_flux,source=source_do_column)
       call self%register_diagnostic_variable(self%id_parEIR,'parEIR','W/m^-2','photosynthetically active radiation', &
-              standard_variable=standard_variables%downwelling_photosynthetic_radiative_flux)
-      call self%register_diagnostic_variable(self%id_xEPS,'xEPS','1/m','attenuation coefficient of shortwave flux')
+              standard_variable=standard_variables%downwelling_photosynthetic_radiative_flux,source=source_do_column)
+      call self%register_diagnostic_variable(self%id_xEPS,'xEPS','1/m','attenuation coefficient of shortwave flux', &
+              source=source_do_column)
 
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_I_0,standard_variables%surface_downwelling_shortwave_flux)
