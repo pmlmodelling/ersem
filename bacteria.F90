@@ -1,9 +1,5 @@
 #include "fabm_driver.h"
 
-!#define DOCDYN
-!#define NOBAC
-!#define IRON
-
 module ersem_bacteria
 
    use fabm_types
@@ -119,12 +115,10 @@ contains
       call self%add_constituent('p',4.288e-8_rk,self%qpB1cX*c0)
 
       ! Register links to nutrient pools.
-      call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3', 'Phosphate')
-      call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3', 'Nitrate')
-      call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3', 'Ammonium')
-#ifdef IRON
-      call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3','Inorganic Iron')
-#endif
+      call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
+      call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3','hitrate')
+      call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','ammonium')
+      if (use_iron) call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3','inorganic iron')
 
       ! Register links to labile dissolved organic matter pools.
       call self%register_state_dependency(self%id_R1c,'R1c','mg C/m^3',  'DOC')
@@ -132,7 +126,7 @@ contains
       call self%register_state_dependency(self%id_R1n,'R1n','mmol N/m^3','DON')    
 
       ! Register links to semi-labile dissolved organic matter pools.
-      call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','Semi-labile DOC')    
+      call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','semi-labile DOC')    
 
       ! Register links to particulate organic matter pools.
       call self%get_parameter(self%nRP,'nRP','','number of substrates',default=0)
@@ -150,10 +144,10 @@ contains
          call self%request_coupling_to_model(self%id_RPc(iRP),self%id_RP(iRP),'c')
          call self%request_coupling_to_model(self%id_RPn(iRP),self%id_RP(iRP),'n')
          call self%request_coupling_to_model(self%id_RPp(iRP),self%id_RP(iRP),'p')
-#ifdef IRON
-         call self%register_state_dependency(self%id_RPf(iRP),'RP'//trim(index)//'f','umol Fe/m^3','POFe '//trim(index),required=.false.)    
-         call self%request_coupling_to_model(self%id_RPf(iRP),self%id_RP(iRP),'f')
-#endif
+         if (use_iron) then
+            call self%register_state_dependency(self%id_RPf(iRP),'RP'//trim(index)//'f','umol Fe/m^3','POFe '//trim(index),required=.false.)    
+            call self%request_coupling_to_model(self%id_RPf(iRP),self%id_RP(iRP),'f')
+         end if
       end do
       
 #ifdef DOCDYN
@@ -454,9 +448,7 @@ contains
       real(rk) :: fB1O3c
 #endif
       real(rk) :: R1pP,R1nP,N4nP
-#ifdef IRON
       real(rk) :: N7fP
-#endif
       real(rk) :: fR1N1p,fR1NIn
       real(rk) :: sRPr1(self%nRP)
       real(rk) :: RPfP(self%nRP),fRPN7f(self%nRP),n7fsink
@@ -473,15 +465,8 @@ contains
 #endif
          _GET_(self%id_R1p,R1pP)
          _GET_(self%id_R1n,R1nP)
-         RPfP = 0.0_rk
-         do iRP=1,self%nRP
-            if (_AVAILABLE_(self%id_RPf(iRP))) _GET_(self%id_RPf(iRP),RPfP(iRP))
-         end do
 
          _GET_(self%id_N4n,N4nP)
-#ifdef IRON
-         _GET_(self%id_N7f,N7fP)
-#endif
 
          etB1 = self%q10B1X**((ETW-10._rk)/10._rk) - self%q10B1X**((ETW-32._rk)/3._rk)
 
@@ -535,19 +520,6 @@ contains
          fR1NIn = self%sR1N4X * R1nP
 #endif
 
-#ifdef IRON
-! remineralization of particulate iron to Fe
-
-         fRPN7f=sRPr1*RPfP
-
-! sink of Fe
-
-! This term takes into account the scavenging due to hydroxide precipitation and it is supposed to be 
-! regulated by a threshold concentration (0.6 nM). See Aumont et al., 2003 (GBC) and Vichi et al., 2007 (JMS) for references.
-! (Luca, 12/08)
-         n7fsink=self%fsinkX*max(0._rk,N7fP-0.6_rk)
-#endif
-
     !..Source equations
 
 #ifdef DOCDYN
@@ -573,12 +545,26 @@ contains
          _SET_ODE_(self%id_N1p, + fR1N1p)
          _SET_ODE_(self%id_N4n, + fR1NIn)
 
-#ifdef IRON
-         do iRP=1,self%nRP
-            if (fRPn7f(iRP)/=0.0_rk) _SET_ODE_(self%id_RPf(iRP),-fRPn7f(iRP))
-         end do
-         _SET_ODE_(self%id_N7f,+sum(fRPn7f)-n7fsink)
-#endif
+         if (use_iron) then
+            ! remineralization of particulate iron to Fe
+            do iRP=1,self%nRP
+               _GET_(self%id_RPf(iRP),RPfP(iRP))
+            end do
+            fRPN7f=sRPr1*RPfP
+
+            ! sink of Fe
+
+            ! This term takes into account the scavenging due to hydroxide precipitation and it is supposed to be 
+            ! regulated by a threshold concentration (0.6 nM). See Aumont et al., 2003 (GBC) and Vichi et al., 2007 (JMS) for references.
+            ! (Luca, 12/08)
+            _GET_(self%id_N7f,N7fP)
+            n7fsink=self%fsinkX*max(0._rk,N7fP-0.6_rk)
+            
+            do iRP=1,self%nRP
+               if (fRPn7f(iRP)/=0.0_rk) _SET_ODE_(self%id_RPf(iRP),-fRPn7f(iRP))
+            end do
+            _SET_ODE_(self%id_N7f,+sum(fRPn7f)-n7fsink)
+         end if
 
 !..Nitrification..
 !Ph influence on nitrification - empirical equation

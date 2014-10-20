@@ -1,7 +1,5 @@
 #include "fabm_driver.h"
 
-!#define IRON
-
 module ersem_microzooplankton
 
    use fabm_types
@@ -113,21 +111,20 @@ contains
          call self%register_dependency(self%id_preyp(iprey),'prey'//trim(index)//'p','mmol P m-3', 'Prey '//trim(index)//' P')
          call self%register_dependency(self%id_preys(iprey),'prey'//trim(index)//'s','mmol Si m-3','Prey '//trim(index)//' Si')
          call self%register_dependency(self%id_preyl(iprey),'prey'//trim(index)//'l','mg C m-3',   'Prey '//trim(index)//' calcite')
-#ifdef IRON
-         call self%register_dependency(self%id_preyf(iprey),'prey'//trim(index)//'f','mmol Fe m-3','Prey '//trim(index)//' Fe')
-         call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe m-3','sink for Fe of prey '//trim(index),required=.false.)
-#endif
 
          call self%register_model_dependency(self%id_prey(iprey),'prey'//trim(index))
          call self%request_coupling_to_model(self%id_preyc(iprey),self%id_prey(iprey),standard_variables%total_carbon)
          call self%request_coupling_to_model(self%id_preyn(iprey),self%id_prey(iprey),standard_variables%total_nitrogen)
          call self%request_coupling_to_model(self%id_preyp(iprey),self%id_prey(iprey),standard_variables%total_phosphorus)
          call self%request_coupling_to_model(self%id_preys(iprey),self%id_prey(iprey),standard_variables%total_silicate)
-#ifdef IRON
-         call self%request_coupling_to_model(self%id_preyf(iprey),self%id_prey(iprey),standard_variables%total_iron)
-#endif
          call self%request_coupling_to_model(self%id_preyl(iprey),self%id_prey(iprey), &
                                              type_bulk_standard_variable(name='total_calcite_in_biota',aggregate_variable=.true.))
+
+         if (use_iron) then
+            call self%register_dependency(self%id_preyf(iprey),'prey'//trim(index)//'f','mmol Fe m-3','Prey '//trim(index)//' Fe')
+            call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe m-3','sink for Fe of prey '//trim(index),required=.false.)
+            call self%request_coupling_to_model(self%id_preyf(iprey),self%id_prey(iprey),standard_variables%total_iron)
+         end if
       end do
 
       ! Register links to external nutrient pools.
@@ -303,15 +300,15 @@ contains
 !..Source equations
       _SET_ODE_(self%id_p,sum(spreyZ5*preypP) - fZ5R6p - fZ5RDp - fZ5N1p)
 
-#ifdef IRON
+      if (use_iron) then
 ! iron dynamics
 ! following Vichi et al., 2007 it is assumed that the iron fraction of the ingested phytoplankton
 ! is egested as particulate detritus (Luca)
-      do iprey=1,self%nprey
-         _GET_(self%id_preyf(iprey),preyP)
-         if (preyP/=0.0_rk) _SET_ODE_(self%id_preyf_target(iprey),+spreyZ5(iprey)*preyP)
-      end do
-#endif
+         do iprey=1,self%nprey
+            _GET_(self%id_preyf(iprey),preyP)
+            if (preyP/=0.0_rk) _SET_ODE_(self%id_preyf_target(iprey),+spreyZ5(iprey)*preyP)
+         end do
+      end if
 
 !..P-flow to pool
       _SET_ODE_(self%id_N1p,+ fZ5N1p)

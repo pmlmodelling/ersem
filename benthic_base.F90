@@ -8,7 +8,7 @@ module ersem_benthic_base
    use fabm_types
    use fabm_particle
 
-   use pml_ersem_shared
+   use ersem_shared
 
    implicit none
 
@@ -106,13 +106,11 @@ contains
       end if
       if (index(self%composition,'f')/=0) then
          call self%add_constituent('f',0.0_rk)
-#ifdef IRON
-         if (self%resuspension) then
+         if (use_iron.and.self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_f,'resuspension_target_f','umol m-3','pelagic variable taking up resuspended iron')
             call self%request_coupling_to_model(self%id_resuspension_f,self%id_resuspension_target,'f')
          end if
-         if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N7f,'N7f','umol m-3','dissolved iron')
-#endif
+         if (use_iron.and.self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N7f,'N7f','umol m-3','dissolved iron')
       end if
       if (index(self%composition,'l')/=0) then
          call self%add_constituent('l',0.0_rk)
@@ -161,10 +159,10 @@ contains
             call self%register_state_variable(self%id_s,'s','mmol Si/m^2','silicate',initial_value,minimum=0._rk)
             call self%add_to_aggregate_variable(standard_variables%total_silicate,self%id_s)
          case ('f')
-#ifdef IRON   
-            call self%register_state_variable(self%id_f,'f','umol Fe/m^2','iron',initial_value,minimum=0._rk)
-            call self%add_to_aggregate_variable(standard_variables%total_iron,self%id_f)
-#endif
+            if (use_iron) then
+               call self%register_state_variable(self%id_f,'f','umol Fe/m^2','iron',initial_value,minimum=0._rk)
+               call self%add_to_aggregate_variable(standard_variables%total_iron,self%id_f)
+            end if
          case ('l')
             call self%register_state_variable(self%id_l,'l','mg C/m^2','calcite',initial_value,minimum=0._rk)
             call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_l,scale_factor=1._rk/CMass)

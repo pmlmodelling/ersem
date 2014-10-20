@@ -1,5 +1,5 @@
 #include "fabm_driver.h"
-!#define IRON
+
 module ersem_pelagic_base
 
    use fabm_types
@@ -102,9 +102,7 @@ contains
          call self%register_state_dependency(self%id_Q6n,'Q6n','mmol N/m^2','Q6n')
          call self%register_state_dependency(self%id_Q6p,'Q6p','mmol P/m^2','Q6p')
          call self%register_state_dependency(self%id_Q6s,'Q6s','mmol Si/m^2','Q6s')
-#ifdef IRON   
-         call self%register_state_dependency(self%id_Q6f,'Q6f','mmol Fe/m^2','Q6f')
-#endif
+         if (use_iron) call self%register_state_dependency(self%id_Q6f,'Q6f','mmol Fe/m^2','Q6f')
          call self%register_state_dependency(self%id_Q7c,'Q7c','mg C/m^2',  'Q7c')
          call self%register_state_dependency(self%id_Q7n,'Q7n','mmol N/m^2','Q7n')
          call self%register_state_dependency(self%id_Q7p,'Q7p','mmol P/m^2','Q7p')
@@ -120,9 +118,7 @@ contains
          call self%request_coupling_to_model(self%id_Q6n,self%id_Q6,'n')
          call self%request_coupling_to_model(self%id_Q6p,self%id_Q6,'p')
          call self%request_coupling_to_model(self%id_Q6s,self%id_Q6,'s')
-#ifdef IRON   
-         call self%request_coupling_to_model(self%id_Q6f,self%id_Q6,'f')
-#endif
+         if (use_iron) call self%request_coupling_to_model(self%id_Q6f,self%id_Q6,'f')
 
          call self%register_model_dependency(self%id_Q7,'Q7')
          call self%request_coupling_to_model(self%id_Q7c,self%id_Q7,'c')
@@ -157,10 +153,10 @@ contains
             call self%register_state_variable(self%id_s,'s','mmol Si/m^3','silicate',initial_value,minimum=0._rk,vertical_movement=-self%rm/self%dt,background_value=background_value)
             call self%add_to_aggregate_variable(standard_variables%total_silicate,self%id_s)
          case ('f')
-#ifdef IRON   
-            call self%register_state_variable(self%id_f,'f','umol Fe/m^3','iron',initial_value,minimum=0._rk,vertical_movement=-self%rm/self%dt,background_value=background_value)
-            call self%add_to_aggregate_variable(standard_variables%total_iron,self%id_f)
-#endif
+            if (use_iron) then
+               call self%register_state_variable(self%id_f,'f','umol Fe/m^3','iron',initial_value,minimum=0._rk,vertical_movement=-self%rm/self%dt,background_value=background_value)
+               call self%add_to_aggregate_variable(standard_variables%total_iron,self%id_f)
+            end if
          case ('chl')
             call self%register_state_variable(self%id_chl,'Chl','mg C/m^3','chlorophyll-a',initial_value,minimum=0._rk,vertical_movement=-self%rm/self%dt,background_value=background_value)
          case default

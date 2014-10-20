@@ -13,6 +13,12 @@ module ersem_shared
    real(rk),parameter :: qsRPIcX = 15._rk/106._rk/CMass
    real(rk),parameter :: ZeroX   = 1e-8_rk
 
+#ifdef IRON
+   logical,parameter :: use_iron = .true.
+#else
+   logical,parameter :: use_iron = .false.
+#endif
+
    type (type_bulk_standard_variable),parameter :: photosynthesis_rate = type_bulk_standard_variable(name='photosynthesis_rate',units='mg C/m^3/d',aggregate_variable=.true.)
    type (type_bulk_standard_variable),parameter :: phytoplankton_respiration_rate = type_bulk_standard_variable(name='phytoplankton_respiration_rate',units='mg C/m^3/d',aggregate_variable=.true.)
    type (type_bulk_standard_variable),parameter :: zooplankton_respiration_rate = type_bulk_standard_variable(name='zooplankton_respiration_rate',units='mg C/m^3/d',aggregate_variable=.true.)
