@@ -5,7 +5,7 @@ module ersem_benthic_bacteria
    use fabm_types
 
    use fabm_particle
-   use pml_ersem_shared
+   use ersem_shared
    use ersem_benthic_base
 
    implicit none
