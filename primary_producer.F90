@@ -34,7 +34,7 @@ module ersem_primary_producer
    private
 
    type,extends(type_ersem_pelagic_base),public :: type_ersem_primary_producer
-      ! NB: own state variables (c,n,p,s,f,chl) are added implciitly by deriving from type_ersem_pelagic_base!
+      ! NB: own state variables (c,n,p,s,f,chl) are added implicitly by deriving from type_ersem_pelagic_base!
       
       ! Identifiers for state variables of other models
       type (type_state_variable_id) :: id_O3c,id_O2o                        ! dissolved inorganic carbon, oxygen
