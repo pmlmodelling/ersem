@@ -91,7 +91,7 @@ contains
       call self%register_dependency(self%id_D1m,'D1m','m','depth of bottom interface of 1st layer',standard_variable=depth_of_bottom_interface_of_layer_1)
 
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
-      call self%register_dependency(self%id_phx,standard_variables%ph_reported_on_total_scale)
+      if (self%ISWphx==1) call self%register_dependency(self%id_phx,standard_variables%ph_reported_on_total_scale)
    end subroutine benthic_nitrification_initialize
 
    subroutine benthic_nitrification_do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
