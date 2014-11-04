@@ -94,18 +94,15 @@ contains
       call self%register_dependency(self%id_diff(2),'diff2','m^2/d','diffusivity in layer 2',standard_variable=diffusivity_in_sediment_layer_2)
       call self%register_dependency(self%id_diff(3),'diff3','m^2/d','diffusivity in layer 3',standard_variable=diffusivity_in_sediment_layer_3)
       call self%register_dependency(self%id_cmix,'cmix','d/m','equilibrium diffusive speed between sediment surface water',standard_variable=pelagic_benthic_transfer_constant)
-      
+
       ! Create model that computes concentrations per benthic layer.
       allocate(profile)
       call self%add_child(profile,'per_layer',configunit=configunit)
       profile%ads = self%ads
       profile%last_layer = self%last_layer
-      call profile%register_diagnostic_variable(profile%id_layers(1),trim(composition)//'1','mmol/m^2',trim(long_name)//' in layer 1')
-      call profile%register_diagnostic_variable(profile%id_layers(2),trim(composition)//'2','mmol/m^2',trim(long_name)//' in layer 2')
-      call profile%register_diagnostic_variable(profile%id_layers(3),trim(composition)//'3','mmol/m^2',trim(long_name)//' in layer 3')
-      call profile%act_as_state_variable(profile%id_layers(1))
-      call profile%act_as_state_variable(profile%id_layers(2))
-      call profile%act_as_state_variable(profile%id_layers(3))
+      call profile%register_diagnostic_variable(profile%id_layers(1),trim(composition)//'1','mmol/m^2',trim(long_name)//' in layer 1',act_as_state_variable=.true.,domain=domain_bottom)
+      call profile%register_diagnostic_variable(profile%id_layers(2),trim(composition)//'2','mmol/m^2',trim(long_name)//' in layer 2',act_as_state_variable=.true.,domain=domain_bottom)
+      call profile%register_diagnostic_variable(profile%id_layers(3),trim(composition)//'3','mmol/m^2',trim(long_name)//' in layer 3',act_as_state_variable=.true.,domain=domain_bottom)
       call profile%register_dependency(profile%id_D1m, 'D1m', 'm','depth of bottom interface of 1st layer')
       call profile%register_dependency(profile%id_D2m, 'D2m', 'm','depth of bottom interface of 2nd layer')
       call profile%register_dependency(profile%id_Dtot,'Dtot','m','depth of sediment column')
@@ -242,7 +239,7 @@ contains
          norm_res_int = poro*(self%ads(1)*c_int1_eq+self%ads(2)*c_int2_eq+self%ads(3)*c_int3_eq)
          P_res_int = (c_int-c_int_eq)/norm_res_int*d3
          _SET_BOTTOM_EXCHANGE_(self%id_pel,sms+P_res_int) ! Equilibrium flux = sms, residual flux = P_res_int
-         _SET_BOTTOM_ODE_(self%id_tot,-P_res_int)
+         _SET_BOTTOM_ODE_(self%id_tot,-P_res_int)         ! Local sources-sinks (sms) minus surface flux (sms+P_res_int)
       end if
 
       _HORIZONTAL_LOOP_END_

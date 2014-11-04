@@ -192,8 +192,7 @@ contains
       call layer_content_calculator%register_dependency(layer_content_calculator%id_d_tot,'d_tot','m','depth of sediment column',standard_variable=depth_of_sediment_column)
 
       ! Register the only diagnostic exported by layer_content_calculator: mass integrated over desired depth interval.
-      call layer_content_calculator%register_diagnostic_variable(layer_content_calculator%id_c,'c',trim(units)//'/m^2','mass')
-      call layer_content_calculator%act_as_state_variable(layer_content_calculator%id_c)
+      call layer_content_calculator%register_diagnostic_variable(layer_content_calculator%id_c,'c',trim(units)//'/m^2','mass',act_as_state_variable=.true.,domain=domain_bottom)
 
       ! Link source-sink terms associated with layer-specific mass to the master module.
       call self%request_coupling(id_sms,'content_calculator_'//trim(name)//'/c_sms')

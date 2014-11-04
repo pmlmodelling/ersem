@@ -78,11 +78,11 @@ contains
       ! Set time unit to d-1. This implies that all rates (sink/source terms) are given in d-1.
       self%dt = 86400._rk
 
-      call self%get_parameter(self%q10nitX,'q10nitX','-',            'Q_10 temperature coefficient mfor nitrification')
-      call self%get_parameter(self%hM4M3X, 'hM4M3X', 'mmol/m^3',     'Michaelis-Menten constant for nitrate limitation of nitrification')
-      call self%get_parameter(self%ISWphx, 'ISWphx', '',             'pH influence on nitrification',default=0)
-      call self%get_parameter(self%sM4M3X, 'sM4M3X', '1/d',          'maximum nitrification rate')
-      call self%get_parameter(self%xno3X,  'xno3X',  'mol O_2/mol N','oxygen consumed per nitrate produced in nitrification')
+      call self%get_parameter(self%q10nitX,'q10nitX','-',            'Q_10 temperature coefficient')
+      call self%get_parameter(self%hM4M3X, 'hM4M3X', 'mmol/m^3',     'Michaelis-Menten constant for nitrate limitation')
+      call self%get_parameter(self%ISWphx, 'ISWphx', '',             'pH influence',default=0)
+      call self%get_parameter(self%sM4M3X, 'sM4M3X', '1/d',          'maximum nitrification rate at 10 degrees Celsius')
+      call self%get_parameter(self%xno3X,  'xno3X',  'mol O_2/mol N','oxygen consumed per nitrate produced')
 
       call self%register_state_dependency(self%id_K3n,'K3n','mmol/m^2','nitrate')
       call self%register_state_dependency(self%id_K4n,'K4n','mmol/m^2','ammonium')
