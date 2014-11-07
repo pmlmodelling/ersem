@@ -14,12 +14,14 @@ module ersem_benthic_fauna
 
   type,extends(type_ersem_benthic_base),public :: type_ersem_benthic_fauna
   type (type_state_variable_id) :: id_O2o
+  type (type_dependency_id), allocatable,dimension(:) :: id_foodc,id_foodn,id_foodp,id_foods
   type (type_dependency_id) :: id_ETW    
      real(rk) :: qnYIcX,qpYIcX
      real(rk) :: q10YX
      real(rk) :: hO2YX,rlO2YX
      real(rk) :: xclYX,xcsYX,xchYX
      real(rk) :: suY
+     real(rk),allocatable :: pueYX(:)
   contains
      procedure :: initialize
      procedure :: do_bottom
@@ -30,7 +32,8 @@ contains
   subroutine initialize(self,configunit)
     class (type_ersem_benthic_fauna),intent(inout),target :: self
     integer,                                 intent(in)           ::configunit
-    
+    integer           :: ifood
+    character(len=16) :: index    
     ! Register parameters
       call self%get_parameter(self%qnYIcX,  'qnYc',  'mmol N/mg C','Maximum nitrogen to carbon ratio')
       call self%get_parameter(self%qpYIcX,  'qpYc',  'mmol P/mg C','Maximum phosphorus to carbon ratio')
@@ -41,8 +44,16 @@ contains
       call self%get_parameter(self%xcsYX,   'xcsY',  'mg C/m^2',    'Michaelis-Menten constant for the impact of crowding')
       call self%get_parameter(self%xchYX,   'xchY',  'mg C/m^2',    'Concentration determining asymptotic treshold of shading limitation (-> xchYXi/(1+xchYXi) for Yc-> inf)')
       call self%get_parameter(self%suYX,    'suY',   '1/d',         'Specific maximal uptake at reference temperature')
+      
+    ! Determine number of food sources
+      call self%get_parameter(self%nfood,'nfood','','number of food sources',default=0)   
 
-
+     allocate(self%pueYX(self%nfood))
+     do ifood=1,self%nfood
+        write(index,'(i0)') ifood
+      call self%get_parameter(self%pueY(ifood),'pueY',//trim(index),'-','Excreted fraction of fixed (carbon) uptake')
+     end do
+ 
     ! Environmental dependencies
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
 
