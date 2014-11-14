@@ -47,7 +47,10 @@ contains
       call self%register_state_dependency(self%id_K4n,'K4n','mmol/m^2','ammonium')
       call self%register_state_dependency(self%id_G2o,'G2o','mmol/m^2','oxygen')
       call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','pelagic ammonium')
-    ! register G4n, K3n2, K4n2, layer2_thickness
+      call self%register_state_variable(self%id_G4n,'G4n','mmol N/m^2','dinitrogen gas')
+      call self%register_state_dependency(self%id_K3n2,'K3n2','mmol N/m^2','benthic nitrate in 2nd layer')
+      call self%register_state_dependency(self%id_K4n2,'K4n2','mmol N/m^2','benthic ammonium in 2nd layer')
+      call self%register_dependency(self%id_layer2_thickness,'layer2_thickness','m','thickness of 2nd layer')
       call self%register_dependency(self%id_D1m,'D1m','m','depth of bottom interface of 1st layer',standard_variable=depth_of_bottom_interface_of_layer_1)
 
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
@@ -116,7 +119,7 @@ contains
           
          _GET_HORIZONTAL_(self%id_K6_sms,K6_sms) 
          _GET_HORIZONTAL_(self%id_layer2_thickness,layer2_thickness)
- 
+
           K6_sms = K6_sms * self%dt
 
 
@@ -131,9 +134,9 @@ contains
 
         jM3G4n = jMIno3*eN2*self%pammonX*       self%pdenitX
 
-        _SET_BOTTOM_ODE_(self%id_K4n2,jM3M4n)
+        _SET_BOTTOM_ODE_(self%id_K4n2, jM3M4n)
         _SET_BOTTOM_ODE_(self%id_K3n2, -jM3M4n -jM3G4n)
-        _SET_BOTTOM_ODE_(self%id_G4n, +jM3G4n)
+        _SET_BOTTOM_ODE_(self%id_G4n, jM3G4n)
         _SET_BOTTOM_ODE_(self%id_G2o, K6_sms + self%xno3X*jM3M4n + (self%xno3X-self%xn2X)*jM3G4n)
 
 
