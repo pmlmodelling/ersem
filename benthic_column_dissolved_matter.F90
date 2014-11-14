@@ -355,13 +355,13 @@ contains
          ! Get depth-integrated concentration.
          _GET_HORIZONTAL_(self%id_tot,c_int)
 
-         ! Layer dpeths and porosity.
+         ! Layer depths and porosity.
          _GET_HORIZONTAL_(self%id_D1m,d(1))
          _GET_HORIZONTAL_(self%id_D2m,D2m)
          _GET_HORIZONTAL_(self%id_Dtot,d_totX)
          _GET_HORIZONTAL_(self%id_poro,poro)
 
-         ! Compute layer ticknesses from depth of bottom interface of individual layers.
+         ! Compute layer thicknesses from depth of bottom interface of individual layers.
          d(2) = D2m-d(1)
          d(3) = d_totX-D2m
 
