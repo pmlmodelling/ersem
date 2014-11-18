@@ -44,12 +44,12 @@ module ersem_bacteria
 #endif
 
       ! Remineralization
-      real(rk) :: redfieldX
       real(rk) :: sR1N1X,sR1N4X
       real(rk) :: fsinkX
       real(rk) :: sN4N3X,cessX
       integer  :: ISWphx
 #ifndef DOCDYN
+      real(rk) :: redfieldX
       real(rk) :: rR2R1X
 #endif
    contains
@@ -94,7 +94,6 @@ contains
       call self%get_parameter(self%urB1_O2X,'ur_O2',   'mmol O_2/mg C','oxygen consumed per carbon respired')
 
       ! Remineralization parameters
-      call self%get_parameter(self%redfieldX,'redfield','mol/mol','Redfield carbon to nitrogen ratio')
       call self%get_parameter(self%sR1N1X,   'sR1N1',   '1/d',    'mineralisation rate of labile dissolved organic phosphorus')
       call self%get_parameter(self%sR1N4X,   'sR1N4',   '1/d',    'mineralisation rate of labile dissolved organic nitrogen')
       call self%get_parameter(self%fsinkX,   'fsink',   '1/d',    'scavenging rate for iron')
@@ -103,6 +102,7 @@ contains
       call self%get_parameter(self%cessX,    'cess',    'mg/m^3', 'silt concentration at which relative rate of nitrification is 1')
       
 #ifndef DOCDYN
+      call self%get_parameter(self%redfieldX,'redfield','mol/mol','Redfield carbon to nitrogen ratio')
       call self%get_parameter(self%rR2R1X,   'rR2R1', '1/d', 'specific rate of breakdown of semi-labile to labile DOC')
 #endif
 
@@ -116,7 +116,7 @@ contains
 
       ! Register links to nutrient pools.
       call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
-      call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3','hitrate')
+      call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3','nitrate')
       call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','ammonium')
       if (use_iron) call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3','inorganic iron')
 
@@ -174,8 +174,8 @@ contains
 #endif
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
-      call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','Carbon Dioxide')
-      call self%register_state_dependency(self%id_O2o,'O2o','mmol O/m^3','Oxygen')
+      call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide')
+      call self%register_state_dependency(self%id_O2o,'O2o','mmol O/m^3','oxygen')
 
       ! Register environmental dependencies (temperature, suspendend sediment, pH, oxygen saturation)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
