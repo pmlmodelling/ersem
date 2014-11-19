@@ -14,12 +14,12 @@ module ersem_benthic_fauna
 
   type,extends(type_ersem_benthic_base),public :: type_ersem_benthic_fauna
   type (type_state_variable_id)   :: id_O2o
-  type (type_bottom_state_variable_id) :: id_Q6c,id_Q6n,id_Q6p,id_Q6c2
+  type (type_bottom_state_variable_id) :: id_Q6c,id_Q6n,id_Q6p,id_Q6s,id_Q6c2
   type (type_bottom_state_variable_id) :: id_G3c,id_G2o,id_K4n,id_K1p,id_K4n2,id_K1p2
   type (type_horizontal_dependency_id), allocatable,dimension(:) :: id_foodc,id_foodn,id_foodp,id_foods
   type (type_dependency_id), allocatable,dimension(:) :: id_foodpelc,id_foodpeln,id_foodpelp,id_foodpels
   type (type_dependency_id) :: id_ETW
-  type (type_model_dependency_id),allocatable,dimension(:) :: id_food
+  type (type_model_id),allocatable,dimension(:) :: id_food
      integer  :: nfood    
      real(rk) :: qnYIcX,qpYIcX
      real(rk) :: q10YX
@@ -42,8 +42,8 @@ contains
     integer,                                 intent(in)           ::configunit
     integer           :: ifood
     character(len=16) :: index
-    logical           :: foodispom,food_anaerobic
-    real(rk)          :: pueYX, pueQX
+    logical           :: foodispom,food_anaerobic,foodispel
+    real(rk)          :: pueYX,pueQX
     ! Register parameters
       call self%get_parameter(self%qnYIcX, 'qnYc',  'mmol N/mg C','Maximum nitrogen to carbon ratio')
       call self%get_parameter(self%qpYIcX, 'qpYc',  'mmol P/mg C','Maximum phosphorus to carbon ratio')
@@ -65,12 +65,22 @@ contains
       call self%get_parameter(self%xdcYX,  'xdcY',  '1/degree C', 'e-folding temperature factor of cold mortality response')
     ! Determine number of food sources
       call self%get_parameter(self%nfood,  'nfood', '',           'Number of food sources',default=0)   
-      call self%get_parameter(pu_anX,      'pu_an', '-',          'Food source from and excretion to anaerobic layer')
       call self%get_parameter(self%srYX,   'srY',   '1/d',        'Specific rest respiration at reference temperature')
       call self%get_parameter(self%purYX,  'purY',  '-',          'Respired fraction of uptake')
-
+   
+      call self%add_constituent('c',3000._rk,self%qnYIcX,self%qpYIcX)
+  
     allocate(self%id_food(self%nfood))
     allocate(self%foodispel(self%nfood))
+    allocate(self%id_foodpelc(self%nfood))
+    allocate(self%id_foodpeln(self%nfood))
+    allocate(self%id_foodpelp(self%nfood))
+    allocate(self%id_foodpels(self%nfood))
+    allocate(self%id_foodc(self%nfood))
+    allocate(self%id_foodn(self%nfood))
+    allocate(self%id_foodp(self%nfood))
+    allocate(self%id_foods(self%nfood))
+
    ! Allocate components of food sources
     do ifood=1,self%nfood
          write (index,'(i0)') ifood
@@ -94,12 +104,8 @@ contains
          call self%request_coupling_to_model(self%id_foodn(ifood),self%id_food(ifood),standard_variables%total_nitrogen)
          call self%request_coupling_to_model(self%id_foodp(ifood),self%id_food(ifood),standard_variables%total_phosphorus)
          call self%request_coupling_to_model(self%id_foods(ifood),self%id_food(ifood),standard_variables%total_silicate)
-    end do
-        call self%register_state_dependency(self%id_G3c,'G3c','mmol C m-2','Carbon Dioxide')
-        call self%register_state_dependency(self%id_G2o,'G2o','mmol O m-2','Oxygen')
-        call self%register_state_dependency(self%id_K3n2,'K1p2','mmol P/m^2','benthic phosphate in 2nd layer')
-        call self%register_state_dependency(self%id_K4n2,'K4n2','mmol N/m^2','benthic ammonium in 2nd layer')
-
+         end if 
+   end do
 
     ! Allocate excretion rates
     allocate(self%pueYX(self%nfood))
@@ -112,7 +118,7 @@ contains
          else
             self%pueYX(ifood) = pueYX
          end if
-         call self%get_parameter(food_anaerobic,'food'//trim(index)//'_anaerobic','','food type '//trim(index)//' is from anaerobic layer',default=.false.
+         call self%get_parameter(food_anaerobic,'food'//trim(index)//'anaerobic','','food type '//trim(index)//' is from anaerobic layer',default=.false.)
         if (food_anaerobic) then
            self%pu_anX(ifood) = 1._rk
         else
@@ -135,7 +141,14 @@ contains
       call self%register_state_dependency(self%id_Q6c,'Q6c','mg C/m^2', 'particulate organic carbon')
       call self%register_state_dependency(self%id_Q6n,'Q6n','mmol N/m^2','particulate organic nitrogen')
       call self%register_state_dependency(self%id_Q6p,'Q6p','mmol P/m^2','particulate organic phosphorus')
-
+      call self%register_state_dependency(self%id_Q6s,'Q6s','mmol Si/m^2','particulate organic silicate')
+      call self%register_state_dependency(self%id_G3c,'G3c','mmol C m-2','Carbon Dioxide')
+      call self%register_state_dependency(self%id_G2o,'G2o','mmol O m-2','Oxygen')
+      call self%register_state_dependency(self%id_K1p2,'K1p2','mmol P/m^2','benthic phosphate in 2nd layer')
+      call self%register_state_dependency(self%id_K4n2,'K4n2','mmol N/m^2','benthic ammonium in 2nd layer')
+      call self%register_state_dependency(self%id_K1p,'K1p','mmol P/m^2','benthic phosphate in 1st layer')
+      call self%register_state_dependency(self%id_K4n,'K4n','mmol N/m^2','benthic ammonium in 1st layer')
+ 
   end subroutine
 
   subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
@@ -143,17 +156,17 @@ contains
      class (type_ersem_benthic_fauna),intent(in) :: self
      _DECLARE_ARGUMENTS_DO_BOTTOM_
      
-     real(rk) :: Yc,Yn,Yp,O2o
+     real(rk) :: Yc,Yn,Yp,O2o,foodP
      real(rk) :: eT,eO,eC,ETW,Y,x
      real(rk) :: rate
-     real(rk) :: AQ6c,AQ6n,AQ6p,AQ6c2
+     real(rk) :: SQ6c
      real(rk),dimension(self%nfood) :: foodcP,foodnP,foodpP,foodsP
      real(rk),dimension(self%nfood) :: feed, sflux
      real(rk) :: foodsum,mm
-     real(rk),dimension(self%nfood) :: grossfluxc,grossfluxn,grossfluxp
+     real(rk),dimension(self%nfood) :: grossfluxc,grossfluxn,grossfluxp,grossfluxs
      real(rk),dimension(self%nfood) :: netfluxc,netfluxn,netfluxp
      real(rk) :: mort_act,mort_ox,mort_cold,mortflux
-     integer  :: ifood
+     integer  :: ifood,istate
      real(rk) :: fBTYc,nfBTYc,fYG3c,p_an,excn,excp
      
      _HORIZONTAL_LOOP_BEGIN_
@@ -216,6 +229,7 @@ contains
    grossfluxc = sflux * foodcP
    grossfluxn = sflux * foodnP
    grossfluxp = sflux * foodpP
+   grossfluxs = sflux * foodsP
    netfluxc = grossfluxc * (1._rk -             self%pueYX(ifood))
    netfluxn = grossfluxn * (1._rk - self%pudilX*self%pueYX(ifood))
    netfluxp = grossfluxp * (1._rk - self%pudilX*self%pueYX(ifood))
@@ -241,7 +255,8 @@ contains
    _SET_BOTTOM_ODE_(self%id_Q6c,fBTYc - nfBTYc)
    _SET_BOTTOM_ODE_(self%id_Q6n,sum(grossfluxn) - sum(netfluxn))
    _SET_BOTTOM_ODE_(self%id_Q6p,sum(grossfluxp) - sum(netfluxp))
-   
+   _SET_BOTTOM_ODE_(self%id_Q6s,sum(grossfluxs))
+
    ! Respiration fluxes = activity respiration + basal respiration
 
    fYG3c = self%srYX * Yc * eT + self%purYX * nfBTYc
@@ -263,15 +278,15 @@ contains
    _SET_BOTTOM_ODE_(self%id_Q6p,mortflux * Yp)
 
    ! Adjust fixed nutrients
-   call Adjust_fixed_nutrients(Yc,Yn,Yp,self%qnYIcX,self%qpYIcX,excn,excp,Q6c)
+   call Adjust_fixed_nutrients(Yc,Yn,Yp,self%qnYIcX,self%qpYIcX,excn,excp,SQ6c)
 
-    p_an = (sum(self%pu_anX*grossflux))/max(fBTYc,1.e-8_rk)
+    p_an = (sum(self%pu_anX*grossfluxc))/max(fBTYc,1.e-8_rk)
 
    _SET_BOTTOM_ODE_(self%id_K4n,(1._rk-p_an) * excn)
    _SET_BOTTOM_ODE_(self%id_K4n2,p_an * excn)
    _SET_BOTTOM_ODE_(self%id_K1p,(1._rk-p_an) * excp)
    _SET_BOTTOM_ODE_(self%id_K1p2,p_an * excp)
-
+   _SET_BOTTOM_ODE_(self%id_Q6c,SQ6c)
      _HORIZONTAL_LOOP_END_
 
   end subroutine do_bottom
