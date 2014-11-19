@@ -127,7 +127,7 @@ contains
 
          ! Retrieve environmental conditions
          _GET_(self%id_ETW,ETW)            ! temperature (of lowermost pelagic layer)
-         _GET_HORIZONTAL_(self%id_Dm,Dm)   ! depth of sediment layer
+         _GET_HORIZONTAL_(self%id_Dm,Dm)   ! depth of the sediment layer that represents bacterial habitat
 
          ! Retrieve organic carbon substrates
          _GET_HORIZONTAL_(self%id_Q1c,Q1cP)
@@ -151,7 +151,7 @@ contains
          ! Limitation by temperature, oxygen, nutrient availability.
          eT  = self%q10HX**((ETW-10._rk)/10._rk) - self%q10HX**((ETW-32._rk)/3._rk)
          eOx = Dm/(self%ddHX+Dm)
-         if (AQ6c<=0) then
+         if (AQ6c<=0.0_rk) then
             ! Avoid division by zero: no carbon in substrate means no nutrient limitation
             eN = 1.0_rk
          else

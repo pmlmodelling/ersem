@@ -47,25 +47,33 @@ contains
       call self%register_state_dependency(self%id_K4n,'K4n','mmol/m^2','ammonium')
       call self%register_state_dependency(self%id_G2o,'G2o','mmol/m^2','oxygen')
       call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','pelagic ammonium')
-      call self%register_state_variable(self%id_G4n,'G4n','mmol N/m^2','dinitrogen gas')
-      call self%register_state_dependency(self%id_K3n2,'K3n2','mmol N/m^2','benthic nitrate in 2nd layer')
-      call self%register_state_dependency(self%id_K4n2,'K4n2','mmol N/m^2','benthic ammonium in 2nd layer')
-      call self%register_dependency(self%id_layer2_thickness,'layer2_thickness','m','thickness of 2nd layer')
       call self%register_dependency(self%id_D1m,'D1m','m','depth of bottom interface of 1st layer',standard_variable=depth_of_bottom_interface_of_layer_1)
 
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
       if (self%ISWphx==1) call self%register_dependency(self%id_phx,standard_variables%ph_reported_on_total_scale)
 
       ! Denitrification
+      call self%get_parameter(self%xn2x,   'xn2x','-','oxygen produced per N2 produced')
+      call self%get_parameter(self%pdenitX,'pdenitX','-','Fraction of pammonX denitrified in N2. The remainder goes into NH4')
+      call self%get_parameter(self%pammonx,'pammonx','-','Fraction of oxygen-consumption taken from nitrate')
+      call self%get_parameter(self%hM3G4X,'hM3G4X','mmol/m','Michaelis-Menten constant for nitrate limitation of denitrification')
+
+      ! Create our own state avriable for dinitrogen gas
+      ! (only to track its total production, which can then be considered in nitrogen mass balance)
+      call self%register_state_variable(self%id_G4n,'G4n','mmol N/m^2','dinitrogen gas')
+      call self%add_to_aggregate_variable(standard_variables%total_nitrogen,self%id_G4n)
+
+      call self%register_state_dependency(self%id_K3n2,'K3n2','mmol N/m^2','benthic nitrate in 2nd layer')
+      call self%register_state_dependency(self%id_K4n2,'K4n2','mmol N/m^2','benthic ammonium in 2nd layer')
+      call self%register_dependency(self%id_layer2_thickness,'layer2_thickness','m','thickness of 2nd layer')
+
+      ! Create a child model that provides a K6 diagnostic. Other models (e.g., anaerobic bacteria) can attach to that to provide it with sink/source terms.
+      ! In turn, these are then picked up by this model (type_ersem_benthic_nitrogen_cycle) and translated into chnages in NO3 and O2.
       allocate(child)
       call self%add_child(child,'K6_calculator',configunit=configunit)
       call child%register_diagnostic_variable(child%id_K6,'K6','mmol O2/m^2','reduction equivalent', act_as_state_variable=.true., output=output_none,domain=domain_bottom)
       call self%register_dependency(self%id_K6_sms,'K6_sms','mmol O2/m^2/s','K6 sources minus sinks')
       call self%request_coupling('K6_sms','K6_calculator/K6_sms')
-      call self%get_parameter(self%xn2x,   'xn2x','-','oxygen produced per N2 produced')
-      call self%get_parameter(self%pdenitX,'pdenitX','-','Fraction of pammonX denitrified in N2. The remainder goes into NH4')
-      call self%get_parameter(self%pammonx,'pammonx','-','Fraction of oxygen-consumption taken from nitrate')
-      call self%get_parameter(self%hM3G4X,'hM3G4X','mmol/m','Michaelis-Menten constant for nitrate limitation of denitrification')
    end subroutine initialize
 
    subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
@@ -79,7 +87,7 @@ contains
       real(rk) :: MU_m2,eN2,jMIno3,jM3M4n,jM3G4n
 
       _HORIZONTAL_LOOP_BEGIN_
-         _GET_HORIZONTAL_(self%id_K3n,K3n) !TODO background
+         _GET_HORIZONTAL_(self%id_K3n,K3n) !TODO include background
          _GET_HORIZONTAL_(self%id_K3n,K3nP)
          _GET_HORIZONTAL_(self%id_K4n,K4nP)
          _GET_(self%id_N4n,N4n)
@@ -116,15 +124,18 @@ contains
          _SET_BOTTOM_ODE_(self%id_K4n,-jM4M3n)
          _SET_BOTTOM_ODE_(self%id_G2o,-self%xno3X*jM4M3n)
 
-          
+         ! Retrive reduction equivalent demand, layer 2 depth integrated nitrate, layer 2 thickness
          _GET_HORIZONTAL_(self%id_K6_sms,K6_sms) 
+         _GET_HORIZONTAL_(self%id_K3n2,K3n2)
          _GET_HORIZONTAL_(self%id_layer2_thickness,layer2_thickness)
 
+         ! FABM provides sources-sinks of K6 in per second - convert to our internal time unit (per day).
           K6_sms = K6_sms * self%dt
 
-
-         MU_m2 = K3nP/(D1m+(layer2_thickness)/3._rk)
-         eN2 = (MU_m2/3._rk)/(MU_m2/3._rk+self%hM3G4X)
+         ! From nitrate per m2 in layer 2 to nitrate concentration
+         ! (not true conentration as it does not consider porosity!)
+         MU_m2 = K3n2/layer2_thickness
+         eN2 = MU_m2/(MU_m2+self%hM3G4X)
 
          ! "borrowed" oxygen consumption in anaerobic layer:
 
@@ -137,8 +148,9 @@ contains
         _SET_BOTTOM_ODE_(self%id_K4n2, jM3M4n)
         _SET_BOTTOM_ODE_(self%id_K3n2, -jM3M4n -jM3G4n)
         _SET_BOTTOM_ODE_(self%id_G4n, jM3G4n)
-        _SET_BOTTOM_ODE_(self%id_G2o, K6_sms + self%xno3X*jM3M4n + (self%xno3X-self%xn2X)*jM3G4n)
 
+        ! Oxygen dynamics: use oxygen to fuel demand for reduction equivalents after nitrate use is taken into account.
+        _SET_BOTTOM_ODE_(self%id_G2o, K6_sms + self%xno3X*jM3M4n + (self%xno3X-self%xn2X)*jM3G4n)
 
       _HORIZONTAL_LOOP_END_
 
