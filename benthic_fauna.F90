@@ -44,6 +44,7 @@ contains
     character(len=16) :: index
     logical           :: foodispom,food_anaerobic,foodispel
     real(rk)          :: pueYX,pueQX
+    self%dt = 86400._rk
     ! Register parameters
       call self%get_parameter(self%qnYIcX, 'qnYc',  'mmol N/mg C','Maximum nitrogen to carbon ratio')
       call self%get_parameter(self%qpYIcX, 'qpYc',  'mmol P/mg C','Maximum phosphorus to carbon ratio')
