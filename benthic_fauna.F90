@@ -42,7 +42,7 @@ contains
     integer,                                 intent(in)           ::configunit
     integer           :: ifood
     character(len=16) :: index
-    logical           :: foodispom,food_anaerobic,foodispel
+    logical           :: foodispom,food_anaerobic
     real(rk)          :: pueYX,pueQX
     self%dt = 86400._rk
     ! Register parameters
@@ -69,7 +69,7 @@ contains
       call self%get_parameter(self%srYX,   'srY',   '1/d',        'Specific rest respiration at reference temperature')
       call self%get_parameter(self%purYX,  'purY',  '-',          'Respired fraction of uptake')
    
-      call self%add_constituent('c',3000._rk,self%qnYIcX,self%qpYIcX)
+      call self%add_constituent('c',3000._rk,qn=self%qnYIcX,qp=self%qpYIcX)
   
     allocate(self%id_food(self%nfood))
     allocate(self%foodispel(self%nfood))
@@ -87,7 +87,7 @@ contains
          write (index,'(i0)') ifood
          call self%get_parameter(self%foodispel(ifood),'food'//trim(index)//'ispel','','food type '//trim(index)//'is pelagic',default=.false.)
          call self%register_model_dependency(self%id_food(ifood),'food'//trim(index))
-         if (foodispel) then
+         if (self%foodispel(ifood)) then
          call self%register_dependency(self%id_foodpelc(ifood), 'food'//trim(index)//'c','mmol C m-2','Food '//trim(index)//' C') 
          call self%register_dependency(self%id_foodpeln(ifood), 'food'//trim(index)//'n','mmol C m-2','Food '//trim(index)//' N')
          call self%register_dependency(self%id_foodpelp(ifood), 'food'//trim(index)//'p','mmol C m-2','Food '//trim(index)//' P')
@@ -160,7 +160,7 @@ contains
      real(rk) :: Yc,Yn,Yp,O2o,foodP
      real(rk) :: eT,eO,eC,ETW,Y,x
      real(rk) :: rate
-     real(rk) :: SQ6c
+     real(rk) :: SY2c,SY2n,SY2p,SQ6c
      real(rk),dimension(self%nfood) :: foodcP,foodnP,foodpP,foodsP
      real(rk),dimension(self%nfood) :: feed, sflux
      real(rk) :: foodsum,mm
@@ -175,6 +175,7 @@ contains
      _GET_HORIZONTAL_(self%id_c,Yc)
      _GET_(self%id_O2o,O2o)
 
+     _GET_(self%id_ETW,ETW)
 
      Yn = Yc*self%qnYIcX
      Yp = Yc*self%qpYIcX
@@ -231,9 +232,9 @@ contains
    grossfluxn = sflux * foodnP
    grossfluxp = sflux * foodpP
    grossfluxs = sflux * foodsP
-   netfluxc = grossfluxc * (1._rk -             self%pueYX(ifood))
-   netfluxn = grossfluxn * (1._rk - self%pudilX*self%pueYX(ifood))
-   netfluxp = grossfluxp * (1._rk - self%pudilX*self%pueYX(ifood))
+   netfluxc = grossfluxc * (1._rk -             self%pueYX)
+   netfluxn = grossfluxn * (1._rk - self%pudilX*self%pueYX)
+   netfluxp = grossfluxp * (1._rk - self%pudilX*self%pueYX)
 
    do ifood=1,self%nfood
       if (self%foodispel(ifood)) then
@@ -251,8 +252,10 @@ contains
    
    fBTYc = sum(grossfluxc)
    nfBTYc= sum(netfluxc)
-   
-   _SET_BOTTOM_ODE_(self%id_c,nfBTYc)
+
+   SY2c = nfBTYc
+   SY2n = sum(netfluxn)
+   SY2p = sum(netfluxp)
    _SET_BOTTOM_ODE_(self%id_Q6c,fBTYc - nfBTYc)
    _SET_BOTTOM_ODE_(self%id_Q6n,sum(grossfluxn) - sum(netfluxn))
    _SET_BOTTOM_ODE_(self%id_Q6p,sum(grossfluxp) - sum(netfluxp))
@@ -262,7 +265,7 @@ contains
 
    fYG3c = self%srYX * Yc * eT + self%purYX * nfBTYc
    
-   _SET_BOTTOM_ODE_(self%id_c,-fYG3c)
+   SY2c = SY2c-fYG3c
    _SET_BOTTOM_ODE_(self%id_G3c, fYG3c/CMass)
    _SET_BOTTOM_ODE_(self%id_G2o,-fYG3c/CMass)
 
@@ -279,9 +282,14 @@ contains
    _SET_BOTTOM_ODE_(self%id_Q6p,mortflux * Yp)
 
    ! Adjust fixed nutrients
-   call Adjust_fixed_nutrients(Yc,Yn,Yp,self%qnYIcX,self%qpYIcX,excn,excp,SQ6c)
+   excn = 0.0_rk
+   excp = 0.0_rk
+   SQ6c = 0.0_rk
+   call Adjust_fixed_nutrients(SY2c,SY2n,SY2p,self%qnYIcX,self%qpYIcX,excn,excp,SQ6c)
 
-    p_an = (sum(self%pu_anX*grossfluxc))/max(fBTYc,1.e-8_rk)
+   _SET_BOTTOM_ODE_(self%id_c,SY2c)
+
+   p_an = (sum(self%pu_anX*grossfluxc))/max(fBTYc,1.e-8_rk)
 
    _SET_BOTTOM_ODE_(self%id_K4n,(1._rk-p_an) * excn)
    _SET_BOTTOM_ODE_(self%id_K4n2,p_an * excn)
