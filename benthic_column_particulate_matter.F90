@@ -172,7 +172,7 @@ contains
       layer_content_calculator%surface_boundary_type  = self%surface_boundary_type
       layer_content_calculator%bottom_boundary_type   = self%bottom_boundary_type
       layer_content_calculator%surface_boundary_depth = self%surface_boundary_depth
-      layer_content_calculator%bottom_boundary_depth  = self%surface_boundary_depth
+      layer_content_calculator%bottom_boundary_depth  = self%bottom_boundary_depth
       if (layer_content_calculator%surface_boundary_type==1) then
          ! Dynamic top boundary
          call layer_content_calculator%register_dependency(layer_content_calculator%id_surface_boundary_depth,'surface_boundary_depth','m','surface boundary depth')
