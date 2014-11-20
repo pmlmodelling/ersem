@@ -200,6 +200,7 @@ contains
     !!!Need to get organic matter from certain horizons
 
     !Get food concentrations !!!!!Benthic and PELAGIC!
+
     do ifood=1,self%nfood
        if (self%foodispel(ifood)) then
        _GET_(self%id_foodpelc(ifood),foodcP(ifood))
@@ -226,7 +227,6 @@ contains
     end if
 
    ! Food uptake fluxes
-
    grossfluxc = sflux * foodcP
    grossfluxn = sflux * foodnP
    grossfluxp = sflux * foodpP
