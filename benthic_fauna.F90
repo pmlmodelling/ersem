@@ -19,6 +19,7 @@ module ersem_benthic_fauna
   type (type_horizontal_dependency_id), allocatable,dimension(:) :: id_foodc,id_foodn,id_foodp,id_foods
   type (type_dependency_id), allocatable,dimension(:) :: id_foodpelc,id_foodpeln,id_foodpelp,id_foodpels
   type (type_dependency_id) :: id_ETW
+  type (type_horizontal_diagnostic_variable_id) :: id_bioirr,id_biotur
   type (type_model_id),allocatable,dimension(:) :: id_food
      integer  :: nfood    
      real(rk) :: qnYIcX,qpYIcX
@@ -31,6 +32,7 @@ module ersem_benthic_fauna
      real(rk) :: pudilX
      real(rk) :: sdYX,sdmO2YX,sdcYX,xdcYX
      real(rk) :: srYX,purYX
+     real(rk) :: pturYX,pirrYX
   contains
      procedure :: initialize
      procedure :: do_bottom
@@ -149,7 +151,15 @@ contains
       call self%register_state_dependency(self%id_K4n2,'K4n2','mmol N/m^2','benthic ammonium in 2nd layer')
       call self%register_state_dependency(self%id_K1p,'K1p','mmol P/m^2','benthic phosphate in 1st layer')
       call self%register_state_dependency(self%id_K4n,'K4n','mmol N/m^2','benthic ammonium in 1st layer')
- 
+
+    ! Get contribution for bioturbation and bioirrigation
+      call self%get_parameter(self%pturYX, 'pturY','-','Relative contribution to bioturbation')
+      call self%get_parameter(self%pirrYX, 'pirrY','-','Relative controbution to bioirrigation')
+      call self%register_diagnostic_variable(self%id_biotur,'biotur','','bioturbation activity',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_bioirr,'bioirr','','bioirrigation activity',output=output_time_step_averaged)
+      call self%add_to_aggregate_variable(bioturbation_activity, self%id_biotur)
+      call self%add_to_aggregate_variable(bioirrigation_activity, self%id_bioirr) 
+
   end subroutine
 
   subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
@@ -261,7 +271,10 @@ contains
    _SET_BOTTOM_ODE_(self%id_Q6p,sum(grossfluxp) - sum(netfluxp))
    _SET_BOTTOM_ODE_(self%id_Q6s,sum(grossfluxs))
 
-   ! Respiration fluxes = activity respiration + basal respiration
+  _SET_HORIZONTAL_DIAGNOSTIC_(self%id_biotur,self%pturYX * fBTYc)
+  _SET_HORIZONTAL_DIAGNOSTIC_(self%id_bioirr, self%pirrYX * fBTYc) 
+
+  ! Respiration fluxes = activity respiration + basal respiration
 
    fYG3c = self%srYX * Yc * eT + self%purYX * nfBTYc
    

@@ -32,5 +32,7 @@ module ersem_shared
    type (type_horizontal_standard_variable),parameter :: depth_of_bottom_interface_of_layer_1 = type_horizontal_standard_variable(name='depth_of_bottom_interface_of_layer_1',units='m')
    type (type_horizontal_standard_variable),parameter :: depth_of_bottom_interface_of_layer_2 = type_horizontal_standard_variable(name='depth_of_bottom_interface_of_layer_2',units='m')
    type (type_horizontal_standard_variable),parameter :: pelagic_benthic_transfer_constant = type_horizontal_standard_variable(name='pelagic_benthic_transfer_constant',units='d/m')
+   type (type_bulk_standard_variable),parameter :: bioturbation_activity = type_bulk_standard_variable(name='bioturbation_activity',units='-',aggregate_variable=.true.)
+   type (type_bulk_standard_variable),parameter :: bioirrigation_activity = type_bulk_standard_variable(name='bioirrigation_activity',units='-',aggregate_variable=.true.)
 
 end module
