@@ -179,7 +179,7 @@ contains
      real(rk) :: mort_act,mort_ox,mort_cold,mortflux
      integer  :: ifood,istate
      real(rk) :: fBTYc,nfBTYc,fYG3c,p_an,excn,excp
-     
+
      _HORIZONTAL_LOOP_BEGIN_
 
      _GET_HORIZONTAL_(self%id_c,Yc)
@@ -195,10 +195,10 @@ contains
 
      ! Calculate oxygen limitation factor
      eO = (O2o-self%rlO2YX)**3/((O2o-self%rlO2YX)**3+(self%hO2YX-self%rlO2YX)**3)
-     
+
      ! Calculate overcrowding limitation factor
      Y = Yc - self%xclYX
-     if ( Y .gt. 0._rk ) then
+     if (Y>0._rk) then
        x = Y * Y/(Y+self%xcsYX)
        eC = 1._rk - x/(x+self%xchYX)
      else
@@ -226,12 +226,15 @@ contains
        end if
     end do
 
+    ! Prey carbon was returned in mmol (due to units of standard_variables%total_carbon); convert to mg
+    foodcP = foodcP*CMass
+
     ! Food Partition
     feed = self%pufood * (self%pufood * foodcP/(self%pufood * foodcP + self%luYX))
     foodsum = sum(feed * foodcP)
     mm = foodsum + self%huYX
 
-    if (foodsum .gt. 0._rk) then
+    if (foodsum>0._rk) then
      sflux = rate * feed / mm
       else
      sflux = 0._rk
@@ -259,7 +262,7 @@ contains
        end do
       end if 
    end do
-   
+
    fBTYc = sum(grossfluxc)
    nfBTYc= sum(netfluxc)
 
@@ -277,7 +280,7 @@ contains
   ! Respiration fluxes = activity respiration + basal respiration
 
    fYG3c = self%srYX * Yc * eT + self%purYX * nfBTYc
-   
+
    SY2c = SY2c-fYG3c
    _SET_BOTTOM_ODE_(self%id_G3c, fYG3c/CMass)
    _SET_BOTTOM_ODE_(self%id_G2o,-fYG3c/CMass)
