@@ -11,7 +11,7 @@ module ersem_benthic_nitrogen_cycle
 
    ! Model for nitrogen cycle
    type,extends(type_base_model),public :: type_ersem_benthic_nitrogen_cycle
-      type (type_bottom_state_variable_id) :: id_K3n,id_K4n,id_G2o,id_K3n2,id_K4n2,id_G4n
+      type (type_bottom_state_variable_id) :: id_K3n,id_K4n,id_G2o,id_K3n2,id_K4n2,id_G2o2,id_G4n
       type (type_state_variable_id)        :: id_N4n
       type (type_dependency_id)            :: id_ETW,id_phx
       type (type_horizontal_dependency_id) :: id_D1m,id_K6_sms,id_layer2_thickness
@@ -65,6 +65,7 @@ contains
 
       call self%register_state_dependency(self%id_K3n2,'K3n2','mmol N/m^2','benthic nitrate in 2nd layer')
       call self%register_state_dependency(self%id_K4n2,'K4n2','mmol N/m^2','benthic ammonium in 2nd layer')
+      call self%register_state_dependency(self%id_G2o2,'G2o2','mmol/m^2',  'oxygen in 2nd layer')
       call self%register_dependency(self%id_layer2_thickness,'layer2_thickness','m','thickness of 2nd layer')
 
       ! Create a child model that provides a K6 diagnostic. Other models (e.g., anaerobic bacteria) can attach to that to provide it with sink/source terms.
@@ -150,7 +151,7 @@ contains
         _SET_BOTTOM_ODE_(self%id_G4n, jM3G4n)
 
         ! Oxygen dynamics: use oxygen to fuel demand for reduction equivalents after nitrate use is taken into account.
-        _SET_BOTTOM_ODE_(self%id_G2o, K6_sms + self%xno3X*jM3M4n + (self%xno3X-self%xn2X)*jM3G4n)
+        _SET_BOTTOM_ODE_(self%id_G2o2, K6_sms + self%xno3X*jM3M4n + (self%xno3X-self%xn2X)*jM3G4n)
 
       _HORIZONTAL_LOOP_END_
 
