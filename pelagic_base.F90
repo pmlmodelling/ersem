@@ -177,69 +177,87 @@ contains
       class (type_ersem_pelagic_base), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
+      ! Bed characteristics - from Puls and Sundermann 1990
+      ! Critical bed shear velocity = 0.01 m/s
+      real(rk) :: tdep = 0.01_rk**2
+
       real(rk) :: tbed,density
-      real(rk) :: tdep,fac,sdrate
-      real(rk) :: Pc,Pn,Pp,Ps
+      real(rk) :: fac,sdrate
+      real(rk) :: Pc,Pn,Pp,P
       real(rk) :: fsd,fsdc,fsdn,fsdp,fsds
 
       if (.not.self%sedimentation) return
 
       _HORIZONTAL_LOOP_BEGIN_
 
+         ! Retrieve sinking rate (at centre of cell closest to the bottom)
+         fsd = self%get_sinking_rate(_ARGUMENTS_LOCAL_)
+
+         ! Retrieve bed stress and local density - needed to determine sedimentation rate from sinking rate.
          _GET_HORIZONTAL_(self%id_bedstress,tbed)
          _GET_(self%id_dens,density)
+
+         ! Divide actual bed stress (Pa) by density (kg m-3) to obtain square of bed shear velocity.
+         tbed = tbed/density
+
+         if(tbed<tdep) then
+            ! Bed stress is low enough to allow some sedimentation.
+            fac=1._rk-tbed/tdep
+         else
+            ! Bed stress is too high - no actual sedimentation.
+            fac=0._rk
+         endif
+
+         !sdrate = min(fsd*fac,pdepth(I)/timestep) ! Jorn: CFL criterion disabled because FABM does not provide timestep
+         sdrate = fsd*fac
 
          Pc = 0.0_rk
          Pn = 0.0_rk
          Pp = 0.0_rk
-         Ps = 0.0_rk
          if (_AVAILABLE_(self%id_c)) _GET_(self%id_c,Pc)
          if (_AVAILABLE_(self%id_n)) _GET_(self%id_n,Pn)
          if (_AVAILABLE_(self%id_p)) _GET_(self%id_p,Pp)
-         if (_AVAILABLE_(self%id_s)) _GET_(self%id_s,Ps)
 
-         fsd = self%get_sinking_rate(_ARGUMENTS_LOCAL_)
+         fsdc = sdrate*Pc
+         fsdn = sdrate*Pn
+         fsdp = sdrate*Pp
 
-         ! Divide actual stress (Pa) by density (kg m-3) to obtain square of bed shear velocity.
-         tbed = tbed/density
-!
-!     Bed characteristics - from Puls and Sundermann 1990
-!     Critical bed shear velocity = 0.01 m/s
-!
-      tdep=0.01_rk**2
-!
-     if(tbed .lt. tdep) then
-       fac=1._rk-tbed/tdep
-     else
-       fac=0._rk
-     endif
-!
-      !sdrate = min(fsd*fac,pdepth(I)/timestep) ! Jorn: CFL criterion disabled because FABM does not provide timestep
-      sdrate = fsd*fac
-!
-      fsdc = sdrate*Pc
-      fsdn = sdrate*Pn
-      fsdp = sdrate*Pp
-      fsds = sdrate*Ps
+         _SET_BOTTOM_ODE_(self%id_Q6c, fsdc * (1._rk - self%qQ1c - self%qQ7c))
+         _SET_BOTTOM_ODE_(self%id_Q6n, fsdn * (1._rk - MIN(1._rk, self%qQ1c * self%xR1nX) - MIN(1._rk, self%qQ7c * self%xR7nX)))
+         _SET_BOTTOM_ODE_(self%id_Q6p, fsdp * (1._rk - MIN(1._rk, self%qQ1c * self%xR1pX) - MIN(1._rk, self%qQ7c * self%xR7pX)))
+      
+         _SET_BOTTOM_ODE_(self%id_Q1c, fsdc * self%qQ1c)
+         _SET_BOTTOM_ODE_(self%id_Q1n, fsdn * MIN(1._rk, self%qQ1c * self%xR1nX))
+         _SET_BOTTOM_ODE_(self%id_Q1p, fsdp * MIN(1._rk, self%qQ1c * self%xR1pX))
+      
+         _SET_BOTTOM_ODE_(self%id_Q7c, fsdc * self%qQ7c)
+         _SET_BOTTOM_ODE_(self%id_Q7n, fsdn * MIN(1._rk, self%qQ7c * self%xR7nX))
+         _SET_BOTTOM_ODE_(self%id_Q7p, fsdp * MIN(1._rk, self%qQ7c * self%xR7pX))
+      
+         _SET_BOTTOM_EXCHANGE_(self%id_c,-fsdc)
+         _SET_BOTTOM_EXCHANGE_(self%id_n,-fsdn)
+         _SET_BOTTOM_EXCHANGE_(self%id_p,-fsdp)
 
-      _SET_BOTTOM_ODE_(self%id_Q6c, fsdc * (1._rk - self%qQ1c - self%qQ7c))
-      _SET_BOTTOM_ODE_(self%id_Q6n, fsdn * (1._rk - MIN(1._rk, self%qQ1c * self%xR1nX) - MIN(1._rk, self%qQ7c * self%xR7nX)))
-      _SET_BOTTOM_ODE_(self%id_Q6p, fsdp * (1._rk - MIN(1._rk, self%qQ1c * self%xR1pX) - MIN(1._rk, self%qQ7c * self%xR7pX)))
-      _SET_BOTTOM_ODE_(self%id_Q6s, fsds)
-      
-      _SET_BOTTOM_ODE_(self%id_Q1c, fsdc * self%qQ1c)
-      _SET_BOTTOM_ODE_(self%id_Q1n, fsdn * MIN(1._rk, self%qQ1c * self%xR1nX))
-      _SET_BOTTOM_ODE_(self%id_Q1p, fsdp * MIN(1._rk, self%qQ1c * self%xR1pX))
-      
-      _SET_BOTTOM_ODE_(self%id_Q7c, fsdc * self%qQ7c)
-      _SET_BOTTOM_ODE_(self%id_Q7n, fsdn * MIN(1._rk, self%qQ7c * self%xR7nX))
-      _SET_BOTTOM_ODE_(self%id_Q7p, fsdp * MIN(1._rk, self%qQ7c * self%xR7pX))
-      
-      _SET_BOTTOM_EXCHANGE_(self%id_c,-fsdc)
-      _SET_BOTTOM_EXCHANGE_(self%id_n,-fsdn)
-      _SET_BOTTOM_EXCHANGE_(self%id_p,-fsdp)
-      if (_AVAILABLE_(self%id_s)) _SET_BOTTOM_EXCHANGE_(self%id_s,-fsds)
-      
+         if (_AVAILABLE_(self%id_s)) then
+            ! All silicate sinks into Q6f
+            _GET_(self%id_s,P)
+            _SET_BOTTOM_ODE_(self%id_Q6s,sdrate*P)
+            _SET_BOTTOM_EXCHANGE_(self%id_s,-sdrate*P)
+         end if
+
+         if (_AVAILABLE_(self%id_f)) then
+            ! All iron sinks into Q6f
+            _GET_(self%id_f,P)
+            _SET_BOTTOM_ODE_(self%id_Q6f,sdrate*P)
+            _SET_BOTTOM_EXCHANGE_(self%id_f,-sdrate*P)
+         end if
+
+         if (_AVAILABLE_(self%id_chl)) then
+            ! Chlorophyll is simply lost by sinking:
+            _GET_(self%id_chl,P)
+            _SET_BOTTOM_EXCHANGE_(self%id_chl,-sdrate*P)
+         end if
+
       _HORIZONTAL_LOOP_END_
    end subroutine
    
