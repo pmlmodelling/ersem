@@ -113,6 +113,24 @@ contains
       call profile%request_coupling(profile%id_Dtot,'Dtot')
       call profile%request_coupling(profile%id_poro,'poro')
       call profile%request_coupling(profile%id_tot,composition)
+      select case (composition)
+         case ('c')
+            call profile%add_to_aggregate_variable(standard_variables%total_carbon,profile%id_layers(1))
+            call profile%add_to_aggregate_variable(standard_variables%total_carbon,profile%id_layers(2))
+            call profile%add_to_aggregate_variable(standard_variables%total_carbon,profile%id_layers(3))
+         case ('n'); long_name = 'nitrogen'
+            call profile%add_to_aggregate_variable(standard_variables%total_nitrogen,profile%id_layers(1))
+            call profile%add_to_aggregate_variable(standard_variables%total_nitrogen,profile%id_layers(2))
+            call profile%add_to_aggregate_variable(standard_variables%total_nitrogen,profile%id_layers(3))
+         case ('p'); long_name = 'phosphorus'
+            call profile%add_to_aggregate_variable(standard_variables%total_phosphorus,profile%id_layers(1))
+            call profile%add_to_aggregate_variable(standard_variables%total_phosphorus,profile%id_layers(2))
+            call profile%add_to_aggregate_variable(standard_variables%total_phosphorus,profile%id_layers(3))
+         case ('s'); long_name = 'silicate'
+            call profile%add_to_aggregate_variable(standard_variables%total_silicate,profile%id_layers(1))
+            call profile%add_to_aggregate_variable(standard_variables%total_silicate,profile%id_layers(2))
+            call profile%add_to_aggregate_variable(standard_variables%total_silicate,profile%id_layers(3))
+      end select
 
       ! Couple to layer-specific "sinks minus sources".
       call self%register_dependency(self%id_sms(1),'sms_l1','mmol/m^2/s',trim(long_name)//' sinks-sources in layer 1')

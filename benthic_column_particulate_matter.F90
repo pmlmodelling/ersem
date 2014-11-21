@@ -57,12 +57,17 @@ module ersem_benthic_column_particulate_matter
    end type
 
    ! Module for particulate organic matter within a single, user-specified depth interval.
+   ! Supports remineralization, in which case the model must be coupled to sinks for each remineralized constituent.
    type,extends(type_particle_model),public :: type_ersem_benthic_pom_layer
       type (type_bottom_state_variable_id) :: id_c_int,id_n_int,id_p_int,id_s_int
       type (type_bottom_state_variable_id) :: id_pen_depth_c,id_pen_depth_n,id_pen_depth_p,id_pen_depth_s
       type (type_horizontal_dependency_id) :: id_c_sms,id_n_sms,id_p_sms,id_s_sms
+      type (type_bottom_state_variable_id) :: id_c_remin_target,id_n_remin_target,id_p_remin_target,id_s_remin_target
+      type (type_horizontal_dependency_id) :: id_c_local,id_n_local,id_p_local,id_s_local
 
       type (type_model_id) :: id_Q
+
+      real(rk) :: remin
 
       ! Layer extents
       integer :: surface_boundary_type   ! 0: constant depth, 1: dynamic depth from variable (e.g., depth of oxygenated layer)
@@ -128,7 +133,10 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
+      self%dt = 86400._rk
+
       call self%get_parameter(composition,'composition', '','elemental composition',default='cnp')
+      call self%get_parameter(self%remin,'remin','d-1','remineralization rate',default=0.0_rk)
       call self%get_parameter(self%surface_boundary_type,'surface_boundary_type','','surface boundary type (0: constant depth, 1: variable depth)',default=0)
       call self%get_parameter(self%bottom_boundary_type, 'bottom_boundary_type', '','bottom boundary type (0: constant depth, 1: variable depth)', default=0)
       if (self%surface_boundary_type==0) then
@@ -143,18 +151,18 @@ contains
       end if
 
       call self%register_model_dependency(self%id_Q,'Q')
-      if (index(composition,'c')/=0) call layer_add_constituent(self,'c','mg C','carbon',    self%id_c_int,self%id_pen_depth_c,self%id_c_sms)
-      if (index(composition,'n')/=0) call layer_add_constituent(self,'n','mmol','nitrogen',  self%id_n_int,self%id_pen_depth_n,self%id_n_sms)
-      if (index(composition,'p')/=0) call layer_add_constituent(self,'p','mmol','phosphorus',self%id_p_int,self%id_pen_depth_p,self%id_p_sms)
-      if (index(composition,'s')/=0) call layer_add_constituent(self,'s','mmol','silicate',  self%id_s_int,self%id_pen_depth_s,self%id_s_sms)
+      if (index(composition,'c')/=0) call layer_add_constituent(self,'c','mg C','carbon',    self%id_c_int,self%id_pen_depth_c,self%id_c_sms,self%id_c_local,self%id_c_remin_target)
+      if (index(composition,'n')/=0) call layer_add_constituent(self,'n','mmol','nitrogen',  self%id_n_int,self%id_pen_depth_n,self%id_n_sms,self%id_n_local,self%id_n_remin_target)
+      if (index(composition,'p')/=0) call layer_add_constituent(self,'p','mmol','phosphorus',self%id_p_int,self%id_pen_depth_p,self%id_p_sms,self%id_p_local,self%id_p_remin_target)
+      if (index(composition,'s')/=0) call layer_add_constituent(self,'s','mmol','silicate',  self%id_s_int,self%id_pen_depth_s,self%id_s_sms,self%id_s_local,self%id_s_remin_target)
 
    end subroutine layer_initialize
 
-   subroutine layer_add_constituent(self,name,units,long_name,id_c_int,id_pen_depth,id_sms)
+   subroutine layer_add_constituent(self,name,units,long_name,id_c_int,id_pen_depth,id_sms,id_local,id_remin_target)
       class (type_ersem_benthic_pom_layer), intent(inout),target :: self
       character(len=*),                     intent(in)           :: name,units,long_name
-      type (type_bottom_state_variable_id), intent(inout),target :: id_c_int,id_pen_depth
-      type (type_horizontal_dependency_id), intent(inout),target :: id_sms
+      type (type_bottom_state_variable_id), intent(inout),target :: id_c_int,id_pen_depth,id_remin_target
+      type (type_horizontal_dependency_id), intent(inout),target :: id_sms,id_local
 
       class (type_layer_content_calculator),pointer :: layer_content_calculator
 
@@ -204,6 +212,19 @@ contains
       ! Create an alias in the master model for the layer-integrated density computed by layer_content_calculator.
       call self%add_horizontal_variable(name,trim(units)//'m^2','layer-integrated '//trim(long_name),domain=domain_bottom,act_as_state_variable=.true.)
       call self%request_coupling(name,'content_calculator_'//trim(name)//'/c')
+
+      ! Register a dependency on the diagnostic that holds the layer-integrated density.
+      ! This will be used to compute remineralization
+      call self%register_dependency(id_local,trim(name)//'_local',trim(units)//'m^2','layer-integrated '//trim(long_name))
+      call self%request_coupling(id_local,'content_calculator_'//trim(name)//'/c')
+      if (self%remin/=0.0_rk) call self%register_state_dependency(id_remin_target,trim(name)//'_remin_target',trim(units)//'m^2','sink for remineralized '//trim(long_name))
+
+      select case (name)
+         case ('c'); call layer_content_calculator%add_to_aggregate_variable(standard_variables%total_carbon,layer_content_calculator%id_c,1.0_rk/CMass)
+         case ('n'); call layer_content_calculator%add_to_aggregate_variable(standard_variables%total_nitrogen,layer_content_calculator%id_c)
+         case ('p'); call layer_content_calculator%add_to_aggregate_variable(standard_variables%total_phosphorus,layer_content_calculator%id_c)
+         case ('s'); call layer_content_calculator%add_to_aggregate_variable(standard_variables%total_silicate,layer_content_calculator%id_c)
+      end select
    end subroutine layer_add_constituent
 
    subroutine layer_do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
@@ -237,21 +258,22 @@ contains
          d_sms = (d_top+d_bot)/2
 
          ! For each constituent: contribute to depth-integrated sink-source terms, contribute to change in penetration depth.
-         if (_VARIABLE_REGISTERED_(self%id_c_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,self%id_c_int,self%id_pen_depth_c,self%id_c_sms)
-         if (_VARIABLE_REGISTERED_(self%id_n_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,self%id_n_int,self%id_pen_depth_n,self%id_n_sms)
-         if (_VARIABLE_REGISTERED_(self%id_p_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,self%id_p_int,self%id_pen_depth_p,self%id_p_sms)
-         if (_VARIABLE_REGISTERED_(self%id_s_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,self%id_s_int,self%id_pen_depth_s,self%id_s_sms)
+         if (_VARIABLE_REGISTERED_(self%id_c_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,self%id_c_int,self%id_pen_depth_c,self%id_c_sms,self%id_c_local,self%id_c_remin_target)
+         if (_VARIABLE_REGISTERED_(self%id_n_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,self%id_n_int,self%id_pen_depth_n,self%id_n_sms,self%id_n_local,self%id_n_remin_target)
+         if (_VARIABLE_REGISTERED_(self%id_p_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,self%id_p_int,self%id_pen_depth_p,self%id_p_sms,self%id_p_local,self%id_p_remin_target)
+         if (_VARIABLE_REGISTERED_(self%id_s_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,self%id_s_int,self%id_pen_depth_s,self%id_s_sms,self%id_s_local,self%id_s_remin_target)
       _HORIZONTAL_LOOP_END_
    end subroutine layer_do_bottom
 
-   subroutine layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,id_c_int,id_pen_depth,id_sms)
+   subroutine layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,id_c_int,id_pen_depth,id_sms,id_local,id_remin_target)
       class (type_ersem_benthic_pom_layer), intent(in) :: self
       _DECLARE_ARGUMENTS_LOCAL_
-      type (type_bottom_state_variable_id),intent(in) :: id_c_int,id_pen_depth
-      type (type_horizontal_dependency_id),intent(in) :: id_sms
+      type (type_bottom_state_variable_id),intent(in) :: id_c_int,id_pen_depth,id_remin_target
+      type (type_horizontal_dependency_id),intent(in) :: id_sms,id_local
       real(rk),                            intent(in) :: d_sms
 
       real(rk) :: c_int,d_pen,sms
+      real(rk) :: c_int_local,sms_remin
 
       ! Change in penetration depth can be derived by considering that the current penetration depth (d_pen)
       ! and mass density (c_int) are perturbed by addition of mass (delta_c) at some known depth (d_sms)
@@ -265,6 +287,17 @@ contains
       _GET_HORIZONTAL_(id_c_int,c_int)
       _GET_HORIZONTAL_(id_pen_depth,d_pen)
       _GET_HORIZONTAL_(id_sms,sms)
+
+      ! Convert sources-sinks in per second, as returned by FABM, to our own time unit.
+      sms = sms*self%dt
+
+      ! Add local remineralization
+      if (self%remin/=0.0_rk) then
+         _GET_HORIZONTAL_(id_c_int,c_int_local)
+         sms_remin = self%remin*c_int_local
+         _SET_BOTTOM_ODE_(id_remin_target,sms_remin)
+         sms = sms - sms_remin
+      end if
 
       ! Apply sinks-sources to depth-integrated mass, compute change in penetration depth.
       _SET_BOTTOM_ODE_(id_c_int,sms)
