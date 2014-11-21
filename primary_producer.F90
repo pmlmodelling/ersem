@@ -441,8 +441,8 @@ contains
 
          ! Chl changes (note that Chl is a component of PXc and not involved
          ! in mass balance)
-         Chl_inc = rho*(sumP1-sraP1)*P1c
-         Chl_loss = (sdoP1+srsP1)*Chl1P + (seoP1+seaP1)*Chl1
+         Chl_inc = rho*(sumP1-sraP1-seoP1-seaP1)*P1c 
+         Chl_loss = (sdoP1+srsP1)*Chl1P 
 
          _SET_ODE_(self%id_c,(fO3P1c-fP1O3c-fP1R6c-fP1RDc))
 
