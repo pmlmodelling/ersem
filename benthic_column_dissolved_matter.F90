@@ -263,53 +263,52 @@ contains
       _HORIZONTAL_LOOP_END_
    end subroutine benthic_dissolved_matter_do_bottom
 
-   subroutine compute_equilibrium_profile(D,sigma,c0,P,flux_bot,c_bot,c_int)
-      real(rk),intent(in)  :: D,sigma,c0,P,flux_bot
-      real(rk),intent(out) :: c_bot,c_int
+   subroutine compute_equilibrium_profile(D,sigma,C0,P,P_deep,C_bot,C_int)
+      real(rk),intent(in)  :: D,sigma,c0,P,P_deep
+      real(rk),intent(out) :: C_bot,C_int
       real(rk) :: a,b,c
       ! ----------------------------------------------------------------------------------------------------
       ! Determine equilibrium concentration profile in pore water from:
       ! - D:        layer thickness (m)
       ! - sigma:    diffusivity (m2/d)
-      ! - c0:       concentration at layer surface (#/m3)
-      ! - P:        layer-integrated source-sink terms (#/m2/d)
-      ! - flux_bot: bottom flux (#/m2/d)
+      ! - C0:       concentration at layer surface (#/m3)
+      ! - P:        layer-integrated source-sink terms of current layer (#/m2/d)
+      ! - P_deep:   depth-integrated source-sink terms of deeper layers (#/m2/d) [must equal -bottom flux at equilibrium]
       ! Returns:
-      ! - c_bot:    equilibrium concentration at bottom interface (#/m3)
-      ! - c_int:    depth integral of concentration (#/m2)
+      ! - C_bot:    equilibrium concentration at bottom interface (#/m3)
+      ! - C_int:    depth-integrated concentration in current layer (#/m2)
       ! ----------------------------------------------------------------------------------------------------
-      ! Governing equation: dy/dt = sigma d2y/dz2 + sms
-      ! Assumption: diffusivity sigma and sources-minus-sinks sms are independent of z within the layer.
-      ! Thus, sms can be written as layer integrated source-sink terms, divided by layer height: sms = P/D
-      ! At equilibrium: sigma d^2y/dz^2 + P/D = 0
-      ! Thus, d^2y/dz^2 = -P/D/sigma
-      ! Solution is a quadratic equation: c(z) = a z^2 + b z + c
-      ! From second derivative: d^2y/dz^2 = 2a = -P/D/sigma. Thus, a = -P/D/sigma/2.
+      ! Governing equation: $\partial C/\partial t = sigma \partial^2 C/\partial z^2 + sms$
+      ! Assumption: diffusivity $\sigma$ and sources-minus-sinks $sms$ are independent of $z$ within the layer.
+      ! Thus, $sms$ can be written as layer integrated source-sink terms, divided by layer height: $sms = P/D$
+      ! At equilibrium: $\sigma \partial^2 C/\partial z^2 + P/D = 0$
+      ! Thus, \partial^2 C/\partial z^2 = -P/D/\sigma
+      ! Solution is a quadratic equation: $C(z) = a z^2 + b z + c$
+      ! From second derivative: $\partial^2 C/\partial z^2 = 2a = -P/D/\sigma$. Thus, $a = -P/D/\sigma/2$.
       ! ----------------------------------------------------------------------------------------------------
-      ! c(z) = -P/D/sigma/2 z^2 + b z + c
+      ! C(z) = -P/D/\sigma/2 z^2 + b z + c
       !
-      ! Lets adopt a bottom-to-top coordinate system, with the bottom interface at z=0 and the top interface at z=D.
+      ! Constraint 1: inward flux at top interface must balance depth-integrated sinks-sources in deeper
+      ! layers: $-P-P_deep$. For consistency, this flux must equal that produced by diffusion at the boundary,
+      ! i.e., $\sigma*\partial C/\partial z$. Note: gradient must be positive when deeper layers are a source
+      ! (i.e., P+P_deep>0). Thus:
+      !    \sigma*\partial C/\partial z(0) = \sigma*b = P+P_deep -> b = (P+P_deep)/\sigma
       !
-      ! Constraint 1: flux over bottom interface is known: flux_bot
-      ! (typically chosen to balance demand depth-integrated sinks-sources in deeper layers)
-      ! For consistency, this flux must equal that produced by diffusion at the boundary, i.e., sigma*dy/dz
-      ! Note: gradient (bottom to top!) must be positive when deeper layers are a sink (i.e., sms_int_deep<0)
-      ! sigma*dy/dz(0) = sigma*b = -flux_bot -> b = -flux_bot/sigma
+      ! Constraint 2: concentration at top interface is know C(0) = c = C0 is known.
       !
-      ! Constraint 2: top concentration c(D)=c0 is known.
-      ! c(D) = -P/sigma/2 D - flux_bot/sigma D + c = c0
-      ! -> c = c0 + (P/2 + flux_bot)/sigma D
-      ! This is also the concentration at bottom interface: c(0) = c
+      ! The concentration at the bottom equal the value of the parabola at depth D:
+      !    C(D) = a D^2 + b D + c
       !
       ! Depth-integrated layer contents is found by integrating the parabola between 0 and D:
-      !    \int{a * z^2 + b z + c} = [a/3 z^3 + b/2 z^2 + c z]_0^D = a/3 D^3 + b/2 D^2 + c Z
+      !    \int_0^D C(z) dz = \int_0^D a * z^2 + b z + c dz
+      !                     = [a/3 z^3 + b/2 z^2 + c z]_0^D
+      !                     = a/3 D^3 + b/2 D^2 + c Z
       ! ----------------------------------------------------------------------------------------------------
       a = -P/D/sigma/2
-      b = -flux_bot/sigma
-      c = c0 + D*(P/2 + flux_bot)/sigma
-
-      c_bot = c
-      c_int = (a/3*D*D + b/2*D + c)*D
+      b = (P+P_deep)/sigma
+      c = C0
+      C_bot = a*D*D + b*D + c
+      C_int = (a/3*D*D + b/2*D + c)*D
    end subroutine compute_equilibrium_profile
 
    subroutine compute_final_equilibrium_profile(sigma,c0,P,Dmax,D,c_int)
@@ -319,34 +318,34 @@ contains
       ! ----------------------------------------------------------------------------------------------------
       ! Determine layer depth and concentration profile in pore water at equilibrium from:
       ! - sigma:    diffusivity (m2/d)
-      ! - c0:       concentration at layer surface (#/m3)
+      ! - C0:       concentration at layer surface (#/m3)
       ! - P:        layer-integrated source-sink terms (#/m2/d)
       ! Constraint: concentration and flux at bottom interface must be zero.
       ! Returns:
       ! - D:        layer thickness (m)
-      ! - c_int:    depth integral of concentration (#/m2)
+      ! - C_int:    depth integral of concentration (#/m2)
       ! ----------------------------------------------------------------------------------------------------
-      ! Governing equation in 1st layer: dy/dt = sigma d2y/dz2 + sms
-      ! Assumption: diffusivity sigma and sink-minus-source sms are independent of z within the layer.
-      ! Thus, sms can be written as layer integral divided by layer height: sms = P/D
-      ! At equilibrium: sigma d^2y/dz^2 + P/D = 0
-      ! Thus, d^2y/dz^2 = -P/D/sigma
-      ! Solution is a quadratic equation: c(z) = a z^2 + b z + c
-      ! From second derivative: d^2y/dz^2 = 2a = -P/D/sigma. Thus, a = -P/D/sigma/2.
+      ! Governing equation: $\partial C/\partial t = sigma \partial^2 C/\partial z^2 + sms$
+      ! Assumption: diffusivity $\sigma$ and sink-minus-source $sms4 are independent of $z$ within the layer.
+      ! Thus, $sms$ can be written as layer integral divided by layer height: $sms = P/D$
+      ! At equilibrium: $\partial^2 C/\partial z^2 + P/D = 0$
+      ! Thus, $\partial^2 C/\partial z^2 = -P/D/sigma$
+      ! Solution is a quadratic equation: C(z) = a z^2 + b z + c
+      ! From second derivative: $\partial^2 C/\partial z^2 = 2a = -P/D/sigma$. Thus, $a = -P/D/sigma/2$.
       ! ----------------------------------------------------------------------------------------------------
       ! Task 1: find layer height
-      !   Bottom-to-top coordinate system, bottom interface at z=0, top interface at z=D
-      !   Bottom constraint: concentration c(0) = 0, flux dy/dz = 0 (i.e., minimum of parabola)
-      !   Thus, b=0 and c=0, and c(z) = -P/D/sigma/2 z^2
-      !   Top constraint: concentration c(D) is known: c0
-      !   Thus c(D) = -P/sigma/2 D = c0 -> layer height D = -2 sigma c0/P
-      !   Note that D>=0 for P<0 only: this solution is valid only if the layer is a sink.
-      !   Also, if the layer is neither sink nor source (P=0), D->infinity. That is,
+      !   Let us adopt a bottom-to-top coordinate system, bottom interface at $z=0$, top interface at $z=D$
+      !   Bottom constraint: concentration $C(0) = 0$, flux $\partial C/\partial z = 0$ (i.e., minimum of parabola)
+      !   Thus, $b=0$ and $c=0$, and $C(z) = -P/D/\sigma/2 z^2$
+      !   Top constraint: concentration $C(D)$ is known: $C(D) = -P/\sigma/2 D = C0$
+      !   -> layer height $D = -2 \sigma C0/P$
+      !   Note that $D>=0$ for $P<0$ only. In other words, this solution is valid only if the layer is a sink.
+      !   Also, if the layer is neither sink nor source ($P=0$), $D->\infty$. That is,
       !   the solution is a flat profile, with surface concentration c0 extending forever downward.
       ! Task 2: compute depth-integrated layer contents:
-      !   \int{-P/D/sigma/2 z^2} = [-P/D/sigma/6 z^3]_0^D = -P/sigma/6 D^2
-      ! Check consistency: flux at top interface is sigma*dy/dz = -P
-      !    [OK: in steady state, surface exchange compensates internal loss]
+      !   \int_0^D -P/D/\sigma/2 z^2 dz = [-P/D/\sigma/6 z^3]_0^D = -P/\sigma/6 D^2
+      ! Consistency check: flux at top interface must balance internal production, since we assume equilibrium.
+      !   \sigma*\partial C/\partial z (D) = -P   [OK]
       ! ----------------------------------------------------------------------------------------------------
       if (Dmax*P>-2*sigma*c0) then   ! Dmax<-2 sigma c0/P, rearranged for P<0 close to 0. Result also picks up P>0.
          ! Loss rate within layer is too low (or layer experiences net production, i.e., P>0).
@@ -355,8 +354,8 @@ contains
          D = Dmax
          call compute_equilibrium_profile(D,sigma,c0,P,0.0_rk,c_bot,c_int)
       else
-         D = -2*sigma*c0/P
-         c_int = -P/sigma/6*D*D
+         D = -2*sigma*C0/P
+         C_int = -P/sigma/6*D*D
       end if
    end subroutine compute_final_equilibrium_profile
 
