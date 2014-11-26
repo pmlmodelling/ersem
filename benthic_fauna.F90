@@ -153,8 +153,8 @@ contains
       call self%register_state_dependency(self%id_K4n,'K4n','mmol N/m^2','benthic ammonium in 1st layer')
 
     ! Get contribution for bioturbation and bioirrigation
-      call self%get_parameter(self%pturYX, 'pturY','-','Relative contribution to bioturbation')
-      call self%get_parameter(self%pirrYX, 'pirrY','-','Relative controbution to bioirrigation')
+      call self%get_parameter(self%pturYX, 'pturY','-','Relative contribution to bioturbation',default=0._rk)
+      call self%get_parameter(self%pirrYX, 'pirrY','-','Relative controbution to bioirrigation',default=0._rk)
       call self%register_diagnostic_variable(self%id_biotur,'biotur','','bioturbation activity',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_bioirr,'bioirr','','bioirrigation activity',output=output_time_step_averaged)
       call self%add_to_aggregate_variable(bioturbation_activity, self%id_biotur)
