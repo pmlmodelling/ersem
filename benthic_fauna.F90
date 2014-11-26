@@ -32,7 +32,7 @@ module ersem_benthic_fauna
      real(rk) :: pudilX
      real(rk) :: sdYX,sdmO2YX,sdcYX,xdcYX
      real(rk) :: srYX,purYX
-     real(rk) :: pturYX,pirrYX
+     real(rk) :: pturYX,pirrYX, dwatYX
   contains
      procedure :: initialize
      procedure :: do_bottom
@@ -70,7 +70,7 @@ contains
       call self%get_parameter(self%nfood,  'nfood', '',           'Number of food sources',default=0)   
       call self%get_parameter(self%srYX,   'srY',   '1/d',        'Specific rest respiration at reference temperature')
       call self%get_parameter(self%purYX,  'purY',  '-',          'Respired fraction of uptake')
-   
+      call self%get_parameter(self%dwatYX, 'dwatY', '1/m',        'Water layer available for uptake of pelagic food source',default=1._rk) 
       call self%add_constituent('c',3000._rk,qn=self%qnYIcX,qp=self%qpYIcX)
   
     allocate(self%id_food(self%nfood))
@@ -90,10 +90,10 @@ contains
          call self%get_parameter(self%foodispel(ifood),'food'//trim(index)//'ispel','','food type '//trim(index)//'is pelagic',default=.false.)
          call self%register_model_dependency(self%id_food(ifood),'food'//trim(index))
          if (self%foodispel(ifood)) then
-         call self%register_dependency(self%id_foodpelc(ifood), 'food'//trim(index)//'c','mmol C m-2','Food '//trim(index)//' C') 
-         call self%register_dependency(self%id_foodpeln(ifood), 'food'//trim(index)//'n','mmol C m-2','Food '//trim(index)//' N')
-         call self%register_dependency(self%id_foodpelp(ifood), 'food'//trim(index)//'p','mmol C m-2','Food '//trim(index)//' P')
-         call self%register_dependency(self%id_foodpels(ifood), 'food'//trim(index)//'s','mmol C m-2','Food '//trim(index)//' Si')
+         call self%register_dependency(self%id_foodpelc(ifood), 'food'//trim(index)//'c','mmol C m-3','Food '//trim(index)//' C') 
+         call self%register_dependency(self%id_foodpeln(ifood), 'food'//trim(index)//'n','mmol C m-3','Food '//trim(index)//' N')
+         call self%register_dependency(self%id_foodpelp(ifood), 'food'//trim(index)//'p','mmol C m-3','Food '//trim(index)//' P')
+         call self%register_dependency(self%id_foodpels(ifood), 'food'//trim(index)//'s','mmol C m-3','Food '//trim(index)//' Si')
          call self%request_coupling_to_model(self%id_foodpelc(ifood),self%id_food(ifood),standard_variables%total_carbon)
          call self%request_coupling_to_model(self%id_foodpeln(ifood),self%id_food(ifood),standard_variables%total_nitrogen)
          call self%request_coupling_to_model(self%id_foodpelp(ifood),self%id_food(ifood),standard_variables%total_phosphorus)
@@ -172,7 +172,7 @@ contains
      real(rk) :: rate
      real(rk) :: SY2c,SY2n,SY2p,SQ6c
      real(rk),dimension(self%nfood) :: foodcP,foodnP,foodpP,foodsP
-     real(rk),dimension(self%nfood) :: feed, sflux
+     real(rk),dimension(self%nfood) :: feed, sflux, prefcorr
      real(rk) :: foodsum,mm
      real(rk),dimension(self%nfood) :: grossfluxc,grossfluxn,grossfluxp,grossfluxs
      real(rk),dimension(self%nfood) :: netfluxc,netfluxn,netfluxp
@@ -197,6 +197,9 @@ contains
      eO = (O2o-self%rlO2YX)**3/((O2o-self%rlO2YX)**3+(self%hO2YX-self%rlO2YX)**3)
 
      ! Calculate overcrowding limitation factor
+     ! In SSB-ERSEM overcrowding limitation factor was not assumed for
+     ! meiobenthos Y4. Set self%xclYX to a very large value in fabm.yaml
+
      Y = Yc - self%xclYX
      if (Y>0._rk) then
        x = Y * Y/(Y+self%xcsYX)
@@ -207,10 +210,8 @@ contains
 
     ! Calculate uptake rate................................................
     rate = self%suYX * Yc * eT * eO * eC
- 
-    !!!Need to get organic matter from certain horizons
 
-    !Get food concentrations !!!!!Benthic and PELAGIC!
+    !Get food concentrations: benthic and pelagic!
 
     do ifood=1,self%nfood
        if (self%foodispel(ifood)) then
@@ -229,8 +230,16 @@ contains
     ! Prey carbon was returned in mmol (due to units of standard_variables%total_carbon); convert to mg
     foodcP = foodcP*CMass
 
+   do ifood=1,self%nfood
+      if (self%foodispel(ifood)) then
+       prefcorr(ifood) = self%pufood(ifood) * self%dwatYX
+      else
+       prefcorr(ifood) = self%pufood(ifood)
+      endif
+   end do
+
     ! Food Partition
-    feed = self%pufood * (self%pufood * foodcP/(self%pufood * foodcP + self%luYX))
+    feed = prefcorr * (prefcorr * foodcP/(prefcorr * foodcP + self%luYX))
     foodsum = sum(feed * foodcP)
     mm = foodsum + self%huYX
 
