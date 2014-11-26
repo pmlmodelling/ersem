@@ -155,10 +155,10 @@ contains
     ! Get contribution for bioturbation and bioirrigation
       call self%get_parameter(self%pturYX, 'pturY','-','Relative contribution to bioturbation',default=0._rk)
       call self%get_parameter(self%pirrYX, 'pirrY','-','Relative controbution to bioirrigation',default=0._rk)
-      call self%register_diagnostic_variable(self%id_biotur,'biotur','','bioturbation activity',output=output_time_step_averaged)
-      call self%register_diagnostic_variable(self%id_bioirr,'bioirr','','bioirrigation activity',output=output_time_step_averaged)
-      call self%add_to_aggregate_variable(bioturbation_activity, self%id_biotur)
-      call self%add_to_aggregate_variable(bioirrigation_activity, self%id_bioirr) 
+      call self%register_diagnostic_variable(self%id_biotur,'biotur','mg C/m^2/d','bioturbation activity',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_bioirr,'bioirr','mg C/m^2/d','bioirrigation activity',output=output_time_step_averaged)
+      call self%add_to_aggregate_variable(total_bioturbation_activity, self%id_biotur)
+      call self%add_to_aggregate_variable(total_bioirrigation_activity, self%id_bioirr) 
 
   end subroutine
 
@@ -202,10 +202,10 @@ contains
 
      Y = Yc - self%xclYX
      if (Y>0._rk) then
-       x = Y * Y/(Y+self%xcsYX)
-       eC = 1._rk - x/(x+self%xchYX)
+        x = Y * Y/(Y+self%xcsYX)
+        eC = 1._rk - x/(x+self%xchYX)
      else
-       eC = 1._rk
+        eC = 1._rk
      end if
 
     ! Calculate uptake rate................................................
@@ -215,15 +215,15 @@ contains
 
     do ifood=1,self%nfood
        if (self%foodispel(ifood)) then
-       _GET_(self%id_foodpelc(ifood),foodcP(ifood))
-       _GET_(self%id_foodpeln(ifood),foodnP(ifood))
-       _GET_(self%id_foodpelp(ifood),foodpP(ifood))
-       _GET_(self%id_foodpels(ifood),foodsP(ifood))
+          _GET_(self%id_foodpelc(ifood),foodcP(ifood))
+          _GET_(self%id_foodpeln(ifood),foodnP(ifood))
+          _GET_(self%id_foodpelp(ifood),foodpP(ifood))
+          _GET_(self%id_foodpels(ifood),foodsP(ifood))
        else
-       _GET_HORIZONTAL_(self%id_foodc(ifood),foodcP(ifood))
-       _GET_HORIZONTAL_(self%id_foodn(ifood),foodnP(ifood))
-       _GET_HORIZONTAL_(self%id_foodp(ifood),foodpP(ifood))
-       _GET_HORIZONTAL_(self%id_foods(ifood),foodsP(ifood))
+          _GET_HORIZONTAL_(self%id_foodc(ifood),foodcP(ifood))
+          _GET_HORIZONTAL_(self%id_foodn(ifood),foodnP(ifood))
+          _GET_HORIZONTAL_(self%id_foodp(ifood),foodpP(ifood))
+          _GET_HORIZONTAL_(self%id_foods(ifood),foodsP(ifood))
        end if
     end do
 
@@ -232,10 +232,10 @@ contains
 
    do ifood=1,self%nfood
       if (self%foodispel(ifood)) then
-       prefcorr(ifood) = self%pufood(ifood) * self%dwatYX
+         prefcorr(ifood) = self%pufood(ifood) * self%dwatYX
       else
-       prefcorr(ifood) = self%pufood(ifood)
-      endif
+         prefcorr(ifood) = self%pufood(ifood)
+      end if
    end do
 
     ! Food Partition
@@ -244,9 +244,9 @@ contains
     mm = foodsum + self%huYX
 
     if (foodsum>0._rk) then
-     sflux = rate * feed / mm
-      else
-     sflux = 0._rk
+       sflux = rate * feed / mm
+    else
+       sflux = 0._rk
     end if
 
    ! Food uptake fluxes
@@ -260,15 +260,15 @@ contains
 
    do ifood=1,self%nfood
       if (self%foodispel(ifood)) then
-       do istate=1,size(self%id_food(ifood)%state)
-         _GET_(self%id_food(ifood)%state(istate),foodP)
-         _SET_ODE_(self%id_food(ifood)%state(istate),-sflux(ifood)*foodP)   
-       end do
+         do istate=1,size(self%id_food(ifood)%state)
+            _GET_(self%id_food(ifood)%state(istate),foodP)
+            _SET_BOTTOM_EXCHANGE_(self%id_food(ifood)%state(istate),-sflux(ifood)*foodP)   
+          end do
       else
-       do istate=1,size(self%id_food(ifood)%bottom_state)
-         _GET_HORIZONTAL_(self%id_food(ifood)%bottom_state(istate),foodP)
-         _SET_BOTTOM_ODE_(self%id_food(ifood)%bottom_state(istate),-sflux(ifood)*foodP)
-       end do
+         do istate=1,size(self%id_food(ifood)%bottom_state)
+            _GET_HORIZONTAL_(self%id_food(ifood)%bottom_state(istate),foodP)
+            _SET_BOTTOM_ODE_(self%id_food(ifood)%bottom_state(istate),-sflux(ifood)*foodP)
+         end do
       end if 
    end do
 
