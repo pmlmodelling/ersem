@@ -20,12 +20,12 @@ module ersem_benthic_column
 
    type,extends(type_base_model),public :: type_ersem_benthic_column
       type (type_bottom_state_variable_id)          :: id_D1m,id_D2m
-      type (type_horizontal_diagnostic_variable_id) :: id_poro,id_Dtot,id_diff(3),id_EDZ_mixX,id_diff_pom,id_layer2_thickness
+      type (type_horizontal_diagnostic_variable_id) :: id_poro,id_Dtot,id_diff(3),id_EDZ_mixX,id_diff_pom,id_Dtur,id_layer2_thickness
       type (type_horizontal_dependency_id)          :: id_biotur_tot, id_bioirr_tot
 
       real(rk) :: d_totX
       real(rk) :: qPWX,EDZ_mixX
-      real(rk) :: mturX, hturX, EturX
+      real(rk) :: mturX, hturX, EturX, dturX
       real(rk) :: mirrX, hirrX, irr_minX, EDZ_1X, EDZ_2X, EDZ_3X
    contains
       procedure :: initialize
@@ -49,6 +49,7 @@ contains
       call self%get_parameter(self%mturX,'mturX','-','maximum relative turbation enhancement')
       call self%get_parameter(self%hturX,'hturX','mg C/m^2/d','Michaelis-Menten constant for bioturbation')
       call self%get_parameter(self%EturX,'EturX','m^2/d','basal bioturbation rate')
+      call self%get_parameter(self%dturX,'dturX','m','bioturbation depth')
 
       ! Bioirrigation
       call self%get_parameter(self%mirrX,   'mirrX','-','maximum relative diffusion enhancement due to bioirrigation')
@@ -65,7 +66,8 @@ contains
       call self%register_diagnostic_variable(self%id_diff(1),'diff1','m^2/d','diffusivity in layer 1',standard_variable=diffusivity_in_sediment_layer_1)
       call self%register_diagnostic_variable(self%id_diff(2),'diff2','m^2/d','diffusivity in layer 2',standard_variable=diffusivity_in_sediment_layer_2)
       call self%register_diagnostic_variable(self%id_diff(3),'diff3','m^2/d','diffusivity in layer 3',standard_variable=diffusivity_in_sediment_layer_3)
-      call self%register_diagnostic_variable(self%id_diff_pom,'diff_pom','m^2/d','particulate diffusivity representing bioturbation',standard_variable=particulate_diffusivity_representing_bioturbation)
+      call self%register_diagnostic_variable(self%id_diff_pom,'diff_pom','m^2/d','particulate diffusivity representing bioturbation',standard_variable=particulate_diffusivity_due_to_bioturbation)
+      call self%register_diagnostic_variable(self%id_Dtur,'Dtur','m','bioturbation depth',standard_variable=bioturbation_depth,missing_value=self%dturX)
       call self%register_diagnostic_variable(self%id_EDZ_mixX,'cmix','s/m','equilibrium diffusive speed between sediment surface water',standard_variable=pelagic_benthic_transfer_constant,missing_value=self%EDZ_mixX)
       call self%register_diagnostic_variable(self%id_layer2_thickness,'layer2_thickness','m','thickness of second layer',output=output_none)
 

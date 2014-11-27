@@ -4,6 +4,125 @@ module ersem_benthic_column_particulate_matter
 
 ! Particulate organic matter with idealized [exponential] profile.
 !
+! -------------------------------------------------
+! Shape of the profile
+! -------------------------------------------------
+!
+! The concentration of matter, in mass per unit sediment volume, is assumed to be an
+! expoential function of depth $z$:
+!
+!   C(z) = C0*exp(-b*z)
+!
+! What value do constants $C0$ and $b$ take?
+!
+! The mean depth of matter equals:
+!
+!   z_mean = \int_0^\infty z C(z) dz / \int_0^\infty C(z) dz
+!
+! When we insert the exponential distribution of $C(z)$, $C0 drops out and we obtain
+!
+!   z_mean = \int_0^\infty z exp(-b*z) dz / \int_0^\infty exp(-b*z) dz
+!
+! For the denominator of z_mean we find through standard integration:
+!
+!   \int_0^\infty exp(-b*z) dz = [-1/b exp(-b*z)]_0^\infty = 1/b
+!
+! Numerator $\int_0^\infty z exp(-b*z) dz$ can be found through integration by parts:
+! General rule: $\int u v dz = u \int v dz - \int (u' \int v dz) dz$
+! We can apply this to find the antiderivative of $z exp(-b*z)$:
+!
+!   \int z exp(-b*z) dz = -z/b exp(-b*z) - 1/b^2 exp(-b*z) = -(z+1/b)/b exp(-b*z)
+!
+! Verify by differentiation (apply chain rule):
+!
+!   -1/b exp(-b*z) + z exp(-b*z) + 1/b exp(-b*z) = z exp(-b*z) [OK]
+!
+! Integrating from $0$ to $\intfy$ while assuming $b>0$ we obtain
+!
+!   \int_0^\infty z exp(-b*z) dz = [-(z+1/b)/b exp(-b*z)]_0^\infty = 1/b^2
+!
+! Combining the expressions for the numerator and denominator of $z_mean$:
+!
+!   z_mean = (1/b^2)/(1/b) = 1/b
+!
+! Thus, the exponential decay constant $b$ is equal to $1/z_mean$, and
+!
+!   C(z) = C0*exp(-z/z_mean)
+!
+! The integral of C(z) from 0 to the bottom of the modelled column, z_bot, should equal the modelled density of mass:
+!
+!   \int_0^z_bot C(z) dz = [-z_mean*C0*exp(-z/z_mean)]_0^z_bot = z_mean*C0*(1-exp(-z_bot/z_mean)) = C_int
+!
+! Thus, surface concentration C0 can be rewritten in terms of the depth-integrated concentration $C_int$,
+! (integrated up to $z_bot$, not $\infty$!):
+!
+!   C0 = C_int/z_mean/(1-exp(-z_bot/z_mean))
+!
+! -------------------------------------------------
+! Impact of bioturbation
+! -------------------------------------------------
+!
+! Modelled as a diffusion process, bioturbation changes $C(z)$, and therefore also penetration depth
+!
+!   z_mean = \int_0^\infty z C(z) dz / \int_0^\infty C(z) dz
+!
+! Let us try this first for the denominator:
+!
+!   d/dt \int_0^\infty C(z) dz = \int_0^\infty d/dt C(z) dz
+!
+! For d/dt C(z) we have the normal diffusion equation:
+!
+!   d/dt C(z) = d/dz(D d/dz C(z)) = d/dz(-D/z_mean C0 exp(-z/z_mean)) = D C0/z_mean^2 exp(-z/z_mean)
+!
+! Inserting this expression we obtain for the change in depth-integrated mass:
+!
+!   d/dt \int_0^\infty C(z) dz = \int_0^\infty D C0/z_mean^2 exp(-z/z_mean) dz
+!                              = [-D C0/z_mean exp(-z/z_mean)]_0^\infty
+!                              = D C0/z_mean
+!
+! However, we KNOW that diffusion witin the column should not affect the mass integral. Why is this then non-zero?
+! The reason for this is that we have not accounted for the no-flux boundary conditions. As a result, we are implicity
+! using a non-zero inward flux at the surface that is determined by the gradient:
+!
+!   -D d/dz C(0) = D C0/z_mean exp(-z/z_mean) = D C0/z_mean
+!
+! In other words, to close the column for mass, we need to subtract this surface flux.
+! (NB the gradient is zero at infinite depth, i.e., the bottom flux is zero)
+!
+! With this knowledge, we can revisit the numerator in the change in penetration depth $z_mean$.
+! Its time derivative equals
+!
+!   d/dt \int_0^\infty z C(z) dz = \int_0^\infty z d/dt C(z) dz
+!
+! From the diffusion equation for $C(z)$ we derived $d/dt C(z) =  D C0/z_mean^2 exp(-z/z_mean)$.
+! Inserting this in $d/dt z_mean$, while introducing a maximum bioturbation depth $z_tur$, we obtain
+!
+!   d/dt \int_0^z_tur z C(z) dz = D C0/z_mean^2 \int_0^z_tur z exp(-z/z_mean) dz
+!
+! For the expression within the integral we previously found antiderivative $-(z+z_mean)z_mean exp(-z/z_mean)$.
+! Thus,
+!
+!   \int_0^z_tur z exp(-z/z_mean) dz = [-(z+z_mean)z_mean exp(-z/z_mean)]_0^z_tur
+!                                    = -(z_tur+z_mean)z_mean exp(-z_tur/z_mean) + z_mean^2
+!
+! Using this antiderivate to solve the integral from $0$ to $z_tur$:
+!
+!    d/dt \int_0^\infty z C(z) dz = D C0 [1-(z_tur/z_mean+1)] exp(-z_tur/z_mean)
+!
+! This includes surface flux $-D C0 z/z_mean d/dz exp(-z/z_mean) = 0$, as well as non-zero bottom flux
+! $-D C0 z_tur/z_mean exp(-z_tur/z_mean)$. Subtracting the latter we obtain:
+!
+!    d/dt \int_0^\infty z C(z) dz = D C0 [1 - exp(-z_tur/z_mean)]
+!
+! Finally, $d/dt z_mean$ is given by the ratio of this expression to $\int_0^\infty C(z) dz = C0 z_mean$:
+!
+!   d/dt z_mean = D/z_mean [1 - exp(-z_tur/z_mean)]
+!
+! This describes how the penetration depth $z_mean$ changes due to bioturbation up to depth $z_tur$, with
+! the intensity of bioturbation described by diffusivity $D$.
+!
+! -------------------------------------------------
+!
 ! This file contains two modules that can be instantiated by the user (from fabm.yaml):
 ! type_ersem_benthic_column_particulate_matter: describes particulate organic matter in terms of column-integrated mass and penetration depth
 ! type_ersem_benthic_pom_layer:        describes particulate organic matter within a user-specified depth interval
@@ -52,8 +171,10 @@ module ersem_benthic_column_particulate_matter
    ! Module for particulate organic matter class with idealized profile (e.g., Q6 Q7)
    type,extends(type_ersem_benthic_base),public :: type_ersem_benthic_column_particulate_matter
       type (type_bottom_state_variable_id) :: id_penetration_c,id_penetration_n,id_penetration_p,id_penetration_s
+      type (type_horizontal_dependency_id) :: id_D, id_z_tur
    contains
       procedure :: initialize
+      procedure :: do_bottom
    end type
 
    ! Module for particulate organic matter within a single, user-specified depth interval.
@@ -100,7 +221,7 @@ contains
    
    subroutine initialize(self,configunit)
       class (type_ersem_benthic_column_particulate_matter), intent(inout), target :: self
-      integer,                                     intent(in)            :: configunit
+      integer,                                              intent(in)            :: configunit
 
       class (type_ersem_benthic_pom_layer),pointer :: single_layer
 
@@ -113,6 +234,10 @@ contains
       if (_VARIABLE_REGISTERED_(self%id_p)) call self%register_state_variable(self%id_penetration_p,'pen_depth_p','m','penetration depth of phosphorus')
       if (_VARIABLE_REGISTERED_(self%id_s)) call self%register_state_variable(self%id_penetration_s,'pen_depth_s','m','penetration depth of silicate')
 
+      ! Link to bioturbation-related standard variables (defined by ERSEM in shared.F90; not by FABM!)
+      call self%register_dependency(self%id_D,particulate_diffusivity_due_to_bioturbation)
+      call self%register_dependency(self%id_z_tur,bioturbation_depth)
+
       ! Create a submodel for particulate organic matter at the sediment surface
       ! This will receive sinks and sources associated with benthic-pelagic exchange - sedimentation, resuspension.
       allocate(single_layer)
@@ -124,6 +249,35 @@ contains
       call single_layer%request_coupling('Q',self%name)
       call self%add_child(single_layer,'surface',configunit=configunit)
    end subroutine initialize
+
+   subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
+      class (type_ersem_benthic_column_particulate_matter), intent(in) :: self
+      _DECLARE_ARGUMENTS_DO_BOTTOM_
+
+      real(rk) :: D,z_mean,z_tur
+
+      _HORIZONTAL_LOOP_BEGIN_
+         _GET_HORIZONTAL_(self%id_D,D)
+         _GET_HORIZONTAL_(self%id_z_tur,z_tur)
+
+         if (_VARIABLE_REGISTERED_(self%id_c)) then
+            _GET_HORIZONTAL_(self%id_penetration_c,z_mean)
+            _SET_BOTTOM_ODE_(self%id_penetration_c,D/z_mean*(1.0_rk - exp(-z_tur/z_mean)))
+         end if
+         if (_VARIABLE_REGISTERED_(self%id_n)) then
+            _GET_HORIZONTAL_(self%id_penetration_n,z_mean)
+            _SET_BOTTOM_ODE_(self%id_penetration_n,D/z_mean*(1.0_rk - exp(-z_tur/z_mean)))
+         end if
+         if (_VARIABLE_REGISTERED_(self%id_p)) then
+            _GET_HORIZONTAL_(self%id_penetration_p,z_mean)
+            _SET_BOTTOM_ODE_(self%id_penetration_p,D/z_mean*(1.0_rk - exp(-z_tur/z_mean)))
+         end if
+         if (_VARIABLE_REGISTERED_(self%id_s)) then
+            _GET_HORIZONTAL_(self%id_penetration_s,z_mean)
+            _SET_BOTTOM_ODE_(self%id_penetration_s,D/z_mean*(1.0_rk - exp(-z_tur/z_mean)))
+         end if
+      _HORIZONTAL_LOOP_END_
+   end subroutine do_bottom
 
    subroutine layer_initialize(self,configunit)
    class (type_ersem_benthic_pom_layer), intent(inout), target :: self
