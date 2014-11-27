@@ -188,19 +188,24 @@ module ersem_benthic_column_particulate_matter
 !
 ! Inserting this
 !
-!    \int_0^z_bot C0 d/dt exp(-z/z_mean) = C0 [(z_bot/z_mean+1) exp(-z_bot/z_mean)] d/dt z_mean
+!    \int_0^z_bot C0 d/dt exp(-z/z_mean) = C0 (z_bot/z_mean+1) exp(-z_bot/z_mean) d/dt z_mean
 !
 ! Inserting C0 = C_int/z_mean/[1-exp(-z_bot/z_mean)] found previously
 !
-!    \int_0^z_bot C0 d/dt exp(-z/z_mean) = C_int/[1-exp(-z_bot/z_mean)] [(z_bot/z_mean+1) exp(-z_bot/z_mean)] 1/z_mean d/dt z_mean
+!    \int_0^z_bot C0 d/dt exp(-z/z_mean) = C_int/[1-exp(-z_bot/z_mean)] (z_bot/z_mean+1) exp(-z_bot/z_mean) 1/z_mean d/dt z_mean
 !
 ! In Oldenburg code, the final expression for burial is
 !
 !    C_int/[1-exp(-z_bot/z_mean)] [exp(-(z_bot-d/dt z_mean)/z_mean-exp(-z_bot/z_mean)]
 !
-! Discrepancy:
+! Both our expression and the Oldenburg one contain C_int/[1-exp(-z_bot/z_mean)] exp(-z_bot/z_mean).
+! A discrepancy remains in the scale factor applied to it:
 !
-!    exp(-[z_bot-d/dt z_mean]/z_mean)-exp(-z_bot/z_mean) ?= [(z_bot/z_mean+1) exp(-z_bot/z_mean)] 1/z_mean d/dt z_mean
+!    our derivation: (z_bot/z_mean+1) 1/z_mean d/dt z_mean
+!    Oldenburg:      exp(d/dt z_mean/z_mean) - 1
+!
+! It's worth noting that the Oldenburg model here has a unit problem: the factor in the exponential
+! is not dimensionless, but has unit time^-1.
 ! 
 ! -------------------------------------------------
 !
