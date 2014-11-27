@@ -103,6 +103,9 @@ module ersem_benthic_column_particulate_matter
 ! In the original Oldenburg implementation, the difference between these quantities ignored.
 ! That is, in $d/dt z_mean$, $C_int$ is substituted for $C_int_\infty$.
 !
+! Worth noting that the resulting expression for d/dt z_mean does NOT depend on distribution
+! $C(z)$. That is, it is valid for ANY vertical distribution, exponential or otherwise.
+!
 ! -------------------------------------------------
 ! Impact of bioturbation
 ! -------------------------------------------------
@@ -164,8 +167,41 @@ module ersem_benthic_column_particulate_matter
 !   d/dt z_mean = D/z_mean [1 - exp(-z_tur/z_mean)]
 !
 ! This describes how the penetration depth $z_mean$ changes due to bioturbation up to depth $z_tur$, with
-! the intensity of bioturbation described by diffusivity $D$.
+! the intensity of bioturbation described by diffusivity $D$. It is worth noting that $d/dt z_mean \to \infty$ 
+! when $z_mean \to 0$. Thus, in the analytical solution of the model penetration depth cannot become negative
+! as long as $D>0$.
 !
+! -------------------------------------------------
+! Impact of burial
+! -------------------------------------------------
+!
+! A change in penetration depth without an associated change in total mass (as in bioturbation)
+! will cause a change in the mass beyond the depth interval described by the model:
+!
+!    \int_0^z_bot C0 d/dt exp(-z/z_mean) = \int_z_bot^\infty C0 z/z_mean^2 exp(-z/z_mean) d/dt z_mean dz
+!                                        = C0/z_mean^2 \int_z_bot^\infty z exp(-z/z_mean) dz d/dt z_mean
+!
+! For the integral we have:
+!
+!    \int_z_bot^\infty z C(z) dz = [-(z+z_mean)z_mean exp(-z/z_mean)]_z_bot^\infty
+!                                = (z_bot+z_mean)z_mean exp(-z_bot/z_mean)
+!
+! Inserting this
+!
+!    \int_0^z_bot C0 d/dt exp(-z/z_mean) = C0 [(z_bot/z_mean+1) exp(-z_bot/z_mean)] d/dt z_mean
+!
+! Inserting C0 = C_int/z_mean/[1-exp(-z_bot/z_mean)] found previously
+!
+!    \int_0^z_bot C0 d/dt exp(-z/z_mean) = C_int/[1-exp(-z_bot/z_mean)] [(z_bot/z_mean+1) exp(-z_bot/z_mean)] 1/z_mean d/dt z_mean
+!
+! In Oldenburg code
+!
+! C_int/[1-exp(-z_bot/z_mean)] [exp(-(z_bot-d/dt z_mean)/z_mean-exp(-z_bot/z_mean)]
+!
+! Discrepancy:
+!
+! exp(-(z_bot-d/dt z_mean)/z_mean-exp(-z_bot/z_mean) ?= [(z_bot/z_mean+1) exp(-z_bot/z_mean)] 1/z_mean d/dt z_mean
+! 
 ! -------------------------------------------------
 !
 ! This file contains two modules that can be instantiated by the user (from fabm.yaml):
