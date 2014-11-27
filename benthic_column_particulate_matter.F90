@@ -9,7 +9,7 @@ module ersem_benthic_column_particulate_matter
 ! -------------------------------------------------
 !
 ! The concentration of matter, in mass per unit sediment volume, is assumed to be an
-! expoential function of depth $z$:
+! exponential function of depth $z$:
 !
 !   C(z) = C0*exp(-b*z)
 !
@@ -19,11 +19,12 @@ module ersem_benthic_column_particulate_matter
 !
 !   z_mean = \int_0^\infty z C(z) dz / \int_0^\infty C(z) dz
 !
-! When we insert the exponential distribution of $C(z)$, $C0 drops out and we obtain
+! When we insert the exponential distribution of $C(z)$, $C0$ drops out and we obtain
 !
 !   z_mean = \int_0^\infty z exp(-b*z) dz / \int_0^\infty exp(-b*z) dz
 !
-! For the denominator of z_mean we find through standard integration:
+! For the denominator of z_mean (concentration integrated from surface to infinite depth)
+! we find through standard integration:
 !
 !   \int_0^\infty exp(-b*z) dz = [-1/b exp(-b*z)]_0^\infty = 1/b
 !
@@ -49,14 +50,58 @@ module ersem_benthic_column_particulate_matter
 !
 !   C(z) = C0*exp(-z/z_mean)
 !
+! NB this is a standard result (mean of the exponential distribution); the above derivation
+! is given simply for completeness.
+!
 ! The integral of C(z) from 0 to the bottom of the modelled column, z_bot, should equal the modelled density of mass:
 !
 !   \int_0^z_bot C(z) dz = [-z_mean*C0*exp(-z/z_mean)]_0^z_bot = z_mean*C0*(1-exp(-z_bot/z_mean)) = C_int
 !
-! Thus, surface concentration C0 can be rewritten in terms of the depth-integrated concentration $C_int$,
+! Thus, surface concentration $C0$ can be rewritten in terms of the depth-integrated concentration $C_int$,
 ! (integrated up to $z_bot$, not $\infty$!):
 !
 !   C0 = C_int/z_mean/(1-exp(-z_bot/z_mean))
+!
+! -------------------------------------------------
+! Impact of sources and sinks at different depths
+! -------------------------------------------------
+!
+! Sources and sinks change $C(z)$, and therefore also penetration depth
+!
+!   z_mean = \int_0^\infty z C(z) dz / \int_0^\infty C(z) dz
+!
+! The time derivative of this expression is found by applying the chain rule
+!
+!   d/dt z_mean = [\int_0^\infty z d/dt C(z) dz - \int_0^\infty d/dt C(z) dz \int_0^\infty z C(z) dz / \int_0^\infty C(z) dz] / \int_0^\infty C(z) dz
+!
+! Introducing depth-integrated concentration
+!
+!   C_int_\infty = \int_0^\infty C(z) dz,
+!
+! depth-integrated sources minus sinks
+!
+!   sms = \int_0^\infty d/dt C(z) dz,
+!
+! and the mean depth of the sources minus sinks
+!
+!   z_sms = \int_0^\infty z d/dt C(z) dz / \int_0^\infty d/dt C(z) dz,
+!
+! we can simplify this to
+!
+!   d/dt z_mean = (z_sms - z_mean) sms/C_int_\infty
+!
+! It is worth noting that the final division is by the concentration integrated from
+! surface to *infinite depth*, $C_int_\infty$:
+!
+!   $C_int_\infty = z_mean C0
+!
+! That is not the same as $C_int$, i.e., the concentration integrated over the modelled
+! depth interval ($0$ to $z_bot$), which equals
+!
+!    C_int = z_mean C0 (1-exp(-z_bot/z_mean))
+!
+! In the original Oldenburg implementation, the difference between these quantities ignored.
+! That is, in $d/dt z_mean$, $C_int$ is substituted for $C_int_\infty$.
 !
 ! -------------------------------------------------
 ! Impact of bioturbation
@@ -257,9 +302,13 @@ contains
       real(rk) :: D,z_mean,z_tur
 
       _HORIZONTAL_LOOP_BEGIN_
+         ! Get diffusivity and maximum depth of bioturbation
          _GET_HORIZONTAL_(self%id_D,D)
          _GET_HORIZONTAL_(self%id_z_tur,z_tur)
 
+         ! Apply change in penentration depth due to bioturbation.
+         ! See its derivation in the comments at the top of the file,
+         ! section "Impact of sources and sinks at different depths".
          if (_VARIABLE_REGISTERED_(self%id_c)) then
             _GET_HORIZONTAL_(self%id_penetration_c,z_mean)
             _SET_BOTTOM_ODE_(self%id_penetration_c,D/z_mean*(1.0_rk - exp(-z_tur/z_mean)))
@@ -429,14 +478,6 @@ contains
       real(rk) :: c_int,d_pen,sms
       real(rk) :: c_int_local,sms_remin
 
-      ! Change in penetration depth can be derived by considering that the current penetration depth (d_pen)
-      ! and mass density (c_int) are perturbed by addition of mass (delta_c) at some known depth (d_sms)
-      ! New penetration depth = (d_pen*c_int + d_sms*delta_c)/(c_int+delta_c) = d_pen + delta_z
-      ! delta_z = (d_pen*c_int + d_sms*delta_c)/(c_int+delta_c) - z_pen
-      !         = (d_sms-z_pen)*delta_c/(c_int+delta_c)
-      ! As we are considering change over an infinitesimal time, delta_c<<c_int, and we obtain
-      ! delta_z = (d_sms-d_pen)*delta_c/c_int
-
       ! Retrieve depth-integrated mass, penetration depth, sinks-sources.
       _GET_HORIZONTAL_(id_c_int,c_int)
       _GET_HORIZONTAL_(id_pen_depth,d_pen)
@@ -454,6 +495,8 @@ contains
       end if
 
       ! Apply sinks-sources to depth-integrated mass, compute change in penetration depth.
+      ! For the change in penentration depth, see its derivation in the comments at the top of the file,
+      ! section "Impact of bioturbation".
       _SET_BOTTOM_ODE_(id_c_int,sms)
       _SET_BOTTOM_ODE_(id_pen_depth, (d_sms-d_pen)*sms/c_int)
    end subroutine layer_process_constituent_changes
