@@ -143,7 +143,7 @@ module ersem_benthic_column_particulate_matter
 !   d/dt \int_0^\infty z C(z) dz = \int_0^\infty z d/dt C(z) dz
 !
 ! From the diffusion equation for $C(z)$ we derived $d/dt C(z) =  D C0/z_mean^2 exp(-z/z_mean)$.
-! Inserting this in $d/dt z_mean$, while introducing a maximum bioturbation depth $z_tur$, we obtain
+! Inserting this in $d/dt z_mean$, while limiting bioturbation to maximum depth $z_tur$, we obtain
 !
 !   d/dt \int_0^z_tur z C(z) dz = D C0/z_mean^2 \int_0^z_tur z exp(-z/z_mean) dz
 !
@@ -153,7 +153,7 @@ module ersem_benthic_column_particulate_matter
 !   \int_0^z_tur z exp(-z/z_mean) dz = [-(z+z_mean)z_mean exp(-z/z_mean)]_0^z_tur
 !                                    = -(z_tur+z_mean)z_mean exp(-z_tur/z_mean) + z_mean^2
 !
-! Using this antiderivate to solve the integral from $0$ to $z_tur$:
+! Using this antiderivative to solve the integral from $0$ to $z_tur$:
 !
 !    d/dt \int_0^\infty z C(z) dz = D C0 [1-(z_tur/z_mean+1)] exp(-z_tur/z_mean)
 !
@@ -181,7 +181,7 @@ module ersem_benthic_column_particulate_matter
 !    \int_0^z_bot C0 d/dt exp(-z/z_mean) = \int_z_bot^\infty C0 z/z_mean^2 exp(-z/z_mean) d/dt z_mean dz
 !                                        = C0/z_mean^2 \int_z_bot^\infty z exp(-z/z_mean) dz d/dt z_mean
 !
-! For the integral we have:
+! The integral we can solve with our previously found antiderivative:
 !
 !    \int_z_bot^\infty z C(z) dz = [-(z+z_mean)z_mean exp(-z/z_mean)]_z_bot^\infty
 !                                = (z_bot+z_mean)z_mean exp(-z_bot/z_mean)
@@ -194,19 +194,19 @@ module ersem_benthic_column_particulate_matter
 !
 !    \int_0^z_bot C0 d/dt exp(-z/z_mean) = C_int/[1-exp(-z_bot/z_mean)] [(z_bot/z_mean+1) exp(-z_bot/z_mean)] 1/z_mean d/dt z_mean
 !
-! In Oldenburg code
+! In Oldenburg code, the final expression for burial is
 !
-! C_int/[1-exp(-z_bot/z_mean)] [exp(-(z_bot-d/dt z_mean)/z_mean-exp(-z_bot/z_mean)]
+!    C_int/[1-exp(-z_bot/z_mean)] [exp(-(z_bot-d/dt z_mean)/z_mean-exp(-z_bot/z_mean)]
 !
 ! Discrepancy:
 !
-! exp(-(z_bot-d/dt z_mean)/z_mean-exp(-z_bot/z_mean) ?= [(z_bot/z_mean+1) exp(-z_bot/z_mean)] 1/z_mean d/dt z_mean
+!    exp(-[z_bot-d/dt z_mean]/z_mean)-exp(-z_bot/z_mean) ?= [(z_bot/z_mean+1) exp(-z_bot/z_mean)] 1/z_mean d/dt z_mean
 ! 
 ! -------------------------------------------------
 !
 ! This file contains two modules that can be instantiated by the user (from fabm.yaml):
 ! type_ersem_benthic_column_particulate_matter: describes particulate organic matter in terms of column-integrated mass and penetration depth
-! type_ersem_benthic_pom_layer:        describes particulate organic matter within a user-specified depth interval
+! type_ersem_benthic_pom_layer:                 describes particulate organic matter within a user-specified depth interval
 !
 ! The idealized profile is defined only in terms of its density (quantity/m^2) and its penetration depth.
 ! By assuming an exponential distribution of matter (constant positive concentration
