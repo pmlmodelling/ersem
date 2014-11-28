@@ -219,7 +219,7 @@ module ersem_benthic_column_particulate_matter
 !    z_mean = sympy.Function('z_mean',positive=True,real=True)(t)
 !    C = C_int_infty/z_mean*sympy.exp(-z/z_mean)
 !    dC_dt = sympy.diff(C,t)
-!    print sympy.integrate(dC_dt,(z,0,z_bot))
+!    print sympy.integrate(dC_dt,(z,0,z_bot),conds='none')
 !
 ! Inserting $C_int_\infty = C_int/[1 - exp(-z_bot/z_mean)]$
 !
@@ -292,10 +292,19 @@ module ersem_benthic_column_particulate_matter
    ! Module for particulate organic matter class with idealized profile (e.g., Q6 Q7)
    type,extends(type_ersem_benthic_base),public :: type_ersem_benthic_column_particulate_matter
       type (type_bottom_state_variable_id) :: id_penetration_c,id_penetration_n,id_penetration_p,id_penetration_s
+      type (type_bottom_state_variable_id) :: id_buried_c,id_buried_n,id_buried_p,id_buried_s
       type (type_horizontal_dependency_id) :: id_D, id_z_tur
+      type (type_model_id)                 :: id_buried_Q
    contains
       procedure :: initialize
       procedure :: do_bottom
+   end type
+
+   type,extends(type_base_model) :: type_burial
+      type (type_bottom_state_variable_id) :: id_mass,id_buried_mass
+      type (type_horizontal_dependency_id) :: id_penetration_depth,id_penetration_depth_sms,id_d_tot
+   contains
+      procedure :: do_bottom => burial_do_bottom
    end type
 
    ! Module for particulate organic matter within a single, user-specified depth interval.
@@ -345,6 +354,7 @@ contains
       integer,                                              intent(in)            :: configunit
 
       class (type_ersem_benthic_pom_layer),pointer :: single_layer
+      logical                                      :: bury
 
       ! Perform normal benthic initialization (i.e., for POM without profile or penentration depth)
       call self%type_ersem_benthic_base%initialize(configunit)
@@ -355,9 +365,23 @@ contains
       if (_VARIABLE_REGISTERED_(self%id_p)) call self%register_state_variable(self%id_penetration_p,'pen_depth_p','m','penetration depth of phosphorus')
       if (_VARIABLE_REGISTERED_(self%id_s)) call self%register_state_variable(self%id_penetration_s,'pen_depth_s','m','penetration depth of silicate')
 
-      ! Link to bioturbation-related standard variables (defined by ERSEM in shared.F90; not by FABM!)
+      ! Bioturbation
+      ! Link to related standard variables (defined by ERSEM in shared.F90; not by FABM!)
       call self%register_dependency(self%id_D,particulate_diffusivity_due_to_bioturbation)
       call self%register_dependency(self%id_z_tur,bioturbation_depth)
+
+      ! Burial
+      call self%get_parameter(bury,'burial','','activate burial',default=.false.)
+      if (bury) then
+         ! Enable wholesale linking to model "burial_target", which would hook up all buried mass constituents.
+         call self%register_model_dependency(self%id_buried_Q,'burial_target')
+
+         ! Add burial modules for all constituents
+         if (_VARIABLE_REGISTERED_(self%id_c)) call add_burial(self,self%id_c,self%id_penetration_c,self%id_buried_c)
+         if (_VARIABLE_REGISTERED_(self%id_n)) call add_burial(self,self%id_n,self%id_penetration_n,self%id_buried_n)
+         if (_VARIABLE_REGISTERED_(self%id_p)) call add_burial(self,self%id_p,self%id_penetration_p,self%id_buried_p)
+         if (_VARIABLE_REGISTERED_(self%id_s)) call add_burial(self,self%id_s,self%id_penetration_s,self%id_buried_s)
+      end if
 
       ! Create a submodel for particulate organic matter at the sediment surface
       ! This will receive sinks and sources associated with benthic-pelagic exchange - sedimentation, resuspension.
@@ -370,6 +394,34 @@ contains
       call single_layer%request_coupling('Q',self%name)
       call self%add_child(single_layer,'surface',configunit=configunit)
    end subroutine initialize
+
+   subroutine add_burial(self,id_mass,id_penetration,id_buried_mass)
+      class (type_ersem_benthic_column_particulate_matter), intent(inout), target :: self
+      type (type_bottom_state_variable_id),                 intent(in)            :: id_mass,id_penetration
+      type (type_bottom_state_variable_id),                 intent(out)           :: id_buried_mass
+
+      class (type_burial),pointer :: burial
+
+      ! Create a dependency on the POM level for buried mass.
+      ! That will enable coupling to be specified on this level.
+      call self%register_state_dependency(id_buried_mass,'buried_'//trim(id_mass%link%name),id_mass%link%target%units,'buried '//trim(id_mass%link%target%long_name))
+      call self%request_coupling_to_model(id_buried_mass,self%id_buried_Q,id_mass%link%name)
+
+      allocate(burial)
+      call self%add_child(burial,trim(id_mass%link%name)//'_burial',configunit=-1)
+
+      call burial%register_state_dependency(burial%id_mass,'mass',id_mass%link%target%units,'mass')
+      call burial%register_state_dependency(burial%id_buried_mass,'buried_mass',id_mass%link%target%units,'buried mass')
+      call burial%register_dependency(burial%id_penetration_depth,'penetration_depth','m','penetration depth')
+      call burial%register_dependency(burial%id_penetration_depth_sms,'penetration_depth_sms','m/s','change in penetration depth')
+      call burial%register_dependency(burial%id_d_tot,depth_of_sediment_column)
+
+      ! Link to variables in parent model
+      call burial%request_coupling(burial%id_buried_mass,'buried_'//trim(id_mass%link%name))
+      call burial%request_coupling(burial%id_mass,id_mass%link%name)
+      call burial%request_coupling(burial%id_penetration_depth,id_penetration%link%name)
+      call burial%request_coupling(burial%id_penetration_depth_sms,trim(id_penetration%link%name)//'_sms')
+   end subroutine
 
    subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
       class (type_ersem_benthic_column_particulate_matter), intent(in) :: self
@@ -404,11 +456,28 @@ contains
       _HORIZONTAL_LOOP_END_
    end subroutine do_bottom
 
-   subroutine layer_initialize(self,configunit)
-   class (type_ersem_benthic_pom_layer), intent(inout), target :: self
-   integer,                              intent(in)            :: configunit
+   subroutine burial_do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
+      class (type_burial), intent(in) :: self
+      _DECLARE_ARGUMENTS_DO_BOTTOM_
 
-   character(len=10) :: composition
+      real(rk) :: z_mean,z_bot,C_int,z_mean_sms,burial_flux
+
+      _HORIZONTAL_LOOP_BEGIN_
+         _GET_HORIZONTAL_(self%id_d_tot,z_bot)
+         _GET_HORIZONTAL_(self%id_mass,C_int)
+         _GET_HORIZONTAL_(self%id_penetration_depth,z_mean)
+         _GET_HORIZONTAL_(self%id_penetration_depth_sms,z_mean_sms)
+         burial_flux = C_int/(1.0_rk - exp(-z_bot/z_mean))*exp(-z_bot/z_mean)*z_bot/z_mean*z_mean_sms/z_mean
+         _SET_BOTTOM_ODE_(self%id_mass,-burial_flux)
+         _SET_BOTTOM_ODE_(self%id_buried_mass,burial_flux)
+      _HORIZONTAL_LOOP_END_
+   end subroutine burial_do_bottom
+
+   subroutine layer_initialize(self,configunit)
+      class (type_ersem_benthic_pom_layer), intent(inout), target :: self
+      integer,                              intent(in)            :: configunit
+
+      character(len=10) :: composition
 !EOP
 !-----------------------------------------------------------------------
 !BOC
