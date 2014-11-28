@@ -175,33 +175,68 @@ module ersem_benthic_column_particulate_matter
 ! Impact of burial
 ! -------------------------------------------------
 !
-! A change in penetration depth without an associated change in total mass (as in bioturbation)
-! will cause a change in the mass beyond the depth interval described by the model:
+! A change in penetration depth without an associated change in total mass $C_int_\infty$
+! will cause a change in the mass in the depth interval described by the model, i.e.,
+! \int_0^z_bot C0 exp(-z/z_mean). Inserting $C0 = C_int_\infty/z_mean$:
 !
-!    \int_0^z_bot C0 d/dt exp(-z/z_mean) = \int_z_bot^\infty C0 z/z_mean^2 exp(-z/z_mean) d/dt z_mean dz
-!                                        = C0/z_mean^2 \int_z_bot^\infty z exp(-z/z_mean) dz d/dt z_mean
+!   \int_0^z_bot C0 exp(-z/z_mean) = C_int_\infty/z_mean \int_0^z_bot exp(-z/z_mean)
 !
-! The integral we can solve with our previously found antiderivative:
+! Taking the time derivative, with only z_mean depending on time (C_int_\infty is constant!):
 !
-!    \int_z_bot^\infty z C(z) dz = [-(z+z_mean)z_mean exp(-z/z_mean)]_z_bot^\infty
-!                                = (z_bot+z_mean)z_mean exp(-z_bot/z_mean)
+!   d/dt \int_0^z_bot C0 exp(-z/z_mean) = d/dt z_mean -C_int_\infty/z_mean^2 \int_0^z_bot exp(-z/z_mean)
+!                                         + C_int_\infty/z_mean \int_0^z_bot z/z_mean^2 d/dt z_mean exp(-z/z_mean) dz
+!
+! For the first term (first line), we have:
+!
+!    d/dt z_mean -C_int_\infty/z_mean^2 \int_0^z_bot exp(-z/z_mean) = - 1/z_mean d/dt z_mean C_int
+!
+! with C_int being the concentration integrated from surface to model bottom [not infinite depth!]
+!
+! We can rewrite the second term by moving constants outside the integral:
+!
+!    C_int_\infty/z_mean^3 d/dt z_mean \int_0^z_bot z exp(-z/z_mean) dz
+!
+! Now we can solve the integral with our previously found antiderivative:
+!
+!    \int_0^\z_bot z exp(-z/z_mean) dz = [-(z+z_mean)z_mean exp(-z/z_mean)]_0^z_bot
+!                                      = -(z_bot+z_mean)z_mean exp(-z_bot/z_mean) + z_mean^2
 !
 ! Inserting this
 !
-!    \int_0^z_bot C0 d/dt exp(-z/z_mean) = C0 (z_bot/z_mean+1) exp(-z_bot/z_mean) d/dt z_mean
+!    C_int_\infty/z_mean d/dt z_mean [-(z_bot/z_mean+1) exp(-z_bot/z_mean) + 1] = C_int_\infty/z_mean d/dt z_mean [1 - exp(-z_bot/z_mean) - z_bot/z_mean exp(-z_bot/z_mean)]
 !
-! Inserting C0 = C_int/z_mean/[1-exp(-z_bot/z_mean)] found previously
+! Since $C_int = C_int_\infty [1 - exp(-z_bot/z_mean)]$, we can rewrite this as
 !
-!    \int_0^z_bot C0 d/dt exp(-z/z_mean) = C_int/[1-exp(-z_bot/z_mean)] (z_bot/z_mean+1) exp(-z_bot/z_mean) 1/z_mean d/dt z_mean
+!    1/z_mean d/dt z_mean C_int - C_int_\infty/z_mean d/dt z_mean z_bot/z_mean exp(-z_bot/z_mean)
 !
-! In Oldenburg code, the final expression for burial is
+! Combining the two contributions to d/dt \int_0^z_bot C0 exp(-z/z_mean), we are left with
 !
-!    C_int/[1-exp(-z_bot/z_mean)] [exp(-(z_bot-d/dt z_mean)/z_mean-exp(-z_bot/z_mean)]
+!    d/dt \int_0^z_bot C0 exp(-z/z_mean) = - C_int_\infty z_bot/z_mean^2 exp(-z_bot/z_mean) d/dt z_mean
 !
-! Both our expression and the Oldenburg one contain C_int/[1-exp(-z_bot/z_mean)] exp(-z_bot/z_mean).
+! JB 28/11/2014: this solution was validated in Python with sympy, using the following code
+! 
+!    C_int_infty,z_bot,z,t = sympy.symbols('C_int_infty,z_bot,z,t',positive=True,real=True)
+!    z_mean = sympy.Function('z_mean',positive=True,real=True)(t)
+!    C = C_int_infty/z_mean*sympy.exp(-z/z_mean)
+!    dC_dt = sympy.diff(C,t)
+!    print sympy.integrate(dC_dt,(z,0,z_bot))
+!
+! Inserting $C_int_\infty = C_int/[1 - exp(-z_bot/z_mean)]$
+!
+!    d/dt \int_0^z_bot C0 exp(-z/z_mean) = - C_int/[1 - exp(-z_bot/z_mean)] z_bot/z_mean^2 exp(-z_bot/z_mean) d/dt z_mean
+!
+! Since $C0 = C_int/[1 - exp(-z_bot/z_mean)]/z_mean$, this is equivalent to
+!
+!    d/dt \int_0^z_bot C0 exp(-z/z_mean) = C(z_bot) z_bot/z_mean d/dt z_mean
+!
+! In the Oldenburg code, the final expression for the change in mass within model domain due to burial is
+!
+!    - C_int/[1-exp(-z_bot/z_mean)] [exp(-(z_bot-d/dt z_mean)/z_mean-exp(-z_bot/z_mean)]
+!
+! Both our expression and the Oldenburg one contain -C_int/[1-exp(-z_bot/z_mean)] exp(-z_bot/z_mean).
 ! A discrepancy remains in the scale factor applied to it:
 !
-!    our derivation: (z_bot/z_mean+1) 1/z_mean d/dt z_mean
+!    our derivation: z_bot/z_mean^2 d/dt z_mean
 !    Oldenburg:      exp(d/dt z_mean/z_mean) - 1
 !
 ! It's worth noting that the Oldenburg model here has a unit problem: the factor in the exponential
