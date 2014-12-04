@@ -19,7 +19,7 @@ module ersem_bacteria
       type (type_state_variable_id) :: id_R1p
       type (type_state_variable_id) :: id_R1n
       type (type_state_variable_id) :: id_N1p,id_N3n,id_N4n,id_N7f
-      type (type_dependency_id)     :: id_ETW,id_ESS,id_phx,id_eO2mO2
+      type (type_dependency_id)     :: id_ETW,id_phx,id_eO2mO2
       type (type_state_variable_id),allocatable,dimension(:) :: id_RPc,id_RPp,id_RPn,id_RPf
       type (type_model_id),         allocatable,dimension(:) :: id_RP
       type (type_diagnostic_variable_id) :: id_fB1O3c
@@ -46,8 +46,9 @@ module ersem_bacteria
       ! Remineralization
       real(rk) :: sR1N1X,sR1N4X
       real(rk) :: fsinkX
-      real(rk) :: sN4N3X,cessX
+      real(rk) :: sN4N3X
       integer  :: ISWphx
+      real(rk) :: chN3oX
 #ifndef DOCDYN
       real(rk) :: redfieldX
       real(rk) :: rR2R1X
@@ -98,8 +99,8 @@ contains
       call self%get_parameter(self%sR1N4X,   'sR1N4',   '1/d',    'mineralisation rate of labile dissolved organic nitrogen')
       call self%get_parameter(self%fsinkX,   'fsink',   '1/d',    'scavenging rate for iron')
       call self%get_parameter(self%ISWphx,   'ISWph',   '',       'switch for pH impact on nitrification')
+      call self%get_parameter(self%chN3oX,   'chN3o',   '(mmol O_2/m^3)^3','cubic Michaelis-Menten constant for oxygen dependence of nitrification')
       call self%get_parameter(self%sN4N3X,   'sN4N3',   '1/d',    'specific nitrification rate')
-      call self%get_parameter(self%cessX,    'cess',    'mg/m^3', 'silt concentration at which relative rate of nitrification is 1')
       
 #ifndef DOCDYN
       call self%get_parameter(self%redfieldX,'redfield','mol/mol','Redfield carbon to nitrogen ratio')
@@ -179,7 +180,6 @@ contains
 
       ! Register environmental dependencies (temperature, suspendend sediment, pH, oxygen saturation)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
-      call self%register_dependency(self%id_ESS,type_bulk_standard_variable(name='mass_concentration_of_silt'))
       if (self%ISWphx==1) call self%register_dependency(self%id_phx,standard_variables%ph_reported_on_total_scale)
       call self%register_dependency(self%id_eO2mO2,standard_variables%fractional_saturation_of_oxygen)
 
@@ -435,7 +435,7 @@ contains
       _DECLARE_ARGUMENTS_DO_
       
       integer :: iRP
-      real(rk) :: ETW,ESS,phx
+      real(rk) :: ETW,phx,O2o
       real(rk) :: etB1
 #ifndef DOCDYN
       real(rk) :: R2cP
@@ -453,12 +453,12 @@ contains
       real(rk) :: sRPr1(self%nRP)
       real(rk) :: RPfP(self%nRP),fRPN7f(self%nRP),n7fsink
       
-      real(rk) :: Fph,fN4N3n
+      real(rk) :: o2state,Fph,fN4N3n
 
       _LOOP_BEGIN_
 
          _GET_(self%id_ETW,ETW)
-         _GET_(self%id_ESS,ESS)
+         _GET_(self%id_O2o,O2o)
 
 #ifdef NOBAC
          _GET_(self%id_R1c,R1cP)
@@ -566,16 +566,18 @@ contains
             _SET_ODE_(self%id_N7f,+sum(fRPn7f)-n7fsink)
          end if
 
-!..Nitrification..
-!Ph influence on nitrification - empirical equation
-! use(1) or not(2)
+         ! Oxygen state for nitrogen species transformation
+         o2state = O2o**3/(O2o**3 + self%chN3oX) ! half saturation    
+
+         !..Nitrification..
+         !Ph influence on nitrification - empirical equation
+         ! use(1) or not(2)
+         fN4N3n = self%sN4N3X  * N4nP * etB1 * o2state
          if(self%ISWphx.eq.1)then
             _GET_(self%id_phx,phx)
             Fph = MIN(2._rk,MAX(0._rk,0.6111_rk*phx-3.8889_rk))
-            fN4N3n = self%sN4N3X  * Fph * N4nP * etB1 * ESS / self%cessX
-         else
-            fN4N3n = self%sN4N3X  * N4nP * etB1 * ESS / self%cessX
-         endif
+            fN4N3n = fN4N3n * Fph
+         end if
          _SET_ODE_(self%id_N3n, + fN4N3n)
          _SET_ODE_(self%id_N4n, - fN4N3n)
 
