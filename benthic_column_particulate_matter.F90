@@ -289,7 +289,7 @@ module ersem_benthic_column_particulate_matter
 !  default: all is private.
    private
 
-   ! Module for particulate organic matter class with idealized profile (e.g., Q6 Q7)
+   ! Module for particulate organic matter class with idealized profile (e.g., Q6, Q7)
    type,extends(type_ersem_benthic_base),public :: type_ersem_benthic_column_particulate_matter
       type (type_bottom_state_variable_id) :: id_penetration_c,id_penetration_n,id_penetration_p,id_penetration_s
       type (type_bottom_state_variable_id) :: id_buried_c,id_buried_n,id_buried_p,id_buried_s
@@ -298,13 +298,6 @@ module ersem_benthic_column_particulate_matter
    contains
       procedure :: initialize
       procedure :: do_bottom
-   end type
-
-   type,extends(type_base_model) :: type_burial
-      type (type_bottom_state_variable_id) :: id_mass,id_buried_mass
-      type (type_horizontal_dependency_id) :: id_penetration_depth,id_penetration_depth_sms,id_d_tot
-   contains
-      procedure :: do_bottom => burial_do_bottom
    end type
 
    ! Module for particulate organic matter within a single, user-specified depth interval.
@@ -319,6 +312,7 @@ module ersem_benthic_column_particulate_matter
       type (type_model_id) :: id_Q
 
       real(rk) :: remin
+      integer :: source_depth_distribution
 
       ! Layer extents
       integer :: surface_boundary_type   ! 0: constant depth, 1: dynamic depth from variable (e.g., depth of oxygenated layer)
@@ -332,6 +326,17 @@ module ersem_benthic_column_particulate_matter
       procedure :: do_bottom  => layer_do_bottom
    end type
 
+   ! Module that handles burial of a single particualte organic matter constituent.
+   ! For internal use only (from type_ersem_benthic_column_particulate_matter)
+   type,extends(type_base_model) :: type_burial
+      type (type_bottom_state_variable_id) :: id_mass,id_buried_mass
+      type (type_horizontal_dependency_id) :: id_penetration_depth,id_penetration_depth_sms,id_d_tot
+   contains
+      procedure :: do_bottom => burial_do_bottom
+   end type
+
+   ! Module that computes depth-integrated particulate organic matter within a single, user-specified depth interval.
+   ! For internal use only (from type_ersem_benthic_pom_layer)
    type,extends(type_base_model) :: type_layer_content_calculator
       type (type_horizontal_diagnostic_variable_id) :: id_c
       type (type_horizontal_dependency_id) :: id_c_int,id_pen_depth, id_d_tot
@@ -357,6 +362,8 @@ contains
       logical                                      :: bury
 
       ! Perform normal benthic initialization (i.e., for POM without profile or penentration depth)
+      ! This will register state variables for all contituents of the particulate organic matter class,
+      ! e.g., carbon, nitrogen, phosphorus, silicon.
       call self%type_ersem_benthic_base%initialize(configunit)
 
       ! Add penetration depths for all active constituents.
@@ -436,7 +443,7 @@ contains
 
          ! Apply change in penentration depth due to bioturbation.
          ! See its derivation in the comments at the top of the file,
-         ! section "Impact of sources and sinks at different depths".
+         ! section "Impact of bioturbation".
          if (_VARIABLE_REGISTERED_(self%id_c)) then
             _GET_HORIZONTAL_(self%id_penetration_c,z_mean)
             _SET_BOTTOM_ODE_(self%id_penetration_c,D/z_mean*(1.0_rk - exp(-z_tur/z_mean)))
@@ -497,6 +504,7 @@ contains
       else
          call self%register_dependency(self%id_bottom_boundary_depth,'bottom_boundary_depth','m','bottom boundary depth')
       end if
+      call self%get_parameter(self%source_depth_distribution,'source_depth_distribution', '','rule for vertical distribution of source terms',default=1)
 
       call self%register_model_dependency(self%id_Q,'Q')
       if (index(composition,'c')/=0) call layer_add_constituent(self,'c','mg C','carbon',    self%id_c_int,self%id_pen_depth_c,self%id_c_sms,self%id_c_local,self%id_c_remin_target)
@@ -579,7 +587,7 @@ contains
       class (type_ersem_benthic_pom_layer), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
-      real(rk) :: d_pen,d_top,d_bot,d_sms
+      real(rk) :: d_pen,d_top,d_bot
       real(rk) :: c_int,sms
 
       _HORIZONTAL_LOOP_BEGIN_
@@ -601,26 +609,22 @@ contains
             _GET_HORIZONTAL_(self%id_bottom_boundary_depth,d_bot)
          end if
 
-         ! Assume sinks-sources are homogenously distributed over desired depth interval.
-         ! Thus, average depth of mass insertion/removal is the average of surface and bottom depths.
-         d_sms = (d_top+d_bot)/2
-
          ! For each constituent: contribute to depth-integrated sink-source terms, contribute to change in penetration depth.
-         if (_VARIABLE_REGISTERED_(self%id_c_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,self%id_c_int,self%id_pen_depth_c,self%id_c_sms,self%id_c_local,self%id_c_remin_target)
-         if (_VARIABLE_REGISTERED_(self%id_n_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,self%id_n_int,self%id_pen_depth_n,self%id_n_sms,self%id_n_local,self%id_n_remin_target)
-         if (_VARIABLE_REGISTERED_(self%id_p_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,self%id_p_int,self%id_pen_depth_p,self%id_p_sms,self%id_p_local,self%id_p_remin_target)
-         if (_VARIABLE_REGISTERED_(self%id_s_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,self%id_s_int,self%id_pen_depth_s,self%id_s_sms,self%id_s_local,self%id_s_remin_target)
+         if (_VARIABLE_REGISTERED_(self%id_c_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_top,d_bot,self%id_c_int,self%id_pen_depth_c,self%id_c_sms,self%id_c_local,self%id_c_remin_target)
+         if (_VARIABLE_REGISTERED_(self%id_n_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_top,d_bot,self%id_n_int,self%id_pen_depth_n,self%id_n_sms,self%id_n_local,self%id_n_remin_target)
+         if (_VARIABLE_REGISTERED_(self%id_p_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_top,d_bot,self%id_p_int,self%id_pen_depth_p,self%id_p_sms,self%id_p_local,self%id_p_remin_target)
+         if (_VARIABLE_REGISTERED_(self%id_s_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_top,d_bot,self%id_s_int,self%id_pen_depth_s,self%id_s_sms,self%id_s_local,self%id_s_remin_target)
       _HORIZONTAL_LOOP_END_
    end subroutine layer_do_bottom
 
-   subroutine layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_sms,id_c_int,id_pen_depth,id_sms,id_local,id_remin_target)
+   subroutine layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_top,d_bot,id_c_int,id_pen_depth,id_sms,id_local,id_remin_target)
       class (type_ersem_benthic_pom_layer), intent(in) :: self
       _DECLARE_ARGUMENTS_LOCAL_
       type (type_bottom_state_variable_id),intent(in) :: id_c_int,id_pen_depth,id_remin_target
       type (type_horizontal_dependency_id),intent(in) :: id_sms,id_local
-      real(rk),                            intent(in) :: d_sms
+      real(rk),                            intent(in) :: d_top,d_bot
 
-      real(rk) :: c_int,d_pen,sms
+      real(rk) :: c_int,d_pen,sms,d_sms
       real(rk) :: c_int_local,sms_remin
 
       ! Retrieve depth-integrated mass, penetration depth, sinks-sources.
@@ -639,11 +643,33 @@ contains
          sms = sms - sms_remin
       end if
 
-      ! Apply sinks-sources to depth-integrated mass, compute change in penetration depth.
-      ! For the change in penentration depth, see its derivation in the comments at the top of the file,
-      ! section "Impact of bioturbation".
+      if (self%source_depth_distribution==1) then
+         ! Assume sinks-sources are homogenously distributed over desired depth interval.
+         ! That is, d/dt C(z) within the layer does not depend on depth.
+         ! Thus, average depth of mass insertion/removal is the average of surface and bottom depths.
+         d_sms = (d_top+d_bot)/2
+
+         ! Compute change in penetration depth. See its derivation in the comments at the top of the file,
+         ! section "Impact of sources and sinks at different depths".
+         !
+         ! JB: correct form would have C_int_infty in the denominator, not C_int [see derivation]
+         _SET_BOTTOM_ODE_(id_pen_depth, (d_sms-d_pen)*sms/c_int)
+      elseif (self%source_depth_distribution==2) then
+         ! Assume the relative rate of change in mass is depth-independent.
+         ! That is, 1/C(z) d/dt C(z) within the layer does not depend on depth.
+         ! In addition, this rule assume the depth of the bottom layer is the max modelled depth ("d_tot"),
+         ! and that the same relative rate of chnage extends below the layer bottom (till infinite depth).
+         ! As a result, the mean depth of change equals the penetration depth, plus whatever offset
+         ! the top of the layer is located at.
+         !
+         ! JB: correct form of the final fraction is the change between d_top and \infty, divided by the mass from 0 to \infty.
+         ! That is equal to the relative rate of change within the layer (sms/c_int_local), multiplied with exp(-d_top/d_pen)
+         d_sms = d_top + d_pen
+         _SET_BOTTOM_ODE_(id_pen_depth, (d_sms-d_pen)*sms/c_int_local)
+      end if
+
+      ! Apply sinks-sources to depth-integrated mass
       _SET_BOTTOM_ODE_(id_c_int,sms)
-      _SET_BOTTOM_ODE_(id_pen_depth, (d_sms-d_pen)*sms/c_int)
    end subroutine layer_process_constituent_changes
 
    subroutine layer_content_calculator_do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
