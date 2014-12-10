@@ -19,7 +19,7 @@ module ersem_bacteria
       type (type_state_variable_id) :: id_R1p
       type (type_state_variable_id) :: id_R1n
       type (type_state_variable_id) :: id_N1p,id_N3n,id_N4n,id_N7f
-      type (type_dependency_id)     :: id_ETW,id_phx,id_eO2mO2
+      type (type_dependency_id)     :: id_ETW,id_eO2mO2
       type (type_state_variable_id),allocatable,dimension(:) :: id_RPc,id_RPp,id_RPn,id_RPf
       type (type_model_id),         allocatable,dimension(:) :: id_RP
       type (type_diagnostic_variable_id) :: id_fB1O3c
@@ -46,9 +46,6 @@ module ersem_bacteria
       ! Remineralization
       real(rk) :: sR1N1X,sR1N4X
       real(rk) :: fsinkX
-      real(rk) :: sN4N3X
-      integer  :: ISWphx
-      real(rk) :: chN3oX
 #ifndef DOCDYN
       real(rk) :: redfieldX
       real(rk) :: rR2R1X
@@ -98,9 +95,6 @@ contains
       call self%get_parameter(self%sR1N1X,   'sR1N1',   '1/d',    'mineralisation rate of labile dissolved organic phosphorus')
       call self%get_parameter(self%sR1N4X,   'sR1N4',   '1/d',    'mineralisation rate of labile dissolved organic nitrogen')
       call self%get_parameter(self%fsinkX,   'fsink',   '1/d',    'scavenging rate for iron')
-      call self%get_parameter(self%ISWphx,   'ISWph',   '',       'switch for pH impact on nitrification')
-      call self%get_parameter(self%chN3oX,   'chN3o',   '(mmol O_2/m^3)^3','cubic Michaelis-Menten constant for oxygen dependence of nitrification')
-      call self%get_parameter(self%sN4N3X,   'sN4N3',   '1/d',    'specific nitrification rate')
       
 #ifndef DOCDYN
       call self%get_parameter(self%redfieldX,'redfield','mol/mol','Redfield carbon to nitrogen ratio')
@@ -180,7 +174,6 @@ contains
 
       ! Register environmental dependencies (temperature, suspendend sediment, pH, oxygen saturation)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
-      if (self%ISWphx==1) call self%register_dependency(self%id_phx,standard_variables%ph_reported_on_total_scale)
       call self%register_dependency(self%id_eO2mO2,standard_variables%fractional_saturation_of_oxygen)
 
       ! Register diagnostics.
@@ -436,7 +429,7 @@ contains
       
       integer :: iRP
       real(rk) :: ETW,phx,O2o
-      real(rk) :: etB1
+      real(rk) :: etRemin
 #ifndef DOCDYN
       real(rk) :: R2cP
       real(rk),dimension(self%nRP) :: RPc,RPn,RPp,RPcP,RPpP,RPnP
@@ -452,8 +445,6 @@ contains
       real(rk) :: fR1N1p,fR1NIn
       real(rk) :: sRPr1(self%nRP)
       real(rk) :: RPfP(self%nRP),fRPN7f(self%nRP),n7fsink
-      
-      real(rk) :: o2state,Fph,fN4N3n
 
       _LOOP_BEGIN_
 
@@ -468,7 +459,7 @@ contains
 
          _GET_(self%id_N4n,N4nP)
 
-         etB1 = self%q10B1X**((ETW-10._rk)/10._rk) - self%q10B1X**((ETW-32._rk)/3._rk)
+         etRemin = self%q10B1X**((ETW-10._rk)/10._rk) - self%q10B1X**((ETW-32._rk)/3._rk)
 
 !..fluxes from particulate to dissolved
 
@@ -489,7 +480,7 @@ contains
          fRPr1  = sRPr1 * RPcP
          ruRPRD = sum(fRPr1)
 #ifdef NOBAC
-         ruRPRD = ruRPRD*etB1
+         ruRPRD = ruRPRD*etRemin
 #endif
 #ifdef SAVEFLX
          fRPRDc(I) = ruRPRD
@@ -499,16 +490,16 @@ contains
 #ifdef NOBAC
 !..mineralisation of DOC to CO2
 
-         fB1O3c = self%sR1N1X * R1cP*etB1
+         fB1O3c = self%sR1N1X * R1cP*etRemin
           _SET_DIAGNOSTIC_(self%id_fB1O3c,fB1O3c)
 
 !..mineralisation of DOP to PO4
 
-         fR1N1p = self%sR1N1X * R1pP*etB1
+         fR1N1p = self%sR1N1X * R1pP*etRemin
 
 !..mineralisation of DON to Nh4
 
-         fR1NIn = self%sR1N4X * R1nP*etB1
+         fR1NIn = self%sR1N4X * R1nP*etRemin
 
 #else 
 !..mineralisation of DOP to PO4
@@ -565,21 +556,6 @@ contains
             end do
             _SET_ODE_(self%id_N7f,+sum(fRPn7f)-n7fsink)
          end if
-
-         ! Oxygen state for nitrogen species transformation
-         o2state = O2o**3/(O2o**3 + self%chN3oX) ! half saturation    
-
-         !..Nitrification..
-         !Ph influence on nitrification - empirical equation
-         ! use(1) or not(2)
-         fN4N3n = self%sN4N3X  * N4nP * etB1 * o2state
-         if(self%ISWphx.eq.1)then
-            _GET_(self%id_phx,phx)
-            Fph = MIN(2._rk,MAX(0._rk,0.6111_rk*phx-3.8889_rk))
-            fN4N3n = fN4N3n * Fph
-         end if
-         _SET_ODE_(self%id_N3n, + fN4N3n)
-         _SET_ODE_(self%id_N4n, - fN4N3n)
 
 !..Breakdown of semi labile to labile DOM
 
