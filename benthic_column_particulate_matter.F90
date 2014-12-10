@@ -671,25 +671,21 @@ contains
          ! That is, d/dt C(z) within the layer does not depend on depth.
          ! Thus, average depth of mass insertion/removal is the average of surface and bottom depths.
          d_sms = (d_top+d_bot)/2
-
-         ! Compute change in penetration depth. See its derivation in the comments at the top of the file,
-         ! section "Impact of sources and sinks at different depths".
-         !
-         ! JB: correct form would have C_int_infty in the denominator, not C_int [see derivation]
-         _SET_BOTTOM_ODE_(id_pen_depth, (d_sms-d_pen)*sms/c_int)
       elseif (self%source_depth_distribution==2) then
          ! Assume the relative rate of change in mass is depth-independent.
          ! That is, 1/C(z) d/dt C(z) within the layer does not depend on depth.
-         ! In addition, this rule assumes the depth of the bottom layer is the max modelled depth ("d_tot"),
-         ! and that the same relative rate of change extends below the layer bottom (till infinite depth).
-         ! As a result, the mean depth of change equals the penetration depth, plus whatever offset
-         ! the top of the layer is located at.
-         !
-         ! JB: correct form of the final fraction is the change between d_top and \infty, divided by the mass from 0 to \infty.
-         ! That is equal to the relative rate of change within the layer (sms/c_int_local), multiplied with exp(-d_top/d_pen)
+         ! In addition, this rule assumes that the same relative rate of change applies below
+         ! the bottom of the active layer (till infinite depth) - or alternatively, that the
+         ! bottom interface of the active layer is much deeper than the penentration depth.
+         ! Using the fact that the distribution of mass is exponential, the mean depth of change
+         ! then equals the penetration depth, plus whatever offset the top of the active layer is located at.
          d_sms = d_top + d_pen
-         _SET_BOTTOM_ODE_(id_pen_depth, (d_sms-d_pen)*sms/c_int)
       end if
+
+      ! Compute change in penetration depth. See its derivation in the comments at the top of the file,
+      ! section "Impact of sources and sinks at different depths".
+      ! JB: correct form would have C_int_infty in the denominator, not C_int [see derivation]
+      _SET_BOTTOM_ODE_(id_pen_depth, (d_sms-d_pen)*sms/c_int)
 
       ! Apply sinks-sources to depth-integrated mass
       _SET_BOTTOM_ODE_(id_c_int,sms)
