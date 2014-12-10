@@ -266,7 +266,7 @@ contains
    subroutine compute_equilibrium_profile(D,sigma,C0,P,P_deep,C_bot,C_int)
       real(rk),intent(in)  :: D,sigma,c0,P,P_deep
       real(rk),intent(out) :: C_bot,C_int
-      real(rk) :: a,b,c
+      real(rk) :: a_D2,b_D,c
       ! ----------------------------------------------------------------------------------------------------
       ! Determine equilibrium concentration profile in pore water from:
       ! - D:        layer thickness (m)
@@ -303,12 +303,16 @@ contains
       !    \int_0^D C(z) dz = \int_0^D a * z^2 + b z + c dz
       !                     = [a/3 z^3 + b/2 z^2 + c z]_0^D
       !                     = a/3 D^3 + b/2 D^2 + c Z
+      !
+      ! As $a$ always occurs multiplied with $D^2$, and $b$ always multiplied with $D$,
+      ! we define the combined constants $a_D2 = a D^2$ and $b_D = b D$. This also avoids
+      ! division by 0 when computing a while D tends to zero.
       ! ----------------------------------------------------------------------------------------------------
-      a = -P/D/sigma/2
-      b = (P+P_deep)/sigma
+      a_D2 = -P/sigma/2*D
+      b_D = (P+P_deep)/sigma*D
       c = C0
-      C_bot = a*D*D + b*D + c
-      C_int = (a/3*D*D + b/2*D + c)*D
+      C_bot = a_D2 + b_D + c
+      C_int = (a_D2/3 + b_D/2 + c)*D
    end subroutine compute_equilibrium_profile
 
    subroutine compute_final_equilibrium_profile(sigma,c0,P,Dmax,D,c_int)
