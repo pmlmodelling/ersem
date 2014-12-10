@@ -74,7 +74,7 @@ contains
       call self%add_child(child,'K6_calculator',configunit=configunit)
       call child%register_diagnostic_variable(child%id_K6,'K6','mmol O2/m^2','reduction equivalent', act_as_state_variable=.true., output=output_none,domain=domain_bottom)
       call self%register_dependency(self%id_K6_sms,'K6_sms','mmol O2/m^2/s','K6 sources minus sinks')
-      call self%request_coupling('K6_sms','K6_calculator/K6_sms')
+      call self%request_coupling('K6_sms','K6_calculator/K6_sms_tot')
    end subroutine initialize
 
    subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
@@ -88,7 +88,7 @@ contains
       real(rk) :: MU_m2,eN2,jMIno3,jM3M4n,jM3G4n
 
       _HORIZONTAL_LOOP_BEGIN_
-         _GET_HORIZONTAL_(self%id_K3n,K3n) !TODO include background
+         _GET_HORIZONTAL_WITH_BACKGROUND_(self%id_K3n,K3n)
          _GET_HORIZONTAL_(self%id_K3n,K3nP)
          _GET_HORIZONTAL_(self%id_K4n,K4nP)
          _GET_(self%id_N4n,N4n)

@@ -68,8 +68,8 @@ contains
       
    subroutine initialize_ersem_base(self,rm,sedimentation)
       class (type_ersem_pelagic_base), intent(inout), target :: self
-      real(rk),optional,                     intent(in)            :: rm
-      logical, optional,                     intent(in)            :: sedimentation
+      real(rk),optional,               intent(in)            :: rm
+      logical, optional,               intent(in)            :: sedimentation
 
       ! Set time unit to d-1
       ! This implies that all rates (sink/source terms, vertical velocities) are given in d-1.

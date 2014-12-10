@@ -136,9 +136,9 @@ contains
       call self%register_dependency(self%id_sms(1),'sms_l1','mmol/m^2/s',trim(long_name)//' sinks-sources in layer 1')
       call self%register_dependency(self%id_sms(2),'sms_l2','mmol/m^2/s',trim(long_name)//' sinks-sources in layer 2')
       call self%register_dependency(self%id_sms(3),'sms_l3','mmol/m^2/s',trim(long_name)//' sinks-sources in layer 3')
-      call self%request_coupling('sms_l1','per_layer/'//trim(composition)//'1_sms')
-      call self%request_coupling('sms_l2','per_layer/'//trim(composition)//'2_sms')
-      call self%request_coupling('sms_l3','per_layer/'//trim(composition)//'3_sms')
+      call self%request_coupling('sms_l1','per_layer/'//trim(composition)//'1_sms_tot')
+      call self%request_coupling('sms_l2','per_layer/'//trim(composition)//'2_sms_tot')
+      call self%request_coupling('sms_l3','per_layer/'//trim(composition)//'3_sms_tot')
    end subroutine benthic_dissolved_matter_initialize
 
    subroutine benthic_dissolved_matter_do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
@@ -197,7 +197,7 @@ contains
          ! Layer 1: compute steady-state layer height H1_eq and layer integral c_int1_eq
          call compute_final_equilibrium_profile(diff1,c_pel,sms_l1,d3,H1_eq,c_int1_eq)
 
-         ! Benthic dynamics: relax towards equilibrium value
+         ! Benthic dynamics: relax depth-integrated mass towards equilibrium value
          c_int_eq = poro*self%ads(1)*c_int1_eq
          _SET_BOTTOM_ODE_(self%id_tot,(c_int_eq-c_int)/self%relax)
 
@@ -205,7 +205,7 @@ contains
          ! Thus, surface exchange = local production - net change (net change = relaxation)
          _SET_BOTTOM_EXCHANGE_(self%id_pel,sms-(c_int_eq-c_int)/self%relax)
 
-         ! Relax depth of layer towards equilibrium value (H1_eq)
+         ! Relax depth of first/oxic layer towards equilibrium value (H1_eq)
          _SET_BOTTOM_ODE_(self%id_D1m,(max(self%minD,H1_eq)-d1)/self%relax)
       elseif (self%last_layer==2) then
          ! Layer 1: compute steady-state concentration at bottom interface c_bot1_eq and layer integral c_int1_eq
@@ -213,7 +213,7 @@ contains
          ! Layer 2: compute steady-state layer height H2_eq and layer integral c_int2_eq
          call compute_final_equilibrium_profile(diff2,c_bot1_eq,sms_l2,d3-d1,H2_eq,c_int2_eq)
 
-         ! Benthic dynamics: relax towards equilibrium value
+         ! Benthic dynamics: relax depth-integrated mass towards equilibrium value
          c_int_eq = poro*(self%ads(1)*c_int1_eq+self%ads(2)*c_int2_eq)
          _SET_BOTTOM_ODE_(self%id_tot,(c_int_eq-c_int)/self%relax)
 
@@ -306,7 +306,7 @@ contains
       !
       ! As $a$ always occurs multiplied with $D^2$, and $b$ always multiplied with $D$,
       ! we define the combined constants $a_D2 = a D^2$ and $b_D = b D$. This also avoids
-      ! division by 0 when computing a while D tends to zero.
+      ! division by 0 when computing $a$ while $D$ tends to zero.
       ! ----------------------------------------------------------------------------------------------------
       a_D2 = -P/sigma/2*D
       b_D = (P+P_deep)/sigma*D

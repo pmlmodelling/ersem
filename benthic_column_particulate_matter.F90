@@ -15,7 +15,7 @@ module ersem_benthic_column_particulate_matter
 !
 ! What value do constants $C0$ and $b$ take?
 !
-! The mean depth of matter equals:
+! Let's define the mean depth of matter within entire sediment column (depth range $0$ to $\infty$):
 !
 !   z_mean = \int_0^\infty z C(z) dz / \int_0^\infty C(z) dz
 !
@@ -62,6 +62,26 @@ module ersem_benthic_column_particulate_matter
 !
 !   C0 = C_int/z_mean/(1-exp(-z_bot/z_mean))
 !
+! Note: Ebenhoeh et al. 1995 define the penetration depth as mean depth within the model domain,
+! i.e., with lower boundary $z_bot$ rather than $\infty$:
+!
+!   z_mean' = \int_0^z_bot z C(z) dz / \int_0^z_bot C(z) dz
+!           = [-(z+1/b)/b exp(-b*z)]_0^z_bot / [-1/b exp(-b*z)]_0^z_bot
+!           = [1/b^2-(z_bot+1/b)/b exp(-b*z_bot)] / [1/b-1/b exp(-b*z_bot)]
+!           = 1/b [1-(z_bot/b+1) exp(-b*z_bot)] / [1-exp(-b*z_bot)]
+!           = 1/b [1-z_bot/b exp(-b*z_bot)/[1-exp(-b*z_bot)]
+!
+! This will NOT produce an explicit expression for b as a function of z_mean'.
+! Instead, Ebenhoeh et al. implicitly assume z_bot>>z_mean', which leads to
+! $b \approx 1/z_mean'$. However, this approximation becomes invalid when
+! z_mean becomes large, and that can happen in the model. To avoid this problem,
+! we define penetration depth as the mean depth of mass between 0 and \infty.
+! Since our exponential fucntion remains the same, expressions based on that
+! (e.g., impact of bioturbation) are the same as in the Oldenburg model.
+! Expressions based on the interpretation of penetration depth (the mean depth of mass
+! between 0 and \infty in our case, and between 0 and z_bot for the Oldenburg model)
+! will differ slightly, as e.g. in the next section.
+!
 ! -------------------------------------------------
 ! Impact of sources and sinks at different depths
 ! -------------------------------------------------
@@ -100,10 +120,13 @@ module ersem_benthic_column_particulate_matter
 !
 !    C_int = z_mean C0 (1-exp(-z_bot/z_mean))
 !
-! In the original Oldenburg implementation, the difference between these quantities ignored.
-! That is, in $d/dt z_mean$, $C_int$ is substituted for $C_int_\infty$.
+! In the original Oldenburg implementation, penetration depth is defined as the mean depth of
+! mass between 0 and z_bot (not 0 to \infty). As a result, $C_int$ is substituted for $C_int_\infty$.
+! One consequence of this difference is that penetration depth in the Oldenburg model can "run away"
+! (tend to infinity), while that is prevented in our expression due to the additional multiplication of the
+! rate of change with 1-exp(-z_bot/z_mean).
 !
-! Worth noting that the resulting expression for d/dt z_mean does NOT depend on distribution
+! It is worth noting that the resulting expression for d/dt z_mean does NOT depend on distribution
 ! $C(z)$. That is, it is valid for ANY vertical distribution, exponential or otherwise.
 !
 ! -------------------------------------------------
@@ -427,7 +450,7 @@ contains
       call burial%request_coupling(burial%id_buried_mass,'buried_'//trim(id_mass%link%name))
       call burial%request_coupling(burial%id_mass,id_mass%link%name)
       call burial%request_coupling(burial%id_penetration_depth,id_penetration%link%name)
-      call burial%request_coupling(burial%id_penetration_depth_sms,trim(id_penetration%link%name)//'_sms')
+      call burial%request_coupling(burial%id_penetration_depth_sms,trim(id_penetration%link%name)//'_sms_tot')
    end subroutine
 
    subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
@@ -559,7 +582,7 @@ contains
       call layer_content_calculator%register_diagnostic_variable(layer_content_calculator%id_c,'c',trim(units)//'/m^2','mass',act_as_state_variable=.true.,domain=domain_bottom)
 
       ! Link source-sink terms associated with layer-specific mass to the master module.
-      call self%request_coupling(id_sms,'content_calculator_'//trim(name)//'/c_sms')
+      call self%request_coupling(id_sms,'content_calculator_'//trim(name)//'/c_sms_tot')
 
       ! Allow bulk coupling to a particulate organic matter module (rather than requiring the user to provide links per constituent and penetration depth)
       call self%request_coupling_to_model(id_c_int,self%id_Q,name)
@@ -637,7 +660,7 @@ contains
 
       ! Add local remineralization
       if (self%remin/=0.0_rk) then
-         _GET_HORIZONTAL_(id_c_int,c_int_local)
+         _GET_HORIZONTAL_(id_local,c_int_local)
          sms_remin = self%remin*c_int_local
          _SET_BOTTOM_ODE_(id_remin_target,sms_remin)
          sms = sms - sms_remin
@@ -657,15 +680,15 @@ contains
       elseif (self%source_depth_distribution==2) then
          ! Assume the relative rate of change in mass is depth-independent.
          ! That is, 1/C(z) d/dt C(z) within the layer does not depend on depth.
-         ! In addition, this rule assume the depth of the bottom layer is the max modelled depth ("d_tot"),
-         ! and that the same relative rate of chnage extends below the layer bottom (till infinite depth).
+         ! In addition, this rule assumes the depth of the bottom layer is the max modelled depth ("d_tot"),
+         ! and that the same relative rate of change extends below the layer bottom (till infinite depth).
          ! As a result, the mean depth of change equals the penetration depth, plus whatever offset
          ! the top of the layer is located at.
          !
          ! JB: correct form of the final fraction is the change between d_top and \infty, divided by the mass from 0 to \infty.
          ! That is equal to the relative rate of change within the layer (sms/c_int_local), multiplied with exp(-d_top/d_pen)
          d_sms = d_top + d_pen
-         _SET_BOTTOM_ODE_(id_pen_depth, (d_sms-d_pen)*sms/c_int_local)
+         _SET_BOTTOM_ODE_(id_pen_depth, (d_sms-d_pen)*sms/c_int)
       end if
 
       ! Apply sinks-sources to depth-integrated mass
