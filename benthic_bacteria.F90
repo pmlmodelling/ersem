@@ -110,7 +110,7 @@ contains
       class (type_ersem_benthic_bacteria),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
      
-      real(rk) :: Hc,Hn,Hp,fHc,fHn,fHp,fHn1,fHp1
+      real(rk) :: Hc,HcP,Hn,Hp,fHc,fHn,fHp,fHn1,fHp1
       real(rk) :: Dm,SK4a,SK1a,SQ6c
       real(rk) :: ETW,eT,eOx,eN,Limit
       real(rk) :: K4a,K1a
@@ -124,6 +124,7 @@ contains
 
          ! Retrieve bacterial carbon
          _GET_HORIZONTAL_(self%id_c,Hc)
+         _GET_HORIZONTAL_WITH_BACKGROUND_(self%id_c,HcP)
 
          ! Retrieve environmental conditions
          _GET_(self%id_ETW,ETW)            ! temperature (of lowermost pelagic layer)
@@ -200,15 +201,15 @@ contains
          sfHQ6 = sfHQI * (1._rk - self%pdHQ1X)
          sfHQ1 = sfHQI * self%pdHQ1X
 
-         _SET_BOTTOM_ODE_(self%id_Q6c, sfHQ6 * Hc)
-         _SET_BOTTOM_ODE_(self%id_Q6n, sfHQ6 * Hc * self%qnHIcX)
-         _SET_BOTTOM_ODE_(self%id_Q6p, sfHQ6 * Hc * self%qpHIcX)
+         _SET_BOTTOM_ODE_(self%id_Q6c, sfHQ6 * HcP)
+         _SET_BOTTOM_ODE_(self%id_Q6n, sfHQ6 * HcP * self%qnHIcX)
+         _SET_BOTTOM_ODE_(self%id_Q6p, sfHQ6 * HcP * self%qpHIcX)
 
-         _SET_BOTTOM_ODE_(self%id_Q1c, sfHQ1 * Hc)
-         _SET_BOTTOM_ODE_(self%id_Q1n, sfHQ1 * Hc * self%qnHIcX)
-         _SET_BOTTOM_ODE_(self%id_Q1p, sfHQ1 * Hc * self%qpHIcX)
+         _SET_BOTTOM_ODE_(self%id_Q1c, sfHQ1 * HcP)
+         _SET_BOTTOM_ODE_(self%id_Q1n, sfHQ1 * HcP * self%qnHIcX)
+         _SET_BOTTOM_ODE_(self%id_Q1p, sfHQ1 * HcP * self%qpHIcX)
 
-         _SET_BOTTOM_ODE_(self%id_c, -(sfHQ6 + sfHQ1) * Hc)
+         _SET_BOTTOM_ODE_(self%id_c, -(sfHQ6 + sfHQ1) * HcP)
 
          ! Uptake and excretion
          fHc = fHc + fQ7Hc * (1._rk-self%p_ex7ox) + fQ6Hc * (1._rk-self%p_ex6ox) + fQ1Hc
