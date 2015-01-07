@@ -110,7 +110,7 @@ contains
       class (type_ersem_benthic_bacteria),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
      
-      real(rk) :: Hc,HcP,Hn,Hp,fHc,fHn,fHp,fHn1,fHp1
+      real(rk) :: Hc,HcP,fHc,fHn,fHp,fHn1,fHp1
       real(rk) :: Dm,SK4a,SK1a,SQ6c
       real(rk) :: ETW,eT,eOx,eN,Limit
       real(rk) :: K4a,K1a
@@ -123,8 +123,8 @@ contains
       _HORIZONTAL_LOOP_BEGIN_
 
          ! Retrieve bacterial carbon
-         _GET_HORIZONTAL_(self%id_c,Hc)
-         _GET_HORIZONTAL_WITH_BACKGROUND_(self%id_c,HcP)
+         _GET_HORIZONTAL_(self%id_c,HcP)
+         _GET_HORIZONTAL_WITH_BACKGROUND_(self%id_c,Hc)
 
          ! Retrieve environmental conditions
          _GET_(self%id_ETW,ETW)            ! temperature (of lowermost pelagic layer)
@@ -144,10 +144,6 @@ contains
          ! Retrieve dissolved nutrients (phosphate, ammonium)
          _GET_HORIZONTAL_(self%id_K1p,K1a)
          _GET_HORIZONTAL_(self%id_K4n,K4a)
-
-         ! Infer bacterial nitrogen and phosphorus from carbon and prescribed fixed stoichiometry.
-         Hn = Hc*self%qnHIcX
-         Hp = Hc*self%qpHIcX
 
          ! Limitation by temperature, oxygen, nutrient availability.
          eT  = self%q10HX**((ETW-10._rk)/10._rk) - self%q10HX**((ETW-32._rk)/3._rk)
