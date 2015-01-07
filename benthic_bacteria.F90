@@ -111,7 +111,7 @@ contains
       _DECLARE_ARGUMENTS_DO_BOTTOM_
      
       real(rk) :: Hc,HcP,fHc,fHn,fHp,fHn1,fHp1
-      real(rk) :: Dm,SK4a,SK1a,SQ6c
+      real(rk) :: Dm,excess_c,excess_n,excess_p
       real(rk) :: ETW,eT,eOx,eN,Limit
       real(rk) :: K4a,K1a
       real(rk) :: Q1cP,Q1nP,Q1pP
@@ -213,15 +213,16 @@ contains
          fHp = fQ7Hp * (1._rk-self%p_ex7ox) + fQ6Hp * (1._rk-self%p_ex6ox) + fQ1Hp + fK1Hp
 
          ! Preserve fixed bacterial stoichiometry by selectively excreting part of N,P,C biomass fluxes
-         ! to ammonia, phosphate and particulate carbon, respectively.
-         SK4a = 0.0_rk
-         SK1a = 0.0_rk
-         SQ6c = 0.0_rk
-         CALL adjust_fixed_nutrients(fHc,fHn,fHp,self%qnHIcX,self%qpHIcX,SK4a,SK1a,SQ6c)
+         ! to ammonia, phosphate and particulate carbon, respectively. adjust_fixed_nutrients computes excess c, n and p,
+         ! and (in the case of non-zero excess carbon) also adjusts the increase in carbon biomass (fHc) downwards.
+         excess_n = 0.0_rk
+         excess_p = 0.0_rk
+         excess_c = 0.0_rk
+         CALL adjust_fixed_nutrients(fHc,fHn,fHp,self%qnHIcX,self%qpHIcX,excess_n,excess_p,excess_c)
 
          _SET_BOTTOM_ODE_(self%id_c,fHc)
 
-         _SET_BOTTOM_ODE_(self%id_Q6c,-fQ6Hc + SQ6c)
+         _SET_BOTTOM_ODE_(self%id_Q6c,-fQ6Hc + excess_c)
          _SET_BOTTOM_ODE_(self%id_Q6n,-fQ6Hn)
          _SET_BOTTOM_ODE_(self%id_Q6p,-fQ6Hp)
 
@@ -233,8 +234,8 @@ contains
          _SET_BOTTOM_ODE_(self%id_Q1n,-fQ1Hn + fQ7Hn*self%p_ex7ox + fQ6Hn*self%p_ex6ox)
          _SET_BOTTOM_ODE_(self%id_Q1p,-fQ1Hp + fQ7Hp*self%p_ex7ox + fQ6Hp*self%p_ex6ox)
 
-         _SET_BOTTOM_ODE_(self%id_K4n,-fK4Hn + SK4a)
-         _SET_BOTTOM_ODE_(self%id_K1p,-fK1Hp + SK1a)
+         _SET_BOTTOM_ODE_(self%id_K4n,-fK4Hn + excess_n)
+         _SET_BOTTOM_ODE_(self%id_K1p,-fK1Hp + excess_p)
 
       _HORIZONTAL_LOOP_END_
 
