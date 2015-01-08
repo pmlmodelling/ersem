@@ -302,6 +302,7 @@ contains
       ! - P:        layer-integrated source-sink terms of current layer (#/m2/d)
       ! - P_deep:   depth-integrated source-sink terms of deeper layers (#/m2/d) [equal to -bottom flux at equilibrium]
       ! - D:        layer thickness (m)
+      ! Task: find concentration at bottom interface from prescribed layer depth.
       ! Returns:
       ! - C_bot:    equilibrium concentration at bottom interface (#/m3)
       ! - C_int:    depth-integrated concentration in current layer (#/m2)
@@ -368,7 +369,8 @@ contains
       ! - sigma:    diffusivity (m2/d)
       ! - C0:       concentration at layer surface (#/m3)
       ! - P:        layer-integrated source-sink terms (#/m2/d)
-      ! Constraint: concentration and flux at bottom interface must be zero.
+      ! - P_deep:   depth-integrated source-sink terms of deeper layers (#/m2/d) [equal to -bottom flux at equilibrium]
+      ! Task: find layer depth from prescribed concentration at bottom interface (zero).
       ! Returns:
       ! - D:        layer thickness (m)
       ! - C_int:    depth integral of concentration (#/m2)
