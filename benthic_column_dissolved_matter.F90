@@ -17,7 +17,7 @@ module ersem_benthic_column_dissolved_matter
       type (type_bottom_state_variable_id) :: id_tot
       type (type_state_variable_id)        :: id_pel
       type (type_bottom_state_variable_id) :: id_D1m,id_D2m
-      type (type_horizontal_dependency_id) :: id_sms(3),id_Dtot,id_poro,id_cmix,id_diff(3)
+      type (type_horizontal_dependency_id) :: id_sms(3),id_pw_sms(3),id_Dtot,id_poro,id_cmix,id_diff(3)
 
       real(rk) :: ads(3)
       real(rk) :: relax, minD
@@ -31,7 +31,8 @@ module ersem_benthic_column_dissolved_matter
    type,extends(type_base_model) :: type_dissolved_matter_per_layer
       type (type_horizontal_dependency_id)          :: id_tot
       type (type_horizontal_dependency_id)          :: id_D1m,id_D2m,id_Dtot,id_poro
-      type (type_horizontal_diagnostic_variable_id) :: id_layers(3)
+      type (type_horizontal_diagnostic_variable_id) :: id_layers(3)    ! mass density (mass/m2) within the layer
+      type (type_horizontal_diagnostic_variable_id) :: id_layers_pw(3) ! mass density (mass/m2) within layer pore water
 
       real(rk) :: ads(3)
       integer :: last_layer
@@ -103,6 +104,9 @@ contains
       call profile%register_diagnostic_variable(profile%id_layers(1),trim(composition)//'1','mmol/m^2',trim(long_name)//' in layer 1',act_as_state_variable=.true.,domain=domain_bottom)
       call profile%register_diagnostic_variable(profile%id_layers(2),trim(composition)//'2','mmol/m^2',trim(long_name)//' in layer 2',act_as_state_variable=.true.,domain=domain_bottom)
       call profile%register_diagnostic_variable(profile%id_layers(3),trim(composition)//'3','mmol/m^2',trim(long_name)//' in layer 3',act_as_state_variable=.true.,domain=domain_bottom)
+      call profile%register_diagnostic_variable(profile%id_layers_pw(1),trim(composition)//'1_pw','mmol/m^2',trim(long_name)//' in pore water of layer 1',act_as_state_variable=.true.,domain=domain_bottom)
+      call profile%register_diagnostic_variable(profile%id_layers_pw(2),trim(composition)//'2_pw','mmol/m^2',trim(long_name)//' in pore water of layer 2',act_as_state_variable=.true.,domain=domain_bottom)
+      call profile%register_diagnostic_variable(profile%id_layers_pw(3),trim(composition)//'3_pw','mmol/m^2',trim(long_name)//' in pore water of layer 3',act_as_state_variable=.true.,domain=domain_bottom)
       call profile%register_dependency(profile%id_D1m, 'D1m', 'm','depth of bottom interface of 1st layer')
       call profile%register_dependency(profile%id_D2m, 'D2m', 'm','depth of bottom interface of 2nd layer')
       call profile%register_dependency(profile%id_Dtot,'Dtot','m','depth of sediment column')
@@ -113,23 +117,37 @@ contains
       call profile%request_coupling(profile%id_Dtot,'Dtot')
       call profile%request_coupling(profile%id_poro,'poro')
       call profile%request_coupling(profile%id_tot,composition)
+
+      ! Make sure that sources-sinks of layer-specific mass are counted in mass budgets.
       select case (composition)
          case ('c')
             call profile%add_to_aggregate_variable(standard_variables%total_carbon,profile%id_layers(1))
             call profile%add_to_aggregate_variable(standard_variables%total_carbon,profile%id_layers(2))
             call profile%add_to_aggregate_variable(standard_variables%total_carbon,profile%id_layers(3))
+            call profile%add_to_aggregate_variable(standard_variables%total_carbon,profile%id_layers_pw(1))
+            call profile%add_to_aggregate_variable(standard_variables%total_carbon,profile%id_layers_pw(2))
+            call profile%add_to_aggregate_variable(standard_variables%total_carbon,profile%id_layers_pw(3))
          case ('n'); long_name = 'nitrogen'
             call profile%add_to_aggregate_variable(standard_variables%total_nitrogen,profile%id_layers(1))
             call profile%add_to_aggregate_variable(standard_variables%total_nitrogen,profile%id_layers(2))
             call profile%add_to_aggregate_variable(standard_variables%total_nitrogen,profile%id_layers(3))
+            call profile%add_to_aggregate_variable(standard_variables%total_nitrogen,profile%id_layers_pw(1))
+            call profile%add_to_aggregate_variable(standard_variables%total_nitrogen,profile%id_layers_pw(2))
+            call profile%add_to_aggregate_variable(standard_variables%total_nitrogen,profile%id_layers_pw(3))
          case ('p'); long_name = 'phosphorus'
             call profile%add_to_aggregate_variable(standard_variables%total_phosphorus,profile%id_layers(1))
             call profile%add_to_aggregate_variable(standard_variables%total_phosphorus,profile%id_layers(2))
             call profile%add_to_aggregate_variable(standard_variables%total_phosphorus,profile%id_layers(3))
+            call profile%add_to_aggregate_variable(standard_variables%total_phosphorus,profile%id_layers_pw(1))
+            call profile%add_to_aggregate_variable(standard_variables%total_phosphorus,profile%id_layers_pw(2))
+            call profile%add_to_aggregate_variable(standard_variables%total_phosphorus,profile%id_layers_pw(3))
          case ('s'); long_name = 'silicate'
             call profile%add_to_aggregate_variable(standard_variables%total_silicate,profile%id_layers(1))
             call profile%add_to_aggregate_variable(standard_variables%total_silicate,profile%id_layers(2))
             call profile%add_to_aggregate_variable(standard_variables%total_silicate,profile%id_layers(3))
+            call profile%add_to_aggregate_variable(standard_variables%total_silicate,profile%id_layers_pw(1))
+            call profile%add_to_aggregate_variable(standard_variables%total_silicate,profile%id_layers_pw(2))
+            call profile%add_to_aggregate_variable(standard_variables%total_silicate,profile%id_layers_pw(3))
       end select
 
       ! Couple to layer-specific "sinks minus sources".
@@ -139,13 +157,21 @@ contains
       call self%request_coupling('sms_l1','per_layer/'//trim(composition)//'1_sms_tot')
       call self%request_coupling('sms_l2','per_layer/'//trim(composition)//'2_sms_tot')
       call self%request_coupling('sms_l3','per_layer/'//trim(composition)//'3_sms_tot')
+
+      ! Couple to layer-specific "sinks minus sources" for matter in pore water.
+      call self%register_dependency(self%id_pw_sms(1),'pw_sms_l1','mmol/m^2/s',trim(long_name)//' sinks-sources in pore water of layer 1')
+      call self%register_dependency(self%id_pw_sms(2),'pw_sms_l2','mmol/m^2/s',trim(long_name)//' sinks-sources in pore water of layer 2')
+      call self%register_dependency(self%id_pw_sms(3),'pw_sms_l3','mmol/m^2/s',trim(long_name)//' sinks-sources in pore water of layer 3')
+      call self%request_coupling('pw_sms_l1','per_layer/'//trim(composition)//'1_pw_sms_tot')
+      call self%request_coupling('pw_sms_l2','per_layer/'//trim(composition)//'2_pw_sms_tot')
+      call self%request_coupling('pw_sms_l3','per_layer/'//trim(composition)//'3_pw_sms_tot')
    end subroutine benthic_dissolved_matter_initialize
 
    subroutine benthic_dissolved_matter_do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
       class (type_ersem_benthic_column_dissolved_matter),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
-      real(rk) :: c_pel,c_int,sms_l1,sms_l2,sms
+      real(rk) :: c_pel,c_int,sms_l1,sms_l2,sms,pw_sms_l1,pw_sms_l2
       real(rk) :: d1,d2,d3
       real(rk) :: c_bot1_eq,c_int1_eq,H1_eq
       real(rk) :: c_bot2_eq,c_int2_eq,H2_eq
@@ -161,11 +187,13 @@ contains
       _GET_HORIZONTAL_(self%id_tot,c_int)
       _GET_HORIZONTAL_(self%id_sms(1),sms_l1)
       _GET_HORIZONTAL_(self%id_sms(2),sms_l2)
+      _GET_HORIZONTAL_(self%id_pw_sms(1),pw_sms_l1)
+      _GET_HORIZONTAL_(self%id_pw_sms(2),pw_sms_l2)
       _GET_(self%id_pel,c_pel)
 
       ! Sink-source terms are always /s, and we need /d.
-      sms_l1 = sms_l1*86400._rk
-      sms_l2 = sms_l2*86400._rk
+      sms_l1 = (sms_l1+pw_sms_l1)*86400._rk
+      sms_l2 = (sms_l2+pw_sms_l2)*86400._rk
 
       ! Retrieve physical properties of sediment column:
       ! layer depths, porosity, pelagic-benthic transfer coefficient, diffusivities.
@@ -195,7 +223,7 @@ contains
 
       if (self%last_layer==1) then
          ! Layer 1: compute steady-state layer height H1_eq and layer integral c_int1_eq
-         call compute_final_equilibrium_profile(diff1,c_pel,sms_l1,d3,H1_eq,c_int1_eq)
+         call compute_final_equilibrium_profile(diff1,c_pel,sms_l1,sms_l2,d3,H1_eq,c_int1_eq)
 
          ! Benthic dynamics: relax depth-integrated mass towards equilibrium value
          c_int_eq = poro*self%ads(1)*c_int1_eq
@@ -209,9 +237,9 @@ contains
          _SET_BOTTOM_ODE_(self%id_D1m,(max(self%minD,H1_eq)-d1)/self%relax)
       elseif (self%last_layer==2) then
          ! Layer 1: compute steady-state concentration at bottom interface c_bot1_eq and layer integral c_int1_eq
-         call compute_equilibrium_profile(d1,diff1,c_pel,sms_l1,sms_l2,c_bot1_eq,c_int1_eq)
+         call compute_equilibrium_profile(diff1,c_pel,sms_l1,sms_l2,d1,c_bot1_eq,c_int1_eq)
          ! Layer 2: compute steady-state layer height H2_eq and layer integral c_int2_eq
-         call compute_final_equilibrium_profile(diff2,c_bot1_eq,sms_l2,d3-d1,H2_eq,c_int2_eq)
+         call compute_final_equilibrium_profile(diff2,c_bot1_eq,sms_l2,0.0_rk,d3-d1,H2_eq,c_int2_eq)
 
          ! Benthic dynamics: relax depth-integrated mass towards equilibrium value
          c_int_eq = poro*(self%ads(1)*c_int1_eq+self%ads(2)*c_int2_eq)
@@ -225,9 +253,9 @@ contains
          _SET_BOTTOM_ODE_(self%id_D2m,(max(self%minD,d1+H2_eq)-d2)/self%relax)
       else
          ! Layer 1: compute steady-state concentration at bottom interface c_bot1_eq and layer integral c_int1_eq
-         call compute_equilibrium_profile(d1,diff1,c_pel,sms_l1,sms_l2,c_bot1_eq,c_int1_eq)
+         call compute_equilibrium_profile(diff1,c_pel,    sms_l1,sms_l2,d1,   c_bot1_eq,c_int1_eq)
          ! Layer 2: compute steady-state concentration at bottom interface c_bot2_eq and layer integral c_int2_eq
-         call compute_equilibrium_profile(d2-d1,diff2,c_bot1_eq,sms_l2,0.0_rk,c_bot2_eq,c_int2_eq)
+         call compute_equilibrium_profile(diff2,c_bot1_eq,sms_l2,0.0_rk,d2-d1,c_bot2_eq,c_int2_eq)
          ! Layer 3: no sources or sinks: homogeneous equilibrium concentration c_bot2_eq
          c_int3_eq = (d3-d2)*c_bot2_eq
          c_int_eq = poro*(self%ads(1)*c_int1_eq+self%ads(2)*c_int2_eq+self%ads(3)*c_int3_eq)
@@ -251,9 +279,9 @@ contains
          ! computed for layer production terms d1, d2-d1, d3-d2. As we are assuming the residual profile was previously an equilibrium
          ! profile, the necessary depth-integrated production rate P_int must equal the exchange across the surface, i.e., diffusivity*gradient.
          ! Thus, we can now simply add the P_int as a additional surface exchange term, accounting for the move towards equilibrium.
-         call compute_equilibrium_profile(d1,   diff1,0.0_rk,   d1,   d3-d1, c_bot1_eq,c_int1_eq)
-         call compute_equilibrium_profile(d2-d1,diff2,c_bot1_eq,d2-d1,d3-d2, c_bot2_eq,c_int2_eq)
-         call compute_equilibrium_profile(d3-d2,diff3,c_bot2_eq,d3-d2,0.0_rk,c_bot3_eq,c_int3_eq)
+         call compute_equilibrium_profile(diff1,0.0_rk,   d1,   d3-d1, d1,   c_bot1_eq,c_int1_eq)
+         call compute_equilibrium_profile(diff2,c_bot1_eq,d2-d1,d3-d2, d2-d1,c_bot2_eq,c_int2_eq)
+         call compute_equilibrium_profile(diff3,c_bot2_eq,d3-d2,0.0_rk,d3-d2,c_bot3_eq,c_int3_eq)
          norm_res_int = poro*(self%ads(1)*c_int1_eq+self%ads(2)*c_int2_eq+self%ads(3)*c_int3_eq)
          P_res_int = (c_int-c_int_eq)/norm_res_int*d3
          _SET_BOTTOM_EXCHANGE_(self%id_pel,sms+P_res_int) ! Equilibrium flux = sms, residual flux = P_res_int
@@ -263,17 +291,17 @@ contains
       _HORIZONTAL_LOOP_END_
    end subroutine benthic_dissolved_matter_do_bottom
 
-   subroutine compute_equilibrium_profile(D,sigma,C0,P,P_deep,C_bot,C_int)
-      real(rk),intent(in)  :: D,sigma,c0,P,P_deep
+   subroutine compute_equilibrium_profile(sigma,C0,P,P_deep,D,C_bot,C_int)
+      real(rk),intent(in)  :: sigma,c0,P,P_deep,D
       real(rk),intent(out) :: C_bot,C_int
       real(rk) :: a_D2,b_D,c
       ! ----------------------------------------------------------------------------------------------------
       ! Determine equilibrium concentration profile in pore water from:
-      ! - D:        layer thickness (m)
       ! - sigma:    diffusivity (m2/d)
       ! - C0:       concentration at layer surface (#/m3)
       ! - P:        layer-integrated source-sink terms of current layer (#/m2/d)
-      ! - P_deep:   depth-integrated source-sink terms of deeper layers (#/m2/d) [must equal -bottom flux at equilibrium]
+      ! - P_deep:   depth-integrated source-sink terms of deeper layers (#/m2/d) [equal to -bottom flux at equilibrium]
+      ! - D:        layer thickness (m)
       ! Returns:
       ! - C_bot:    equilibrium concentration at bottom interface (#/m3)
       ! - C_int:    depth-integrated concentration in current layer (#/m2)
@@ -284,29 +312,45 @@ contains
       ! At equilibrium: $\sigma \partial^2 C/\partial z^2 + P/D = 0$
       ! Thus, \partial^2 C/\partial z^2 = -P/D/\sigma
       ! Solution is a quadratic equation: $C(z) = a z^2 + b z + c$
-      ! From second derivative: $\partial^2 C/\partial z^2 = 2a = -P/D/\sigma$. Thus, $a = -P/D/\sigma/2$.
       ! ----------------------------------------------------------------------------------------------------
-      ! C(z) = -P/D/\sigma/2 z^2 + b z + c
+      ! First we determine the coefficients a,b,c of the quadratic equation:
       !
-      ! Constraint 1: inward flux at top interface must balance depth-integrated sinks-sources in deeper
-      ! layers: $-P-P_deep$. For consistency, this flux must equal that produced by diffusion at the boundary,
-      ! i.e., $\sigma*\partial C/\partial z$. Note: gradient must be positive when deeper layers are a source
-      ! (i.e., P+P_deep>0). Thus:
+      ! a)
+      ! From second derivative: $\partial^2 C/\partial z^2 = 2a = -P/D/\sigma$.
+      ! Thus, $a = -P/D/\sigma/2$.
+      !
+      ! b)
+      ! Inward flux at top interface must balance depth-integrated sinks-sources in deeper layers:
+      ! $-P-P_deep$. For consistency, this flux must equal that produced by diffusion at the boundary,
+      ! i.e., $\sigma*\partial C/\partial z$. Note: gradient must be positive when deeper layers are a
+      ! source (i.e., P+P_deep>0). Thus:
       !    \sigma*\partial C/\partial z(0) = \sigma*b = P+P_deep -> b = (P+P_deep)/\sigma
       !
-      ! Constraint 2: concentration at top interface is know C(0) = c = C0 is known.
+      ! c)
+      ! Concentration at top interface $C(0) = c = C0$ is known.
+      !
+      ! Thus the pore water concentration is prescribed by the quadratic equation $C(z) = a z^2 + b z + c$
+      ! with constants:
+      !   $a = -P/D/\sigma/2$
+      !   $b = (P+P_deep)/\sigma$
+      !   $c = C0$
+      ! ----------------------------------------------------------------------------------------------------
+      ! Problem 1: find the concentration at the bottom interface of the layer (units: #/m3):
       !
       ! The concentration at the bottom equal the value of the parabola at depth D:
       !    C(D) = a D^2 + b D + c
+      ! ----------------------------------------------------------------------------------------------------
+      ! Problem 2: find the concentration integrated over the layer (units: #/m2)
       !
       ! Depth-integrated layer contents is found by integrating the parabola between 0 and D:
       !    \int_0^D C(z) dz = \int_0^D a * z^2 + b z + c dz
       !                     = [a/3 z^3 + b/2 z^2 + c z]_0^D
-      !                     = a/3 D^3 + b/2 D^2 + c Z
-      !
+      !                     = a/3 D^3 + b/2 D^2 + c D
+      ! ----------------------------------------------------------------------------------------------------
+      ! Preventing division by zero (due to D=0):
       ! As $a$ always occurs multiplied with $D^2$, and $b$ always multiplied with $D$,
-      ! we define the combined constants $a_D2 = a D^2$ and $b_D = b D$. This also avoids
-      ! division by 0 when computing $a$ while $D$ tends to zero.
+      ! we define the combined constants $a_D2 = a D^2$ and $b_D = b D$. This avoids division by 0 when
+      ! computing $a$ while $D$ tends to zero.
       ! ----------------------------------------------------------------------------------------------------
       a_D2 = -P/sigma/2*D
       b_D = (P+P_deep)/sigma*D
@@ -315,10 +359,10 @@ contains
       C_int = (a_D2/3 + b_D/2 + c)*D
    end subroutine compute_equilibrium_profile
 
-   subroutine compute_final_equilibrium_profile(sigma,c0,P,Dmax,D,c_int)
-      real(rk),intent(in)  :: sigma,c0,P,Dmax
+   subroutine compute_final_equilibrium_profile(sigma,c0,P,P_deep,Dmax,D,c_int)
+      real(rk),intent(in)  :: sigma,c0,P,P_deep,Dmax
       real(rk),intent(out) :: D,c_int
-      real(rk) :: c_bot
+      real(rk) :: a_D2,b_D,c,c_bot
       ! ----------------------------------------------------------------------------------------------------
       ! Determine layer depth and concentration profile in pore water at equilibrium from:
       ! - sigma:    diffusivity (m2/d)
@@ -330,36 +374,73 @@ contains
       ! - C_int:    depth integral of concentration (#/m2)
       ! ----------------------------------------------------------------------------------------------------
       ! Governing equation: $\partial C/\partial t = sigma \partial^2 C/\partial z^2 + sms$
-      ! Assumption: diffusivity $\sigma$ and sink-minus-source $sms4 are independent of $z$ within the layer.
-      ! Thus, $sms$ can be written as layer integral divided by layer height: $sms = P/D$
-      ! At equilibrium: $\partial^2 C/\partial z^2 + P/D = 0$
-      ! Thus, $\partial^2 C/\partial z^2 = -P/D/sigma$
-      ! Solution is a quadratic equation: C(z) = a z^2 + b z + c
-      ! From second derivative: $\partial^2 C/\partial z^2 = 2a = -P/D/sigma$. Thus, $a = -P/D/sigma/2$.
+      ! Assumption: diffusivity $\sigma$ and sources-minus-sinks $sms$ are independent of $z$ within the layer.
+      ! Thus, $sms$ can be written as layer integrated source-sink terms, divided by layer height: $sms = P/D$
+      ! At equilibrium: $\sigma \partial^2 C/\partial z^2 + P/D = 0$
+      ! Thus, \partial^2 C/\partial z^2 = -P/D/\sigma
+      ! Solution is a quadratic equation: $C(z) = a z^2 + b z + c$
       ! ----------------------------------------------------------------------------------------------------
-      ! Task 1: find layer height
-      !   Let us adopt a bottom-to-top coordinate system, bottom interface at $z=0$, top interface at $z=D$
-      !   Bottom constraint: concentration $C(0) = 0$, flux $\partial C/\partial z = 0$ (i.e., minimum of parabola)
-      !   Thus, $b=0$ and $c=0$, and $C(z) = -P/D/\sigma/2 z^2$
-      !   Top constraint: concentration $C(D)$ is known: $C(D) = -P/\sigma/2 D = C0$
-      !   -> layer height $D = -2 \sigma C0/P$
-      !   Note that $D>=0$ for $P<0$ only. In other words, this solution is valid only if the layer is a sink.
-      !   Also, if the layer is neither sink nor source ($P=0$), $D->\infty$. That is,
-      !   the solution is a flat profile, with surface concentration c0 extending forever downward.
-      ! Task 2: compute depth-integrated layer contents:
-      !   \int_0^D -P/D/\sigma/2 z^2 dz = [-P/D/\sigma/6 z^3]_0^D = -P/\sigma/6 D^2
-      ! Consistency check: flux at top interface must balance internal production, since we assume equilibrium.
-      !   \sigma*\partial C/\partial z (D) = -P   [OK]
+      ! First we determine the coefficients a,b,c of the quadratic equation:
+      !
+      ! a)
+      ! From second derivative: $\partial^2 C/\partial z^2 = 2a = -P/D/\sigma$.
+      ! Thus, $a = -P/D/\sigma/2$.
+      !
+      ! b)
+      ! Inward flux at top interface must balance depth-integrated sinks-sources in deeper layers:
+      ! $-P-P_deep$. For consistency, this flux must equal that produced by diffusion at the boundary,
+      ! i.e., $\sigma*\partial C/\partial z$. Note: gradient must be positive when deeper layers are a
+      ! source (i.e., P+P_deep>0). Thus:
+      !    \sigma*\partial C/\partial z(0) = \sigma*b = P+P_deep -> b = (P+P_deep)/\sigma
+      !
+      ! c)
+      ! Concentration at top interface $C(0) = c = C0$ is known.
+      !
+      ! Thus the pore water concentration is prescribed by the quadratic equation $C(z) = a z^2 + b z + c$
+      ! with constants:
+      !   $a = -P/D/\sigma/2$
+      !   $b = (P+P_deep)/\sigma$
+      !   $c = C0$
       ! ----------------------------------------------------------------------------------------------------
-      if (Dmax*P>-2*sigma*c0) then   ! Dmax<-2 sigma c0/P, rearranged for P<0 close to 0. Result also picks up P>0.
-         ! Loss rate within layer is too low (or layer experiences net production, i.e., P>0).
+      ! Problem 1: find the depth of the layer, defined as the depth at which the pore water concentration
+      ! is zero.
+      !
+      ! Depth-integrated layer contents is found by integrating the parabola between 0 and D:
+      !    \int_0^D C(z) dz = \int_0^D a * z^2 + b z + c dz
+      !                     = [a/3 z^3 + b/2 z^2 + c z]_0^D
+      !                     = a/3 D^3 + b/2 D^2 + c D
+      !
+      ! Inserting coefficients a,b,c
+      !
+      ! D = -C0 \sigma/(P/2 + P_deep) = -2 C0 \sigma/(P + 2 P_deep)
+      !
+      ! Note that this returns a positive depth D only if P+2 P_deep<0!
+      ! ----------------------------------------------------------------------------------------------------
+      ! Problem 2: find the concentration integrated over the layer (units: #/m2)
+      !
+      ! Depth-integrated layer contents is found by integrating the parabola between 0 and D:
+      !    \int_0^D C(z) dz = \int_0^D a * z^2 + b z + c dz
+      !                     = [a/3 z^3 + b/2 z^2 + c z]_0^D
+      !                     = a/3 D^3 + b/2 D^2 + c D
+      ! ----------------------------------------------------------------------------------------------------
+      ! Preventing division by zero (due to D=0):
+      ! As $a$ always occurs multiplied with $D^2$, and $b$ always multiplied with $D$,
+      ! we define the combined constants $a_D2 = a D^2$ and $b_D = b D$. This avoids division by 0 when
+      ! computing $a$ while $D$ tends to zero.
+      ! ----------------------------------------------------------------------------------------------------
+      
+      if (Dmax*(P+2*P_deep)>-2*sigma*c0) then   ! Dmax<-2 sigma c0/P, rearranged for P<0 close to 0. Result also picks up P>0.
+         ! Destruction within layer is too low (or layer experiences net production, i.e., P>0).
          ! If we would impose zero concentration at the layer bottom, the layer would extend beyond maximum depth.
          ! Fix depth at maximum depth and use parabola with zero flux but non-zero concentration at bottom interface.
          D = Dmax
-         call compute_equilibrium_profile(D,sigma,c0,P,0.0_rk,c_bot,c_int)
+         call compute_equilibrium_profile(sigma,c0,P,P_deep,D,c_bot,c_int)
       else
-         D = -2*sigma*C0/P
-         C_int = -P/sigma/6*D*D
+         D = -2*sigma*C0/(P+2*P_deep)
+         a_D2 = -P/sigma/2*D
+         b_D = (P+P_deep)/sigma*D
+         c = C0
+         C_int = (a_D2/3 + b_D/2 + c)*D
       end if
    end subroutine compute_final_equilibrium_profile
 
@@ -392,6 +473,11 @@ contains
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(1),c_int)
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(2),0.0_rk)
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(3),0.0_rk)
+
+            ! Pore water contents: layer contents divided by adsorption [total:dissolved]
+            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(1),c_int/self%ads(1))
+            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(2),0.0_rk)
+            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(3),0.0_rk)
          elseif (self%last_layer==2) then
             ! Vertically homogeneous in layer 1, quadratically decreasing in layer 2 (zero concentration at bottom interface)
             ! Typically used for nitrate
@@ -402,6 +488,11 @@ contains
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(1),poro*self%ads(1)*d(1)*factor)
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(2),poro*self%ads(2)*d(2)/3.0_rk*factor)
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(3),0.0_rk)
+            
+            ! Pore water contents: layer contents divided by adsorption [total:dissolved]
+            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(1),poro*d(1)*factor)
+            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(2),poro*d(2)/3.0_rk*factor)
+            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(3),0.0_rk)
          else
             ! Vertically homogeneous in layers 1,2,3
             ! Typically used for all tracers but oxygen and nitrate.
@@ -413,6 +504,11 @@ contains
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(1),poro*self%ads(1)*d(1)*factor)
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(2),poro*self%ads(2)*d(2)*factor)
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(3),poro*self%ads(3)*d(3)*factor)
+
+            ! Pore water contents: layer contents divided by adsorption [total:dissolved]
+            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(1),poro*d(1)*factor)
+            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(2),poro*d(2)*factor)
+            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(3),poro*d(3)*factor)
          end if
 
       _HORIZONTAL_LOOP_END_
