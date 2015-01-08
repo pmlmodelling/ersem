@@ -402,17 +402,17 @@ contains
       !   $b = (P+P_deep)/\sigma$
       !   $c = C0$
       ! ----------------------------------------------------------------------------------------------------
-      ! Problem 1: find the depth of the layer, defined as the depth at which the pore water concentration
-      ! is zero.
+      ! Problem 1: find layer depth $D$, defined as the depth at which the pore water concentration is zero:
       !
-      ! Depth-integrated layer contents is found by integrating the parabola between 0 and D:
-      !    \int_0^D C(z) dz = \int_0^D a * z^2 + b z + c dz
-      !                     = [a/3 z^3 + b/2 z^2 + c z]_0^D
-      !                     = a/3 D^3 + b/2 D^2 + c D
+      !   a D^2 + b D + c = 0
       !
-      ! Inserting coefficients a,b,c
+      ! Inserting coefficients $a,b,c$:
       !
-      ! D = -C0 \sigma/(P/2 + P_deep) = -2 C0 \sigma/(P + 2 P_deep)
+      !   -P/D/\sigma/2 D^2 + (P + P_deep)/\sigma D + C0 = (P/2 + P_deep)/\sigma D + C0 = 0
+      !
+      ! Isolating $D$:
+      !
+      !   D = -C0 \sigma/(P/2 + P_deep) = -2 C0 \sigma/(P + 2 P_deep)
       !
       ! Note that this returns a positive depth D only if P+2 P_deep<0!
       ! ----------------------------------------------------------------------------------------------------
