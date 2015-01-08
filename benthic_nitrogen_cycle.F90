@@ -125,7 +125,7 @@ contains
          _SET_BOTTOM_ODE_(self%id_K4n,-jM4M3n)
          _SET_BOTTOM_ODE_(self%id_G2o,-self%xno3X*jM4M3n)
 
-         ! Retrive reduction equivalent demand, layer 2 depth integrated nitrate, layer 2 thickness
+         ! Retrieve reduction equivalent demand, layer 2 depth integrated nitrate, layer 2 thickness
          _GET_HORIZONTAL_(self%id_K6_sms,K6_sms) 
          _GET_HORIZONTAL_(self%id_K3n2,K3n2)
          _GET_HORIZONTAL_(self%id_layer2_thickness,layer2_thickness)
@@ -133,8 +133,8 @@ contains
          ! FABM provides sources-sinks of K6 in per second - convert to our internal time unit (per day).
           K6_sms = K6_sms * self%dt
 
-         ! From nitrate per m2 in layer 2 to nitrate concentration
-         ! (not true conentration as it does not consider porosity!)
+         ! From nitrate per m2 in layer 2 to nitrate concentration per unit sediment
+         ! (not pore water concentration as it does not consider porosity!)
          MU_m2 = K3n2/layer2_thickness
          eN2 = MU_m2/(MU_m2+self%hM3G4X)
 

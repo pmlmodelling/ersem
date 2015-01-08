@@ -429,7 +429,7 @@ contains
       ! computing $a$ while $D$ tends to zero.
       ! ----------------------------------------------------------------------------------------------------
       
-      if (Dmax*(P+2*P_deep)>-2*sigma*c0) then   ! Dmax<-2 sigma c0/P, rearranged for P<0 close to 0. Result also picks up P>0.
+      if (Dmax*(P+2*P_deep)>-2*sigma*c0) then   ! Dmax<-2 sigma c0/(P+2*P_deep), rearranged for P+2*P_deep<0 close to 0. Result also picks up P+2*P_deep>0.
          ! Destruction within layer is too low (or layer experiences net production, i.e., P>0).
          ! If we would impose zero concentration at the layer bottom, the layer would extend beyond maximum depth.
          ! Fix depth at maximum depth and use parabola with zero flux but non-zero concentration at bottom interface.
