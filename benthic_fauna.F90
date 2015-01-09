@@ -170,7 +170,7 @@ contains
      real(rk) :: Yc,Yn,Yp,O2o,foodP
      real(rk) :: eT,eO,eC,ETW,Y,x
      real(rk) :: rate
-     real(rk) :: SY2c,SY2n,SY2p,SQ6c
+     real(rk) :: SYc,SYn,SYp,SQ6c
      real(rk),dimension(self%nfood) :: foodcP,foodnP,foodpP,foodsP
      real(rk),dimension(self%nfood) :: feed, sflux, prefcorr
      real(rk) :: foodsum,mm
@@ -275,9 +275,9 @@ contains
    fBTYc = sum(grossfluxc)
    nfBTYc= sum(netfluxc)
 
-   SY2c = nfBTYc
-   SY2n = sum(netfluxn)
-   SY2p = sum(netfluxp)
+   SYc = nfBTYc
+   SYn = sum(netfluxn)
+   SYp = sum(netfluxp)
    _SET_BOTTOM_ODE_(self%id_Q6c,fBTYc - nfBTYc)
    _SET_BOTTOM_ODE_(self%id_Q6n,sum(grossfluxn) - sum(netfluxn))
    _SET_BOTTOM_ODE_(self%id_Q6p,sum(grossfluxp) - sum(netfluxp))
@@ -290,7 +290,7 @@ contains
 
    fYG3c = self%srYX * Yc * eT + self%purYX * nfBTYc
 
-   SY2c = SY2c-fYG3c
+   SYc = SYc-fYG3c
    _SET_BOTTOM_ODE_(self%id_G3c, fYG3c/CMass)
    _SET_BOTTOM_ODE_(self%id_G2o,-fYG3c/CMass)
 
@@ -310,9 +310,9 @@ contains
    excn = 0.0_rk
    excp = 0.0_rk
    SQ6c = 0.0_rk
-   call Adjust_fixed_nutrients(SY2c,SY2n,SY2p,self%qnYIcX,self%qpYIcX,excn,excp,SQ6c)
+   call Adjust_fixed_nutrients(SYc,SYn,SYp,self%qnYIcX,self%qpYIcX,excn,excp,SQ6c)
 
-   _SET_BOTTOM_ODE_(self%id_c,SY2c)
+   _SET_BOTTOM_ODE_(self%id_c,SYc)
 
    p_an = (sum(self%pu_anX*grossfluxc))/max(fBTYc,1.e-8_rk)
 
