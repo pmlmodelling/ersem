@@ -141,7 +141,7 @@ contains
          ! "borrowed" oxygen consumption in anaerobic layer:
 
          ! expression in nitrate reduction (100%):
-        jMIno3 = -K6_sms/(self%xno3X - self%xn2X*self%pdenitX)
+        jMIno3 = -K6_sms/(self%xno3X *(1._rk - self%pdenitX) + self%xn2X*self%pdenitX)
         jM3M4n = jMIno3*eN2*self%pammonX*(1._rk-self%pdenitX)
 
         jM3G4n = jMIno3*eN2*self%pammonX*       self%pdenitX
@@ -151,7 +151,7 @@ contains
         _SET_BOTTOM_ODE_(self%id_G4n, jM3G4n)
 
         ! Oxygen dynamics: use oxygen to fuel demand for reduction equivalents after nitrate use is taken into account.
-        _SET_BOTTOM_ODE_(self%id_G2o2, K6_sms + self%xno3X*jM3M4n + (self%xno3X-self%xn2X)*jM3G4n)
+        _SET_BOTTOM_ODE_(self%id_G2o2, K6_sms + self%xno3X*jM3M4n + self%xn2X*jM3G4n)
 
       _HORIZONTAL_LOOP_END_
 
