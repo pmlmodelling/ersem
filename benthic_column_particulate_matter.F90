@@ -647,7 +647,7 @@ contains
       type (type_horizontal_dependency_id),intent(in) :: id_sms,id_local
       real(rk),                            intent(in) :: d_top,d_bot
 
-      real(rk) :: c_int,d_pen,sms,d_sms
+      real(rk) :: c_int,d_pen,d_pen_c,sms,d_sms
       real(rk) :: c_int_local,sms_remin
 
       ! Retrieve depth-integrated mass, penetration depth, sinks-sources.
@@ -676,10 +676,15 @@ contains
          ! That is, 1/C(z) d/dt C(z) within the layer does not depend on depth.
          ! In addition, this rule assumes that the same relative rate of change applies below
          ! the bottom of the active layer (till infinite depth) - or alternatively, that the
-         ! bottom interface of the active layer is much deeper than the penentration depth.
+         ! bottom interface of the active layer is much deeper than the penetration depth.
          ! Using the fact that the distribution of mass is exponential, the mean depth of change
          ! then equals the penetration depth, plus whatever offset the top of the active layer is located at.
          d_sms = d_top + d_pen
+      elseif (self%source_depth_distribution==3) then
+         ! As for self%source_depth_distribution==2, but derive depth of change from
+         ! penetration depth of carbon, even when changing nitrogen, phosphorous, silicate.
+         _GET_HORIZONTAL_(self%id_pen_depth_c,d_pen_c)
+         d_sms = d_top + d_pen_c
       end if
 
       ! Compute change in penetration depth. See its derivation in the comments at the top of the file,
