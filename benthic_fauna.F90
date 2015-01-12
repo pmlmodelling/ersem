@@ -170,7 +170,7 @@ contains
      real(rk) :: Yc,Yn,Yp,O2o,foodP
      real(rk) :: eT,eO,eC,ETW,Y,x
      real(rk) :: rate
-     real(rk) :: SYc,SYn,SYp,SQ6c
+     real(rk) :: SYc,SYn,SYp
      real(rk),dimension(self%nfood) :: foodcP,foodnP,foodpP,foodsP
      real(rk),dimension(self%nfood) :: feed, sflux, prefcorr
      real(rk) :: foodsum,mm
@@ -178,7 +178,8 @@ contains
      real(rk),dimension(self%nfood) :: netfluxc,netfluxn,netfluxp
      real(rk) :: mort_act,mort_ox,mort_cold,mortflux
      integer  :: ifood,istate
-     real(rk) :: fBTYc,nfBTYc,fYG3c,p_an,excn,excp
+     real(rk) :: fBTYc,nfBTYc,fYG3c,p_an
+     real(rk) :: excess_c,excess_n,excess_p
 
      _HORIZONTAL_LOOP_BEGIN_
 
@@ -307,20 +308,20 @@ contains
    _SET_BOTTOM_ODE_(self%id_Q6p,mortflux * Yp)
 
    ! Adjust fixed nutrients
-   excn = 0.0_rk
-   excp = 0.0_rk
-   SQ6c = 0.0_rk
-   call Adjust_fixed_nutrients(SYc,SYn,SYp,self%qnYIcX,self%qpYIcX,excn,excp,SQ6c)
+   excess_n = 0.0_rk
+   excess_p = 0.0_rk
+   excess_c = 0.0_rk
+   call Adjust_fixed_nutrients(SYc,SYn,SYp,self%qnYIcX,self%qpYIcX,excess_n,excess_p,excess_c)
 
    _SET_BOTTOM_ODE_(self%id_c,SYc)
 
    p_an = (sum(self%pu_anX*grossfluxc))/max(fBTYc,1.e-8_rk)
 
-   _SET_BOTTOM_ODE_(self%id_K4n,(1._rk-p_an) * excn)
-   _SET_BOTTOM_ODE_(self%id_K4n2,p_an * excn)
-   _SET_BOTTOM_ODE_(self%id_K1p,(1._rk-p_an) * excp)
-   _SET_BOTTOM_ODE_(self%id_K1p2,p_an * excp)
-   _SET_BOTTOM_ODE_(self%id_Q6c,SQ6c)
+   _SET_BOTTOM_ODE_(self%id_K4n,(1._rk-p_an) * excess_n)
+   _SET_BOTTOM_ODE_(self%id_K4n2,p_an * excess_n)
+   _SET_BOTTOM_ODE_(self%id_K1p,(1._rk-p_an) * excess_p)
+   _SET_BOTTOM_ODE_(self%id_K1p2,p_an * excess_p)
+   _SET_BOTTOM_ODE_(self%id_Q6c,excess_c)
      _HORIZONTAL_LOOP_END_
 
   end subroutine do_bottom
