@@ -13,21 +13,29 @@ module ersem_benthic_fauna
    private
 
   type,extends(type_ersem_benthic_base),public :: type_ersem_benthic_fauna
-  type (type_state_variable_id)   :: id_O2o
-  type (type_bottom_state_variable_id) :: id_Q6c,id_Q6n,id_Q6p,id_Q6s,id_Q6c2
-  type (type_bottom_state_variable_id) :: id_G3c,id_G2o,id_K4n,id_K1p,id_K4n2,id_K1p2
-  type (type_horizontal_dependency_id), allocatable,dimension(:) :: id_foodc,id_foodn,id_foodp,id_foods
-  type (type_dependency_id), allocatable,dimension(:) :: id_foodpelc,id_foodpeln,id_foodpelp,id_foodpels
-  type (type_dependency_id) :: id_ETW
-  type (type_horizontal_diagnostic_variable_id) :: id_bioirr,id_biotur
-  type (type_model_id),allocatable,dimension(:) :: id_food
+     type (type_state_variable_id)   :: id_O2o
+     type (type_bottom_state_variable_id) :: id_Q6c,id_Q6n,id_Q6p,id_Q6s,id_Q6c2
+     type (type_bottom_state_variable_id) :: id_G3c,id_G2o,id_K4n,id_K1p,id_K4n2,id_K1p2
+     type (type_horizontal_dependency_id), allocatable,dimension(:) :: id_foodc,id_foodn,id_foodp,id_foods
+     type (type_horizontal_dependency_id), allocatable,dimension(:) :: id_foodc_an
+     type (type_dependency_id), allocatable,dimension(:) :: id_foodpelc,id_foodpeln,id_foodpelp,id_foodpels
+     type (type_dependency_id) :: id_ETW
+     type (type_horizontal_diagnostic_variable_id) :: id_bioirr,id_biotur
+     type (type_model_id),allocatable,dimension(:) :: id_food
+
+     ! To achieve compatibility with legacy ERSEM, we need to be able to decouple the variable
+     ! from which food availability is derived from the variable that absorbs the loss due to
+     ! gross food uptake. The following variables absorb the loss due to food uptake - by default
+     ! they are coupled to the same variable from which available food is derived.
+     type (type_model_id),allocatable,dimension(:) :: id_food_loss_source
+
      integer  :: nfood    
      real(rk) :: qnYIcX,qpYIcX
      real(rk) :: q10YX
      real(rk) :: hO2YX,rlO2YX
      real(rk) :: xclYX,xcsYX,xchYX
      real(rk) :: suYX,luYX,huYX
-     real(rk),allocatable :: pueYX(:),pufood(:),pu_anX(:)
+     real(rk),allocatable :: pueYX(:),pufood(:)
      logical,allocatable ::foodispel(:)
      real(rk) :: pudilX
      real(rk) :: sdYX,sdmO2YX,sdcYX,xdcYX
@@ -44,7 +52,7 @@ contains
     integer,                                 intent(in)           ::configunit
     integer           :: ifood
     character(len=16) :: index
-    logical           :: foodispom,food_anaerobic
+    logical           :: foodispom
     real(rk)          :: pueYX,pueQX
     self%dt = 86400._rk
     ! Register parameters
@@ -83,6 +91,8 @@ contains
     allocate(self%id_foodn(self%nfood))
     allocate(self%id_foodp(self%nfood))
     allocate(self%id_foods(self%nfood))
+    allocate(self%id_foodc_an(self%nfood))
+    allocate(self%id_food_loss_source(self%nfood))
 
    ! Allocate components of food sources
     do ifood=1,self%nfood
@@ -90,43 +100,43 @@ contains
          call self%get_parameter(self%foodispel(ifood),'food'//trim(index)//'ispel','','food type '//trim(index)//'is pelagic',default=.false.)
          call self%register_model_dependency(self%id_food(ifood),'food'//trim(index))
          if (self%foodispel(ifood)) then
-         call self%register_dependency(self%id_foodpelc(ifood), 'food'//trim(index)//'c','mmol C m-3','Food '//trim(index)//' C') 
-         call self%register_dependency(self%id_foodpeln(ifood), 'food'//trim(index)//'n','mmol C m-3','Food '//trim(index)//' N')
-         call self%register_dependency(self%id_foodpelp(ifood), 'food'//trim(index)//'p','mmol C m-3','Food '//trim(index)//' P')
-         call self%register_dependency(self%id_foodpels(ifood), 'food'//trim(index)//'s','mmol C m-3','Food '//trim(index)//' Si')
-         call self%request_coupling_to_model(self%id_foodpelc(ifood),self%id_food(ifood),standard_variables%total_carbon)
-         call self%request_coupling_to_model(self%id_foodpeln(ifood),self%id_food(ifood),standard_variables%total_nitrogen)
-         call self%request_coupling_to_model(self%id_foodpelp(ifood),self%id_food(ifood),standard_variables%total_phosphorus)
-         call self%request_coupling_to_model(self%id_foodpels(ifood),self%id_food(ifood),standard_variables%total_silicate)
-           else
-         call self%register_dependency(self%id_foodc(ifood),'food'//trim(index)//'c','mmol C m-2','Food '//trim(index)//' C') 
-         call self%register_dependency(self%id_foodn(ifood),'food'//trim(index)//'n','mmol C m-2','Food '//trim(index)//' N')
-         call self%register_dependency(self%id_foodp(ifood),'food'//trim(index)//'p','mmol C m-2','Food '//trim(index)//' P')
-         call self%register_dependency(self%id_foods(ifood),'food'//trim(index)//'s','mmol C m-2','Food '//trim(index)//' Si')
-         call self%request_coupling_to_model(self%id_foodc(ifood),self%id_food(ifood),standard_variables%total_carbon)
-         call self%request_coupling_to_model(self%id_foodn(ifood),self%id_food(ifood),standard_variables%total_nitrogen)
-         call self%request_coupling_to_model(self%id_foodp(ifood),self%id_food(ifood),standard_variables%total_phosphorus)
-         call self%request_coupling_to_model(self%id_foods(ifood),self%id_food(ifood),standard_variables%total_silicate)
-         end if 
+            call self%register_dependency(self%id_foodpelc(ifood), 'food'//trim(index)//'c','mmol C m-3','Food '//trim(index)//' C') 
+            call self%register_dependency(self%id_foodpeln(ifood), 'food'//trim(index)//'n','mmol C m-3','Food '//trim(index)//' N')
+            call self%register_dependency(self%id_foodpelp(ifood), 'food'//trim(index)//'p','mmol C m-3','Food '//trim(index)//' P')
+            call self%register_dependency(self%id_foodpels(ifood), 'food'//trim(index)//'s','mmol C m-3','Food '//trim(index)//' Si')
+            call self%request_coupling_to_model(self%id_foodpelc(ifood),self%id_food(ifood),standard_variables%total_carbon)
+            call self%request_coupling_to_model(self%id_foodpeln(ifood),self%id_food(ifood),standard_variables%total_nitrogen)
+            call self%request_coupling_to_model(self%id_foodpelp(ifood),self%id_food(ifood),standard_variables%total_phosphorus)
+            call self%request_coupling_to_model(self%id_foodpels(ifood),self%id_food(ifood),standard_variables%total_silicate)
+         else
+            call self%register_dependency(self%id_foodc(ifood),'food'//trim(index)//'c','mmol C m-2','Food '//trim(index)//' C') 
+            call self%register_dependency(self%id_foodn(ifood),'food'//trim(index)//'n','mmol C m-2','Food '//trim(index)//' N')
+            call self%register_dependency(self%id_foodp(ifood),'food'//trim(index)//'p','mmol C m-2','Food '//trim(index)//' P')
+            call self%register_dependency(self%id_foods(ifood),'food'//trim(index)//'s','mmol C m-2','Food '//trim(index)//' Si')
+            call self%request_coupling_to_model(self%id_foodc(ifood),self%id_food(ifood),standard_variables%total_carbon)
+            call self%request_coupling_to_model(self%id_foodn(ifood),self%id_food(ifood),standard_variables%total_nitrogen)
+            call self%request_coupling_to_model(self%id_foodp(ifood),self%id_food(ifood),standard_variables%total_phosphorus)
+            call self%request_coupling_to_model(self%id_foods(ifood),self%id_food(ifood),standard_variables%total_silicate)
+
+            call self%register_dependency(self%id_foodc_an(ifood),'food'//trim(index)//'c_an','mmol C m-2','Food '//trim(index)//' C in anaerobic layer')
+            call self%request_coupling(self%id_foodc_an(ifood),'zero_hz')
+
+            ! Hack for legacy ERSEM compatibility - to be removed!
+            call self%register_model_dependency(self%id_food_loss_source(ifood),'food'//trim(index)//'_loss_source')
+            call self%request_coupling('food'//trim(index)//'_loss_source','food'//trim(index))
+         end if
    end do
 
     ! Allocate excretion rates
     allocate(self%pueYX(self%nfood))
-    allocate(self%pu_anX(self%nfood))  
     do ifood=1,self%nfood
-         write (index,'(i0)') ifood
-         call self%get_parameter(foodispom,'food'//trim(index)//'ispom','','food type '//trim(index)//' is POM',default=.false.)
-         if (foodispom) then
-            self%pueYX(ifood) = pueQX
-         else
-            self%pueYX(ifood) = pueYX
-         end if
-         call self%get_parameter(food_anaerobic,'food'//trim(index)//'anaerobic','','food type '//trim(index)//' is from anaerobic layer',default=.false.)
-        if (food_anaerobic) then
-           self%pu_anX(ifood) = 1._rk
-        else
-           self%pu_anX(ifood) = 0._rk
-        end if
+       write (index,'(i0)') ifood
+       call self%get_parameter(foodispom,'food'//trim(index)//'ispom','','food type '//trim(index)//' is POM',default=.false.)
+       if (foodispom) then
+          self%pueYX(ifood) = pueQX
+       else
+          self%pueYX(ifood) = pueYX
+       end if
     end do
 
     ! Allocate food source preferences
@@ -171,7 +181,7 @@ contains
      real(rk) :: eT,eO,eC,ETW,Y,x
      real(rk) :: rate
      real(rk) :: SYc,SYn,SYp
-     real(rk),dimension(self%nfood) :: foodcP,foodnP,foodpP,foodsP
+     real(rk),dimension(self%nfood) :: foodcP,foodnP,foodpP,foodsP,foodcP_an
      real(rk),dimension(self%nfood) :: feed, sflux, prefcorr
      real(rk) :: foodsum,mm
      real(rk),dimension(self%nfood) :: grossfluxc,grossfluxn,grossfluxp,grossfluxs
@@ -220,11 +230,15 @@ contains
           _GET_(self%id_foodpeln(ifood),foodnP(ifood))
           _GET_(self%id_foodpelp(ifood),foodpP(ifood))
           _GET_(self%id_foodpels(ifood),foodsP(ifood))
+
+          foodcP_an(ifood) = 0.0_rk
        else
           _GET_HORIZONTAL_(self%id_foodc(ifood),foodcP(ifood))
           _GET_HORIZONTAL_(self%id_foodn(ifood),foodnP(ifood))
           _GET_HORIZONTAL_(self%id_foodp(ifood),foodpP(ifood))
           _GET_HORIZONTAL_(self%id_foods(ifood),foodsP(ifood))
+
+          _GET_HORIZONTAL_(self%id_foodc_an(ifood),foodcP_an(ifood))
        end if
     end do
 
@@ -268,7 +282,7 @@ contains
       else
          do istate=1,size(self%id_food(ifood)%bottom_state)
             _GET_HORIZONTAL_(self%id_food(ifood)%bottom_state(istate),foodP)
-            _SET_BOTTOM_ODE_(self%id_food(ifood)%bottom_state(istate),-sflux(ifood)*foodP)
+            _SET_BOTTOM_ODE_(self%id_food_loss_source(ifood)%bottom_state(istate),-sflux(ifood)*foodP)
          end do
       end if 
    end do
@@ -315,7 +329,7 @@ contains
 
    _SET_BOTTOM_ODE_(self%id_c,SYc)
 
-   p_an = (sum(self%pu_anX*grossfluxc))/max(fBTYc,1.e-8_rk)
+   p_an = (sum(foodcP_an/foodcP*grossfluxc))/max(fBTYc,1.e-8_rk)
 
    _SET_BOTTOM_ODE_(self%id_K4n,(1._rk-p_an) * excess_n)
    _SET_BOTTOM_ODE_(self%id_K4n2,p_an * excess_n)
