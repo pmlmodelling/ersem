@@ -328,7 +328,7 @@ module ersem_benthic_column_particulate_matter
    type,extends(type_particle_model),public :: type_ersem_benthic_pom_layer
       type (type_bottom_state_variable_id) :: id_c_int,id_n_int,id_p_int,id_s_int
       type (type_bottom_state_variable_id) :: id_pen_depth_c,id_pen_depth_n,id_pen_depth_p,id_pen_depth_s
-      type (type_horizontal_dependency_id) :: id_c_sms,id_n_sms,id_p_sms,id_s_sms
+      type (type_horizontal_dependency_id) :: id_c_sms,id_n_sms,id_p_sms,id_s_sms,id_d_tot
       type (type_bottom_state_variable_id) :: id_c_remin_target,id_n_remin_target,id_p_remin_target,id_s_remin_target
       type (type_horizontal_dependency_id) :: id_c_local,id_n_local,id_p_local,id_s_local
 
@@ -528,6 +528,7 @@ contains
          call self%register_dependency(self%id_bottom_boundary_depth,'bottom_boundary_depth','m','bottom boundary depth')
       end if
       call self%get_parameter(self%source_depth_distribution,'source_depth_distribution', '','rule for vertical distribution of source terms',default=1)
+      call self%register_dependency(self%id_d_tot,'d_tot','m','depth of sediment column',standard_variable=depth_of_sediment_column)
 
       call self%register_model_dependency(self%id_Q,'Q')
       if (index(composition,'c')/=0) call layer_add_constituent(self,'c','mg C','carbon',    self%id_c_int,self%id_pen_depth_c,self%id_c_sms,self%id_c_local,self%id_c_remin_target)
@@ -648,7 +649,7 @@ contains
       real(rk),                            intent(in) :: d_top,d_bot
 
       real(rk) :: c_int,d_pen,d_pen_c,sms,d_sms
-      real(rk) :: c_int_local,sms_remin
+      real(rk) :: c_int_local,sms_remin, d_tot
 
       ! Retrieve depth-integrated mass, penetration depth, sinks-sources.
       _GET_HORIZONTAL_(id_c_int,c_int)
@@ -690,6 +691,11 @@ contains
       ! Compute change in penetration depth. See its derivation in the comments at the top of the file,
       ! section "Impact of sources and sinks at different depths".
       ! JB: correct form would have C_int_infty in the denominator, not C_int [see derivation]
+
+     _GET_HORIZONTAL_(self%id_d_tot,d_tot) 
+      if ((d_pen > d_tot).and.(sms<0._rk)) then 
+          d_sms = d_tot
+      end if
       _SET_BOTTOM_ODE_(id_pen_depth, (d_sms-d_pen)*sms/c_int)
 
       ! Apply sinks-sources to depth-integrated mass
