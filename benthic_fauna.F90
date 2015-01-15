@@ -20,6 +20,7 @@ module ersem_benthic_fauna
      type (type_horizontal_dependency_id), allocatable,dimension(:) :: id_foodc_an
      type (type_dependency_id), allocatable,dimension(:) :: id_foodpelc,id_foodpeln,id_foodpelp,id_foodpels
      type (type_dependency_id) :: id_ETW
+     type (type_horizontal_dependency_id) :: id_Dm
      type (type_horizontal_diagnostic_variable_id) :: id_bioirr,id_biotur
      type (type_model_id),allocatable,dimension(:) :: id_food
 
@@ -36,11 +37,11 @@ module ersem_benthic_fauna
      real(rk) :: xclYX,xcsYX,xchYX
      real(rk) :: suYX,luYX,huYX
      real(rk),allocatable :: pueYX(:),pufood(:)
-     logical,allocatable ::foodispel(:)
+     logical,allocatable ::foodispel(:),food_ll(:)
      real(rk) :: pudilX
      real(rk) :: sdYX,sdmO2YX,sdcYX,xdcYX
      real(rk) :: srYX,purYX
-     real(rk) :: pturYX,pirrYX, dwatYX
+     real(rk) :: pturYX,pirrYX, dwatYX,dQ6YX
   contains
      procedure :: initialize
      procedure :: do_bottom
@@ -78,7 +79,8 @@ contains
       call self%get_parameter(self%nfood,  'nfood', '',           'Number of food sources',default=0)   
       call self%get_parameter(self%srYX,   'srY',   '1/d',        'Specific rest respiration at reference temperature')
       call self%get_parameter(self%purYX,  'purY',  '-',          'Respired fraction of uptake')
-      call self%get_parameter(self%dwatYX, 'dwatY', '1/m',        'Water layer available for uptake of pelagic food source',default=1._rk) 
+      call self%get_parameter(self%dwatYX, 'dwatY', '1/m',        'Water layer available for uptake of pelagic food source',default=1._rk)
+      call self%get_parameter(self%dQ6YX, 'dQ6Y', 'm', 'Depth of available sediment layer',default=0._rk)
       call self%add_constituent('c',3000._rk,qn=self%qnYIcX,qp=self%qpYIcX)
   
     allocate(self%id_food(self%nfood))
@@ -92,12 +94,14 @@ contains
     allocate(self%id_foodp(self%nfood))
     allocate(self%id_foods(self%nfood))
     allocate(self%id_foodc_an(self%nfood))
+    allocate(self%food_ll(self%nfood))
     allocate(self%id_food_loss_source(self%nfood))
-
+    
    ! Allocate components of food sources
     do ifood=1,self%nfood
          write (index,'(i0)') ifood
          call self%get_parameter(self%foodispel(ifood),'food'//trim(index)//'ispel','','food type '//trim(index)//'is pelagic',default=.false.)
+         call self%get_parameter(self%food_ll(ifood),'food'//trim(index)//'_ll','','food '//trim(index)//'availability is limited by aerobic layer hight',default=.false.)
          call self%register_model_dependency(self%id_food(ifood),'food'//trim(index))
          if (self%foodispel(ifood)) then
             call self%register_dependency(self%id_foodpelc(ifood), 'food'//trim(index)//'c','mmol C m-3','Food '//trim(index)//' C') 
@@ -138,7 +142,7 @@ contains
           self%pueYX(ifood) = pueYX
        end if
     end do
-
+      
     ! Allocate food source preferences
     allocate(self%pufood(self%nfood))
     do ifood=1,self%nfood
@@ -148,6 +152,7 @@ contains
 
     ! Environmental dependencies
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
+      call self%register_dependency(self%id_Dm,'Dm','m','depth of limiting layer for uptake')
 
     ! Dependencies on state variables of external modules
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O/m^3','oxygen')
@@ -177,7 +182,7 @@ contains
      class (type_ersem_benthic_fauna),intent(in) :: self
      _DECLARE_ARGUMENTS_DO_BOTTOM_
      
-     real(rk) :: Yc,Yn,Yp,O2o,foodP
+     real(rk) :: Yc,Yn,Yp,O2o,foodP,Dm
      real(rk) :: eT,eO,eC,ETW,Y,x
      real(rk) :: rate
      real(rk) :: SYc,SYn,SYp
@@ -194,6 +199,8 @@ contains
      _HORIZONTAL_LOOP_BEGIN_
 
      _GET_HORIZONTAL_(self%id_c,Yc)
+
+     _GET_HORIZONTAL_(self%id_Dm,Dm)
      _GET_(self%id_O2o,O2o)
 
      _GET_(self%id_ETW,ETW)
@@ -249,7 +256,11 @@ contains
       if (self%foodispel(ifood)) then
          prefcorr(ifood) = self%pufood(ifood) * self%dwatYX
       else
-         prefcorr(ifood) = self%pufood(ifood)
+          if (self%food_ll(ifood)) then
+             prefcorr(ifood) = self%pufood(ifood) * min(1._rk,self%dQ6YX/Dm)
+          else
+             prefcorr(ifood) = self%pufood(ifood)
+          endif
       end if
    end do
 
