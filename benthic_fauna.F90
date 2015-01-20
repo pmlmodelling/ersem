@@ -121,7 +121,6 @@ contains
             call self%request_coupling_to_model(self%id_foodn(ifood),self%id_food(ifood),standard_variables%total_nitrogen)
             call self%request_coupling_to_model(self%id_foodp(ifood),self%id_food(ifood),standard_variables%total_phosphorus)
             call self%request_coupling_to_model(self%id_foods(ifood),self%id_food(ifood),standard_variables%total_silicate)
-
             call self%register_dependency(self%id_foodc_an(ifood),'food'//trim(index)//'c_an','mmol C m-2','Food '//trim(index)//' C in anaerobic layer')
             call self%request_coupling(self%id_foodc_an(ifood),'zero_hz')
 
@@ -252,6 +251,7 @@ contains
     ! Prey carbon was returned in mmol (due to units of standard_variables%total_carbon); convert to mg
     foodcP = foodcP*CMass
 
+  ! In case of pelagic food source, its availability can be limited by a near-bottom fraction available to organism. In case of benthic food source, it is possible to limit availability of food source by depth of aerobic layer, e.g. limiting aerobic bacteria as a food source for suspension-feeders by ratio of habitat depth to aerobic layer depth. Food sources limited in such a way must be specified using logical food{n}_ll in fabm.yaml file.
    do ifood=1,self%nfood
       if (self%foodispel(ifood)) then
          prefcorr(ifood) = self%pufood(ifood) * self%dwatYX
@@ -339,6 +339,7 @@ contains
    call Adjust_fixed_nutrients(SYc,SYn,SYp,self%qnYIcX,self%qpYIcX,excess_n,excess_p,excess_c)
 
    _SET_BOTTOM_ODE_(self%id_c,SYc)
+! In some cases food or part of it can originate from anaerobic layer. We might wish to distribute excess ammonium and phosphate resulting from nutrient content adjustment between aerobic and anaerobic layers proportionally to amount of food taken from them. In accordance to the legacy code excess nutrient by default enter the aerobic layer. This behaviour can be changed by specifying anaerobic food sources as food{n}c_an. Sum of uptake of those relative to total food uptake will then define partition of excess nutrients between layers.
 
    p_an = (sum(foodcP_an/foodcP*grossfluxc))/max(fBTYc,1.e-8_rk)
 
