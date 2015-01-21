@@ -497,7 +497,7 @@ contains
          _GET_HORIZONTAL_(self%id_mass,C_int)
          _GET_HORIZONTAL_(self%id_penetration_depth,z_mean)
          _GET_HORIZONTAL_(self%id_penetration_depth_sms,z_mean_sms)
-         burial_flux = C_int/(1.0_rk - exp(-z_bot/z_mean))*exp(-z_bot/z_mean)*z_bot/z_mean*z_mean_sms/z_mean
+         burial_flux = max(0.0_rk,C_int/(1.0_rk - exp(-z_bot/z_mean))*exp(-z_bot/z_mean)*z_bot/z_mean*z_mean_sms/z_mean)
          _SET_BOTTOM_ODE_(self%id_mass,-burial_flux)
          _SET_BOTTOM_ODE_(self%id_buried_mass,burial_flux)
       _HORIZONTAL_LOOP_END_
