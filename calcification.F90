@@ -56,6 +56,7 @@ contains
       call self%get_parameter(self%Rain0,'Rain0','-','maximum rain ratio from PISCES')
       call self%get_parameter(sedL2,'sedL2','m/d','sinking velocity')
       call self%get_parameter(c0,'c0','mg C m^-3','background concentration',default=0.0_rk)
+      call self%get_parameter(self%sedimentation,'sedimentation','','enable sedimentation',default=.true.)
 
       call self%initialize_ersem_base(rm=sedL2,sedimentation=.false.)
       call self%add_constituent('c',0.0_rk,c0)
@@ -64,9 +65,12 @@ contains
 
       call self%register_dependency(self%id_om_cal,'om_cal','-','calcite saturation')
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m**3','total dissolved inorganic carbon')
-      call self%register_bottom_state_dependency(self%id_bL2c,'bL2c','mg C m-3','benthic calcite')
-      call self%register_dependency(self%id_bedstress,standard_variables%bottom_stress)
-      call self%register_dependency(self%id_dens,     standard_variables%density)
+
+      if (self%sedimentation) then
+          call self%register_bottom_state_dependency(self%id_bL2c,'bL2c','mg C m-3','benthic calcite')
+          call self%register_dependency(self%id_bedstress,standard_variables%bottom_stress)
+          call self%register_dependency(self%id_dens,     standard_variables%density)
+      end if
    end subroutine
 
    subroutine do(self,_ARGUMENTS_DO_)
@@ -104,6 +108,8 @@ contains
       real(rk) :: tbed,density
       real(rk) :: tdep,fac,sdrate,fsd
       real(rk) :: L2c
+
+      if (.not.self%sedimentation) return
 
       _HORIZONTAL_LOOP_BEGIN_
 
