@@ -18,7 +18,7 @@ module ersem_benthic_column_dissolved_matter
       type (type_state_variable_id)        :: id_pel
       type (type_bottom_state_variable_id) :: id_D1m,id_D2m
       type (type_horizontal_dependency_id) :: id_sms(3),id_pw_sms(3),id_Dtot,id_poro,id_cmix,id_diff(3)
-
+      type (type_horizontal_diagnostic_variable_id) :: id_pbf
       real(rk) :: ads(3)
       real(rk) :: relax, minD
       integer :: last_layer
@@ -33,7 +33,6 @@ module ersem_benthic_column_dissolved_matter
       type (type_horizontal_dependency_id)          :: id_D1m,id_D2m,id_Dtot,id_poro
       type (type_horizontal_diagnostic_variable_id) :: id_layers(3)    ! mass density (mass/m2) within the layer
       type (type_horizontal_diagnostic_variable_id) :: id_layers_pw(3) ! mass density (mass/m2) within layer pore water
-
       real(rk) :: ads(3)
       integer :: last_layer
    contains
@@ -85,7 +84,7 @@ contains
 
       ! Register state variable for bottom-most pelagic concentration.
       call self%register_state_dependency(self%id_pel,trim(composition)//'_pel','mmol/m^3','pelagic '//trim(long_name))
-
+      call self%register_diagnostic_variable(self%id_pbf,'pb_flux','mmol/m^2/day','pelagic-benthic flux')      
       ! Dependencies
       call self%register_state_dependency(self%id_D1m, 'D1m', 'm','depth of bottom interface of layer 1',standard_variable=depth_of_bottom_interface_of_layer_1)
       call self%register_state_dependency(self%id_D2m, 'D2m', 'm','depth of bottom interface of layer 2',standard_variable=depth_of_bottom_interface_of_layer_2)
@@ -232,7 +231,8 @@ contains
          ! Net change in benthos must equal local production - surface exchange.
          ! Thus, surface exchange = local production - net change (net change = relaxation)
          _SET_BOTTOM_EXCHANGE_(self%id_pel,sms-(c_int_eq-c_int)/self%relax)
-
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_pbf,sms-(c_int_eq-c_int)/self%relax)
+      
          ! Relax depth of first/oxic layer towards equilibrium value (H1_eq)
          _SET_BOTTOM_ODE_(self%id_D1m,(max(self%minD,H1_eq)-d1)/self%relax)
       elseif (self%last_layer==2) then
@@ -248,7 +248,8 @@ contains
          ! Net change in benthos must equal local production - surface exchange.
          ! Thus, surface exchange = local production - net change (net change = relaxation)
          _SET_BOTTOM_EXCHANGE_(self%id_pel,sms-(c_int_eq-c_int)/self%relax)
-      
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_pbf,sms-(c_int_eq-c_int)/self%relax)
+
          ! Relax depth of bottom interface of second/oxidised layer towards equilibrium value (d1+H2_eq)
          _SET_BOTTOM_ODE_(self%id_D2m,(max(self%minD,d1+H2_eq)-d2)/self%relax)
       else
@@ -285,7 +286,9 @@ contains
          norm_res_int = poro*(self%ads(1)*c_int1_eq+self%ads(2)*c_int2_eq+self%ads(3)*c_int3_eq)
          P_res_int = (c_int-c_int_eq)/norm_res_int*d3
          _SET_BOTTOM_EXCHANGE_(self%id_pel,sms+P_res_int) ! Equilibrium flux = sms, residual flux = P_res_int
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_pbf,sms+P_res_int)
          _SET_BOTTOM_ODE_(self%id_tot,-P_res_int)         ! Local sources-sinks (sms) minus surface flux (sms+P_res_int)
+
       end if
 
       _HORIZONTAL_LOOP_END_
