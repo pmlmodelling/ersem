@@ -163,7 +163,7 @@ contains
 
       ! Add the submodel that will compute total prey for us, and create a variable that will contain its depth integral.
       call self%add_child(total_prey_calculator,'totprey_calculator',configunit=-1)
-      call self%register_dependency(self%id_totprey,'totprey')
+      call self%register_dependency(self%id_totprey,'totprey','mg C m-3','total prey carbon')
       call self%request_coupling(self%id_totprey,'totprey_calculator/result')
       call self%register_expression_dependency(self%id_inttotprey,vertical_integral(self%id_totprey))
 
