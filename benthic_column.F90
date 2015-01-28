@@ -67,7 +67,6 @@ contains
       ! This is because type_ersem_benthic_column provides the max column depth, which is used to compute food for
       ! benthic fauna, which in turn results in the aggrege biturbation/bioirrigation activity.
       allocate(bioturbation)
-      call self%add_child(bioturbation,'bioturbation',configunit=-1)
 
       ! Bioturbation
       call self%get_parameter(bioturbation%mturX,'mturX','-','maximum relative turbation enhancement')
@@ -82,6 +81,9 @@ contains
       call self%get_parameter(bioturbation%EDZ_1X,  'EDZ_1X','m^2/d','diffusivity in 1st (oxygenated) layer')
       call self%get_parameter(bioturbation%EDZ_2X,  'EDZ_2X','m^2/d','diffusivity in 2nd (oxidized) layer')
       call self%get_parameter(bioturbation%EDZ_3X,  'EDZ_3X','m^2/d','diffusivity in 3rd (anoxic) layer')
+
+      ! Allow bioturbation module to initialize - must be after retrievingits parameters, as they are used when registering diagnostics.
+      call self%add_child(bioturbation,'bioturbation',configunit=-1)
 
    end subroutine
 
