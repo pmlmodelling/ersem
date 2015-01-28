@@ -126,7 +126,7 @@ contains
 
             ! Hack for legacy ERSEM compatibility - to be removed!
             call self%register_model_dependency(self%id_food_loss_source(ifood),'food'//trim(index)//'_loss_source')
-            call self%request_coupling('food'//trim(index)//'_loss_source','food'//trim(index))
+            call self%couplings%set_string('food'//trim(index)//'_loss_source','food'//trim(index))
          end if
    end do
 
@@ -141,7 +141,7 @@ contains
           self%pueYX(ifood) = pueYX
        end if
     end do
-      
+
     ! Allocate food source preferences
     allocate(self%pufood(self%nfood))
     do ifood=1,self%nfood
@@ -169,8 +169,8 @@ contains
     ! Get contribution for bioturbation and bioirrigation
       call self%get_parameter(self%pturYX, 'pturY','-','Relative contribution to bioturbation',default=0._rk)
       call self%get_parameter(self%pirrYX, 'pirrY','-','Relative controbution to bioirrigation',default=0._rk)
-      call self%register_diagnostic_variable(self%id_biotur,'biotur','mg C/m^2/d','bioturbation activity',output=output_time_step_averaged)
-      call self%register_diagnostic_variable(self%id_bioirr,'bioirr','mg C/m^2/d','bioirrigation activity',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_biotur,'biotur','mg C/m^2/d','bioturbation activity',output=output_time_step_averaged,domain=domain_bottom)
+      call self%register_diagnostic_variable(self%id_bioirr,'bioirr','mg C/m^2/d','bioirrigation activity',output=output_time_step_averaged,domain=domain_bottom)
       call self%add_to_aggregate_variable(total_bioturbation_activity, self%id_biotur)
       call self%add_to_aggregate_variable(total_bioirrigation_activity, self%id_bioirr) 
 

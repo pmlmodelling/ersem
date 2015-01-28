@@ -88,12 +88,12 @@ contains
       ! Dependencies
       call self%register_state_dependency(self%id_D1m, 'D1m', 'm','depth of bottom interface of layer 1',standard_variable=depth_of_bottom_interface_of_layer_1)
       call self%register_state_dependency(self%id_D2m, 'D2m', 'm','depth of bottom interface of layer 2',standard_variable=depth_of_bottom_interface_of_layer_2)
-      call self%register_dependency(self%id_Dtot,'Dtot','m','depth of sediment column',standard_variable=depth_of_sediment_column)
-      call self%register_dependency(self%id_poro,'poro','-','porosity',standard_variable=sediment_porosity)
-      call self%register_dependency(self%id_diff(1),'diff1','m^2/d','diffusivity in layer 1',standard_variable=diffusivity_in_sediment_layer_1)
-      call self%register_dependency(self%id_diff(2),'diff2','m^2/d','diffusivity in layer 2',standard_variable=diffusivity_in_sediment_layer_2)
-      call self%register_dependency(self%id_diff(3),'diff3','m^2/d','diffusivity in layer 3',standard_variable=diffusivity_in_sediment_layer_3)
-      call self%register_dependency(self%id_cmix,'cmix','d/m','equilibrium diffusive speed between sediment surface water',standard_variable=pelagic_benthic_transfer_constant)
+      call self%register_dependency(self%id_Dtot,depth_of_sediment_column)
+      call self%register_dependency(self%id_poro,sediment_porosity)
+      call self%register_dependency(self%id_diff(1),diffusivity_in_sediment_layer_1)
+      call self%register_dependency(self%id_diff(2),diffusivity_in_sediment_layer_2)
+      call self%register_dependency(self%id_diff(3),diffusivity_in_sediment_layer_3)
+      call self%register_dependency(self%id_cmix,pelagic_benthic_transfer_constant)
 
       ! Create model that computes concentrations per benthic layer.
       allocate(profile)
@@ -108,13 +108,11 @@ contains
       call profile%register_diagnostic_variable(profile%id_layers_pw(3),trim(composition)//'3_pw','mmol/m^2',trim(long_name)//' in pore water of layer 3',act_as_state_variable=.true.,domain=domain_bottom)
       call profile%register_dependency(profile%id_D1m, 'D1m', 'm','depth of bottom interface of 1st layer')
       call profile%register_dependency(profile%id_D2m, 'D2m', 'm','depth of bottom interface of 2nd layer')
-      call profile%register_dependency(profile%id_Dtot,'Dtot','m','depth of sediment column')
-      call profile%register_dependency(profile%id_poro,'poro','-','porosity')
+      call profile%register_dependency(profile%id_Dtot,depth_of_sediment_column)
+      call profile%register_dependency(profile%id_poro,sediment_porosity)
       call profile%register_dependency(profile%id_tot,trim(composition)//'_int','mmol/m^2',trim(long_name)//', depth-integrated')
       call profile%request_coupling(profile%id_D1m,'D1m')
       call profile%request_coupling(profile%id_D2m,'D2m')
-      call profile%request_coupling(profile%id_Dtot,'Dtot')
-      call profile%request_coupling(profile%id_poro,'poro')
       call profile%request_coupling(profile%id_tot,composition)
 
       ! Make sure that sources-sinks of layer-specific mass are counted in mass budgets.

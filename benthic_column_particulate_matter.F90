@@ -313,6 +313,10 @@ module ersem_benthic_column_particulate_matter
    private
 
    ! Module for particulate organic matter class with idealized profile (e.g., Q6, Q7)
+   ! Also handles the change in average penetration depth due to bioturbation, as well as burial in
+   ! the form of organic matter moving beyond the bottom of the modelled column due to an increase
+   ! in penetration depth. This module will always create a "surface" submodel for organic matter at
+   ! the very surface of the sediment, which is typically used in sedimention/resuspension processes.
    type,extends(type_ersem_benthic_base),public :: type_ersem_benthic_column_particulate_matter
       type (type_bottom_state_variable_id) :: id_penetration_c,id_penetration_n,id_penetration_p,id_penetration_s
       type (type_bottom_state_variable_id) :: id_buried_c,id_buried_n,id_buried_p,id_buried_s
@@ -324,6 +328,7 @@ module ersem_benthic_column_particulate_matter
    end type
 
    ! Module for particulate organic matter within a single, user-specified depth interval.
+   ! Top and bottom boundaries of this interval can be absolute depths or they can be derived from external variables.
    ! Supports remineralization, in which case the model must be coupled to sinks for each remineralized constituent.
    type,extends(type_particle_model),public :: type_ersem_benthic_pom_layer
       type (type_bottom_state_variable_id) :: id_c_int,id_n_int,id_p_int,id_s_int
@@ -349,7 +354,7 @@ module ersem_benthic_column_particulate_matter
       procedure :: do_bottom  => layer_do_bottom
    end type
 
-   ! Module that handles burial of a single particualte organic matter constituent.
+   ! Module that handles burial of a single particulate organic matter constituent.
    ! For internal use only (from type_ersem_benthic_column_particulate_matter)
    type,extends(type_base_model) :: type_burial
       type (type_bottom_state_variable_id) :: id_mass,id_buried_mass
@@ -421,7 +426,7 @@ contains
       call single_layer%parameters%set('surface_boundary_depth',0.0_rk)
       call single_layer%parameters%set('bottom_boundary_depth',0.0_rk)
       call single_layer%parameters%set('composition',self%composition)
-      call single_layer%request_coupling('Q',self%name)
+      call single_layer%couplings%set_string('Q',self%name)
       call self%add_child(single_layer,'surface',configunit=configunit)
    end subroutine initialize
 
@@ -528,7 +533,7 @@ contains
          call self%register_dependency(self%id_bottom_boundary_depth,'bottom_boundary_depth','m','bottom boundary depth')
       end if
       call self%get_parameter(self%source_depth_distribution,'source_depth_distribution', '','rule for vertical distribution of source terms',default=1)
-      call self%register_dependency(self%id_d_tot,'d_tot','m','depth of sediment column',standard_variable=depth_of_sediment_column)
+      call self%register_dependency(self%id_d_tot,depth_of_sediment_column)
 
       call self%register_model_dependency(self%id_Q,'Q')
       if (index(composition,'c')/=0) call layer_add_constituent(self,'c','mg C','carbon',    self%id_c_int,self%id_pen_depth_c,self%id_c_sms,self%id_c_local,self%id_c_remin_target)
@@ -577,7 +582,7 @@ contains
       call layer_content_calculator%register_dependency(layer_content_calculator%id_pen_depth,'pen_depth','m', 'penetration depth')
       call layer_content_calculator%request_coupling(layer_content_calculator%id_c_int,trim(name)//'_int')
       call layer_content_calculator%request_coupling(layer_content_calculator%id_pen_depth,'pen_depth_'//trim(name))
-      call layer_content_calculator%register_dependency(layer_content_calculator%id_d_tot,'d_tot','m','depth of sediment column',standard_variable=depth_of_sediment_column)
+      call layer_content_calculator%register_dependency(layer_content_calculator%id_d_tot,depth_of_sediment_column)
 
       ! Register the only diagnostic exported by layer_content_calculator: mass integrated over desired depth interval.
       call layer_content_calculator%register_diagnostic_variable(layer_content_calculator%id_c,'c',trim(units)//'/m^2','mass',act_as_state_variable=.true.,domain=domain_bottom)

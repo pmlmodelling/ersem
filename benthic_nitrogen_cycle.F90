@@ -47,7 +47,7 @@ contains
       call self%register_state_dependency(self%id_K4n,'K4n','mmol/m^2','ammonium')
       call self%register_state_dependency(self%id_G2o,'G2o','mmol/m^2','oxygen')
       call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','pelagic ammonium')
-      call self%register_dependency(self%id_D1m,'D1m','m','depth of bottom interface of 1st layer',standard_variable=depth_of_bottom_interface_of_layer_1)
+      call self%register_dependency(self%id_D1m,depth_of_bottom_interface_of_layer_1)
 
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
       if (self%ISWphx==1) call self%register_dependency(self%id_phx,standard_variables%ph_reported_on_total_scale)
