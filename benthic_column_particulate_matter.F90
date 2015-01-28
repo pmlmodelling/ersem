@@ -469,7 +469,7 @@ contains
          _GET_HORIZONTAL_(self%id_D,D)
          _GET_HORIZONTAL_(self%id_z_tur,z_tur)
 
-         ! Apply change in penentration depth due to bioturbation.
+         ! Apply change in penetration depth due to bioturbation.
          ! See its derivation in the comments at the top of the file,
          ! section "Impact of bioturbation".
          if (_VARIABLE_REGISTERED_(self%id_c)) then
