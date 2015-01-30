@@ -30,7 +30,7 @@ module ersem_benthic_column
    end type
 
    type,extends(type_base_model),public :: type_ersem_bioturbation
-      type (type_horizontal_diagnostic_variable_id) :: id_Dtot,id_diff(3),id_diff_pom,id_Dtur
+      type (type_horizontal_diagnostic_variable_id) :: id_diff(3),id_diff_pom,id_Dtur
       type (type_horizontal_dependency_id)          :: id_biotur_tot, id_bioirr_tot
 
       real(rk) :: mturX, hturX, EturX, dturX
@@ -59,7 +59,7 @@ contains
       call self%register_state_variable(self%id_D2m,'D2m','m','depth of bottom interface of 2nd layer',standard_variable=depth_of_bottom_interface_of_layer_2)
       call self%register_diagnostic_variable(self%id_poro,'poro','-','porosity',standard_variable=sediment_porosity,missing_value=self%qPWX,output=output_none)
       call self%register_diagnostic_variable(self%id_Dtot,'Dtot','m','depth of sediment column',missing_value=self%d_totX,standard_variable=depth_of_sediment_column,output=output_none)
-      call self%register_diagnostic_variable(self%id_EDZ_mixX,'cmix','s/m','equilibrium diffusive speed between sediment surface water',standard_variable=pelagic_benthic_transfer_constant,missing_value=self%EDZ_mixX)
+      call self%register_diagnostic_variable(self%id_EDZ_mixX,'cmix','s/m','equilibrium diffusive speed between sediment surface water',standard_variable=pelagic_benthic_transfer_constant,missing_value=self%EDZ_mixX,output=output_none)
       call self%register_diagnostic_variable(self%id_layer2_thickness,'layer2_thickness','m','thickness of second layer',output=output_none)
 
       ! Create bioturbation submodel and provide it with parameters
