@@ -14,7 +14,7 @@ module ersem_benthic_fauna
 
   type,extends(type_ersem_benthic_base),public :: type_ersem_benthic_fauna
      type (type_state_variable_id)   :: id_O2o
-     type (type_bottom_state_variable_id) :: id_Q6c,id_Q6n,id_Q6p,id_Q6s,id_Q6c2
+     type (type_bottom_state_variable_id) :: id_Q6c,id_Q6n,id_Q6p,id_Q6s
      type (type_bottom_state_variable_id) :: id_G3c,id_G2o,id_K4n,id_K1p,id_K4n2,id_K1p2
      type (type_horizontal_dependency_id), allocatable,dimension(:) :: id_foodc,id_foodn,id_foodp,id_foods
      type (type_horizontal_dependency_id), allocatable,dimension(:) :: id_foodc_an
