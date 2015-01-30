@@ -110,7 +110,7 @@ contains
       class (type_ersem_benthic_bacteria),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
      
-      real(rk) :: Hc,HcP,fHc,fHn,fHp,fHn1,fHp1
+      real(rk) :: Hc,HcP,fHc,fHn,fHp
       real(rk) :: Dm,excess_c,excess_n,excess_p
       real(rk) :: ETW,eT,eOx,eN,Limit
       real(rk) :: K4a,K1a
@@ -118,7 +118,7 @@ contains
       real(rk) :: AQ6c,AQ6n,AQ6p
       real(rk) :: AQ7c,AQ7n,AQ7p
       real(rk) :: sfQ7H,sfQ6H,sfQ1H,fQ7Hc,fQ6Hc,fQ1Hc,fQIHc,fQ7Hn,fQ7Hp,fQ6Hn,fQ6Hp
-      real(rk) :: fQ1Hn,fQ1Hp,fK1Hn,fK1Hp,fHG3c,fK4Hn,fK4Hp,sfHQ1,sfHQI,sfHQ6
+      real(rk) :: fQ1Hn,fQ1Hp,fK1Hp,fHG3c,fK4Hn,sfHQ1,sfHQI,sfHQ6
 
       _HORIZONTAL_LOOP_BEGIN_
 

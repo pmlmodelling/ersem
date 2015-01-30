@@ -184,7 +184,7 @@ contains
       real(rk) :: tbed,density
       real(rk) :: fac,sdrate
       real(rk) :: Pc,Pn,Pp,P
-      real(rk) :: fsd,fsdc,fsdn,fsdp,fsds
+      real(rk) :: fsd,fsdc,fsdn,fsdp
 
       if (.not.self%sedimentation) return
 

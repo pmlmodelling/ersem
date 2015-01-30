@@ -84,7 +84,7 @@ contains
       real(rk) :: K3n,K3nP,K4nP,N4n
       real(rk) :: ETW,phx
       real(rk) :: Mu_m,eT,eN,Fph,jM4M3n,D1m
-      real(rk) :: K6_sms,layer2_thickness,K3n2,K4n2
+      real(rk) :: K6_sms,layer2_thickness,K3n2
       real(rk) :: MU_m2,eN2,jMIno3,jM3M4n,jM3G4n
 
       _HORIZONTAL_LOOP_BEGIN_

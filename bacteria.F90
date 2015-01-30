@@ -197,7 +197,7 @@ contains
       real(rk) :: qpB1c,qnB1c
       real(rk) :: etB1,eO2B1
       real(rk) :: sB1RD,sutB1,rumB1,sugB1,rugB1,rraB1,fB1O3c
-      real(rk) :: sB1R2,fB1R2c,fB1R3c,fB1RDc
+      real(rk) :: fB1RDc
       real(rk) :: netb1,bge
       real(rk) :: fB1N1p,fR1B1p,fB1RDp
       real(rk) :: fB1NIn,fR1B1n,fB1RDn
@@ -428,7 +428,7 @@ contains
       _DECLARE_ARGUMENTS_DO_
       
       integer :: iRP
-      real(rk) :: ETW,phx,O2o
+      real(rk) :: ETW,O2o
       real(rk) :: etRemin
 #ifndef DOCDYN
       real(rk) :: R2cP

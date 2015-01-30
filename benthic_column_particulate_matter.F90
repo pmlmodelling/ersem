@@ -616,8 +616,7 @@ contains
       class (type_ersem_benthic_pom_layer), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
-      real(rk) :: d_pen,d_top,d_bot
-      real(rk) :: c_int,sms
+      real(rk) :: d_top,d_bot
 
       _HORIZONTAL_LOOP_BEGIN_
          ! Determine top and bottom of desired depth interval.
