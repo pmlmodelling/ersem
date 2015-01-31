@@ -52,21 +52,21 @@ contains
       self%dt = 86400._rk
 
       ! Register parameters
-      call self%get_parameter(self%qnHIcX, 'qnc',  'mmol N/mg C','Maximum nitrogen to carbon ratio')
-      call self%get_parameter(self%qpHIcX, 'qpc',  'mmol P/mg C','Maximum phosphorus to carbon ratio')
+      call self%get_parameter(self%qnHIcX, 'qnc',  'mmol N/mg C','nitrogen to carbon ratio')
+      call self%get_parameter(self%qpHIcX, 'qpc',  'mmol P/mg C','phosphorus to carbon ratio')
       call self%get_parameter(self%q10HX,  'q10',  '-',          'Q_10 temperature coefficient')
       call self%get_parameter(self%ddHX,   'dd',   '1/m',        'Michaelis-Menten constant for limitation through layer thickness')
-      call self%get_parameter(self%suQ7HX, 'suQ7', '1/d',        'Specific not nutrient limited refractory matter uptake')
-      call self%get_parameter(self%suQ6fHX,'suQ6f','1/d',        'Specific nutrient limited detritus uptake')
-      call self%get_parameter(self%suQ6sHX,'suQ6s','1/d',        'Specific not nutrient limited detritus uptake')
-      call self%get_parameter(self%suQ1HX, 'suQ1', '1/d',        'Specific DOC uptake')
-      call self%get_parameter(self%puincHX,'puinc','1/d',        'Preference factor of nutrient content')
-      call self%get_parameter(self%p_ex6ox,'pue6', '-',          'Excreted fraction of uptake of POM')
-      call self%get_parameter(self%p_ex7ox,'pue7', '-',          'Excreted fraction of uptake of refractory matter')
-      call self%get_parameter(self%purHX,  'pur',  '1/d',        'Fraction of carbon uptake respired')
-      call self%get_parameter(self%srHX,   'sr',   '1/d',        'Specific rest respiration')
+      call self%get_parameter(self%suQ7HX, 'suQ7', '1/d',        'specific not nutrient limited refractory matter uptake')
+      call self%get_parameter(self%suQ6fHX,'suQ6f','1/d',        'specific nutrient limited detritus uptake')
+      call self%get_parameter(self%suQ6sHX,'suQ6s','1/d',        'specific not nutrient limited detritus uptake')
+      call self%get_parameter(self%suQ1HX, 'suQ1', '1/d',        'specific DOC uptake')
+      call self%get_parameter(self%puincHX,'puinc','1/d',        'preference factor of nutrient content')
+      call self%get_parameter(self%p_ex6ox,'pue6', '-',          'excreted fraction of uptake of POM')
+      call self%get_parameter(self%p_ex7ox,'pue7', '-',          'excreted fraction of uptake of refractory matter')
+      call self%get_parameter(self%purHX,  'pur',  '1/d',        'fraction of carbon uptake respired')
+      call self%get_parameter(self%srHX,   'sr',   '1/d',        'specific rest respiration')
       call self%get_parameter(self%pdHQ1X, 'pdQ1', '-',          'DOM-fraction of mortality')
-      call self%get_parameter(self%sdHX,   'sd',   '1/d',        'Specific maximum mortality')
+      call self%get_parameter(self%sdHX,   'sd',   '1/d',        'specific maximum mortality related to oxygen limitation')
 
       call self%add_constituent('c',0.0_rk,qn=self%qnHIcX,qp=self%qpHIcX)
 

@@ -46,7 +46,7 @@ contains
 
       ! Retrieve parameter values
       call self%get_parameter(self%q10,   'q10',  '-',               'Q_10 temperature coefficient')
-      call self%get_parameter(self%ISWphx,'ISWph','',                'switch for pH impact on nitrification')
+      call self%get_parameter(self%ISWphx,'ISWph','',                'pH impact on nitrification (0: off, 1: on)')
       call self%get_parameter(self%sN4N3X,'sN4N3','1/d',             'specific nitrification rate')
       call self%get_parameter(self%chN3oX,'chN3o','(mmol O_2/m^3)^3','cubic Michaelis-Menten constant for oxygen dependence of nitrification')
 

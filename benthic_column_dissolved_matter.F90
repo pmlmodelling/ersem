@@ -72,13 +72,13 @@ contains
       end select
 
       ! Obtain parameter values
-      call self%get_parameter(self%last_layer,  'last_layer','-','layer presence',default=3)
+      call self%get_parameter(self%last_layer,  'last_layer','','deepest sediment layer',default=3)
       self%ads = 1.0_rk
-      call self%get_parameter(self%ads(1),'ads1','-','adsorption in layer 1 (total:dissolved)',default=1.0_rk)
-      if (self%last_layer>1) call self%get_parameter(self%ads(2),'ads2','-','adsorption in layer 2 (total:dissolved)',default=1.0_rk)
-      if (self%last_layer>2) call self%get_parameter(self%ads(3),'ads3','-','adsorption in layer 3 (total:dissolved)',default=1.0_rk)
+      call self%get_parameter(self%ads(1),'ads1','-','adsorption in oxygenated layer (total:dissolved)',default=1.0_rk)
+      if (self%last_layer>1) call self%get_parameter(self%ads(2),'ads2','-','adsorption in oxidized layer (total:dissolved)',default=1.0_rk)
+      if (self%last_layer>2) call self%get_parameter(self%ads(3),'ads3','-','adsorption in anoxic layer (total:dissolved)',default=1.0_rk)
       if (self%last_layer/=3) then
-         call self%get_parameter(self%relax,'relax','/d','diffusion time scale for benthic/pelagic interface')
+         call self%get_parameter(self%relax,'relax','1/d','diffusion time scale for benthic/pelagic interface')
          call self%get_parameter(self%minD, 'minD','m',  'minimum depth of bottom interface of controlled layer')
       end if
 

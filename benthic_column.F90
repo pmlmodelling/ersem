@@ -55,8 +55,8 @@ contains
       call self%get_parameter(self%EDZ_mixX,'EDZ_mixX','d/m','equilibrium diffusive speed between sediment surface water')
       call self%get_parameter(self%d_totX,'d_totX','m','depth of sediment column')
 
-      call self%register_state_variable(self%id_D1m,'D1m','m','depth of bottom interface of 1st layer',standard_variable=depth_of_bottom_interface_of_layer_1)
-      call self%register_state_variable(self%id_D2m,'D2m','m','depth of bottom interface of 2nd layer',standard_variable=depth_of_bottom_interface_of_layer_2)
+      call self%register_state_variable(self%id_D1m,'D1m','m','depth of bottom interface of oxygenated layer',standard_variable=depth_of_bottom_interface_of_layer_1)
+      call self%register_state_variable(self%id_D2m,'D2m','m','depth of bottom interface of oxidized layer',standard_variable=depth_of_bottom_interface_of_layer_2)
       call self%register_diagnostic_variable(self%id_poro,'poro','-','porosity',standard_variable=sediment_porosity,missing_value=self%qPWX,output=output_none)
       call self%register_diagnostic_variable(self%id_Dtot,'Dtot','m','depth of sediment column',missing_value=self%d_totX,standard_variable=depth_of_sediment_column,output=output_none)
       call self%register_diagnostic_variable(self%id_EDZ_mixX,'cmix','s/m','equilibrium diffusive speed between sediment surface water',standard_variable=pelagic_benthic_transfer_constant,missing_value=self%EDZ_mixX,output=output_none)
@@ -69,18 +69,18 @@ contains
       allocate(bioturbation)
 
       ! Bioturbation
+      call self%get_parameter(bioturbation%EturX,'EturX','m^2/d','basal bioturbation rate')
       call self%get_parameter(bioturbation%mturX,'mturX','-','maximum relative turbation enhancement')
       call self%get_parameter(bioturbation%hturX,'hturX','mg C/m^2/d','Michaelis-Menten constant for bioturbation')
-      call self%get_parameter(bioturbation%EturX,'EturX','m^2/d','basal bioturbation rate')
       call self%get_parameter(bioturbation%dturX,'dturX','m','bioturbation depth')
 
       ! Bioirrigation
+      call self%get_parameter(bioturbation%EDZ_1X,  'EDZ_1X','m^2/d','diffusivity in oxygenated layer')
+      call self%get_parameter(bioturbation%EDZ_2X,  'EDZ_2X','m^2/d','diffusivity in oxidized layer')
+      call self%get_parameter(bioturbation%EDZ_3X,  'EDZ_3X','m^2/d','diffusivity in anoxic layer')
+      call self%get_parameter(bioturbation%irr_minX,'irr_minX','-','minimum diffusion enhancement through bioirrigation')
       call self%get_parameter(bioturbation%mirrX,   'mirrX','-','maximum relative diffusion enhancement due to bioirrigation')
       call self%get_parameter(bioturbation%hirrX,   'hirrX','mg C/m^2/d','Michaelis-Menten constant for bioirrigation')
-      call self%get_parameter(bioturbation%irr_minX,'irr_minX','-','minimum diffusion enhancement through bioirrigation')
-      call self%get_parameter(bioturbation%EDZ_1X,  'EDZ_1X','m^2/d','diffusivity in 1st (oxygenated) layer')
-      call self%get_parameter(bioturbation%EDZ_2X,  'EDZ_2X','m^2/d','diffusivity in 2nd (oxidized) layer')
-      call self%get_parameter(bioturbation%EDZ_3X,  'EDZ_3X','m^2/d','diffusivity in 3rd (anoxic) layer')
 
       ! Allow bioturbation module to initialize - must be after retrieving its parameters, as they are used when registering diagnostics.
       call self%add_child(bioturbation,'bioturbation',configunit=-1)

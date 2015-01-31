@@ -57,30 +57,30 @@ contains
     real(rk)          :: pueYX,pueQX
     self%dt = 86400._rk
     ! Register parameters
-      call self%get_parameter(self%qnYIcX, 'qnYc',  'mmol N/mg C','Maximum nitrogen to carbon ratio')
-      call self%get_parameter(self%qpYIcX, 'qpYc',  'mmol P/mg C','Maximum phosphorus to carbon ratio')
-      call self%get_parameter(self%q10YX,  'q10Y',  '-',          'Regulating temperature factor Q10')
-      call self%get_parameter(self%hO2YX,  'hO2Y',  'mmol/m^3',   'Michaelis-Menten constant for oxygen limitation')
-      call self%get_parameter(self%rlO2YX, 'rlO2Y', 'mmol/m^3',   'Minimum treshold of oxygen required')
-      call self%get_parameter(self%xclYX,  'xclY',  'mg C/m^2',   'Lower treshold for crowding effect on food uptake')
+      call self%get_parameter(self%qnYIcX, 'qnYc',  'mmol N/mg C','maximum nitrogen to carbon ratio')
+      call self%get_parameter(self%qpYIcX, 'qpYc',  'mmol P/mg C','maximum phosphorus to carbon ratio')
+      call self%get_parameter(self%q10YX,  'q10Y',  '-',          'Q_10 temperature coefficient')
+      call self%get_parameter(self%hO2YX,  'hO2Y',  'mmol O2/m^3','Michaelis-Menten constant for oxygen limitation')
+      call self%get_parameter(self%rlO2YX, 'rlO2Y', 'mmol O2/m^3','minimum treshold of oxygen required')
+      call self%get_parameter(self%xclYX,  'xclY',  'mg C/m^2',   'abundance above which crowding reduces food uptake')
       call self%get_parameter(self%xcsYX,  'xcsY',  'mg C/m^2',   'Michaelis-Menten constant for the impact of crowding')
-      call self%get_parameter(self%xchYX,  'xchY',  'mg C/m^2',   'Concentration determining asymptotic treshold of shading limitation (-> xchYXi/(1+xchYXi) for Yc-> inf)')
-      call self%get_parameter(self%suYX,   'suY',   '1/d',        'Specific maximal uptake at reference temperature')
+      call self%get_parameter(self%xchYX,  'xchY',  'mg C/m^2',   'abundance determining asymptotic threshold of crowding limitation (-> xchY/(Yc+xchY) for Yc-> inf)')
+      call self%get_parameter(self%suYX,   'suY',   '1/d',        'specific maximum uptake at reference temperature')
       call self%get_parameter(self%luYX,   'luY',   'mg C/m^2',   'Michaelis-Menten constant for food species uptake')
       call self%get_parameter(self%huYX,   'huY',   'mg C/m^2',   'Michaelis-Menten constant for gross carbon uptake')
-      call self%get_parameter(pueYX,       'pueY',  '-',          'Excreted fraction of food uptake')
-      call self%get_parameter(pueQX,       'pueQ',  '-',          'Excreted fraction of POM uptake')
-      call self%get_parameter(self%pudilX, 'pudil', '-',          'Relative nutrient content in the fecal pellets')
-      call self%get_parameter(self%sdYX,   'sdY',   '1/d',        'Specific mortality at reference temperature')
-      call self%get_parameter(self%sdmO2YX,'sdmO2Y','1/d',        'Specific maximal additional mortality of deposit feeders due to oxygen stress')
-      call self%get_parameter(self%sdcYX,  'sdcY',  '1/d',        'Specific maximal additional mortality of deposit feeders induced by cold temperature')
+      call self%get_parameter(pueYX,       'pueY',  '-',          'fraction of carbon in consumed live food that goes to faeces')
+      call self%get_parameter(pueQX,       'pueQ',  '-',          'fraction of carbon in consumed detritus that goes to faeces')
+      call self%get_parameter(self%pudilX, 'pudil', '-',          'relative nutrient content of faeces')
+      call self%get_parameter(self%sdYX,   'sdY',   '1/d',        'specific mortality at reference temperature')
+      call self%get_parameter(self%sdmO2YX,'sdmO2Y','1/d',        'specific maximum additional mortality due to oxygen stress')
+      call self%get_parameter(self%sdcYX,  'sdcY',  '1/d',        'specific maximum additional mortality induced by cold temperature')
       call self%get_parameter(self%xdcYX,  'xdcY',  '1/degree C', 'e-folding temperature factor of cold mortality response')
     ! Determine number of food sources
-      call self%get_parameter(self%nfood,  'nfood', '',           'Number of food sources',default=0)   
-      call self%get_parameter(self%srYX,   'srY',   '1/d',        'Specific rest respiration at reference temperature')
-      call self%get_parameter(self%purYX,  'purY',  '-',          'Respired fraction of uptake')
-      call self%get_parameter(self%dwatYX, 'dwatY', '1/m',        'Water layer available for uptake of pelagic food source',default=1._rk)
-      call self%get_parameter(self%dQ6YX, 'dQ6Y', 'm', 'Depth of available sediment layer',default=0._rk)
+      call self%get_parameter(self%nfood,  'nfood', '',           'number of food sources',default=0)   
+      call self%get_parameter(self%srYX,   'srY',   '1/d',        'specific rest respiration at reference temperature')
+      call self%get_parameter(self%purYX,  'purY',  '-',          'fraction of net food uptake that is respired')
+      call self%get_parameter(self%dwatYX, 'dwatY', 'm',          'water layer accessible for pelagic food uptake',default=1._rk)
+      call self%get_parameter(self%dQ6YX, 'dQ6Y', 'm', 'depth of available sediment layer',default=0._rk)
       call self%add_constituent('c',3000._rk,qn=self%qnYIcX,qp=self%qpYIcX)
   
     allocate(self%id_food(self%nfood))
@@ -100,28 +100,28 @@ contains
    ! Allocate components of food sources
     do ifood=1,self%nfood
          write (index,'(i0)') ifood
-         call self%get_parameter(self%foodispel(ifood),'food'//trim(index)//'ispel','','food type '//trim(index)//'is pelagic',default=.false.)
-         call self%get_parameter(self%food_ll(ifood),'food'//trim(index)//'_ll','','food '//trim(index)//'availability is limited by aerobic layer hight',default=.false.)
+         call self%get_parameter(self%foodispel(ifood),'food'//trim(index)//'ispel','','food source '//trim(index)//' is pelagic',default=.false.)
+         call self%get_parameter(self%food_ll(ifood),'food'//trim(index)//'_ll','','availability of food source '//trim(index)//' is limited by aerobic layer height',default=.false.)
          call self%register_model_dependency(self%id_food(ifood),'food'//trim(index))
          if (self%foodispel(ifood)) then
-            call self%register_dependency(self%id_foodpelc(ifood), 'food'//trim(index)//'c','mmol C m-3','Food '//trim(index)//' C') 
-            call self%register_dependency(self%id_foodpeln(ifood), 'food'//trim(index)//'n','mmol C m-3','Food '//trim(index)//' N')
-            call self%register_dependency(self%id_foodpelp(ifood), 'food'//trim(index)//'p','mmol C m-3','Food '//trim(index)//' P')
-            call self%register_dependency(self%id_foodpels(ifood), 'food'//trim(index)//'s','mmol C m-3','Food '//trim(index)//' Si')
+            call self%register_dependency(self%id_foodpelc(ifood), 'food'//trim(index)//'c','mmol C m-3','food source '//trim(index)//' carbon') 
+            call self%register_dependency(self%id_foodpeln(ifood), 'food'//trim(index)//'n','mmol C m-3','food source '//trim(index)//' nitrogen')
+            call self%register_dependency(self%id_foodpelp(ifood), 'food'//trim(index)//'p','mmol C m-3','food source '//trim(index)//' phosphorus')
+            call self%register_dependency(self%id_foodpels(ifood), 'food'//trim(index)//'s','mmol C m-3','food source '//trim(index)//' silicate')
             call self%request_coupling_to_model(self%id_foodpelc(ifood),self%id_food(ifood),standard_variables%total_carbon)
             call self%request_coupling_to_model(self%id_foodpeln(ifood),self%id_food(ifood),standard_variables%total_nitrogen)
             call self%request_coupling_to_model(self%id_foodpelp(ifood),self%id_food(ifood),standard_variables%total_phosphorus)
             call self%request_coupling_to_model(self%id_foodpels(ifood),self%id_food(ifood),standard_variables%total_silicate)
          else
-            call self%register_dependency(self%id_foodc(ifood),'food'//trim(index)//'c','mmol C m-2','Food '//trim(index)//' C') 
-            call self%register_dependency(self%id_foodn(ifood),'food'//trim(index)//'n','mmol C m-2','Food '//trim(index)//' N')
-            call self%register_dependency(self%id_foodp(ifood),'food'//trim(index)//'p','mmol C m-2','Food '//trim(index)//' P')
-            call self%register_dependency(self%id_foods(ifood),'food'//trim(index)//'s','mmol C m-2','Food '//trim(index)//' Si')
+            call self%register_dependency(self%id_foodc(ifood),'food'//trim(index)//'c','mmol C m-2','Food '//trim(index)//' carbon') 
+            call self%register_dependency(self%id_foodn(ifood),'food'//trim(index)//'n','mmol C m-2','Food '//trim(index)//' nitrogen')
+            call self%register_dependency(self%id_foodp(ifood),'food'//trim(index)//'p','mmol C m-2','Food '//trim(index)//' phosphorus')
+            call self%register_dependency(self%id_foods(ifood),'food'//trim(index)//'s','mmol C m-2','Food '//trim(index)//' silicate')
             call self%request_coupling_to_model(self%id_foodc(ifood),self%id_food(ifood),standard_variables%total_carbon)
             call self%request_coupling_to_model(self%id_foodn(ifood),self%id_food(ifood),standard_variables%total_nitrogen)
             call self%request_coupling_to_model(self%id_foodp(ifood),self%id_food(ifood),standard_variables%total_phosphorus)
             call self%request_coupling_to_model(self%id_foods(ifood),self%id_food(ifood),standard_variables%total_silicate)
-            call self%register_dependency(self%id_foodc_an(ifood),'food'//trim(index)//'c_an','mmol C m-2','Food '//trim(index)//' C in anaerobic layer')
+            call self%register_dependency(self%id_foodc_an(ifood),'food'//trim(index)//'c_an','mmol C m-2','food source '//trim(index)//' carbon in anaerobic layer')
             call self%request_coupling(self%id_foodc_an(ifood),'zero_hz')
 
             ! Hack for legacy ERSEM compatibility - to be removed!
@@ -134,7 +134,7 @@ contains
     allocate(self%pueYX(self%nfood))
     do ifood=1,self%nfood
        write (index,'(i0)') ifood
-       call self%get_parameter(foodispom,'food'//trim(index)//'ispom','','food type '//trim(index)//' is POM',default=.false.)
+       call self%get_parameter(foodispom,'food'//trim(index)//'ispom','','food source '//trim(index)//' is detritus',default=.false.)
        if (foodispom) then
           self%pueYX(ifood) = pueQX
        else
@@ -146,7 +146,7 @@ contains
     allocate(self%pufood(self%nfood))
     do ifood=1,self%nfood
          write (index,'(i0)') ifood
-         call self%get_parameter(self%pufood(ifood),'pufood'//trim(index),'-','Food preference of benthic faunal group for food source'//trim(index))
+         call self%get_parameter(self%pufood(ifood),'pufood'//trim(index),'-','preference for food source '//trim(index))
     end do
 
     ! Environmental dependencies
@@ -154,21 +154,21 @@ contains
       call self%register_dependency(self%id_Dm,'Dm','m','depth of limiting layer for uptake')
 
     ! Dependencies on state variables of external modules
-      call self%register_state_dependency(self%id_O2o,'O2o','mmol O/m^3','oxygen')
+      call self%register_state_dependency(self%id_O2o,'O2o','mmol O2/m^3','oxygen')
       call self%register_state_dependency(self%id_Q6c,'Q6c','mg C/m^2', 'particulate organic carbon')
       call self%register_state_dependency(self%id_Q6n,'Q6n','mmol N/m^2','particulate organic nitrogen')
       call self%register_state_dependency(self%id_Q6p,'Q6p','mmol P/m^2','particulate organic phosphorus')
       call self%register_state_dependency(self%id_Q6s,'Q6s','mmol Si/m^2','particulate organic silicate')
-      call self%register_state_dependency(self%id_G3c,'G3c','mmol C m-2','Carbon Dioxide')
-      call self%register_state_dependency(self%id_G2o,'G2o','mmol O m-2','Oxygen')
-      call self%register_state_dependency(self%id_K1p2,'K1p2','mmol P/m^2','benthic phosphate in 2nd layer')
-      call self%register_state_dependency(self%id_K4n2,'K4n2','mmol N/m^2','benthic ammonium in 2nd layer')
-      call self%register_state_dependency(self%id_K1p,'K1p','mmol P/m^2','benthic phosphate in 1st layer')
-      call self%register_state_dependency(self%id_K4n,'K4n','mmol N/m^2','benthic ammonium in 1st layer')
+      call self%register_state_dependency(self%id_G3c,'G3c','mmol C/m^2','carbon dioxide')
+      call self%register_state_dependency(self%id_G2o,'G2o','mmol O2/m^2','oxygen')
+      call self%register_state_dependency(self%id_K1p, 'K1p', 'mmol P/m^2','benthic phosphate in aerobic layer')
+      call self%register_state_dependency(self%id_K4n, 'K4n', 'mmol N/m^2','benthic ammonium in aerobic layer')
+      call self%register_state_dependency(self%id_K1p2,'K1p2','mmol P/m^2','benthic phosphate in anaerobic layer')
+      call self%register_state_dependency(self%id_K4n2,'K4n2','mmol N/m^2','benthic ammonium in anaerobic layer')
 
     ! Get contribution for bioturbation and bioirrigation
-      call self%get_parameter(self%pturYX, 'pturY','-','Relative contribution to bioturbation',default=0._rk)
-      call self%get_parameter(self%pirrYX, 'pirrY','-','Relative controbution to bioirrigation',default=0._rk)
+      call self%get_parameter(self%pturYX, 'pturY','-','relative contribution to bioturbation',default=0._rk)
+      call self%get_parameter(self%pirrYX, 'pirrY','-','relative contribution to bioirrigation',default=0._rk)
       call self%register_diagnostic_variable(self%id_biotur,'biotur','mg C/m^2/d','bioturbation activity',output=output_time_step_averaged,domain=domain_bottom)
       call self%register_diagnostic_variable(self%id_bioirr,'bioirr','mg C/m^2/d','bioirrigation activity',output=output_time_step_averaged,domain=domain_bottom)
       call self%add_to_aggregate_variable(total_bioturbation_activity, self%id_biotur)

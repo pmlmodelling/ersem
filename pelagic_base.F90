@@ -87,12 +87,12 @@ contains
       if (self%sedimentation) then
          call self%register_dependency(self%id_bedstress,standard_variables%bottom_stress)
          call self%register_dependency(self%id_dens,     standard_variables%density)
+         call self%get_parameter(self%qQ1c, 'qQ1c','-','fraction of sedimented matter decomposing into DOM')
+         call self%get_parameter(self%qQ7c, 'qQ7c','-','fraction of sedimented matter decomposing into refractory matter')
          call self%get_parameter(self%xR1nX,'xR1n','-','transfer of sedimented nitrogen to DOM, relative to POM')
          call self%get_parameter(self%xR1pX,'xR1p','-','transfer of sedimented phosphorus to DOM, relative to POM')
          call self%get_parameter(self%xR7nX,'xR7n','-','transfer of sedimented nitrogen to refractory matter, relative to POM')
          call self%get_parameter(self%xR7pX,'xR7p','-','transfer of sedimented phosphorus to refractory matter, relative to POM')
-         call self%get_parameter(self%qQ1c, 'qQ1c','-','fraction of sedimented matter decomposing into benthic DOM')
-         call self%get_parameter(self%qQ7c, 'qQ7c','-','fraction of sedimented matter decomposing into benthic refractory matter')
 
          ! Links to external benthic state variables
          call self%register_state_dependency(self%id_Q1c,'Q1c','mg C/m^2',  'Q1c')
@@ -158,7 +158,7 @@ contains
                call self%add_to_aggregate_variable(standard_variables%total_iron,self%id_f)
             end if
          case ('chl')
-            call self%register_state_variable(self%id_chl,'Chl','mg C/m^3','chlorophyll-a',initial_value,minimum=0._rk,vertical_movement=-self%rm/self%dt,background_value=background_value)
+            call self%register_state_variable(self%id_chl,'Chl','mg/m^3','chlorophyll a',initial_value,minimum=0._rk,vertical_movement=-self%rm/self%dt,background_value=background_value)
          case default
             call self%fatal_error('add_constituent','Unknown constituent "'//trim(name)//'".')
          end select

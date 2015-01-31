@@ -102,7 +102,6 @@ contains
       ! Obtain the values of all model parameters from FABM.
       ! Specify the long name and units of the parameters, which could be used by FABM (or its host)
       ! to present parameters to the user for configuration (e.g., through a GUI)
-      call self%get_parameter(self%use_Si,   'use_Si','',          'use silicate',default=.true.)
       call self%get_parameter(self%sump1X,   'sum',  '1/d',        'maximum specific productivity at reference temperature')
       call self%get_parameter(self%q10p1X,   'q10',  '-',          'Q_10 temperature coefficient')
       call self%get_parameter(self%srsp1X,   'srs',  '1/d',        'specific rest respiration at reference temperature')
@@ -117,13 +116,14 @@ contains
       call self%get_parameter(self%qup1n3X,  'qun3', 'm^3/mg C/d', 'nitrate affinity')
       call self%get_parameter(self%qup1n4X,  'qun4', 'm^3/mg C/d', 'ammonium affinity')
       call self%get_parameter(self%qurp1pX,  'qurp', 'm^3/mg C/d', 'phosphate affinity')
+      call self%get_parameter(self%use_Si,   'use_Si','',          'use silicate',default=.true.)
       if (self%use_Si) then
          call self%get_parameter(self%qsp1cX,'qsc', 'mmol Si/mg C','maximum silicate to carbon ratio')
          call self%get_parameter(self%chp1sX,'chs', 'mmol/m^3',    'Michaelis-Menten constant for silicate limitation')
       end if
       call self%get_parameter(self%sdop1X,   'sdo',  '1/d',        '1.1 of minimal specific lysis rate')
       call self%get_parameter(self%alphaP1X, 'alpha','mg C m^2/mg Chl/W/d', 'initial slope of PI-curve')
-      call self%get_parameter(self%betaP1X,  'beta', 'mg C m^2 /mg Chl/W/d','photoinhibition parameter')
+      call self%get_parameter(self%betaP1X,  'beta', 'mg C m^2/mg Chl/W/d','photoinhibition parameter')
       call self%get_parameter(self%phimP1X,  'phim', 'mg Chl/mg C','maximum effective chlorophyll to carbon photosynthesis ratio')
       call self%get_parameter(self%phiP1HX,  'phiH', 'mg Chl/mg C','minimum effective chlorophyll to carbon photosynthesis ratio')
       call self%get_parameter(self%LimnutX,  'Limnut','',          'nitrogen-phosphorus colimitation formulation')
@@ -132,15 +132,15 @@ contains
       call self%get_parameter(self%uB1c_O2X, 'uB1c_O2','mmol O_2/mg C','oxygen produced per unit of carbon fixed')
       call self%get_parameter(self%urB1_O2X, 'urB1_O2','mmol O_2/mg C','oxygen consumed per unit of carbon respired')
       if (use_iron) then
-         call self%get_parameter(self%qflP1cX,  'qflc','umol Fe/mg C','minimal iron to carbon ratio')
-         call self%get_parameter(self%qfRP1cX,  'qfRc','umol Fe/mg C','maximal/optimal iron to carbon ratio')
+         call self%get_parameter(self%qflP1cX,  'qflc','umol Fe/mg C','minimum iron to carbon ratio')
+         call self%get_parameter(self%qfRP1cX,  'qfRc','umol Fe/mg C','maximum/optimal iron to carbon ratio')
          call self%get_parameter(self%qurP1fX,  'qurf','m^3/mg C/d',  'specific affinity for iron')
       end if
       call self%get_parameter(EPS,           'EPS', 'm^2/mg C', 'specific extinction coefficient')
       call self%get_parameter(c0,            'c0',  'mg C/m^3', 'background carbon concentration', default=0.0_rk)
       call self%get_parameter(self%calcify,  'calcify','',      'calcify',                         default=.false.)
       call self%get_parameter(self%rP1mX,    'rm',   'm/d',     'background sinking velocity',     default=0.0_rk)
-      call self%get_parameter(self%resp1mX,  'resm', 'm/d',     'maximum sinking velocity',        default=0.0_rk)
+      call self%get_parameter(self%resp1mX,  'resm', 'm/d',     'maximum nutrient-limitation-induced sinking velocity', default=0.0_rk)
       call self%get_parameter(self%esnip1X,  'esni','-',        'level of nutrient limitation at which sinking commences')
 
       ! Register state variables (handled by type_ersem_pelagic_base)

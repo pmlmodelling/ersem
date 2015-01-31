@@ -38,14 +38,14 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%EPSESSX,  'EPSESS',  'm^2/mg','specific shortwave attenuation of silt')
       call self%get_parameter(self%EPS0X,    'EPS0r',   '1/m',   'background shortwave attenuation') 
+      call self%get_parameter(self%EPSESSX,  'EPSESS',  'm^2/mg','specific shortwave attenuation of silt')
       call self%get_parameter(self%pEIR_eowX,'pEIR_eow','-',     'photosynthetically active fraction of shortwave radiation') 
 
       ! Register diagnostic variables
-      call self%register_diagnostic_variable(self%id_EIR,'EIR','W/m^-2','shortwave radiation', &
+      call self%register_diagnostic_variable(self%id_EIR,'EIR','W/m^2','shortwave radiation', &
               standard_variable=standard_variables%downwelling_shortwave_flux,source=source_do_column)
-      call self%register_diagnostic_variable(self%id_parEIR,'parEIR','W/m^-2','photosynthetically active radiation', &
+      call self%register_diagnostic_variable(self%id_parEIR,'parEIR','W/m^2','photosynthetically active radiation', &
               standard_variable=standard_variables%downwelling_photosynthetic_radiative_flux,source=source_do_column)
       call self%register_diagnostic_variable(self%id_xEPS,'xEPS','1/m','attenuation coefficient of shortwave flux', &
               source=source_do_column)

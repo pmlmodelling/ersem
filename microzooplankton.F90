@@ -61,8 +61,8 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%chuz5cX,   'chuc',   'mg C/m^3',   'Michaelis-Menten constant for food uptake')
       call self%get_parameter(self%sumz5X,    'sum',    '1/d',        'maximum specific uptake at reference temperature')
+      call self%get_parameter(self%chuz5cX,   'chuc',   'mg C/m^3',   'Michaelis-Menten constant for food uptake')
       call self%get_parameter(self%puz5X,     'pu',     '-',          'assimilation efficiency')
       call self%get_parameter(self%pe_r1z5X,  'pe_r1',  '-',          'dissolved fraction of excreted/dying matter')
       call self%get_parameter(self%q10z5X,    'q10',    '-',          'Q_10 temperature coefficient')

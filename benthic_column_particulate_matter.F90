@@ -519,7 +519,7 @@ contains
       self%dt = 86400._rk
 
       call self%get_parameter(composition,'composition', '','elemental composition',default='cnp')
-      call self%get_parameter(self%remin,'remin','d-1','remineralization rate',default=0.0_rk)
+      call self%get_parameter(self%remin,'remin','1/d','remineralization rate',default=0.0_rk)
       call self%get_parameter(self%surface_boundary_type,'surface_boundary_type','','surface boundary type (0: constant depth, 1: variable depth)',default=0)
       call self%get_parameter(self%bottom_boundary_type, 'bottom_boundary_type', '','bottom boundary type (0: constant depth, 1: variable depth)', default=0)
       if (self%surface_boundary_type==0) then
@@ -532,7 +532,7 @@ contains
       else
          call self%register_dependency(self%id_bottom_boundary_depth,'bottom_boundary_depth','m','bottom boundary depth')
       end if
-      call self%get_parameter(self%source_depth_distribution,'source_depth_distribution', '','rule for vertical distribution of source terms',default=1)
+      call self%get_parameter(self%source_depth_distribution,'source_depth_distribution', '','vertical distribution of changes (1: constant absolute rate, 2: constant relative rate, 3: constant carbon-based relative rate)',default=1)
       call self%register_dependency(self%id_d_tot,depth_of_sediment_column)
 
       call self%register_model_dependency(self%id_Q,'Q')
