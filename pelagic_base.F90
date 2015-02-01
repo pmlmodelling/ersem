@@ -45,9 +45,9 @@ contains
       character(len=10) :: composition
       real(rk)          :: c0,s0,rRPmX,EPS
 
-      call self%get_parameter(composition,'composition','',        'elemental composition',     default='')
-      call self%get_parameter(rRPmX,      'rm',         'm/d',     'sinking velocity',          default=0.0_rk)
+      call self%get_parameter(composition,'composition','',        'elemental composition',         default='')
       call self%get_parameter(EPS,        'EPS',        'm^2/mg C','specific shortwave attenuation',default=0.0_rk)
+      call self%get_parameter(rRPmX,      'rm',         'm/d',     'sinking velocity',              default=0.0_rk)
 
       call self%initialize_ersem_base(rm=rRPmX)
       
@@ -197,7 +197,7 @@ contains
          _GET_HORIZONTAL_(self%id_bedstress,tbed)
          _GET_(self%id_dens,density)
 
-         ! Divide actual bed stress (Pa) by density (kg m-3) to obtain square of bed shear velocity.
+         ! Divide actual bed stress (Pa) by density (kg/m^3) to obtain square of bed shear velocity.
          tbed = tbed/density
 
          if(tbed<tdep) then

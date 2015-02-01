@@ -43,7 +43,7 @@ contains
 
    subroutine benthic_dissolved_matter_initialize(self,configunit)
       class (type_ersem_benthic_column_dissolved_matter),intent(inout),target :: self
-      integer,                                        intent(in)           :: configunit
+      integer,                                           intent(in)           :: configunit
 
       class (type_dissolved_matter_per_layer), pointer :: profile
       character(len=10) :: composition
@@ -78,8 +78,8 @@ contains
       if (self%last_layer>1) call self%get_parameter(self%ads(2),'ads2','-','adsorption in oxidized layer (total:dissolved)',default=1.0_rk)
       if (self%last_layer>2) call self%get_parameter(self%ads(3),'ads3','-','adsorption in anoxic layer (total:dissolved)',default=1.0_rk)
       if (self%last_layer/=3) then
-         call self%get_parameter(self%relax,'relax','1/d','diffusion time scale for benthic/pelagic interface')
-         call self%get_parameter(self%minD, 'minD','m',  'minimum depth of bottom interface of controlled layer')
+         call self%get_parameter(self%relax,'relax','1/d','rate of relaxation towards equilibrium concentration profile')
+         call self%get_parameter(self%minD, 'minD','m',  'minimum depth of bottom interface of deepest layer')
       end if
 
       ! Register state variable for bottom-most pelagic concentration.

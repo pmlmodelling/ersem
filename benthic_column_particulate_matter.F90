@@ -406,7 +406,7 @@ contains
       call self%register_dependency(self%id_z_tur,bioturbation_depth)
 
       ! Burial
-      call self%get_parameter(bury,'burial','','activate burial',default=.false.)
+      call self%get_parameter(bury,'burial','','enable burial',default=.false.)
       if (bury) then
          ! Enable wholesale linking to model "burial_target", which would hook up all buried mass constituents.
          call self%register_model_dependency(self%id_buried_Q,'burial_target')

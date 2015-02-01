@@ -106,11 +106,11 @@ contains
       do iprey=1,self%nprey
          write (index,'(i0)') iprey
          call self%get_parameter(self%suprey(iprey),'suprey'//trim(index),'-','relative affinity for prey type '//trim(index))
-         call self%register_dependency(self%id_preyc(iprey),'prey'//trim(index)//'c','mmol C m-3', 'Prey '//trim(index)//' C')
-         call self%register_dependency(self%id_preyn(iprey),'prey'//trim(index)//'n','mmol N m-3', 'Prey '//trim(index)//' N')
-         call self%register_dependency(self%id_preyp(iprey),'prey'//trim(index)//'p','mmol P m-3', 'Prey '//trim(index)//' P')
-         call self%register_dependency(self%id_preys(iprey),'prey'//trim(index)//'s','mmol Si m-3','Prey '//trim(index)//' Si')
-         call self%register_dependency(self%id_preyl(iprey),'prey'//trim(index)//'l','mg C m-3',   'Prey '//trim(index)//' calcite')
+         call self%register_dependency(self%id_preyc(iprey),'prey'//trim(index)//'c','mmol C/m^3', 'prey '//trim(index)//' carbon')
+         call self%register_dependency(self%id_preyn(iprey),'prey'//trim(index)//'n','mmol N/m^3', 'prey '//trim(index)//' nitrogen')
+         call self%register_dependency(self%id_preyp(iprey),'prey'//trim(index)//'p','mmol P/m^3', 'prey '//trim(index)//' phosphorus')
+         call self%register_dependency(self%id_preys(iprey),'prey'//trim(index)//'s','mmol Si/m^3','prey '//trim(index)//' silicate')
+         call self%register_dependency(self%id_preyl(iprey),'prey'//trim(index)//'l','mg C/m^3',   'prey '//trim(index)//' calcite')
 
          call self%register_model_dependency(self%id_prey(iprey),'prey'//trim(index))
          call self%request_coupling_to_model(self%id_preyc(iprey),self%id_prey(iprey),standard_variables%total_carbon)
@@ -121,39 +121,39 @@ contains
                                              type_bulk_standard_variable(name='total_calcite_in_biota',aggregate_variable=.true.))
 
          if (use_iron) then
-            call self%register_dependency(self%id_preyf(iprey),'prey'//trim(index)//'f','mmol Fe m-3','Prey '//trim(index)//' Fe')
-            call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe m-3','sink for Fe of prey '//trim(index),required=.false.)
+            call self%register_dependency(self%id_preyf(iprey),'prey'//trim(index)//'f','mmol Fe/m^3','Prey '//trim(index)//' Fe')
+            call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe/m^3','sink for Fe of prey '//trim(index),required=.false.)
             call self%request_coupling_to_model(self%id_preyf(iprey),self%id_prey(iprey),standard_variables%total_iron)
          end if
       end do
 
       ! Register links to external nutrient pools.
-      call self%register_state_dependency(self%id_N1p,'N1p','mmol P m-3', 'Phosphate')
-      call self%register_state_dependency(self%id_N4n,'N4n','mmol N m-3', 'Ammonium')
+      call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3', 'phosphate')
+      call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3', 'ammonium')
 
       ! Register links to external labile dissolved organic matter pools.
-      call self%register_state_dependency(self%id_R1c,'R1c','mg C m-3',  'DOC')
-      call self%register_state_dependency(self%id_R1p,'R1p','mmol P m-3','DOP')
-      call self%register_state_dependency(self%id_R1n,'R1n','mmol N m-3','DON')
+      call self%register_state_dependency(self%id_R1c,'R1c','mg C/m^3',  'dissolved organic carbon')
+      call self%register_state_dependency(self%id_R1p,'R1p','mmol P/m^3','dissolved organic phosphorus')
+      call self%register_state_dependency(self%id_R1n,'R1n','mmol N/m^3','dissolved organic nitrogen')
 
       ! Register links to external semi-labile dissolved organic matter pools.
-      call self%register_state_dependency(self%id_R2c,'R2c','mg C m-3','Semi-labile DOC')
+      call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','semi-labile dissolved organic carbon')
 
       ! Register links to external particulate organic matter pools.
-      call self%register_state_dependency(self%id_R6c,'RPc','mg C m-3',   'POC')
-      call self%register_state_dependency(self%id_R6p,'RPp','mmol P m-3', 'POP')
-      call self%register_state_dependency(self%id_R6n,'RPn','mmol N m-3', 'PON')
-      call self%register_state_dependency(self%id_R6s,'RPs','mmol Si m-3','POSi')
+      call self%register_state_dependency(self%id_R6c,'RPc','mg C/m^3',   'particulate organic carbon')
+      call self%register_state_dependency(self%id_R6p,'RPp','mmol P/m^3', 'particulate organic phosphorus')
+      call self%register_state_dependency(self%id_R6n,'RPn','mmol N/m^3', 'particulate organic nitrogen')
+      call self%register_state_dependency(self%id_R6s,'RPs','mmol Si/m^3','particulate organic silicate')
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
-      call self%register_state_dependency(self%id_O3c,'O3c','mmol C m-3','Carbon Dioxide')
-      call self%register_state_dependency(self%id_O2o,'O2o','mmol O m-3','Oxygen')
+      call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide sink')
+      call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen source')
 
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
       call self%register_dependency(self%id_eO2mO2,standard_variables%fractional_saturation_of_oxygen)
 
-      call self%register_state_dependency(self%id_L2c,'L2c','mg C m-3','Calcite',required=.false.)
+      call self%register_state_dependency(self%id_L2c,'L2c','mg C/m^3','calcite',required=.false.)
 
       ! Allow coupling of all required particulate organic matter variables to a single source model.
       call self%register_model_dependency(self%id_RP,'RP')

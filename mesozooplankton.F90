@@ -73,21 +73,21 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%qpZIcX,    'qpc',    'mmol P/mg C','phosphorous to carbon ratio')
+      call self%get_parameter(self%qpZIcX,    'qpc',    'mmol P/mg C','phosphorus to carbon ratio')
       call self%get_parameter(self%qnZIcX,    'qnc',    'mmol N/mg C','nitrogen to carbon ratio')
       call self%get_parameter(self%q10z4X,    'q10',    '-','Q_10 temperature coefficient')
-      call self%get_parameter(self%chrZ4oX,   'chro',   '','Michaelis Menten constant for oxygen limitation')
+      call self%get_parameter(self%chrZ4oX,   'chro',   '-','Michaelis-Menten constant for oxygen limitation')
       call self%get_parameter(self%minfoodZ4X,'minfood','mg C/m^3','Michaelis-Menten constant to perceive food')
       call self%get_parameter(self%chuZ4cX,   'chuc',   'mg C/m^3','Michaelis Menten constant for food uptake')
       call self%get_parameter(self%sumZ4X,    'sum',    '1/d','maximum specific uptake at reference temperature')
       call self%get_parameter(self%sdZ4oX,    'sdo',    '1/d','specific mortality due to oxygen limitation')
       call self%get_parameter(self%sdZ4X,     'sd',     '1/d','specific basal mortality')
       call self%get_parameter(self%srsZ4X,    'srs',    '1/d','specific rest respiration at reference temperature')
-      call self%get_parameter(self%puZ4X,     'pu',     '-', 'relative assimilation efficiency')
+      call self%get_parameter(self%puZ4X,     'pu',     '-', 'assimilation efficiency')
       call self%get_parameter(pu_eaZ4X,       'pu_ea',  '-','excreted fraction of prey uptake')
       call self%get_parameter(pu_eaRZ4X,      'pu_eaR', '-','excreted fraction of POM uptake')
       call self%get_parameter(self%pe_R1Z4X,  'pe_R1',  '-','DOM fraction of excreted matter')
-      call self%get_parameter(self%MinpreyX,  'Minprey','mg C/m^2','food treshold for overwintering state')
+      call self%get_parameter(self%MinpreyX,  'Minprey','mg C/m^2','food threshold for overwintering state')
       call self%get_parameter(self%Z4repwX,   'repw',   '1/d','specific overwintering respiration')
       call self%get_parameter(self%Z4mortX,   'mort',   '1/d','specific overwintering mortality')
       call self%get_parameter(c0,             'c0',     'mg C/m^3','background concentration')
@@ -105,7 +105,7 @@ contains
       ! Create an expression that will compute the total prey
       ! (will be depth integrated to determine overwintering)
       allocate(total_prey_calculator)
-      total_prey_calculator%output_units = 'mg C m-3'
+      total_prey_calculator%output_units = 'mg C/m^3'
 
       ! Determine number of prey types.
       call self%get_parameter(self%nprey,'nprey','','number of prey types',default=0)
@@ -119,7 +119,7 @@ contains
       end do
       do iprey=1,self%nprey
          write (index,'(i0)') iprey
-         call self%get_parameter(preyispom,'prey'//trim(index)//'ispom','','prey type '//trim(index)//' is POM',default=.false.)
+         call self%get_parameter(preyispom,'prey'//trim(index)//'ispom','','prey type '//trim(index)//' is detritus',default=.false.)
          if (preyispom) then
             self%pu_eaZ4X(iprey) = pu_eaRZ4X
          else
@@ -138,11 +138,11 @@ contains
       allocate(self%id_preyf_target(self%nprey))
       do iprey=1,self%nprey
          write (index,'(i0)') iprey
-         call self%register_dependency(self%id_preyc(iprey), 'prey'//trim(index)//'c','mmol C m-3', 'Prey '//trim(index)//' C')    
-         call self%register_dependency(self%id_preyn(iprey), 'prey'//trim(index)//'n','mmol N m-3', 'Prey '//trim(index)//' N')    
-         call self%register_dependency(self%id_preyp(iprey), 'prey'//trim(index)//'p','mmol P m-3', 'Prey '//trim(index)//' P')    
-         call self%register_dependency(self%id_preys(iprey), 'prey'//trim(index)//'s','mmol Si m-3','Prey '//trim(index)//' Si')
-         call self%register_dependency(self%id_preyl(iprey), 'prey'//trim(index)//'l','mg C m-3',   'Prey '//trim(index)//' calcite')
+         call self%register_dependency(self%id_preyc(iprey), 'prey'//trim(index)//'c','mmol C/m^3', 'Prey '//trim(index)//' C')    
+         call self%register_dependency(self%id_preyn(iprey), 'prey'//trim(index)//'n','mmol N/m^3', 'Prey '//trim(index)//' N')    
+         call self%register_dependency(self%id_preyp(iprey), 'prey'//trim(index)//'p','mmol P/m^3', 'Prey '//trim(index)//' P')    
+         call self%register_dependency(self%id_preys(iprey), 'prey'//trim(index)//'s','mmol Si/m^3','Prey '//trim(index)//' Si')
+         call self%register_dependency(self%id_preyl(iprey), 'prey'//trim(index)//'l','mg C/m^3',   'Prey '//trim(index)//' calcite')
 
          call self%register_model_dependency(self%id_prey(iprey),'prey'//trim(index))
          call self%request_coupling_to_model(self%id_preyc(iprey),self%id_prey(iprey),standard_variables%total_carbon)
@@ -153,8 +153,8 @@ contains
                                              type_bulk_standard_variable(name='total_calcite_in_biota',aggregate_variable=.true.))
 
          if (use_iron) then
-            call self%register_dependency(self%id_preyf(iprey), 'prey'//trim(index)//'f','mmol Fe m-3','Prey '//trim(index)//' Fe')    
-            call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe m-3','sink for Fe of prey '//trim(index),required=.false.)    
+            call self%register_dependency(self%id_preyf(iprey), 'prey'//trim(index)//'f','mmol Fe/m^3','Prey '//trim(index)//' Fe')    
+            call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe/m^3','sink for Fe of prey '//trim(index),required=.false.)    
             call self%request_coupling_to_model(self%id_preyf(iprey),self%id_prey(iprey),standard_variables%total_iron)
          end if
 
@@ -163,27 +163,27 @@ contains
 
       ! Add the submodel that will compute total prey for us, and create a variable that will contain its depth integral.
       call self%add_child(total_prey_calculator,'totprey_calculator',configunit=-1)
-      call self%register_dependency(self%id_totprey,'totprey','mg C m-3','total prey carbon')
+      call self%register_dependency(self%id_totprey,'totprey','mg C/m^3','total carbon in prey')
       call self%request_coupling(self%id_totprey,'totprey_calculator/result')
       call self%register_expression_dependency(self%id_inttotprey,vertical_integral(self%id_totprey))
 
       ! Register links to external nutrient pools.
-      call self%register_state_dependency(self%id_N1p,'N1p','mmol P m-3', 'Phosphate')    
-      call self%register_state_dependency(self%id_N4n,'N4n','mmol N m-3', 'Ammonium')    
+      call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')    
+      call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','ammonium')    
 
       ! Register links to external labile dissolved organic matter pools.
-      call self%register_state_dependency(self%id_R1c,'R1c','mg C m-3',  'DOC')
-      call self%register_state_dependency(self%id_R1p,'R1p','mmol P m-3','DOP')    
-      call self%register_state_dependency(self%id_R1n,'R1n','mmol N m-3','DON')    
+      call self%register_state_dependency(self%id_R1c,'R1c','mg C/m^3',  'dissolved organic carbon')
+      call self%register_state_dependency(self%id_R1p,'R1p','mmol P/m^3','dissolved organic phosphorus')    
+      call self%register_state_dependency(self%id_R1n,'R1n','mmol N/m^3','dissolved organic nitrogen')    
 
       ! Register links to external semi-labile dissolved organic matter pools.
-      call self%register_state_dependency(self%id_R2c,'R2c','mg C m-3','Semi-labile DOC')    
+      call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','semi-labile dissolved organic carbon')
 
       ! Register links to external particulate organic matter pools.
-      call self%register_state_dependency(self%id_R8c,'RPc','mg C m-3',   'POC')    
-      call self%register_state_dependency(self%id_R8p,'RPp','mmol P m-3', 'POP')    
-      call self%register_state_dependency(self%id_R8n,'RPn','mmol N m-3', 'PON')    
-      call self%register_state_dependency(self%id_R8s,'RPs','mmol Si m-3','POSi')    
+      call self%register_state_dependency(self%id_R8c,'RPc','mg C/m^3',   'particulate organic carbon')    
+      call self%register_state_dependency(self%id_R8p,'RPp','mmol P/m^3', 'particulate organic phosphorus')
+      call self%register_state_dependency(self%id_R8n,'RPn','mmol N/m^3', 'particulate organic nitrogen')
+      call self%register_state_dependency(self%id_R8s,'RPs','mmol Si/m^3','particulate organic silicate')    
 
       ! Allow coupling of all required particulate organic matter variables to a single source model.
       call self%register_model_dependency(self%id_RP,'RP')
@@ -193,10 +193,10 @@ contains
       call self%request_coupling_to_model(self%id_R8s,self%id_RP,'s')
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
-      call self%register_state_dependency(self%id_O3c,'O3c','mmol C m-3','Carbon Dioxide')    
-      call self%register_state_dependency(self%id_O2o,'O2o','mmol O m-3','Oxygen')    
+      call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide')
+      call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen')
 
-      call self%register_state_dependency(self%id_L2c,'L2c','mg C m-3','Calcite',required=.false.)
+      call self%register_state_dependency(self%id_L2c,'L2c','mg C/m^3','calcite',required=.false.)
 
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)

@@ -91,34 +91,34 @@ contains
       if (index(self%composition,'p')/=0) then
          call self%add_constituent('p',0.0_rk)
          if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_p,'resuspension_target_p','mmol m-3','pelagic variable taking up resuspended phosphorus')
+            call self%register_state_dependency(self%id_resuspension_p,'resuspension_target_p','mmol/m^3','pelagic variable taking up resuspended phosphorus')
             call self%request_coupling_to_model(self%id_resuspension_p,self%id_resuspension_target,'p')
          end if
-         if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N1p,'N1p','mmol m-3','phosphate')
+         if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N1p,'N1p','mmol/m^3','phosphate')
       end if
       if (index(self%composition,'s')/=0) then
          call self%add_constituent('s',0.0_rk)
          if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_s,'resuspension_target_s','mmol m-3','pelagic variable taking up resuspended silicate')
+            call self%register_state_dependency(self%id_resuspension_s,'resuspension_target_s','mmol/m^3','pelagic variable taking up resuspended silicate')
             call self%request_coupling_to_model(self%id_resuspension_s,self%id_resuspension_target,'s')
          end if
-         if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N5s,'N5s','mmol m-3','silicate')
+         if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N5s,'N5s','mmol/m^3','silicate')
       end if
       if (index(self%composition,'f')/=0) then
          call self%add_constituent('f',0.0_rk)
          if (use_iron.and.self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_f,'resuspension_target_f','umol m-3','pelagic variable taking up resuspended iron')
+            call self%register_state_dependency(self%id_resuspension_f,'resuspension_target_f','umol/m^3','pelagic variable taking up resuspended iron')
             call self%request_coupling_to_model(self%id_resuspension_f,self%id_resuspension_target,'f')
          end if
-         if (use_iron.and.self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N7f,'N7f','umol m-3','dissolved iron')
+         if (use_iron.and.self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N7f,'N7f','umol/m^3','dissolved iron')
       end if
       if (index(self%composition,'l')/=0) then
          call self%add_constituent('l',0.0_rk)
          if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_l,'resuspension_target_l','mg m-3','pelagic variable taking up resuspended calcite')
+            call self%register_state_dependency(self%id_resuspension_l,'resuspension_target_l','mg/m^3','pelagic variable taking up resuspended calcite')
             call self%request_coupling_to_model(self%id_resuspension_l,self%id_resuspension_target,'l')
          end if
-         if (index(self%composition,'c')==0) call self%register_state_dependency(self%id_O3c,'O3c','umol m-3','dissolved inorganic carbon')
+         if (index(self%composition,'c')==0) call self%register_state_dependency(self%id_O3c,'O3c','umol/m^3','dissolved inorganic carbon')
       end if
    end subroutine
 
@@ -192,7 +192,7 @@ contains
             _GET_HORIZONTAL_(self%id_bedstress,bedstress)
             _GET_(self%id_dens,density)
 
-            ! Divide actual stress (Pa) by density (kg m-3) to obtain square of bed shear velocity.
+            ! Divide actual stress (Pa) by density (kg/m^3) to obtain square of bed shear velocity.
             ! This allows for comparison with ter.
             bedstress = bedstress/density
          else

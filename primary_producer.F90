@@ -126,7 +126,7 @@ contains
       call self%get_parameter(self%betaP1X,  'beta', 'mg C m^2/mg Chl/W/d','photoinhibition parameter')
       call self%get_parameter(self%phimP1X,  'phim', 'mg Chl/mg C','maximum effective chlorophyll to carbon photosynthesis ratio')
       call self%get_parameter(self%phiP1HX,  'phiH', 'mg Chl/mg C','minimum effective chlorophyll to carbon photosynthesis ratio')
-      call self%get_parameter(self%LimnutX,  'Limnut','',          'nitrogen-phosphorus colimitation formulation')
+      call self%get_parameter(self%LimnutX,  'Limnut','',          'nitrogen-phosphorus colimitation formulation (0: geometric mean, 1: minimum, 2: harmonic mean)')
       call self%get_parameter(self%docdyn,   'docdyn','','use dynamic ratio of labile to semi-labile DOM production', default=.false.)
       if (.not.self%docdyn) call self%get_parameter(self%R1R2X,'R1R2','-','labile fraction of produced DOM')
       call self%get_parameter(self%uB1c_O2X, 'uB1c_O2','mmol O_2/mg C','oxygen produced per unit of carbon fixed')
@@ -141,7 +141,7 @@ contains
       call self%get_parameter(self%calcify,  'calcify','',      'calcify',                         default=.false.)
       call self%get_parameter(self%rP1mX,    'rm',   'm/d',     'background sinking velocity',     default=0.0_rk)
       call self%get_parameter(self%resp1mX,  'resm', 'm/d',     'maximum nutrient-limitation-induced sinking velocity', default=0.0_rk)
-      call self%get_parameter(self%esnip1X,  'esni','-',        'level of nutrient limitation at which sinking commences')
+      call self%get_parameter(self%esnip1X,  'esni','-',        'level of nutrient limitation below which sinking commences')
 
       ! Register state variables (handled by type_ersem_pelagic_base)
       call self%initialize_ersem_base(sedimentation=.true.)
@@ -187,7 +187,7 @@ contains
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide')    
-      call self%register_state_dependency(self%id_O2o,'O2o','mmol O/m^3','oxygen')    
+      call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen')    
 
       ! Register diagnostic variables (i.e., model outputs)
       call self%register_diagnostic_variable(self%id_netPI, 'netP1', 'mg C/m^3/d','net primary production',  output=output_time_step_averaged)
@@ -203,14 +203,14 @@ contains
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
       if (self%calcify) then
          ! Link to rain ratio (set by calcification module; excludes effect of nutrient limitation, which is computed below)
-         call self%register_dependency(self%id_RainR,'RainR','-','Rain ratio')
+         call self%register_dependency(self%id_RainR,'RainR','-','rain ratio (PIC : POC)')
 
          ! Link to external detached liths (sink for calcite of dying phytoplankton)
          call self%register_state_dependency(self%id_L2c,'L2c','mg C/m^3','free calcite')
 
          ! Create diagnostic variable for cell-bound calcite, and register its contribution to the known quantity "total_calcite_in_biota".
          ! This quantity can be used by other models (e.g., predators) to determine how much calcite is released when phytoplankton is broken down.
-         call self%register_diagnostic_variable(self%id_lD,'l','mg C m-3','Bound calcite',missing_value=0._rk,output=output_none)
+         call self%register_diagnostic_variable(self%id_lD,'l','mg C/m^3','bound calcite',missing_value=0._rk,output=output_none)
          call self%add_to_aggregate_variable(type_bulk_standard_variable(name='total_calcite_in_biota',aggregate_variable=.true.),self%id_lD)
       end if
 #ifdef CENH
@@ -532,7 +532,7 @@ contains
          if (use_iron) then
             ! Iron flux................................................
 
-            ! Obtain internal iron concentration (umol m-3, excludes background), and external biologically available iron.
+            ! Obtain internal iron concentration (umol/m^3, excludes background), and external biologically available iron.
             _GET_(self%id_f,P1fP)
             _GET_(self%id_N7f,N7fP)
 
