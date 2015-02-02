@@ -45,7 +45,7 @@ contains
       character(len=10) :: composition
       real(rk)          :: c0,s0,rRPmX,EPS
 
-      call self%get_parameter(composition,'composition','',        'elemental composition',         default='')
+      call self%get_parameter(composition,'composition','',        'elemental composition')
       call self%get_parameter(EPS,        'EPS',        'm^2/mg C','specific shortwave attenuation',default=0.0_rk)
       call self%get_parameter(rRPmX,      'rm',         'm/d',     'sinking velocity',              default=0.0_rk)
 
