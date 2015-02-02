@@ -17,8 +17,7 @@
 !
 ! Iron use is controlled by use_iron defined in ersem/shared.F90.
 !
-! Preprocessor symbol CENH is still used, but should be
-! replaced by run-time flags provided performance does not suffer.
+! CO2-enhanced photosynthesis is controlled by runtime switch cenh.
 ! -----------------------------------------------------------------------------
 
 module ersem_primary_producer
@@ -46,7 +45,7 @@ module ersem_primary_producer
       ! Environmental dependencies
       type (type_dependency_id)            :: id_parEIR,id_ETW   ! PAR and temperature
       type (type_dependency_id)            :: id_RainR           ! Rain ratio - used by calcifiers only
-      type (type_horizontal_dependency_id) :: id_pco2a3          ! Atmospheric pCO2 - used only if CENH is active
+      type (type_horizontal_dependency_id) :: id_pco2a3          ! Atmospheric pCO2 - used only if cenh is active
 
       ! Identifiers for diagnostic variables
       type (type_diagnostic_variable_id) :: id_fO3PIc  ! Gross primary production rate
@@ -67,7 +66,7 @@ module ersem_primary_producer
       real(rk) :: qflP1cX,qfRP1cX,qurP1fX
       real(rk) :: rP1mX
       integer :: LimnutX
-      logical :: use_Si, calcify, docdyn
+      logical :: use_Si, calcify, docdyn, cenh
 
    contains
 
@@ -142,6 +141,7 @@ contains
       call self%get_parameter(self%rP1mX,    'rm',   'm/d',     'background sinking velocity',     default=0.0_rk)
       call self%get_parameter(self%resp1mX,  'resm', 'm/d',     'maximum nutrient-limitation-induced sinking velocity', default=0.0_rk)
       call self%get_parameter(self%esnip1X,  'esni','-',        'level of nutrient limitation below which sinking commences')
+      call self%get_parameter(self%cenh,     'cenh','',         'enable atmospheric CO2 influence on photosynthesis', default=.false.)
 
       ! Register state variables (handled by type_ersem_pelagic_base)
       call self%initialize_ersem_base(sedimentation=.true.)
@@ -213,10 +213,9 @@ contains
          call self%register_diagnostic_variable(self%id_lD,'l','mg C/m^3','bound calcite',missing_value=0._rk,output=output_none)
          call self%add_to_aggregate_variable(type_bulk_standard_variable(name='total_calcite_in_biota',aggregate_variable=.true.),self%id_lD)
       end if
-#ifdef CENH
+
       ! Link to atmospheric CO2 (only if using CO2-enhanced primary production).
-      call self%register_dependency(self%id_pco2a3,standard_variables%mole_fraction_of_carbon_dioxide_in_air)    
-#endif
+      if (self%cenh) call self%register_dependency(self%id_pco2a3,standard_variables%mole_fraction_of_carbon_dioxide_in_air)
 
       ! Register contribution to light extinction
       call self%add_to_aggregate_variable(standard_variables%attenuation_coefficient_of_photosynthetic_radiative_flux, &
@@ -245,7 +244,7 @@ contains
       real(rk) :: fNIP1n,fN3P1n,fN4P1n
       real(rk) :: fP1R6s,fP1N5s,fN5P1s
 
-      real(rk) :: sdoP1,sumP1,sugP1,seoP1,seaP1,sraP1,sunP1,runP1,rugP1,sP1R6
+      real(rk) :: sdoP1,sumP1,sugP1,seoP1,seaP1,sraP1,sunP1,runP1,sP1R6
       real(rk) :: runP1p,misP1p,rumP1p
       real(rk) :: runP1n,misP1n,rumP1n,rumP1n3,rumP1n4
       real(rk) :: etP1,pe_R6P1
@@ -255,9 +254,7 @@ contains
       real(rk) :: runP1f,rumP1f,misP1f
       real(rk) :: fN7P1f,fP1R6f
       real(rk) :: fP1R1c,fP1R2c
-#ifdef CENH
       real(rk) :: pco2a3,cenh
-#endif
       real(rk) :: RainR, t
 
       ! Enter spatial loops (if any)
@@ -348,13 +345,16 @@ contains
             rho = ChlCmin
          end if
 
-#ifdef CENH
-         ! Retrieve atmospheric pCO2 if using CO2-enhanced primary production.
-         _GET_HORIZONTAL_(self%id_pco2a3,pco2a3)
+         if (self%cenh) then
+            ! Retrieve atmospheric pCO2 if using CO2-enhanced primary production.
+            _GET_HORIZONTAL_(self%id_pco2a3,pco2a3)
 
-         ! Enhancement factor (from MEECE D1.5) 379.48 = pco2a @ 2005
-         cenh=1.0_rk+(pco2a3-379.48_rk)*0.0005_rk
-#endif
+            ! Enhancement factor (from MEECE D1.5) 379.48 = pco2a @ 2005
+            cenh=1.0_rk+(pco2a3-379.48_rk)*0.0005_rk
+         else
+            ! No influence of atmospheric CO2 on photosynthesis
+            cenh = 1.0_rk
+         end if
 
          ! Nutrient-stress lysis rate :
          sdoP1 = (1._rk/(MIN( iNP1s, iNIP1 )+0.1_rk))*self%sdoP1X
@@ -412,28 +412,19 @@ contains
 
          ! Activity respiration rate :
          sraP1 = sugP1*self%pu_raP1X
-#ifndef CENH
+
          ! Total respiration flux :
-         fP1O3c = srsP1*P1cP+sraP1*P1c
+         fP1O3c = srsP1*P1cP+sraP1*P1c*cenh
 
          ! Gross production as flux from inorganic CO2 :
-         fO3P1c = sumP1*P1c
-#else
          fO3P1c = sumP1*P1c*cenh
-         fP1O3c = srsP1*P1cP+sraP1*P1c*cenh
-#endif
-         rugP1 = fO3P1c
 
-         ! Production and productivity
+         ! Production and productivity (as used in nutrient uptake equations)
          sunP1 = sumP1-(seoP1+seaP1+sraP1)  ! net productivity
          runP1 = sunP1*P1c-srsP1*P1cP       ! net production
 
-         ! To save net production
-#ifndef CENH
-         _SET_DIAGNOSTIC_(self%id_netPI,runP1)
-#else
+         ! Save net production (equals runP1 if cenh=1)
          _SET_DIAGNOSTIC_(self%id_netPI,(sumP1*cenh-seoP1-seaP1-sraP1*cenh)*P1c-srsP1*P1cP)
-#endif
 
          ! Carbon Source equations
 
