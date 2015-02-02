@@ -159,6 +159,7 @@ contains
             end if
          case ('chl')
             call self%register_state_variable(self%id_chl,'Chl','mg/m^3','chlorophyll a',initial_value,minimum=0._rk,vertical_movement=-self%rm/self%dt,background_value=background_value)
+            call self%add_to_aggregate_variable(total_chlorophyll,self%id_chl)
          case default
             call self%fatal_error('add_constituent','Unknown constituent "'//trim(name)//'".')
          end select

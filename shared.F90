@@ -24,6 +24,7 @@ module ersem_shared
    type (type_bulk_standard_variable),parameter :: phytoplankton_respiration_rate = type_bulk_standard_variable(name='phytoplankton_respiration_rate',units='mg C/m^3/d',aggregate_variable=.true.)
    type (type_bulk_standard_variable),parameter :: zooplankton_respiration_rate = type_bulk_standard_variable(name='zooplankton_respiration_rate',units='mg C/m^3/d',aggregate_variable=.true.)
    type (type_bulk_standard_variable),parameter :: bacterial_respiration_rate = type_bulk_standard_variable(name='bacterial_respiration_rate',units='mg C/m^3/d',aggregate_variable=.true.)
+   type (type_bulk_standard_variable),parameter :: total_chlorophyll = type_bulk_standard_variable(name='total_chlorophyll',units='mg/m^3',aggregate_variable=.true.)
 
    ! Aggregate variables for benthic bioturbation and bioirrigation (summed over all fauna).
    type (type_bulk_standard_variable),parameter :: total_bioturbation_activity = type_bulk_standard_variable(name='total_bioturbation_activity',units='mg C/m^2/d',aggregate_variable=.true.)
