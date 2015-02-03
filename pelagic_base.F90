@@ -43,10 +43,12 @@ contains
       integer,                               intent(in)            :: configunit
 
       character(len=10) :: composition
-      real(rk)          :: c0,s0,rRPmX,EPS
+      real(rk)          :: c0,s0,rRPmX,EPS,iopADS,iopBBS
 
       call self%get_parameter(composition,'composition','',        'elemental composition')
       call self%get_parameter(EPS,        'EPS',        'm^2/mg C','specific shortwave attenuation',default=0.0_rk)
+      call self%get_parameter(iopADS,        'iopADS',        'm^2/mg C','specific shortwave adsorption',default=0.0_rk)
+      call self%get_parameter(iopBBS,        'iopBBS',        'm^2/mg C','specific shortwave backscatter',default=0.0_rk)
       call self%get_parameter(rRPmX,      'rm',         'm/d',     'sinking velocity',              default=0.0_rk)
 
       call self%initialize_ersem_base(rm=rRPmX)

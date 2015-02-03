@@ -13,6 +13,7 @@ module ersem_model_library
    use ersem_bacteria_docdyn
    use ersem_nitrification
    use ersem_light
+   use ersem_light_iop
    use ersem_calcification
    use ersem_benthic_column
    use ersem_benthic_column_dissolved_matter
@@ -20,6 +21,7 @@ module ersem_model_library
    use ersem_benthic_nitrogen_cycle
    use ersem_benthic_bacteria
    use ersem_benthic_fauna
+   use ersem_zenith_angle
 
    implicit none
 
@@ -51,6 +53,7 @@ contains
          case ('bacteria_docdyn');                         allocate(type_ersem_bacteria_docdyn::model)
          case ('nitrification');                           allocate(type_ersem_nitrification::model)
          case ('light');                                   allocate(type_ersem_light::model)
+         case ('light_iop');                                   allocate(type_ersem_light_iop::model)
          case ('calcification');                           allocate(type_ersem_calcification::model)
          case ('benthic_column');                          allocate(type_ersem_benthic_column::model)
          case ('benthic_column_dissolved_matter');         allocate(type_ersem_benthic_column_dissolved_matter::model)
@@ -59,6 +62,7 @@ contains
          case ('benthic_bacteria');                        allocate(type_ersem_benthic_bacteria::model)
          case ('benthic_column_particulate_matter_layer'); allocate(type_ersem_benthic_pom_layer::model)
          case ('benthic_fauna');                           allocate(type_ersem_benthic_fauna::model)
+         case ('zenith_angle');                           allocate(type_ersem_zenith_angle::model)
          ! Add new models here
          case default
             call self%type_base_model_factory%create(name,model)

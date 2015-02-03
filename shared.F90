@@ -15,6 +15,8 @@ module ersem_shared
    real(rk),parameter :: qpRPIcX = 7.86E-04_rk
    real(rk),parameter :: qsRPIcX = 15._rk/106._rk/CMass
    real(rk),parameter :: ZeroX   = 1e-8_rk
+   real(rk), parameter :: pi=acos(-1._rk)
+   real(rk), parameter :: deg2rad=pi/180._rk
 
 #ifdef IRON
    logical,parameter :: use_iron = .true.
@@ -46,4 +48,11 @@ module ersem_shared
    type (type_horizontal_standard_variable),parameter :: depth_of_bottom_interface_of_layer_2 = type_horizontal_standard_variable(name='depth_of_bottom_interface_of_layer_2',units='m')
    type (type_horizontal_standard_variable),parameter :: pelagic_benthic_transfer_constant = type_horizontal_standard_variable(name='pelagic_benthic_transfer_constant',units='d/m')
 
+   ! Aggregate adsorption and backscatter.
+   type (type_bulk_standard_variable),parameter :: particulate_organic_adsportion_coefficient = type_bulk_standard_variable(name='particulate_organic_adsportion_coefficient',units='1/m',aggregate_variable=.true.)
+   type (type_bulk_standard_variable),parameter :: particulate_organic_backscatter_coefficient = type_bulk_standard_variable(name='particulate_organic_backscatter_coefficient',units='1/m',aggregate_variable=.true.)
+
+   ! Zenith angle.
+   type (type_horizontal_standard_variable),parameter :: zenith_angle = type_horizontal_standard_variable(name='zenith_angle',units='degrees')
+   
 end module
