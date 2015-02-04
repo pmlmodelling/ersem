@@ -63,6 +63,10 @@ contains
       end if
       if (index(composition,'f')/=0) call self%add_constituent('f',0.0_rk)
 
+      if (iopADS/=0.0_rk) call self%add_to_aggregate_variable(particulate_organic_adsportion_coefficient, &
+         self%id_c,scale_factor=iopADS,include_background=.true.)
+      if (iopBBS/=0.0_rk) call self%add_to_aggregate_variable(particulate_organic_backscatter_coefficient, &
+         self%id_c,scale_factor=iopBBS,include_background=.true.)
       if (EPS/=0.0_rk) call self%add_to_aggregate_variable(standard_variables%attenuation_coefficient_of_photosynthetic_radiative_flux, &
          self%id_c,scale_factor=EPS,include_background=.true.)
 
