@@ -72,8 +72,8 @@ contains
       ! In turn, these are then picked up by this model (type_ersem_benthic_nitrogen_cycle) and translated into chnages in NO3 and O2.
       allocate(child)
       call self%add_child(child,'K6_calculator',configunit=configunit)
-      call child%register_diagnostic_variable(child%id_K6,'K6','mmol O2/m^2','reduction equivalent', act_as_state_variable=.true., output=output_none,domain=domain_bottom)
-      call self%register_dependency(self%id_K6_sms,'K6_sms','mmol O2/m^2/s','K6 sources minus sinks')
+      call child%register_diagnostic_variable(child%id_K6,'K6','mmol O2/m^2','oxygen debt due to anaerobic respiration', act_as_state_variable=.true., output=output_none,domain=domain_bottom)
+      call self%register_dependency(self%id_K6_sms,'K6_sms','mmol O2/m^2/s','sources-sinks of oxygen debt')
       call self%request_coupling('K6_sms','K6_calculator/K6_sms_tot')
    end subroutine initialize
 
@@ -97,7 +97,7 @@ contains
       
          _GET_(self%id_ETW,ETW)
 
-         !* Nitrification (layer 1 only):
+         ! Nitrification (oxygenated layer only):
          ! Reaction: (NH4+,OH-) + 2*O2 -> (NO3-,H+) + 2*H2O
          ! treated as first order reaction for NH4 in the oxygenated layer
          ! Average nitrate density (mmol/m3): MU_m
@@ -125,7 +125,7 @@ contains
          _SET_BOTTOM_ODE_(self%id_K4n,-jM4M3n)
          _SET_BOTTOM_ODE_(self%id_G2o,-self%xno3X*jM4M3n)
 
-         ! Retrieve reduction equivalent demand, layer 2 depth integrated nitrate, layer 2 thickness
+         ! Retrieve oxygen debt to to anaerobic respiration, depth-integrated nitrate in oxidized layer, thickness of oxidized layer.
          _GET_HORIZONTAL_(self%id_K6_sms,K6_sms) 
          _GET_HORIZONTAL_(self%id_K3n2,K3n2)
          _GET_HORIZONTAL_(self%id_layer2_thickness,layer2_thickness)
@@ -138,8 +138,7 @@ contains
          MU_m2 = K3n2/layer2_thickness
          eN2 = MU_m2/(MU_m2+self%hM3G4X)
 
-         ! "borrowed" oxygen consumption in anaerobic layer:
-
+         ! Oxygen debt in anaerobic layer:
          ! expression in nitrate reduction (100%):
         jMIno3 = -K6_sms/(self%xno3X *(1._rk - self%pdenitX) + self%xn2X*self%pdenitX)
         jM3M4n = jMIno3*eN2*self%pammonX*(1._rk-self%pdenitX)
@@ -150,7 +149,7 @@ contains
         _SET_BOTTOM_ODE_(self%id_K3n2, -jM3M4n -jM3G4n)
         _SET_BOTTOM_ODE_(self%id_G4n, jM3G4n)
 
-        ! Oxygen dynamics: use oxygen to fuel demand for reduction equivalents after nitrate use is taken into account.
+        ! Oxygen dynamics: after denitrification is taken into account, use actual oxygen to pay off remaining oxygen debt.
         _SET_BOTTOM_ODE_(self%id_G2o2, K6_sms + self%xno3X*jM3M4n + self%xn2X*jM3G4n)
 
       _HORIZONTAL_LOOP_END_

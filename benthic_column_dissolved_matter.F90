@@ -86,8 +86,8 @@ contains
       call self%register_state_dependency(self%id_pel,trim(composition)//'_pel','mmol/m^3','pelagic '//trim(long_name))
       call self%register_diagnostic_variable(self%id_pbf,'pb_flux','mmol/m^2/day','pelagic-benthic flux')      
       ! Dependencies
-      call self%register_state_dependency(self%id_D1m, 'D1m', 'm','depth of bottom interface of layer 1',standard_variable=depth_of_bottom_interface_of_layer_1)
-      call self%register_state_dependency(self%id_D2m, 'D2m', 'm','depth of bottom interface of layer 2',standard_variable=depth_of_bottom_interface_of_layer_2)
+      call self%register_state_dependency(self%id_D1m, 'D1m', 'm','depth of bottom interface of oxygenated layer',standard_variable=depth_of_bottom_interface_of_layer_1)
+      call self%register_state_dependency(self%id_D2m, 'D2m', 'm','depth of bottom interface of oxidized layer',standard_variable=depth_of_bottom_interface_of_layer_2)
       call self%register_dependency(self%id_Dtot,depth_of_sediment_column)
       call self%register_dependency(self%id_poro,sediment_porosity)
       call self%register_dependency(self%id_diff(1),diffusivity_in_sediment_layer_1)
@@ -100,14 +100,14 @@ contains
       call self%add_child(profile,'per_layer',configunit=configunit)
       profile%ads = self%ads
       profile%last_layer = self%last_layer
-      call profile%register_diagnostic_variable(profile%id_layers(1),trim(composition)//'1','mmol/m^2',trim(long_name)//' in layer 1',act_as_state_variable=.true.,domain=domain_bottom)
-      call profile%register_diagnostic_variable(profile%id_layers(2),trim(composition)//'2','mmol/m^2',trim(long_name)//' in layer 2',act_as_state_variable=.true.,domain=domain_bottom)
-      call profile%register_diagnostic_variable(profile%id_layers(3),trim(composition)//'3','mmol/m^2',trim(long_name)//' in layer 3',act_as_state_variable=.true.,domain=domain_bottom)
-      call profile%register_diagnostic_variable(profile%id_layers_pw(1),trim(composition)//'1_pw','mmol/m^2',trim(long_name)//' in pore water of layer 1',act_as_state_variable=.true.,domain=domain_bottom)
-      call profile%register_diagnostic_variable(profile%id_layers_pw(2),trim(composition)//'2_pw','mmol/m^2',trim(long_name)//' in pore water of layer 2',act_as_state_variable=.true.,domain=domain_bottom)
-      call profile%register_diagnostic_variable(profile%id_layers_pw(3),trim(composition)//'3_pw','mmol/m^2',trim(long_name)//' in pore water of layer 3',act_as_state_variable=.true.,domain=domain_bottom)
-      call profile%register_dependency(profile%id_D1m, 'D1m', 'm','depth of bottom interface of 1st layer')
-      call profile%register_dependency(profile%id_D2m, 'D2m', 'm','depth of bottom interface of 2nd layer')
+      call profile%register_diagnostic_variable(profile%id_layers(1),trim(composition)//'1','mmol/m^2','total '//trim(long_name)//' in oxygenated layer (absorbed + dissolved)',act_as_state_variable=.true.,domain=domain_bottom)
+      call profile%register_diagnostic_variable(profile%id_layers(2),trim(composition)//'2','mmol/m^2','total '//trim(long_name)//' in oxidized layer (absorbed + dissolved)',act_as_state_variable=.true.,domain=domain_bottom)
+      call profile%register_diagnostic_variable(profile%id_layers(3),trim(composition)//'3','mmol/m^2','total '//trim(long_name)//' in anoxic layer (absorbed + dissolved)',act_as_state_variable=.true.,domain=domain_bottom)
+      call profile%register_diagnostic_variable(profile%id_layers_pw(1),trim(composition)//'1_pw','mmol/m^2','dissolved '//trim(long_name)//' in oxygenated layer',act_as_state_variable=.true.,domain=domain_bottom)
+      call profile%register_diagnostic_variable(profile%id_layers_pw(2),trim(composition)//'2_pw','mmol/m^2','dissolved '//trim(long_name)//' in oxidized layer',act_as_state_variable=.true.,domain=domain_bottom)
+      call profile%register_diagnostic_variable(profile%id_layers_pw(3),trim(composition)//'3_pw','mmol/m^2','dissolved '//trim(long_name)//' in anoxic layer',act_as_state_variable=.true.,domain=domain_bottom)
+      call profile%register_dependency(profile%id_D1m, 'D1m', 'm','depth of bottom interface of oxygenated layer')
+      call profile%register_dependency(profile%id_D2m, 'D2m', 'm','depth of bottom interface of oxidized layer')
       call profile%register_dependency(profile%id_Dtot,depth_of_sediment_column)
       call profile%register_dependency(profile%id_poro,sediment_porosity)
       call profile%register_dependency(profile%id_tot,trim(composition)//'_int','mmol/m^2',trim(long_name)//', depth-integrated')
@@ -148,17 +148,17 @@ contains
       end select
 
       ! Couple to layer-specific "sinks minus sources".
-      call self%register_dependency(self%id_sms(1),'sms_l1','mmol/m^2/s',trim(long_name)//' sinks-sources in layer 1')
-      call self%register_dependency(self%id_sms(2),'sms_l2','mmol/m^2/s',trim(long_name)//' sinks-sources in layer 2')
-      call self%register_dependency(self%id_sms(3),'sms_l3','mmol/m^2/s',trim(long_name)//' sinks-sources in layer 3')
+      call self%register_dependency(self%id_sms(1),'sms_l1','mmol/m^2/s','sources-sinks of total '//trim(long_name)//' in oxygenated layer')
+      call self%register_dependency(self%id_sms(2),'sms_l2','mmol/m^2/s','sources-sinks of total '//trim(long_name)//' in oxidized layer')
+      call self%register_dependency(self%id_sms(3),'sms_l3','mmol/m^2/s','sources-sinks of total '//trim(long_name)//' in anoxic layer')
       call self%request_coupling('sms_l1','per_layer/'//trim(composition)//'1_sms_tot')
       call self%request_coupling('sms_l2','per_layer/'//trim(composition)//'2_sms_tot')
       call self%request_coupling('sms_l3','per_layer/'//trim(composition)//'3_sms_tot')
 
       ! Couple to layer-specific "sinks minus sources" for matter in pore water.
-      call self%register_dependency(self%id_pw_sms(1),'pw_sms_l1','mmol/m^2/s',trim(long_name)//' sinks-sources in pore water of layer 1')
-      call self%register_dependency(self%id_pw_sms(2),'pw_sms_l2','mmol/m^2/s',trim(long_name)//' sinks-sources in pore water of layer 2')
-      call self%register_dependency(self%id_pw_sms(3),'pw_sms_l3','mmol/m^2/s',trim(long_name)//' sinks-sources in pore water of layer 3')
+      call self%register_dependency(self%id_pw_sms(1),'pw_sms_l1','mmol/m^2/s','sources-sinks of dissolved '//trim(long_name)//' in oxygenated layer')
+      call self%register_dependency(self%id_pw_sms(2),'pw_sms_l2','mmol/m^2/s','sources-sinks of dissolved '//trim(long_name)//' in oxidized layer')
+      call self%register_dependency(self%id_pw_sms(3),'pw_sms_l3','mmol/m^2/s','sources-sinks of dissolved '//trim(long_name)//' in anoxic layer')
       call self%request_coupling('pw_sms_l1','per_layer/'//trim(composition)//'1_pw_sms_tot')
       call self%request_coupling('pw_sms_l2','per_layer/'//trim(composition)//'2_pw_sms_tot')
       call self%request_coupling('pw_sms_l3','per_layer/'//trim(composition)//'3_pw_sms_tot')
@@ -211,6 +211,12 @@ contains
       ! JB: the logic behind the expressions below is UNKNOWN (in original ERSEM, this was handled by the modconc subroutine)
       if (sms>0._rk) then
          ! Sediment column produces tracer. Steady state concentration at sediment interface > lowermost pelagic concentration.
+         ! One way to arrive at this formulation is to assume no production or destruction of the tracer
+         ! within the lowermost pelagic layer. In that case, the equilibrium concentration profile near the bed has a slope
+         ! equal to sms/diffusivity. The change between centre of the pelagic layer and the sediment interface equals
+         ! sms/D*H/2, with D representing diffusivity within the lowermost pelagic layer and H representing the height of the 
+         ! lowermost pelagic layer. Thus, cmix must equal H/2/D. In practice, however, H is defined by the vertical grid and
+         ! and D is defined by the level of turbulence - it then seems unreasonable to treat cmix=H/2/D as constant - JB 4/2/2015.
          c_pel = c_pel + cmix*sms
       else
          ! Sediment column destroys tracer. Steady state concentration at sediment interface < lowermost pelagic concentration.
@@ -219,7 +225,7 @@ contains
       end if
 
       if (self%last_layer==1) then
-         ! Layer 1: compute steady-state layer height H1_eq and layer integral c_int1_eq
+         ! Oxygenated layer: compute steady-state layer height H1_eq and layer integral c_int1_eq
          call compute_final_equilibrium_profile(diff1,c_pel,sms_l1,sms_l2,d3,H1_eq,c_int1_eq)
 
          ! Benthic dynamics: relax depth-integrated mass towards equilibrium value
@@ -234,9 +240,9 @@ contains
          ! Relax depth of first/oxic layer towards equilibrium value (H1_eq)
          _SET_BOTTOM_ODE_(self%id_D1m,(max(self%minD,H1_eq)-d1)/self%relax)
       elseif (self%last_layer==2) then
-         ! Layer 1: compute steady-state concentration at bottom interface c_bot1_eq and layer integral c_int1_eq
+         ! Oxygenated layer: compute steady-state concentration at bottom interface c_bot1_eq and layer integral c_int1_eq
          call compute_equilibrium_profile(diff1,c_pel,sms_l1,sms_l2,d1,c_bot1_eq,c_int1_eq)
-         ! Layer 2: compute steady-state layer height H2_eq and layer integral c_int2_eq
+         ! Oxidized layer: compute steady-state layer height H2_eq and layer integral c_int2_eq
          call compute_final_equilibrium_profile(diff2,c_bot1_eq,sms_l2,0.0_rk,d3-d1,H2_eq,c_int2_eq)
 
          ! Benthic dynamics: relax depth-integrated mass towards equilibrium value
@@ -251,11 +257,11 @@ contains
          ! Relax depth of bottom interface of second/oxidised layer towards equilibrium value (d1+H2_eq)
          _SET_BOTTOM_ODE_(self%id_D2m,(max(self%minD,d1+H2_eq)-d2)/self%relax)
       else
-         ! Layer 1: compute steady-state concentration at bottom interface c_bot1_eq and layer integral c_int1_eq
+         ! Oxygenated layer: compute steady-state concentration at bottom interface c_bot1_eq and layer integral c_int1_eq
          call compute_equilibrium_profile(diff1,c_pel,    sms_l1,sms_l2,d1,   c_bot1_eq,c_int1_eq)
-         ! Layer 2: compute steady-state concentration at bottom interface c_bot2_eq and layer integral c_int2_eq
+         ! Oxidized layer: compute steady-state concentration at bottom interface c_bot2_eq and layer integral c_int2_eq
          call compute_equilibrium_profile(diff2,c_bot1_eq,sms_l2,0.0_rk,d2-d1,c_bot2_eq,c_int2_eq)
-         ! Layer 3: no sources or sinks: homogeneous equilibrium concentration c_bot2_eq
+         ! Anoxic layer: no sources or sinks: homogeneous equilibrium concentration c_bot2_eq
          c_int3_eq = (d3-d2)*c_bot2_eq
          c_int_eq = poro*(self%ads(1)*c_int1_eq+self%ads(2)*c_int2_eq+self%ads(3)*c_int3_eq)
 
@@ -471,7 +477,7 @@ contains
          d(3) = d_totX-D2m
 
          if (self%last_layer==1) then
-            ! All in layer 1
+            ! All in oxygenated layer
             ! Typically used for oxygen
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(1),c_int)
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(2),0.0_rk)
@@ -482,7 +488,7 @@ contains
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(2),0.0_rk)
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(3),0.0_rk)
          elseif (self%last_layer==2) then
-            ! Vertically homogeneous in layer 1, quadratically decreasing in layer 2 (zero concentration at bottom interface)
+            ! Vertically homogeneous in oxygenated layer, quadratically decreasing in oxidized layer (zero concentration at bottom interface)
             ! Typically used for nitrate
 
             ! Mean concentration in pore water (matter/m3)
@@ -497,7 +503,7 @@ contains
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(2),poro*d(2)/3.0_rk*factor)
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(3),0.0_rk)
          else
-            ! Vertically homogeneous in layers 1,2,3
+            ! Vertically homogeneous in all individual layers (oxygenated, oxidized, anoxic).
             ! Typically used for all tracers but oxygen and nitrate.
 
             ! Mean concentration in pore water (matter/m3)

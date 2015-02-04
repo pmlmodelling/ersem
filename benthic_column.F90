@@ -108,9 +108,9 @@ contains
       class (type_ersem_bioturbation),intent(inout),target :: self
       integer,                        intent(in)           :: configunit
 
-      call self%register_diagnostic_variable(self%id_diff(1),'diff1','m^2/d','diffusivity in layer 1',standard_variable=diffusivity_in_sediment_layer_1)
-      call self%register_diagnostic_variable(self%id_diff(2),'diff2','m^2/d','diffusivity in layer 2',standard_variable=diffusivity_in_sediment_layer_2)
-      call self%register_diagnostic_variable(self%id_diff(3),'diff3','m^2/d','diffusivity in layer 3',standard_variable=diffusivity_in_sediment_layer_3)
+      call self%register_diagnostic_variable(self%id_diff(1),'diff1','m^2/d','diffusivity in oxygenated layer',standard_variable=diffusivity_in_sediment_layer_1)
+      call self%register_diagnostic_variable(self%id_diff(2),'diff2','m^2/d','diffusivity in oxidized layer',standard_variable=diffusivity_in_sediment_layer_2)
+      call self%register_diagnostic_variable(self%id_diff(3),'diff3','m^2/d','diffusivity in anoxic layer',standard_variable=diffusivity_in_sediment_layer_3)
       call self%register_diagnostic_variable(self%id_diff_pom,'diff_pom','m^2/d','particulate diffusivity representing bioturbation',standard_variable=particulate_diffusivity_due_to_bioturbation)
       call self%register_diagnostic_variable(self%id_Dtur,'Dtur','m','bioturbation depth',standard_variable=bioturbation_depth,missing_value=self%dturX,output=output_none)
 
