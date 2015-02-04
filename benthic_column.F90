@@ -51,7 +51,7 @@ contains
       ! Set time unit to d-1. This implies that all rates (sink/source terms) are given in d-1.
       self%dt = 86400._rk
 
-      call self%get_parameter(self%qPWX,'qPWX','-','fraction of pore water in the sediment')
+      call self%get_parameter(self%qPWX,'qPWX','-','sediment porosity')
       call self%get_parameter(self%EDZ_mixX,'EDZ_mixX','d/m','equilibrium diffusive speed between sediment surface water')
       call self%get_parameter(self%d_totX,'d_totX','m','depth of sediment column')
 
