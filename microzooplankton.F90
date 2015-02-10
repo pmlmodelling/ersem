@@ -29,9 +29,14 @@ module ersem_microzooplankton
 
       ! Parameters
       integer  :: nprey
-      real(rk) :: chuc,sum,pu,pe_r1,q10,srs,chro,pu_ea
-      real(rk) :: sdo,sd,qnc,qpc,minfood,stempn,stempp,gutdiss
+      real(rk) :: qpc,qnc,stempn,stempp
+      real(rk) :: q10,chro,minfood,chuc,pu_ea
       real(rk),allocatable :: suprey(:)
+      real(rk) :: sum
+      real(rk) :: sdo, sd, srs
+      real(rk) :: pu
+      real(rk) :: pe_R1
+      real(rk) :: gutdiss
 
       ! ERSEM global parameters
       real(rk) :: R1R2,urB1_O2
@@ -60,19 +65,19 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%sum,    'sum',    '1/d',        'maximum specific uptake at reference temperature')
-      call self%get_parameter(self%chuc,   'chuc',   'mg C/m^3',   'Michaelis-Menten constant for food uptake')
-      call self%get_parameter(self%pu,     'pu',     '-',          'assimilation efficiency')
-      call self%get_parameter(self%pe_r1,  'pe_r1',  '-',          'dissolved fraction of excreted/dying matter')
+      call self%get_parameter(self%qpc,    'qpc',    'mmol P/mg C','maximum phosphorus to carbon ratio')
+      call self%get_parameter(self%qnc,    'qnc',    'mmol N/mg C','maximum nitrogen to carbon ratio')
       call self%get_parameter(self%q10,    'q10',    '-',          'Q_10 temperature coefficient')
-      call self%get_parameter(self%srs,    'srs',    '1/d',        'specific rest respiration at reference temperature')
+      call self%get_parameter(self%chro,   'chro',   '-',          'Michaelis-Menten constant for oxygen limitation')
+      call self%get_parameter(self%minfood,'minfood','mg C/m^3',   'Michaelis-Menten constant to perceive food')
+      call self%get_parameter(self%chuc,   'chuc',   'mg C/m^3',   'Michaelis-Menten constant for food uptake')
+      call self%get_parameter(self%sum,    'sum',    '1/d',        'maximum specific uptake at reference temperature')
+      call self%get_parameter(self%pu,     'pu',     '-',          'assimilation efficiency')
       call self%get_parameter(self%pu_ea,  'pu_ea',  '-',          'fraction of unassimilated prey that is excreted (not respired)')
+      call self%get_parameter(self%pe_R1,  'pe_r1',  '-',          'dissolved fraction of excreted/dying matter')
+      call self%get_parameter(self%srs,    'srs',    '1/d',        'specific rest respiration at reference temperature')
       call self%get_parameter(self%sd,     'sd',     '1/d',        'basal mortality')
       call self%get_parameter(self%sdo,    'sdo',    '1/d',        'maximum mortality due to oxygen limitation')
-      call self%get_parameter(self%chro,   'chro',   '-',          'Michaelis-Menten constant for oxygen limitation')
-      call self%get_parameter(self%qnc,    'qnc',    'mmol N/mg C','maximum nitrogen to carbon ratio')
-      call self%get_parameter(self%qpc,    'qpc',    'mmol P/mg C','maximum phosphorus to carbon ratio')
-      call self%get_parameter(self%minfood,'minfood','mg C/m^3',   'Michaelis-Menten constant to perceive food')
       call self%get_parameter(self%stempn, 'stempn', '1/d',        'specific ammonium excretion rate')
       call self%get_parameter(self%stempp, 'stempp', '1/d',        'specific phosphate excretion rate')
 
@@ -81,9 +86,9 @@ contains
       call self%get_parameter(self%xR1n,   'xR1n','-','transfer of nitrogen to DOM, relative to POM')
       call self%get_parameter(self%urB1_O2,'urB1_O2','mmol O_2/mg C','oxygen consumed per carbon respired')
 
-      call self%get_parameter(c0,'c0','mg C/m^3','background carbon concentration')
-
       call self%get_parameter(self%gutdiss,'gutdiss','-','fraction of prey calcite that is dissolved after ingestion')
+
+      call self%get_parameter(c0,'c0','mg C/m^3','background carbon concentration')
 
       ! Register state variables
       call self%initialize_ersem_base(sedimentation=.false.)

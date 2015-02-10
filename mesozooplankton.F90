@@ -81,23 +81,25 @@ contains
       call self%get_parameter(self%minfood,'minfood','mg C/m^3','Michaelis-Menten constant to perceive food')
       call self%get_parameter(self%chuc,   'chuc',   'mg C/m^3','Michaelis Menten constant for food uptake')
       call self%get_parameter(self%sum,    'sum',    '1/d','maximum specific uptake at reference temperature')
-      call self%get_parameter(self%sdo,    'sdo',    '1/d','specific mortality due to oxygen limitation')
-      call self%get_parameter(self%sd,     'sd',     '1/d','specific basal mortality')
-      call self%get_parameter(self%srs,    'srs',    '1/d','specific rest respiration at reference temperature')
       call self%get_parameter(self%pu,     'pu',     '-','assimilation efficiency')
-      call self%get_parameter(pu_ea,       'pu_ea',  '-','excreted fraction of non-assimilated prey (rest is respired)')
-      call self%get_parameter(pu_eaR,      'pu_eaR', '-','excreted fraction of non-assimilated detritus (rest is respired)')
-      call self%get_parameter(self%pe_R1,  'pe_R1',  '-','DOM fraction of excreted matter')
+      call self%get_parameter(pu_ea,       'pu_ea',  '-','fraction of unassimilated prey that is excreted (not respired)')
+      call self%get_parameter(pu_eaR,      'pu_eaR', '-','fraction of unassimilated detritus that is excreted (not respired)')
+      call self%get_parameter(self%pe_R1,  'pe_R1',  '-','dissolved fraction of excreted/dying matter')
+      call self%get_parameter(self%srs,    'srs',    '1/d','specific rest respiration at reference temperature')
+      call self%get_parameter(self%sd,     'sd',     '1/d','specific basal mortality')
+      call self%get_parameter(self%sdo,    'sdo',    '1/d','specific mortality due to oxygen limitation')
       call self%get_parameter(self%Minprey,'Minprey','mg C/m^2','food threshold for overwintering state')
       call self%get_parameter(self%repw,   'repw',   '1/d','specific overwintering respiration')
       call self%get_parameter(self%mort,   'mort',   '1/d','specific overwintering mortality')
-      call self%get_parameter(c0,          'c0',     'mg C/m^3','background concentration')
-      call self%get_parameter(self%gutdiss,'gutdiss','-','fraction of prey calcite that dissolves after ingestion')
 
       call self%get_parameter(self%R1R2,   'R1R2','-','labile fraction of produced DOM')
       call self%get_parameter(self%xR1p,   'xR1p','-','transfer of phosphorus to DOM, relative to POM')
       call self%get_parameter(self%xR1n,   'xR1n','-','transfer of nitrogen to DOM, relative to POM')
       call self%get_parameter(self%urB1_O2,'urB1_O2','mmol O_2/mg C','oxygen consumed per carbon respired')
+
+      call self%get_parameter(self%gutdiss,'gutdiss','-','fraction of prey calcite that dissolves after ingestion')
+
+      call self%get_parameter(c0,'c0','mg C/m^3','background concentration')
 
       ! Register state variables
       call self%initialize_ersem_base(sedimentation=.false.)
