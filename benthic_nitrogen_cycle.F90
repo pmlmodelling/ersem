@@ -37,11 +37,11 @@ contains
       ! Set time unit to d-1. This implies that all rates (sink/source terms) are given in d-1.
       self%dt = 86400._rk
 
-      call self%get_parameter(self%q10nitX,'q10nitX','-',            'Q_10 temperature coefficient')
-      call self%get_parameter(self%hM4M3X, 'hM4M3X', 'mmol/m^3',     'Michaelis-Menten constant for nitrate limitation')
-      call self%get_parameter(self%ISWphx, 'ISWphx', '',             'pH impact on nitrification (0: off, 1: on)',default=0)
-      call self%get_parameter(self%sM4M3X, 'sM4M3X', '1/d',          'maximum nitrification rate at 10 degrees Celsius')
-      call self%get_parameter(self%xno3X,  'xno3X',  'mol O_2/mol N','oxygen consumed per nitrate produced')
+      call self%get_parameter(self%q10nitX,'q10nit','-',            'Q_10 temperature coefficient')
+      call self%get_parameter(self%hM4M3X, 'hM4M3', 'mmol/m^3',     'Michaelis-Menten constant for nitrate limitation')
+      call self%get_parameter(self%ISWphx, 'ISWph', '',             'pH impact on nitrification (0: off, 1: on)',default=0)
+      call self%get_parameter(self%sM4M3X, 'sM4M3', '1/d',          'maximum nitrification rate at 10 degrees Celsius')
+      call self%get_parameter(self%xno3X,  'xno3',  'mol O_2/mol N','oxygen consumed per nitrate produced')
 
       call self%register_state_dependency(self%id_K3n,'K3n','mmol/m^2','nitrate')
       call self%register_state_dependency(self%id_K4n,'K4n','mmol/m^2','ammonium')
@@ -53,10 +53,10 @@ contains
       if (self%ISWphx==1) call self%register_dependency(self%id_phx,standard_variables%ph_reported_on_total_scale)
 
       ! Denitrification
-      call self%get_parameter(self%pammonx,'pammonx','-','fraction of oxygen demand fulfilled by denitrification under anaerobic conditions')
-      call self%get_parameter(self%pdenitX,'pdenitX','-','fraction of denitrification producing dinitrogen gas (remainder produces ammonium)')
-      call self%get_parameter(self%xn2x,   'xn2x','-','oxygen produced per N2 produced')
-      call self%get_parameter(self%hM3G4X,'hM3G4X','mmol N/m^3','Michaelis-Menten constant for nitrate limitation of denitrification')
+      call self%get_parameter(self%pammonx,'pammon','-','fraction of oxygen demand fulfilled by denitrification under anaerobic conditions')
+      call self%get_parameter(self%pdenitX,'pdenit','-','fraction of denitrification producing dinitrogen gas (remainder produces ammonium)')
+      call self%get_parameter(self%xn2x,   'xn2','-','oxygen produced per N2 produced')
+      call self%get_parameter(self%hM3G4X,'hM3G4','mmol N/m^3','Michaelis-Menten constant for nitrate limitation of denitrification')
 
       ! Create our own state avriable for dinitrogen gas
       ! (only to track its total production, which can then be considered in nitrogen mass balance)
