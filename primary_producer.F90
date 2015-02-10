@@ -115,7 +115,7 @@ contains
       call self%get_parameter(self%qup1n3X,  'qun3', 'm^3/mg C/d', 'nitrate affinity')
       call self%get_parameter(self%qup1n4X,  'qun4', 'm^3/mg C/d', 'ammonium affinity')
       call self%get_parameter(self%qurp1pX,  'qurp', 'm^3/mg C/d', 'phosphate affinity')
-      call self%get_parameter(self%use_Si,   'use_Si','',          'use silicate',default=.true.)
+      call self%get_parameter(self%use_Si,   'use_Si','',          'use silicate',default=.false.)
       if (self%use_Si) then
          call self%get_parameter(self%qsp1cX,'qsc', 'mmol Si/mg C','maximum silicate to carbon ratio')
          call self%get_parameter(self%chp1sX,'chs', 'mmol/m^3',    'Michaelis-Menten constant for silicate limitation')
