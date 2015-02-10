@@ -178,7 +178,7 @@ contains
       real(rk) :: ETW, eO2mO2
       real(rk) :: c,p,n,cP,nP,pP
       real(rk),dimension(self%nprey) :: preycP,preynP,preypP,preysP,preylP
-      real(rk),dimension(self%nprey) :: sprey,ruprey,fprey
+      real(rk),dimension(self%nprey) :: sprey,rupreyc,fpreyc
       real(rk) :: et,CORROX,eO2
       real(rk) :: rum, put_u,rug
       real(rk) :: sd,rd
@@ -243,8 +243,8 @@ contains
          sprey = self%suprey*preycP/(preycP+self%minfood)
 
          ! Compute total available prey (mg C/m3), weighted according to effective prey preferences.
-         ruprey = sprey*preycP
-         rum = sum(ruprey)
+         rupreyc = sprey*preycP
+         rum = sum(rupreyc)
 
          ! Prey uptake based on a Michaelis-Menten/Type II functional response with dynamic preferences "sprey".
          ! put_u is the relative rate of uptake (1/d), rug the absolute rateof uptake (mg C/m3/d)
@@ -253,7 +253,7 @@ contains
 
          ! Loss rates of individual prey types: sprey is the specific loss rate (1/d), fpreyc the absolute loss rate (mg C/m3/d)
          sprey = put_u*sprey
-         fprey = put_u*ruprey
+         fpreyc = put_u*rupreyc
 
          ! Apply specific predation rates to all state variables of every prey.
          do iprey=1,self%nprey
