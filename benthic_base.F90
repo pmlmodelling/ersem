@@ -54,10 +54,10 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%composition, 'composition', '',   'elemental composition',default='cnp')
+      call self%get_parameter(self%composition, 'composition', '',   'elemental composition')
       call self%get_parameter(self%reminQIX,    'remin',       '1/d','remineralisation rate',default=0.0_rk)
       if (index(self%composition,'n')/=0 .and. self%reminQIX/=0.0_rk) &
-         call self%get_parameter(self%pQIN3X,'pN3','-','nitrate fraction of remineralised nitrogen (remainder is ammonia)',default=0.0_rk)
+         call self%get_parameter(self%pQIN3X,'pN3','-','nitrate fraction of remineralised nitrogen (remainder is ammonium)',default=0.0_rk)
       call self%get_parameter(self%resuspension,'resuspension','',   'enable resuspension',  default=.false.)
 
       call self%initialize_ersem_benthic_base()

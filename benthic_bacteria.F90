@@ -45,17 +45,16 @@ contains
 
    subroutine initialize(self,configunit)
       class (type_ersem_benthic_bacteria),intent(inout),target :: self
-      integer,                                 intent(in)           :: configunit
+      integer,                            intent(in)           :: configunit
 
-      ! Set time unit to d-1
-      ! This implies that all rates (sink/source terms, vertical velocities) are given in d-1.
-      self%dt = 86400._rk
+      ! Initialize base model type (this will also set the internal time unit to per day)
+      call self%initialize_ersem_benthic_base()
 
       ! Register parameters
       call self%get_parameter(self%qnHIcX, 'qnc',  'mmol N/mg C','nitrogen to carbon ratio')
       call self%get_parameter(self%qpHIcX, 'qpc',  'mmol P/mg C','phosphorus to carbon ratio')
       call self%get_parameter(self%q10HX,  'q10',  '-',          'Q_10 temperature coefficient')
-      call self%get_parameter(self%ddHX,   'dd',   '1/m',        'Michaelis-Menten constant for limitation through layer thickness')
+      call self%get_parameter(self%ddHX,   'dd',   '1/m',        'Michaelis-Menten constant for oxygen limitation through layer thickness')
       call self%get_parameter(self%suQ7HX, 'suQ7', '1/d',        'specific not nutrient limited refractory matter uptake')
       call self%get_parameter(self%suQ6fHX,'suQ6f','1/d',        'specific nutrient limited detritus uptake')
       call self%get_parameter(self%suQ6sHX,'suQ6s','1/d',        'specific not nutrient limited detritus uptake')
@@ -63,7 +62,7 @@ contains
       call self%get_parameter(self%puincHX,'puinc','1/d',        'preference factor of nutrient content')
       call self%get_parameter(self%p_ex6ox,'pue6', '-',          'excreted fraction of uptake of POM')
       call self%get_parameter(self%p_ex7ox,'pue7', '-',          'excreted fraction of uptake of refractory matter')
-      call self%get_parameter(self%purHX,  'pur',  '1/d',        'fraction of carbon uptake respired')
+      call self%get_parameter(self%purHX,  'pur',  '1/d',        'fraction of carbon uptake that is respired')
       call self%get_parameter(self%srHX,   'sr',   '1/d',        'specific rest respiration')
       call self%get_parameter(self%pdHQ1X, 'pdQ1', '-',          'DOM-fraction of mortality')
       call self%get_parameter(self%sdHX,   'sd',   '1/d',        'specific maximum mortality related to oxygen limitation')

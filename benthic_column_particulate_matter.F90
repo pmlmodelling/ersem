@@ -343,12 +343,12 @@ module ersem_benthic_column_particulate_matter
       integer :: source_depth_distribution
 
       ! Layer extents
-      integer :: surface_boundary_type   ! 0: constant depth, 1: dynamic depth from variable (e.g., depth of oxygenated layer)
-      integer :: bottom_boundary_type    ! 0: constant depth, 1: dynamic depth from variable (e.g., depth of oxygenated layer)
-      real(rk) :: surface_boundary_depth                                ! only used if surface_boundary_type==0
-      real(rk) :: bottom_boundary_depth                                 ! only used if bottom_boundary_type==0
-      type (type_horizontal_dependency_id) :: id_surface_boundary_depth ! only used if surface_boundary_type==1
-      type (type_horizontal_dependency_id) :: id_bottom_boundary_depth  ! only used if bottom_boundary_type==1
+      logical :: variable_minimum_depth   ! if not set, use minimum depth; if set, take dynamic minimum depth from variable (e.g., depth of oxygenated layer)
+      logical :: variable_maximum_depth   ! if not set, use maximum depth; if set, take dynamic maximum depth from variable (e.g., depth of oxygenated layer)
+      real(rk) :: minimum_depth          ! only used if variable_minimum_depth is not set
+      real(rk) :: maximum_depth          ! only used if variable_maximum_depth is not set
+      type (type_horizontal_dependency_id) :: id_minimum_depth ! only used if variable_minimum_depth is set
+      type (type_horizontal_dependency_id) :: id_maximum_depth ! only used if variable_maximum_depth is set
    contains
       procedure :: initialize => layer_initialize
       procedure :: do_bottom  => layer_do_bottom
@@ -370,12 +370,12 @@ module ersem_benthic_column_particulate_matter
       type (type_horizontal_dependency_id) :: id_c_int,id_pen_depth, id_d_tot
 
       ! Layer extents
-      integer :: surface_boundary_type   ! 0: constant depth, 1: dynamic depth from variable (e.g., depth of oxygenated layer)
-      integer :: bottom_boundary_type    ! 0: constant depth, 1: dynamic depth from variable (e.g., depth of oxygenated layer)
-      real(rk) :: surface_boundary_depth ! only used if surface_boundary_type==0
-      real(rk) :: bottom_boundary_depth  ! only used if bottom_boundary_type==0
-      type (type_horizontal_dependency_id) :: id_surface_boundary_depth ! only used if surface_boundary_type==1
-      type (type_horizontal_dependency_id) :: id_bottom_boundary_depth  ! only used if bottom_boundary_type==1
+      logical :: variable_minimum_depth  ! if not set, use minimum depth; if set, take dynamic minimum depth from variable (e.g., depth of oxygenated layer)
+      logical :: variable_maximum_depth  ! if not set, use maximum depth; if set, take dynamic maximum depth from variable (e.g., depth of oxygenated layer)
+      real(rk) :: minimum_depth         ! only used if variable_minimum_depth is not set
+      real(rk) :: maximum_depth         ! only used if variable_maximum_depth is not set
+      type (type_horizontal_dependency_id) :: id_minimum_depth ! only used if variable_minimum_depth is set
+      type (type_horizontal_dependency_id) :: id_maximum_depth  ! only used if variable_maximum_depth is set
    contains
       procedure :: do_bottom  => layer_content_calculator_do_bottom
    end type
@@ -421,10 +421,10 @@ contains
       ! Create a submodel for particulate organic matter at the sediment surface
       ! This will receive sinks and sources associated with benthic-pelagic exchange - sedimentation, resuspension.
       allocate(single_layer)
-      call single_layer%parameters%set('surface_boundary_type',0)
-      call single_layer%parameters%set('bottom_boundary_type',0)
-      call single_layer%parameters%set('surface_boundary_depth',0.0_rk)
-      call single_layer%parameters%set('bottom_boundary_depth',0.0_rk)
+      call single_layer%parameters%set('variable_minimum_depth',.false.)
+      call single_layer%parameters%set('variable_maximum_depth',.false.)
+      call single_layer%parameters%set('minimum_depth',0.0_rk)
+      call single_layer%parameters%set('maximum_depth',0.0_rk)
       call single_layer%parameters%set('composition',self%composition)
       call single_layer%couplings%set_string('Q',self%name)
       call self%add_child(single_layer,'surface',configunit=configunit)
@@ -518,19 +518,19 @@ contains
 !BOC
       self%dt = 86400._rk
 
-      call self%get_parameter(composition,'composition', '','elemental composition',default='cnp')
+      call self%get_parameter(composition,'composition', '','elemental composition')
       call self%get_parameter(self%remin,'remin','1/d','remineralization rate',default=0.0_rk)
-      call self%get_parameter(self%surface_boundary_type,'surface_boundary_type','','surface boundary type (0: constant depth, 1: variable depth)',default=0)
-      call self%get_parameter(self%bottom_boundary_type, 'bottom_boundary_type', '','bottom boundary type (0: constant depth, 1: variable depth)', default=0)
-      if (self%surface_boundary_type==0) then
-         call self%get_parameter(self%surface_boundary_depth,'surface_boundary_depth','m','surface boundary depth',default=0.0_rk)
+      call self%get_parameter(self%variable_minimum_depth,'variable_minimum_depth','','minimum depth is variable', default=.false.)
+      if (self%variable_minimum_depth) then
+         call self%register_dependency(self%id_minimum_depth,'minimum_depth','m','minimum depth')
       else
-         call self%register_dependency(self%id_surface_boundary_depth,'surface_boundary_depth','m','surface boundary depth')
+         call self%get_parameter(self%minimum_depth,'minimum_depth','m','minimum depth',default=0.0_rk)
       end if
-      if (self%bottom_boundary_type==0) then
-         call self%get_parameter(self%bottom_boundary_depth,'bottom_boundary_depth','m','bottom boundary depth',default=0.0_rk)
+      call self%get_parameter(self%variable_maximum_depth,'variable_maximum_depth','','maximum depth is variable', default=.false.)
+      if (self%variable_maximum_depth) then
+         call self%register_dependency(self%id_maximum_depth,'maximum_depth','m','maximum depth')
       else
-         call self%register_dependency(self%id_bottom_boundary_depth,'bottom_boundary_depth','m','bottom boundary depth')
+         call self%get_parameter(self%maximum_depth,'maximum_depth','m','maximum depth',default=0.0_rk)
       end if
       call self%get_parameter(self%source_depth_distribution,'source_depth_distribution', '','vertical distribution of changes (1: constant absolute rate, 2: constant relative rate, 3: constant carbon-based relative rate)',default=1)
       call self%register_dependency(self%id_d_tot,depth_of_sediment_column)
@@ -562,19 +562,19 @@ contains
       call self%add_child(layer_content_calculator,'content_calculator_'//trim(name),configunit=-1)
 
       ! Copy information on interval boundaries from master module.
-      layer_content_calculator%surface_boundary_type  = self%surface_boundary_type
-      layer_content_calculator%bottom_boundary_type   = self%bottom_boundary_type
-      layer_content_calculator%surface_boundary_depth = self%surface_boundary_depth
-      layer_content_calculator%bottom_boundary_depth  = self%bottom_boundary_depth
-      if (layer_content_calculator%surface_boundary_type==1) then
+      layer_content_calculator%variable_minimum_depth = self%variable_minimum_depth
+      layer_content_calculator%variable_maximum_depth = self%variable_maximum_depth
+      layer_content_calculator%minimum_depth = self%minimum_depth
+      layer_content_calculator%maximum_depth = self%maximum_depth
+      if (layer_content_calculator%variable_minimum_depth) then
          ! Dynamic top boundary
-         call layer_content_calculator%register_dependency(layer_content_calculator%id_surface_boundary_depth,'surface_boundary_depth','m','surface boundary depth')
-         call layer_content_calculator%request_coupling(layer_content_calculator%id_surface_boundary_depth,'surface_boundary_depth')
+         call layer_content_calculator%register_dependency(layer_content_calculator%id_minimum_depth,'minimum_depth','m','minimum depth')
+         call layer_content_calculator%request_coupling(layer_content_calculator%id_minimum_depth,'minimum_depth')
       end if
-      if (layer_content_calculator%bottom_boundary_type==1) then
+      if (layer_content_calculator%variable_maximum_depth) then
          ! Dynamic bottom boundary
-         call layer_content_calculator%register_dependency(layer_content_calculator%id_bottom_boundary_depth,'bottom_boundary_depth','m','bottom boundary depth')
-         call layer_content_calculator%request_coupling(layer_content_calculator%id_bottom_boundary_depth,'bottom_boundary_depth')
+         call layer_content_calculator%register_dependency(layer_content_calculator%id_maximum_depth,'maximum_depth','m','maximum depth')
+         call layer_content_calculator%request_coupling(layer_content_calculator%id_maximum_depth,'maximum_depth')
       end if
 
       ! Get column-integrated mass and penetration depth from master module.
@@ -616,41 +616,41 @@ contains
       class (type_ersem_benthic_pom_layer), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
-      real(rk) :: d_top,d_bot
+      real(rk) :: d_min,d_max
 
       _HORIZONTAL_LOOP_BEGIN_
          ! Determine top and bottom of desired depth interval.
 
-         if (self%surface_boundary_type==0) then
-            ! Constant top depth
-            d_top = self%surface_boundary_depth
+         if (self%variable_minimum_depth) then
+            ! Minimum depth from coupled variable.
+            _GET_HORIZONTAL_(self%id_minimum_depth,d_min)
          else
-            ! Variable top depth
-            _GET_HORIZONTAL_(self%id_surface_boundary_depth,d_top)
+            ! Constant minimum depth
+            d_min = self%minimum_depth
          end if
 
-         if (self%bottom_boundary_type==0) then
-            ! Constant bottom depth
-            d_bot = self%bottom_boundary_depth
+         if (self%variable_maximum_depth) then
+            ! Maximum depth from coupled variable.
+            _GET_HORIZONTAL_(self%id_maximum_depth,d_max)
          else
-            ! Variable bottom depth
-            _GET_HORIZONTAL_(self%id_bottom_boundary_depth,d_bot)
+            ! Constant maximum depth
+            d_max = self%maximum_depth
          end if
 
          ! For each constituent: contribute to depth-integrated sink-source terms, contribute to change in penetration depth.
-         if (_VARIABLE_REGISTERED_(self%id_c_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_top,d_bot,self%id_c_int,self%id_pen_depth_c,self%id_c_sms,self%id_c_local,self%id_c_remin_target)
-         if (_VARIABLE_REGISTERED_(self%id_n_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_top,d_bot,self%id_n_int,self%id_pen_depth_n,self%id_n_sms,self%id_n_local,self%id_n_remin_target)
-         if (_VARIABLE_REGISTERED_(self%id_p_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_top,d_bot,self%id_p_int,self%id_pen_depth_p,self%id_p_sms,self%id_p_local,self%id_p_remin_target)
-         if (_VARIABLE_REGISTERED_(self%id_s_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_top,d_bot,self%id_s_int,self%id_pen_depth_s,self%id_s_sms,self%id_s_local,self%id_s_remin_target)
+         if (_VARIABLE_REGISTERED_(self%id_c_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_min,d_max,self%id_c_int,self%id_pen_depth_c,self%id_c_sms,self%id_c_local,self%id_c_remin_target)
+         if (_VARIABLE_REGISTERED_(self%id_n_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_min,d_max,self%id_n_int,self%id_pen_depth_n,self%id_n_sms,self%id_n_local,self%id_n_remin_target)
+         if (_VARIABLE_REGISTERED_(self%id_p_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_min,d_max,self%id_p_int,self%id_pen_depth_p,self%id_p_sms,self%id_p_local,self%id_p_remin_target)
+         if (_VARIABLE_REGISTERED_(self%id_s_int)) call layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_min,d_max,self%id_s_int,self%id_pen_depth_s,self%id_s_sms,self%id_s_local,self%id_s_remin_target)
       _HORIZONTAL_LOOP_END_
    end subroutine layer_do_bottom
 
-   subroutine layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_top,d_bot,id_c_int,id_pen_depth,id_sms,id_local,id_remin_target)
+   subroutine layer_process_constituent_changes(self,_ARGUMENTS_LOCAL_,d_min,d_max,id_c_int,id_pen_depth,id_sms,id_local,id_remin_target)
       class (type_ersem_benthic_pom_layer), intent(in) :: self
       _DECLARE_ARGUMENTS_LOCAL_
       type (type_bottom_state_variable_id),intent(in) :: id_c_int,id_pen_depth,id_remin_target
       type (type_horizontal_dependency_id),intent(in) :: id_sms,id_local
-      real(rk),                            intent(in) :: d_top,d_bot
+      real(rk),                            intent(in) :: d_min,d_max
 
       real(rk) :: c_int,d_pen,d_pen_c,sms,d_sms
       real(rk) :: c_int_local,sms_remin, d_tot
@@ -675,7 +675,7 @@ contains
          ! Assume sinks-sources are homogenously distributed over desired depth interval.
          ! That is, d/dt C(z) within the layer does not depend on depth.
          ! Thus, average depth of mass insertion/removal is the average of surface and bottom depths.
-         d_sms = (d_top+d_bot)/2
+         d_sms = (d_min+d_max)/2
       elseif (self%source_depth_distribution==2) then
          ! Assume the relative rate of change in mass is depth-independent.
          ! That is, 1/C(z) d/dt C(z) within the layer does not depend on depth.
@@ -684,12 +684,12 @@ contains
          ! bottom interface of the active layer is much deeper than the penetration depth.
          ! Using the fact that the distribution of mass is exponential, the mean depth of change
          ! then equals the penetration depth, plus whatever offset the top of the active layer is located at.
-         d_sms = d_top + d_pen
+         d_sms = d_min + d_pen
       elseif (self%source_depth_distribution==3) then
          ! As for self%source_depth_distribution==2, but derive depth of change from
          ! penetration depth of carbon, even when changing nitrogen, phosphorous, silicate.
          _GET_HORIZONTAL_(self%id_pen_depth_c,d_pen_c)
-         d_sms = d_top + d_pen_c
+         d_sms = d_min + d_pen_c
       end if
 
       ! Compute change in penetration depth. See its derivation in the comments at the top of the file,
@@ -697,9 +697,7 @@ contains
       ! JB: correct form would have C_int_infty in the denominator, not C_int [see derivation]
 
      _GET_HORIZONTAL_(self%id_d_tot,d_tot) 
-      if ((d_pen > d_tot).and.(sms<0._rk)) then 
-          d_sms = d_tot
-      end if
+      if (d_pen>d_tot .and. sms<0._rk) d_sms = d_tot
       _SET_BOTTOM_ODE_(id_pen_depth, (d_sms-d_pen)*sms/c_int)
 
       ! Apply sinks-sources to depth-integrated mass
@@ -712,7 +710,7 @@ contains
 
       real(rk) :: d_pen
       real(rk) :: c_int
-      real(rk) :: d_top, d_bot, d_totX
+      real(rk) :: d_min, d_max, d_totX
 
       _HORIZONTAL_LOOP_BEGIN_
          ! Retrieve column-integrated mass, penetration depth, and depth of modelled sediment column.
@@ -721,19 +719,19 @@ contains
          _GET_HORIZONTAL_(self%id_d_tot,d_totX)
 
          ! Determine top and bottom of desired depth interval.
-         if (self%surface_boundary_type==0) then
-            d_top = self%surface_boundary_depth
+         if (self%variable_minimum_depth) then
+            _GET_HORIZONTAL_(self%id_minimum_depth,d_min)
          else
-            _GET_HORIZONTAL_(self%id_surface_boundary_depth,d_top)
+            d_min = self%minimum_depth
          end if
-         if (self%bottom_boundary_type==0) then
-            d_bot = self%bottom_boundary_depth
+         if (self%variable_maximum_depth) then
+            _GET_HORIZONTAL_(self%id_maximum_depth,d_max)
          else
-            _GET_HORIZONTAL_(self%id_bottom_boundary_depth,d_bot)
+            d_max = self%maximum_depth
          end if
 
          ! Compute depth-integrated mass in desired depth interval.
-         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_c, c_int*partQ(d_pen, d_top, d_bot, d_totX))
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_c, c_int*partQ(d_pen, d_min, d_max, d_totX))
 
       _HORIZONTAL_LOOP_END_
    end subroutine layer_content_calculator_do_bottom

@@ -12,61 +12,67 @@ module ersem_benthic_fauna
 
    private
 
-  type,extends(type_ersem_benthic_base),public :: type_ersem_benthic_fauna
-     type (type_state_variable_id)   :: id_O2o
-     type (type_bottom_state_variable_id) :: id_Q6c,id_Q6n,id_Q6p,id_Q6s
-     type (type_bottom_state_variable_id) :: id_G3c,id_G2o,id_K4n,id_K1p,id_K4n2,id_K1p2
-     type (type_horizontal_dependency_id), allocatable,dimension(:) :: id_foodc,id_foodn,id_foodp,id_foods
-     type (type_horizontal_dependency_id), allocatable,dimension(:) :: id_foodc_an
-     type (type_dependency_id), allocatable,dimension(:) :: id_foodpelc,id_foodpeln,id_foodpelp,id_foodpels
-     type (type_dependency_id) :: id_ETW
-     type (type_horizontal_dependency_id) :: id_Dm
-     type (type_horizontal_diagnostic_variable_id) :: id_bioirr,id_biotur
-     type (type_model_id),allocatable,dimension(:) :: id_food
+   type,extends(type_ersem_benthic_base),public :: type_ersem_benthic_fauna
+      type (type_state_variable_id)   :: id_O2o
+      type (type_bottom_state_variable_id) :: id_Q6c,id_Q6n,id_Q6p,id_Q6s
+      type (type_bottom_state_variable_id) :: id_G3c,id_G2o,id_K4n,id_K1p,id_K4n2,id_K1p2
+      type (type_horizontal_dependency_id), allocatable,dimension(:) :: id_foodc,id_foodn,id_foodp,id_foods
+      type (type_horizontal_dependency_id), allocatable,dimension(:) :: id_foodc_an
+      type (type_dependency_id), allocatable,dimension(:) :: id_foodpelc,id_foodpeln,id_foodpelp,id_foodpels
+      type (type_dependency_id) :: id_ETW
+      type (type_horizontal_dependency_id) :: id_Dm
+      type (type_horizontal_diagnostic_variable_id) :: id_bioirr,id_biotur
+      type (type_model_id),allocatable,dimension(:) :: id_food
+      type (type_model_id)                          :: id_Q
 
-     ! To achieve compatibility with legacy ERSEM, we need to be able to decouple the variable
-     ! from which food availability is derived from the variable that absorbs the loss due to
-     ! gross food uptake. The following variables absorb the loss due to food uptake - by default
-     ! they are coupled to the same variable from which available food is derived.
-     type (type_model_id),allocatable,dimension(:) :: id_food_loss_source
+      ! To achieve compatibility with legacy ERSEM, we need to be able to decouple the variable
+      ! from which food availability is derived from the variable that absorbs the loss due to
+      ! gross food uptake. The following variables absorb the loss due to food uptake - by default
+      ! they are coupled to the same variable from which available food is derived.
+      type (type_model_id),allocatable,dimension(:) :: id_food_loss_source
 
-     integer  :: nfood    
-     real(rk) :: qnYIcX,qpYIcX
-     real(rk) :: q10YX
-     real(rk) :: hO2YX,rlO2YX
-     real(rk) :: xclYX,xcsYX,xchYX
-     real(rk) :: suYX,luYX,huYX
-     real(rk),allocatable :: pueYX(:),pufood(:)
-     logical,allocatable ::foodispel(:),food_ll(:)
-     real(rk) :: pudilX
-     real(rk) :: sdYX,sdmO2YX,sdcYX,xdcYX
-     real(rk) :: srYX,purYX
-     real(rk) :: pturYX,pirrYX, dwatYX,dQ6YX
-  contains
-     procedure :: initialize
-     procedure :: do_bottom
-  end type
+      integer  :: nfood    
+      real(rk) :: qnYIcX,qpYIcX
+      real(rk) :: q10YX
+      real(rk) :: hO2YX,rlO2YX
+      real(rk) :: xclYX,xcsYX,xchYX
+      real(rk) :: suYX,luYX,huYX
+      real(rk),allocatable :: pueYX(:),pufood(:)
+      logical,allocatable ::foodispel(:),food_ll(:)
+      real(rk) :: pudilX
+      real(rk) :: sdYX,sdmO2YX,sdcYX,xdcYX
+      real(rk) :: srYX,purYX
+      real(rk) :: pturYX,pirrYX, dwatYX,dQ6YX
+   contains
+      procedure :: initialize
+      procedure :: do_bottom
+   end type
+
 contains
 
-  subroutine initialize(self,configunit)
-    class (type_ersem_benthic_fauna),intent(inout),target :: self
-    integer,                                 intent(in)           ::configunit
-    integer           :: ifood
-    character(len=16) :: index
-    logical           :: foodispom
-    real(rk)          :: pueYX,pueQX
-    self%dt = 86400._rk
-    ! Register parameters
-      call self%get_parameter(self%qnYIcX, 'qnYc',  'mmol N/mg C','maximum nitrogen to carbon ratio')
-      call self%get_parameter(self%qpYIcX, 'qpYc',  'mmol P/mg C','maximum phosphorus to carbon ratio')
+   subroutine initialize(self,configunit)
+      class (type_ersem_benthic_fauna),intent(inout),target :: self
+      integer,                         intent(in)           :: configunit
+
+      integer           :: ifood
+      character(len=16) :: index
+      logical           :: foodispom
+      real(rk)          :: pueYX,pueQX
+
+      ! Initialize base model type (this will also set the internal time unit to per day)
+      call self%initialize_ersem_benthic_base()
+
+      ! Register parameters
+      call self%get_parameter(self%qnYIcX, 'qnYc',  'mmol N/mg C','nitrogen to carbon ratio')
+      call self%get_parameter(self%qpYIcX, 'qpYc',  'mmol P/mg C','phosphorus to carbon ratio')
       call self%get_parameter(self%q10YX,  'q10Y',  '-',          'Q_10 temperature coefficient')
+      call self%get_parameter(self%rlO2YX, 'rlO2Y', 'mmol O2/m^3','minimum pelagic oxygen concentration')
       call self%get_parameter(self%hO2YX,  'hO2Y',  'mmol O2/m^3','Michaelis-Menten constant for oxygen limitation')
-      call self%get_parameter(self%rlO2YX, 'rlO2Y', 'mmol O2/m^3','minimum threshold of oxygen required')
       call self%get_parameter(self%xclYX,  'xclY',  'mg C/m^2',   'abundance above which crowding reduces food uptake')
       call self%get_parameter(self%xcsYX,  'xcsY',  'mg C/m^2',   'Michaelis-Menten constant for the impact of crowding')
       call self%get_parameter(self%xchYX,  'xchY',  'mg C/m^2',   'abundance determining asymptotic threshold of crowding limitation (-> xchY/(Yc+xchY) for Yc-> inf)')
       call self%get_parameter(self%suYX,   'suY',   '1/d',        'specific maximum uptake at reference temperature')
-      call self%get_parameter(self%luYX,   'luY',   'mg C/m^2',   'Michaelis-Menten constant for food species uptake')
+      call self%get_parameter(self%luYX,   'luY',   'mg C/m^2',   'Michaelis-Menten constant for food preference as function of food concentration')
       call self%get_parameter(self%huYX,   'huY',   'mg C/m^2',   'Michaelis-Menten constant for gross carbon uptake')
       call self%get_parameter(pueYX,       'pueY',  '-',          'fraction of carbon in consumed live food that goes to faeces')
       call self%get_parameter(pueQX,       'pueQ',  '-',          'fraction of carbon in consumed detritus that goes to faeces')
@@ -75,28 +81,58 @@ contains
       call self%get_parameter(self%sdmO2YX,'sdmO2Y','1/d',        'specific maximum additional mortality due to oxygen stress')
       call self%get_parameter(self%sdcYX,  'sdcY',  '1/d',        'specific maximum additional mortality induced by cold temperature')
       call self%get_parameter(self%xdcYX,  'xdcY',  '1/degree C', 'e-folding temperature factor of cold mortality response')
-    ! Determine number of food sources
       call self%get_parameter(self%srYX,   'srY',   '1/d',        'specific rest respiration at reference temperature')
       call self%get_parameter(self%purYX,  'purY',  '-',          'fraction of assimilated food that is respired')
+
+      ! Add carbon pool as our only state variable.
       call self%add_constituent('c',3000._rk,qn=self%qnYIcX,qp=self%qpYIcX)
-      call self%get_parameter(self%nfood,  'nfood', '',           'number of food sources',default=0)   
-  
-    allocate(self%id_food(self%nfood))
-    allocate(self%foodispel(self%nfood))
-    allocate(self%id_foodpelc(self%nfood))
-    allocate(self%id_foodpeln(self%nfood))
-    allocate(self%id_foodpelp(self%nfood))
-    allocate(self%id_foodpels(self%nfood))
-    allocate(self%id_foodc(self%nfood))
-    allocate(self%id_foodn(self%nfood))
-    allocate(self%id_foodp(self%nfood))
-    allocate(self%id_foods(self%nfood))
-    allocate(self%id_foodc_an(self%nfood))
-    allocate(self%food_ll(self%nfood))
-    allocate(self%id_food_loss_source(self%nfood))
-    
-   ! Allocate components of food sources
-    do ifood=1,self%nfood
+
+      ! Environmental dependencies
+      call self%register_dependency(self%id_ETW,standard_variables%temperature)
+      call self%register_dependency(self%id_Dm,'Dm','m','depth of limiting layer for uptake')
+
+      ! Dependencies on state variables of external modules
+      call self%register_state_dependency(self%id_O2o,'O2o','mmol O2/m^3','pelagic oxygen')
+      call self%register_state_dependency(self%id_G3c,'G3c','mmol C/m^2','carbon dioxide')
+      call self%register_state_dependency(self%id_G2o,'G2o','mmol O2/m^2','oxygen')
+      call self%register_state_dependency(self%id_K1p, 'K1p', 'mmol P/m^2','benthic phosphate in aerobic layer')
+      call self%register_state_dependency(self%id_K4n, 'K4n', 'mmol N/m^2','benthic ammonium in aerobic layer')
+      call self%register_state_dependency(self%id_K1p2,'K1p2','mmol P/m^2','benthic phosphate in anaerobic layer')
+      call self%register_state_dependency(self%id_K4n2,'K4n2','mmol N/m^2','benthic ammonium in anaerobic layer')
+
+      ! Dependencies on state variables of external modules: POM sinks that will take faeces and dead matter.
+      call self%register_state_dependency(self%id_Q6c,'Q6c','mg C/m^2',   'particulate organic carbon')
+      call self%register_state_dependency(self%id_Q6n,'Q6n','mmol N/m^2', 'particulate organic nitrogen')
+      call self%register_state_dependency(self%id_Q6p,'Q6p','mmol P/m^2', 'particulate organic phosphorus')
+      call self%register_state_dependency(self%id_Q6s,'Q6s','mmol Si/m^2','particulate organic silicate')
+
+      ! Make it possible to hook up all POM sinks at once by coupling to a whole model "Q".
+      call self%register_model_dependency(self%id_Q,'Q')
+      call self%request_coupling_to_model(self%id_Q6c,self%id_Q,'c')
+      call self%request_coupling_to_model(self%id_Q6n,self%id_Q,'n')
+      call self%request_coupling_to_model(self%id_Q6p,self%id_Q,'p')
+      call self%request_coupling_to_model(self%id_Q6s,self%id_Q,'s')
+
+      ! Determine number of food sources
+      call self%get_parameter(self%nfood, 'nfood', '', 'number of food sources',default=0)   
+
+      ! Allocate arrays with food source specific information.
+      allocate(self%id_food(self%nfood))
+      allocate(self%id_foodpelc(self%nfood))
+      allocate(self%id_foodpeln(self%nfood))
+      allocate(self%id_foodpelp(self%nfood))
+      allocate(self%id_foodpels(self%nfood))
+      allocate(self%id_foodc(self%nfood))
+      allocate(self%id_foodn(self%nfood))
+      allocate(self%id_foodp(self%nfood))
+      allocate(self%id_foods(self%nfood))
+      allocate(self%id_foodc_an(self%nfood))
+      allocate(self%foodispel(self%nfood))
+      allocate(self%food_ll(self%nfood))
+      allocate(self%id_food_loss_source(self%nfood))
+
+      ! Allocate components of food sources
+      do ifood=1,self%nfood
          write (index,'(i0)') ifood
          call self%get_parameter(self%foodispel(ifood),'food'//trim(index)//'ispel','','food source '//trim(index)//' is pelagic',default=.false.)
          call self%get_parameter(self%food_ll(ifood),'food'//trim(index)//'_ll','','availability of food source '//trim(index)//' is limited by aerobic layer height',default=.false.)
@@ -122,53 +158,48 @@ contains
             call self%register_dependency(self%id_foodc_an(ifood),'food'//trim(index)//'c_an','mmol C/m^2','food source '//trim(index)//' carbon in anaerobic layer')
             call self%request_coupling(self%id_foodc_an(ifood),'zero_hz')
 
-            ! Hack for legacy ERSEM compatibility - to be removed!
-            call self%register_model_dependency(self%id_food_loss_source(ifood),'food'//trim(index)//'_loss_source')
-            call self%couplings%set_string('food'//trim(index)//'_loss_source','food'//trim(index))
+            if (legacy_ersem_compatibility) then
+               ! Legacy ERSEM computes available detritus based on the predator's depth range, but applies the detritus loss
+               ! to a detritus pool with a different depth distribution. To be able to reproduce this (inconsistent!) behaviour
+               ! we allow separate coupling to the pool that should absorb the detritus loss (this comes in addition to the
+               ! pool representing available detritus).
+               call self%register_model_dependency(self%id_food_loss_source(ifood),'food'//trim(index)//'_loss_source')
+               call self%couplings%set_string('food'//trim(index)//'_loss_source','food'//trim(index))
+            end if
          end if
-   end do
+      end do
 
-    ! Allocate excretion rates
-    allocate(self%pueYX(self%nfood))
-    do ifood=1,self%nfood
-       write (index,'(i0)') ifood
-       call self%get_parameter(foodispom,'food'//trim(index)//'ispom','','food source '//trim(index)//' is detritus',default=.false.)
-       if (foodispom) then
-          self%pueYX(ifood) = pueQX
-       else
-          self%pueYX(ifood) = pueYX
-       end if
-    end do
-
-    ! Allocate food source preferences
-    allocate(self%pufood(self%nfood))
-    do ifood=1,self%nfood
+      ! Allocate and obtain food source preferences
+      allocate(self%pufood(self%nfood))
+      do ifood=1,self%nfood
          write (index,'(i0)') ifood
          call self%get_parameter(self%pufood(ifood),'pufood'//trim(index),'-','preference for food source '//trim(index))
-    end do
+      end do
 
-    if (any(self%foodispel)) &
-      call self%get_parameter(self%dwatYX, 'dwatY', 'm', 'water layer accessible for pelagic food uptake',default=1._rk)
-    call self%get_parameter(self%dQ6YX,  'dQ6Y',  'm', 'depth of available sediment layer',default=0._rk)
+      ! Allocate excretion rates
+      allocate(self%pueYX(self%nfood))
+      do ifood=1,self%nfood
+         write (index,'(i0)') ifood
+         call self%get_parameter(foodispom,'food'//trim(index)//'ispom','','food source '//trim(index)//' is detritus',default=.false.)
+         if (foodispom) then
+            ! Use assimilation efficiency for particulate organic matter.
+            self%pueYX(ifood) = pueQX
 
-    ! Environmental dependencies
-      call self%register_dependency(self%id_ETW,standard_variables%temperature)
-      call self%register_dependency(self%id_Dm,'Dm','m','depth of limiting layer for uptake')
+            ! Legacy ERSEM applies the loss of detritus due to feeding to the same pool that absorbs faeces and dead matter,
+            ! even though the availability of detritus for consumption is computed differently. Apply this default behaviour here.
+            if (legacy_ersem_compatibility.and..not.self%foodispel(ifood)) &
+               call self%couplings%set_string('food'//trim(index)//'_loss_source','Q')
+         else
+            ! Use assimilation efficiency for living matter.
+            self%pueYX(ifood) = pueYX
+         end if
+      end do
 
-    ! Dependencies on state variables of external modules
-      call self%register_state_dependency(self%id_O2o,'O2o','mmol O2/m^3','oxygen')
-      call self%register_state_dependency(self%id_Q6c,'Q6c','mg C/m^2', 'particulate organic carbon')
-      call self%register_state_dependency(self%id_Q6n,'Q6n','mmol N/m^2','particulate organic nitrogen')
-      call self%register_state_dependency(self%id_Q6p,'Q6p','mmol P/m^2','particulate organic phosphorus')
-      call self%register_state_dependency(self%id_Q6s,'Q6s','mmol Si/m^2','particulate organic silicate')
-      call self%register_state_dependency(self%id_G3c,'G3c','mmol C/m^2','carbon dioxide')
-      call self%register_state_dependency(self%id_G2o,'G2o','mmol O2/m^2','oxygen')
-      call self%register_state_dependency(self%id_K1p, 'K1p', 'mmol P/m^2','benthic phosphate in aerobic layer')
-      call self%register_state_dependency(self%id_K4n, 'K4n', 'mmol N/m^2','benthic ammonium in aerobic layer')
-      call self%register_state_dependency(self%id_K1p2,'K1p2','mmol P/m^2','benthic phosphate in anaerobic layer')
-      call self%register_state_dependency(self%id_K4n2,'K4n2','mmol N/m^2','benthic ammonium in anaerobic layer')
+      if (any(self%foodispel)) &
+         call self%get_parameter(self%dwatYX, 'dwatY', 'm', 'water layer accessible for pelagic food uptake',default=1._rk)
+      call self%get_parameter(self%dQ6YX,  'dQ6Y',  'm', 'depth of available sediment layer',default=0._rk)
 
-    ! Get contribution for bioturbation and bioirrigation
+      ! Get contribution for bioturbation and bioirrigation
       call self%get_parameter(self%pturYX, 'pturY','-','relative contribution to bioturbation',default=0._rk)
       call self%get_parameter(self%pirrYX, 'pirrY','-','relative contribution to bioirrigation',default=0._rk)
       call self%register_diagnostic_variable(self%id_biotur,'biotur','mg C/m^2/d','bioturbation activity',output=output_time_step_averaged,domain=domain_bottom)
@@ -176,246 +207,206 @@ contains
       call self%add_to_aggregate_variable(total_bioturbation_activity, self%id_biotur)
       call self%add_to_aggregate_variable(total_bioirrigation_activity, self%id_bioirr) 
 
-  end subroutine
+   end subroutine initialize
 
-  subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
+   subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
 
-     class (type_ersem_benthic_fauna),intent(in) :: self
-     _DECLARE_ARGUMENTS_DO_BOTTOM_
-     
-     real(rk) :: Yc,Yn,Yp,O2o,foodP,Dm
-     real(rk) :: eT,eO,eC,ETW,Y,x
-     real(rk) :: rate
-     real(rk) :: SYc,SYn,SYp
-     real(rk),dimension(self%nfood) :: foodcP,foodnP,foodpP,foodsP,foodcP_an
-     real(rk),dimension(self%nfood) :: feed, sflux, prefcorr
-     real(rk) :: foodsum,mm
-     real(rk),dimension(self%nfood) :: grossfluxc,grossfluxn,grossfluxp,grossfluxs
-     real(rk),dimension(self%nfood) :: netfluxc,netfluxn,netfluxp
-     real(rk) :: mort_act,mort_ox,mort_cold,mortflux
-     integer  :: ifood,istate
-     real(rk) :: fBTYc,nfBTYc,fYG3c,p_an
-     real(rk) :: excess_c,excess_n,excess_p
+      class (type_ersem_benthic_fauna),intent(in) :: self
+      _DECLARE_ARGUMENTS_DO_BOTTOM_
 
-     _HORIZONTAL_LOOP_BEGIN_
+      real(rk) :: Yc,Yn,Yp,O2o,foodP,Dm
+      real(rk) :: eT,eO,eC,ETW,Y,x
+      real(rk) :: rate
+      real(rk) :: SYc,SYn,SYp
+      real(rk),dimension(self%nfood) :: foodcP,foodnP,foodpP,foodsP,foodcP_an
+      real(rk),dimension(self%nfood) :: feed, sflux, prefcorr
+      real(rk) :: foodsum
+      real(rk),dimension(self%nfood) :: grossfluxc,grossfluxn,grossfluxp,grossfluxs
+      real(rk),dimension(self%nfood) :: netfluxc,netfluxn,netfluxp
+      real(rk) :: mort_act,mort_ox,mort_cold,mortflux
+      integer  :: ifood,istate
+      real(rk) :: fBTYc,nfBTYc,fYG3c,p_an
+      real(rk) :: excess_c,excess_n,excess_p
 
-     _GET_HORIZONTAL_(self%id_c,Yc)
+      _HORIZONTAL_LOOP_BEGIN_
 
-     _GET_HORIZONTAL_(self%id_Dm,Dm)
-     _GET_(self%id_O2o,O2o)
+      _GET_HORIZONTAL_(self%id_c,Yc)
 
-     _GET_(self%id_ETW,ETW)
+      _GET_HORIZONTAL_(self%id_Dm,Dm)
+      _GET_(self%id_O2o,O2o)
 
-     Yn = Yc*self%qnYIcX
-     Yp = Yc*self%qpYIcX
-     
-     ! Calculate temperature limitation factor
-     eT = self%q10YX**((ETW-10._rk)/10._rk) - self%q10YX**((ETW-32._rk)/3._rk)
+      _GET_(self%id_ETW,ETW)
 
-     ! Calculate oxygen limitation factor
-     eO = (O2o-self%rlO2YX)**3/((O2o-self%rlO2YX)**3+(self%hO2YX-self%rlO2YX)**3)
+      Yn = Yc*self%qnYIcX
+      Yp = Yc*self%qpYIcX
 
-     ! Calculate overcrowding limitation factor
-     ! In SSB-ERSEM overcrowding limitation factor was not assumed for
-     ! meiobenthos Y4. Set self%xclYX to a very large value in fabm.yaml
+      ! Calculate temperature limitation factor
+      eT = self%q10YX**((ETW-10._rk)/10._rk) - self%q10YX**((ETW-32._rk)/3._rk)
 
-     Y = Yc - self%xclYX
-     if (Y>0._rk) then
-        x = Y * Y/(Y+self%xcsYX)
-        eC = 1._rk - x/(x+self%xchYX)
-     else
-        eC = 1._rk
-     end if
+      ! Calculate oxygen limitation factor
+      eO = (O2o-self%rlO2YX)**3/((O2o-self%rlO2YX)**3+(self%hO2YX-self%rlO2YX)**3)
 
-    ! Calculate uptake rate................................................
-    rate = self%suYX * Yc * eT * eO * eC
-
-    !Get food concentrations: benthic and pelagic!
-
-    do ifood=1,self%nfood
-       if (self%foodispel(ifood)) then
-          _GET_(self%id_foodpelc(ifood),foodcP(ifood))
-          _GET_(self%id_foodpeln(ifood),foodnP(ifood))
-          _GET_(self%id_foodpelp(ifood),foodpP(ifood))
-          _GET_(self%id_foodpels(ifood),foodsP(ifood))
-
-          foodcP_an(ifood) = 0.0_rk
-       else
-          _GET_HORIZONTAL_(self%id_foodc(ifood),foodcP(ifood))
-          _GET_HORIZONTAL_(self%id_foodn(ifood),foodnP(ifood))
-          _GET_HORIZONTAL_(self%id_foodp(ifood),foodpP(ifood))
-          _GET_HORIZONTAL_(self%id_foods(ifood),foodsP(ifood))
-
-          _GET_HORIZONTAL_(self%id_foodc_an(ifood),foodcP_an(ifood))
-       end if
-    end do
-
-    ! Prey carbon was returned in mmol (due to units of standard_variables%total_carbon); convert to mg
-    foodcP = foodcP*CMass
-
-  ! In case of pelagic food source, its availability can be limited by a near-bottom fraction available to organism. In case of benthic food source, it is possible to limit availability of food source by depth of aerobic layer, e.g. limiting aerobic bacteria as a food source for suspension-feeders by ratio of habitat depth to aerobic layer depth. Food sources limited in such a way must be specified using logical food{n}_ll in fabm.yaml file.
-   do ifood=1,self%nfood
-      if (self%foodispel(ifood)) then
-         prefcorr(ifood) = self%pufood(ifood) * self%dwatYX
+      ! Calculate limitaiton factor describing a decrease in feeding rate due to oevrcrowding.
+      ! To disable any effect of overcrowding on feeding, set parameter xclY to a very large value.
+      ! This can for instance be done to disable the overcrowding effect for meiobenthos/Y4, as in SSB-ERSEM.
+      Y = Yc - self%xclYX
+      if (Y>0._rk) then
+         x = Y * Y/(Y+self%xcsYX)
+         eC = 1._rk - x/(x+self%xchYX)
       else
-          if (self%food_ll(ifood)) then
-             prefcorr(ifood) = self%pufood(ifood) * min(1._rk,self%dQ6YX/Dm)
-          else
-             prefcorr(ifood) = self%pufood(ifood)
-          endif
+         eC = 1._rk
       end if
-   end do
 
-    ! Food Partition
-    feed = prefcorr * (prefcorr * foodcP/(prefcorr * foodcP + self%luYX))
-    foodsum = sum(feed * foodcP)
-    mm = foodsum + self%huYX
+      ! Calculate uptake rate
+      rate = self%suYX * Yc * eT * eO * eC
 
-    if (foodsum>0._rk) then
-       sflux = rate * feed / mm
-    else
-       sflux = 0._rk
-    end if
+      ! Get food concentrations: benthic and pelagic!
+      do ifood=1,self%nfood
+         if (self%foodispel(ifood)) then
+            _GET_(self%id_foodpelc(ifood),foodcP(ifood))
+            _GET_(self%id_foodpeln(ifood),foodnP(ifood))
+            _GET_(self%id_foodpelp(ifood),foodpP(ifood))
+            _GET_(self%id_foodpels(ifood),foodsP(ifood))
 
-   ! Food uptake fluxes
-   grossfluxc = sflux * foodcP
-   grossfluxn = sflux * foodnP
-   grossfluxp = sflux * foodpP
-   grossfluxs = sflux * foodsP
-   netfluxc = grossfluxc * (1._rk -             self%pueYX)
-   netfluxn = grossfluxn * (1._rk - self%pudilX*self%pueYX)
-   netfluxp = grossfluxp * (1._rk - self%pudilX*self%pueYX)
+            foodcP_an(ifood) = 0.0_rk
+         else
+            _GET_HORIZONTAL_(self%id_foodc(ifood),foodcP(ifood))
+            _GET_HORIZONTAL_(self%id_foodn(ifood),foodnP(ifood))
+            _GET_HORIZONTAL_(self%id_foodp(ifood),foodpP(ifood))
+            _GET_HORIZONTAL_(self%id_foods(ifood),foodsP(ifood))
 
-   do ifood=1,self%nfood
-      if (self%foodispel(ifood)) then
-         do istate=1,size(self%id_food(ifood)%state)
-            _GET_(self%id_food(ifood)%state(istate),foodP)
-            _SET_BOTTOM_EXCHANGE_(self%id_food(ifood)%state(istate),-sflux(ifood)*foodP)   
-          end do
+            _GET_HORIZONTAL_(self%id_foodc_an(ifood),foodcP_an(ifood))
+         end if
+      end do
+
+      ! Prey carbon was returned in mmol (due to units of standard_variables%total_carbon); convert to mg
+      foodcP = foodcP*CMass
+
+      ! In case of pelagic food source, its availability can be limited by a near-bottom fraction available to organism.
+      ! In case of benthic food source, it is possible to limit availability of food source by depth of aerobic layer,
+      ! e.g. limiting aerobic bacteria as a food source for suspension-feeders by ratio of habitat depth to aerobic layer depth.
+      ! Food sources limited in such a way must be specified using logical food{n}_ll in fabm.yaml file.
+      do ifood=1,self%nfood
+         if (self%foodispel(ifood)) then
+            prefcorr(ifood) = self%pufood(ifood) * self%dwatYX
+         else
+            if (self%food_ll(ifood)) then
+               prefcorr(ifood) = self%pufood(ifood) * min(1._rk,self%dQ6YX/Dm)
+            else
+               prefcorr(ifood) = self%pufood(ifood)
+            end if
+         end if
+      end do
+
+      ! Compute effective preferences for individual food sources: "feed".
+      ! Weighting factors for original preferences increase hyperbolically from 0 at low food density to 1 at high food density.
+      feed = prefcorr * (prefcorr * foodcP/(prefcorr * foodcP + self%luYX))
+
+      ! Compute specific uptake rates of the different food sources: "sflux" (1/d).
+      ! These are based on a Michaelis-Menten/Type II functional response with dynamic preferences "feed".
+      foodsum = sum(feed * foodcP)
+      if (foodsum>0._rk) then
+         sflux = rate * feed / (foodsum + self%huYX)
       else
-         do istate=1,size(self%id_food(ifood)%bottom_state)
-            _GET_HORIZONTAL_(self%id_food(ifood)%bottom_state(istate),foodP)
-            _SET_BOTTOM_ODE_(self%id_food_loss_source(ifood)%bottom_state(istate),-sflux(ifood)*foodP)
-         end do
-      end if 
-   end do
+         sflux = 0._rk
+      end if
 
-   fBTYc = sum(grossfluxc)
-   nfBTYc= sum(netfluxc)
+      ! Gross absolute uptake fluxes (matter/m2/d) per food source.
+      grossfluxc = sflux * foodcP
+      grossfluxn = sflux * foodnP
+      grossfluxp = sflux * foodpP
+      grossfluxs = sflux * foodsP
 
-   SYc = nfBTYc
-   SYn = sum(netfluxn)
-   SYp = sum(netfluxp)
-   _SET_BOTTOM_ODE_(self%id_Q6c,fBTYc - nfBTYc)
-   _SET_BOTTOM_ODE_(self%id_Q6n,sum(grossfluxn) - sum(netfluxn))
-   _SET_BOTTOM_ODE_(self%id_Q6p,sum(grossfluxp) - sum(netfluxp))
-   _SET_BOTTOM_ODE_(self%id_Q6s,sum(grossfluxs))
+      ! Compute net absolute uptake fluxes (matter/m2/d) per food source from
+      ! gross fluxes and assimilation inefficiency.
+      netfluxc = grossfluxc * (1._rk -             self%pueYX)
+      netfluxn = grossfluxn * (1._rk - self%pudilX*self%pueYX)
+      netfluxp = grossfluxp * (1._rk - self%pudilX*self%pueYX)
 
-  _SET_HORIZONTAL_DIAGNOSTIC_(self%id_biotur,self%pturYX * fBTYc)
-  _SET_HORIZONTAL_DIAGNOSTIC_(self%id_bioirr, self%pirrYX * fBTYc) 
+      ! Based on relative uptake rate of each food source, decrease all state variables of that food source.
+      do ifood=1,self%nfood
+         if (self%foodispel(ifood)) then
+            do istate=1,size(self%id_food(ifood)%state)
+               _GET_(self%id_food(ifood)%state(istate),foodP)
+               _SET_BOTTOM_EXCHANGE_(self%id_food(ifood)%state(istate),-sflux(ifood)*foodP)   
+            end do
+         else
+            do istate=1,size(self%id_food(ifood)%bottom_state)
+               _GET_HORIZONTAL_(self%id_food(ifood)%bottom_state(istate),foodP)
+               _SET_BOTTOM_ODE_(self%id_food_loss_source(ifood)%bottom_state(istate),-sflux(ifood)*foodP)
+            end do
+         end if 
+      end do
 
-  ! Respiration fluxes = activity respiration + basal respiration
+      ! Total gross and net food uptake, summed over all food sources (matter/m2/d).
+      fBTYc = sum(grossfluxc)
+      nfBTYc = sum(netfluxc)
 
-   fYG3c = self%srYX * Yc * eT + self%purYX * nfBTYc
+      ! Store net carbon, nitrogen and phosphorus fluxes associated with food uptake for later use,
+      ! and send difference between gross and net fluxes to faeces.
+      SYc = nfBTYc
+      SYn = sum(netfluxn)
+      SYp = sum(netfluxp)
+      _SET_BOTTOM_ODE_(self%id_Q6c,fBTYc - nfBTYc)
+      _SET_BOTTOM_ODE_(self%id_Q6n,sum(grossfluxn) - sum(netfluxn))
+      _SET_BOTTOM_ODE_(self%id_Q6p,sum(grossfluxp) - sum(netfluxp))
+      _SET_BOTTOM_ODE_(self%id_Q6s,sum(grossfluxs))
 
-   SYc = SYc-fYG3c
-   _SET_BOTTOM_ODE_(self%id_G3c, fYG3c/CMass)
-   _SET_BOTTOM_ODE_(self%id_G2o,-fYG3c/CMass)
+      ! Compute contribution to bioturbation and bioirrigation from gross food uptake.
+      _SET_HORIZONTAL_DIAGNOSTIC_(self%id_biotur, self%pturYX * fBTYc)
+      _SET_HORIZONTAL_DIAGNOSTIC_(self%id_bioirr, self%pirrYX * fBTYc) 
 
-   ! Mortality fluxes     
-   mort_act  = self%sdYX * eT
-   mort_ox   = self%sdmO2YX * (1._rk - eO) * eT
-   mort_cold = self%sdcYX * exp(ETW * self%xdcYX)
+      ! Respiration fluxes = activity respiration + basal respiration
+      fYG3c = self%srYX * Yc * eT + self%purYX * nfBTYc
 
-   mortflux = mort_act + mort_ox + mort_cold
-   
-   _SET_BOTTOM_ODE_(self%id_c, -mortflux * Yc)
-   _SET_BOTTOM_ODE_(self%id_Q6c,mortflux * Yc)
-   _SET_BOTTOM_ODE_(self%id_Q6n,mortflux * Yn)
-   _SET_BOTTOM_ODE_(self%id_Q6p,mortflux * Yp)
+      ! Store carbon flux resulting from respiration for later use (note: respiration does not affect nitrogen, phosphorus).
+      ! Also account for its production of benthic CO2 and consumption of benthic oxygen.
+      SYc = SYc - fYG3c
+      _SET_BOTTOM_ODE_(self%id_G3c, fYG3c/CMass)
+      _SET_BOTTOM_ODE_(self%id_G2o,-fYG3c/CMass)
 
-   ! Adjust fixed nutrients
-   excess_n = 0.0_rk
-   excess_p = 0.0_rk
-   excess_c = 0.0_rk
-   call Adjust_fixed_nutrients(SYc,SYn,SYp,self%qnYIcX,self%qpYIcX,excess_n,excess_p,excess_c)
+      ! Specific mortality fluxes (1/d): background mortality + mortality due to oxygen limitation + mortality due to cold.
+      mort_act  = self%sdYX * eT
+      mort_ox   = self%sdmO2YX * (1._rk - eO) * eT
+      mort_cold = self%sdcYX * exp(ETW * self%xdcYX)
 
-   _SET_BOTTOM_ODE_(self%id_c,SYc)
-! In some cases food or part of it can originate from anaerobic layer. We might wish to distribute excess ammonium and phosphate resulting from nutrient content adjustment between aerobic and anaerobic layers proportionally to amount of food taken from them. In accordance to the legacy code excess nutrient by default enter the aerobic layer. This behaviour can be changed by specifying anaerobic food sources as food{n}c_an. Sum of uptake of those relative to total food uptake will then define partition of excess nutrients between layers.
+      ! Total specific mortality rate (1/d)
+      mortflux = mort_act + mort_ox + mort_cold
 
-   p_an = (sum(foodcP_an/foodcP*grossfluxc))/max(fBTYc,1.e-8_rk)
+      ! Apply mortality to biomass, and send dead matter to particulate organic carbon pool.
+      _SET_BOTTOM_ODE_(self%id_c, -mortflux*Yc)
+      _SET_BOTTOM_ODE_(self%id_Q6c,mortflux*Yc)
+      _SET_BOTTOM_ODE_(self%id_Q6n,mortflux*Yn)
+      _SET_BOTTOM_ODE_(self%id_Q6p,mortflux*Yp)
 
-   _SET_BOTTOM_ODE_(self%id_K4n,(1._rk-p_an) * excess_n)
-   _SET_BOTTOM_ODE_(self%id_K4n2,p_an * excess_n)
-   _SET_BOTTOM_ODE_(self%id_K1p,(1._rk-p_an) * excess_p)
-   _SET_BOTTOM_ODE_(self%id_K1p2,p_an * excess_p)
-   _SET_BOTTOM_ODE_(self%id_Q6c,excess_c)
-     _HORIZONTAL_LOOP_END_
+      ! Compute excess carbon flux, given that the maximum realizable carbon flux needs to be balanced
+      ! by corresponding nitrogen and phosphorus fluxes to maintain constant stoichiometry.
+      excess_c = max(max(SYc - SYp/self%qpYIcX, SYc - SYn/self%qnYIcX), 0.0_rk)
+      SYc = SYc - excess_c
+      _SET_BOTTOM_ODE_(self%id_c,SYc)
+      _SET_BOTTOM_ODE_(self%id_Q6c,excess_c)
 
-  end subroutine do_bottom
+      ! Compute excess nitrogen and phosphorus fluxes, based on final carbon flux.
+      ! Excess nutrient will be exudated to preserve constant stoichiometry of biomass.
+      excess_n = max(SYn - SYc*self%qnYIcX,0.0_rk)
+      excess_p = max(SYp - SYc*self%qpYIcX,0.0_rk)
 
-!-----------------------------------------------------------------------
-!BOP
-!
-! !IROUTINE: Adjust_fixed_nutrients \label{sec:AdjustFixedNutrients}
-!
-! !DESCRIPTION:
-!  TODO - description
-!
-!  This routine determines the amount of excess c,n or p in the
-!  source terms and excretes the appropriate amount(s) to Q6 and
-!  nutrients, so that the fixed nutrient ratio is re-established
-!
-!  IN:  Source terms of fixed quota bio-state.(cnp)......SXx
-!       Fixed quota values (np)..........................qx
-!
-!  INT: Excess nutrient in bio-state (np)................ExcessX
-!
-!  OUT: Source terms for Predator (SX), Q6 and nutrients
-!\\
-!\\
-! !INTERFACE:
-      subroutine adjust_fixed_nutrients ( SXc, SXn, SXp,qn, qp, SKn, SKp, SQc )
-!
-! !INPUT/OUTPUT PARAMETERS:
-       real(rk), intent(inout)  :: SXc, SXn, SXp, SKn, SKp, SQc
-       real(rk), intent(in)     :: qn, qp
-!
-! !LOCAL PARAMETERS:
-       real(rk) :: ExcessN, ExcessP, ExcessC
-!
-! !REVISION HISTORY:
-!  Original author(s) TODO
-!
-!EOP
-!-----------------------------------------------------------------------
+      ! In some cases food or part of it originates from the anaerobic layer.
+      ! We distribute excess ammonium and phosphate between aerobic and anaerobic layers proportionally
+      ! to the amount of food taken from them. In accordance to the legacy code, excess nutrients by default
+      ! enter the aerobic layer. This behaviour can be changed by specifying anaerobic food sources as
+      ! food{n}c_an. The sum of food uptake from the anaerobic domain, of those relative to total food
+      ! uptake defines how much of the exudated nutrients go into the anaerobic layer.
+      p_an = sum(foodcP_an/foodcP*grossfluxc)/max(fBTYc,1.e-8_rk)
 
-!-----------------------------------------------------------------------
-!BOC
-!
-       ExcessC = max(max(SXc - SXp/qp,SXc - SXn/qn),0._rk)
-!
-       if (ExcessC>0.0_rk) then
-         SXc = SXc - ExcessC
-         SQc = SQc + ExcessC
-       end if
+      ! Send excess nutrients to phosphate, ammonium pools.
+      _SET_BOTTOM_ODE_(self%id_K4n,(1._rk-p_an)*excess_n)
+      _SET_BOTTOM_ODE_(self%id_K4n2,p_an       *excess_n)
+      _SET_BOTTOM_ODE_(self%id_K1p,(1._rk-p_an)*excess_p)
+      _SET_BOTTOM_ODE_(self%id_K1p2,p_an       *excess_p)
 
-       ExcessN = max(SXn - SXc*qn,0._rk)
-       ExcessP = max(SXp - SXc*qp,0._rk)
+      _HORIZONTAL_LOOP_END_
 
-       if (ExcessN>0.0_rk) then
-         SXn = SXn - ExcessN
-         SKn = SKn + ExcessN
-       end if
-
-       if (ExcessP>0.0_rk) then
-         SXp = SXp - ExcessP
-         SKp = SKp + ExcessP
-       end if
-
-       end subroutine adjust_fixed_nutrients
-!
-!EOC
-!-----------------------------------------------------------------------
+   end subroutine do_bottom
 
 end module

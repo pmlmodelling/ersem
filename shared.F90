@@ -6,7 +6,10 @@ module ersem_shared
    implicit none
 
    public
-   
+
+   ! Parameter to reproduce pre-SSB-v1 ERSEM behaviour, including several obvious flaws/inconsistencies.
+   logical, parameter :: legacy_ersem_compatibility = .true.
+
    real(rk),parameter :: CMass   = 12.011_rk
    real(rk),parameter :: qnRPIcX = 1.26E-02_rk
    real(rk),parameter :: qpRPIcX = 7.86E-04_rk
