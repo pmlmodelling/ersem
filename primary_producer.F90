@@ -282,12 +282,15 @@ contains
          _GET_(self%id_ETW,ETW)
          _GET_(self%id_parEIR,parEIR)
 
+         ! Ratios: phosphorus to carbon, nitrogen to carbon, chlorophyll to carbon.
+         ! Note: these are protected against division by zero because c includes the background concentration.
          qpc = p/c
          qnc = n/c
+         ChlCpp = Chl/c
 
          ! Regulation factors...................................................
 
-         ! Nitrogen and phopshorus limitation factors based on internal quota
+         ! Nitrogen and phosphorus limitation factors based on internal quota
          iNp = MIN(1._rk,  &
                  MAX(0._rk, (qpc-self%qplc) / (self%xqcp*qpRPIcX-self%qplc) ))
          iNn = MIN(1._rk,  &
@@ -306,7 +309,12 @@ contains
 
          if (self%use_Si) then
             ! Limitation factor based on ambient silicate
-            _GET_WITH_BACKGROUND_(self%id_N5s,N5s) ! Jorn: kept identical to legacy ersem, but should likely exclude background
+            if (legacy_ersem_compatibility) then
+               ! Legacy ERSEM includes background value, but this is inappropriate as it is used in a sink term.
+               _GET_WITH_BACKGROUND_(self%id_N5s,N5s)
+            else
+               _GET_(self%id_N5s,N5s)
+            end if
             iNs = MIN(1._rk, N5s/(N5s+self%chs))
          else
             ! No silicate limitation
@@ -315,10 +323,13 @@ contains
 
          ! Co-limitation of inorganic nitrogen and phosphorus
          if (self%Limnut==0) then  ! Jorn: select case would be cleaner but makes vectorization impossible for ifort 14
+            ! Geometric mean
             iNI = sqrt(iNp * iNn)
          elseif (self%Limnut==1) then
+            ! Minimum
             iNI = min(iNp, iNn)
          else
+            ! Harmonic mean
             iNI = 2.0_rk / (1._rk/iNp + 1._rk/iNn)
          end if
 
@@ -327,13 +338,10 @@ contains
 
          ! Production...........................................................
 
-         ! calculate chl to C ratio.............................................
-
-         !ChlCpp = max(min(phim,Chl(I)/(c(I)-Chl(I)+zeroX)),ChlCmin)
-         ChlCpp = Chl/c
-
-         ! Gross photosynthetic activity :
+         ! Gross photosynthetic activity (1/d), limited by avaialbility of silicate and iron,
+         ! but not nitrogen and phosphorus.
          sum = self%sum*et*iNs*iNf
+
          phi = self%phiH + (ChlCpp/self%phim)*(self%phim-self%phiH)
 
          if (parEIR>zeroX) then

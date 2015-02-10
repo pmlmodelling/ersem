@@ -25,10 +25,11 @@ module ersem_mesozooplankton
       type (type_state_variable_id)      :: id_R2c
       type (type_state_variable_id)      :: id_RPc,id_RPp,id_RPn,id_RPs
       type (type_state_variable_id)      :: id_N1p,id_N4n
-      type (type_dependency_id)          :: id_ETW,id_eO2mO2,id_totprey
+      type (type_dependency_id)          :: id_ETW,id_eO2mO2
+      type (type_dependency_id)          :: id_totprey
       type (type_horizontal_dependency_id) :: id_inttotprey
 
-      type (type_diagnostic_variable_id) :: id_fZ4O3c
+      type (type_diagnostic_variable_id) :: id_fZIO3c
 
       ! Parameters
       integer  :: nprey
@@ -44,7 +45,7 @@ module ersem_mesozooplankton
       real(rk) :: Minprey,repw,mort
 
       ! ERSEM global parameters
-      real(rk) :: R1R2,urB1_O2X
+      real(rk) :: R1R2,urB1_O2
    contains
 !     Model procedures
       procedure :: initialize
@@ -96,16 +97,11 @@ contains
       call self%get_parameter(self%R1R2,   'R1R2','-','labile fraction of produced DOM')
       call self%get_parameter(self%xR1p,   'xR1p','-','transfer of phosphorus to DOM, relative to POM')
       call self%get_parameter(self%xR1n,   'xR1n','-','transfer of nitrogen to DOM, relative to POM')
-      call self%get_parameter(self%urB1_O2X,'urB1_O2','mmol O_2/mg C','oxygen consumed per carbon respired')
+      call self%get_parameter(self%urB1_O2,'urB1_O2','mmol O_2/mg C','oxygen consumed per carbon respired')
 
       ! Register state variables
       call self%initialize_ersem_base(sedimentation=.false.)
       call self%add_constituent('c',1.e-4_rk,c0,qn=self%qnc,qp=self%qpc)
-
-      ! Create an expression that will compute the total prey
-      ! (will be depth integrated to determine overwintering)
-      allocate(total_prey_calculator)
-      total_prey_calculator%output_units = 'mg C/m^3'
 
       ! Determine number of prey types.
       call self%get_parameter(self%nprey,'nprey','','number of prey types',default=0)
@@ -138,11 +134,11 @@ contains
       allocate(self%id_preyf_target(self%nprey))
       do iprey=1,self%nprey
          write (index,'(i0)') iprey
-         call self%register_dependency(self%id_preyc(iprey), 'prey'//trim(index)//'c','mmol C/m^3', 'Prey '//trim(index)//' C')    
-         call self%register_dependency(self%id_preyn(iprey), 'prey'//trim(index)//'n','mmol N/m^3', 'Prey '//trim(index)//' N')    
-         call self%register_dependency(self%id_preyp(iprey), 'prey'//trim(index)//'p','mmol P/m^3', 'Prey '//trim(index)//' P')    
-         call self%register_dependency(self%id_preys(iprey), 'prey'//trim(index)//'s','mmol Si/m^3','Prey '//trim(index)//' Si')
-         call self%register_dependency(self%id_preyl(iprey), 'prey'//trim(index)//'l','mg C/m^3',   'Prey '//trim(index)//' calcite')
+         call self%register_dependency(self%id_preyc(iprey), 'prey'//trim(index)//'c','mmol C/m^3', 'prey '//trim(index)//' carbon')
+         call self%register_dependency(self%id_preyn(iprey), 'prey'//trim(index)//'n','mmol N/m^3', 'prey '//trim(index)//' nitrogen')
+         call self%register_dependency(self%id_preyp(iprey), 'prey'//trim(index)//'p','mmol P/m^3', 'prey '//trim(index)//' phosphorus')
+         call self%register_dependency(self%id_preys(iprey), 'prey'//trim(index)//'s','mmol Si/m^3','prey '//trim(index)//' silicate')
+         call self%register_dependency(self%id_preyl(iprey), 'prey'//trim(index)//'l','mg C/m^3',   'prey '//trim(index)//' calcite')
 
          call self%register_model_dependency(self%id_prey(iprey),'prey'//trim(index))
          call self%request_coupling_to_model(self%id_preyc(iprey),self%id_prey(iprey),standard_variables%total_carbon)
@@ -153,37 +149,43 @@ contains
                                              type_bulk_standard_variable(name='total_calcite_in_biota',aggregate_variable=.true.))
 
          if (use_iron) then
-            call self%register_dependency(self%id_preyf(iprey), 'prey'//trim(index)//'f','mmol Fe/m^3','Prey '//trim(index)//' Fe')    
+            call self%register_dependency(self%id_preyf(iprey),'prey'//trim(index)//'f','mmol Fe/m^3','prey '//trim(index)//' iron')
             call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe/m^3','sink for Fe of prey '//trim(index),required=.false.)    
             call self%request_coupling_to_model(self%id_preyf(iprey),self%id_prey(iprey),standard_variables%total_iron)
          end if
-
-         call total_prey_calculator%add_component('prey'//trim(index)//'c',self%suprey(iprey))
       end do
 
-      ! Add the submodel that will compute total prey for us, and create a variable that will contain its depth integral.
+      ! Create a submodel that will compute total prey for us, and create a variable that will contain its depth integral.
+      ! This quantity will be depth integrated to determine whether we should be overwintering.
+      allocate(total_prey_calculator)
+      total_prey_calculator%output_units = 'mg C/m^3'
+      do iprey=1,self%nprey
+         call total_prey_calculator%add_component('prey'//trim(index)//'c',self%suprey(iprey))
+      end do
       call self%add_child(total_prey_calculator,'totprey_calculator',configunit=-1)
+
+      ! Create a link to the total prey, and request its depth-integrated value.
       call self%register_dependency(self%id_totprey,'totprey','mg C/m^3','total carbon in prey')
       call self%request_coupling(self%id_totprey,'totprey_calculator/result')
       call self%register_expression_dependency(self%id_inttotprey,vertical_integral(self%id_totprey))
 
       ! Register links to external nutrient pools.
-      call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')    
-      call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','ammonium')    
+      call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
+      call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','ammonium')
 
       ! Register links to external labile dissolved organic matter pools.
       call self%register_state_dependency(self%id_R1c,'R1c','mg C/m^3',  'dissolved organic carbon')
-      call self%register_state_dependency(self%id_R1p,'R1p','mmol P/m^3','dissolved organic phosphorus')    
-      call self%register_state_dependency(self%id_R1n,'R1n','mmol N/m^3','dissolved organic nitrogen')    
+      call self%register_state_dependency(self%id_R1p,'R1p','mmol P/m^3','dissolved organic phosphorus')
+      call self%register_state_dependency(self%id_R1n,'R1n','mmol N/m^3','dissolved organic nitrogen')
 
       ! Register links to external semi-labile dissolved organic matter pools.
       call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','semi-labile dissolved organic carbon')
 
       ! Register links to external particulate organic matter pools.
-      call self%register_state_dependency(self%id_RPc,'RPc','mg C/m^3',   'particulate organic carbon')    
+      call self%register_state_dependency(self%id_RPc,'RPc','mg C/m^3',   'particulate organic carbon')
       call self%register_state_dependency(self%id_RPp,'RPp','mmol P/m^3', 'particulate organic phosphorus')
       call self%register_state_dependency(self%id_RPn,'RPn','mmol N/m^3', 'particulate organic nitrogen')
-      call self%register_state_dependency(self%id_RPs,'RPs','mmol Si/m^3','particulate organic silicate')    
+      call self%register_state_dependency(self%id_RPs,'RPs','mmol Si/m^3','particulate organic silicate')
 
       ! Allow coupling of all required particulate organic matter variables to a single source model.
       call self%register_model_dependency(self%id_RP,'RP')
@@ -193,8 +195,8 @@ contains
       call self%request_coupling_to_model(self%id_RPs,self%id_RP,'s')
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
-      call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide')
-      call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen')
+      call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide sink')
+      call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen source')
 
       call self%register_state_dependency(self%id_L2c,'L2c','mg C/m^3','calcite',required=.false.)
 
@@ -203,13 +205,13 @@ contains
       call self%register_dependency(self%id_eO2mO2,standard_variables%fractional_saturation_of_oxygen)
 
       ! Register diagnostics
-      call self%register_diagnostic_variable(self%id_fZ4O3c,'fZIO3c','mg C/m^3/d','respiration',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fZIO3c,'fZIO3c','mg C/m^3/d','respiration',output=output_time_step_averaged)
 
       ! Contribute to aggregate fluxes.
-      call self%add_to_aggregate_variable(zooplankton_respiration_rate,self%id_fZ4O3c)
+      call self%add_to_aggregate_variable(zooplankton_respiration_rate,self%id_fZIO3c)
 
    end subroutine
-   
+
    subroutine do(self,_ARGUMENTS_DO_)
 
       class (type_ersem_mesozooplankton),intent(in) :: self
@@ -344,13 +346,13 @@ contains
 
             ! Account for CO2 production and oxygen consumption in respiration.
             _SET_ODE_(self%id_O3c, + fZIO3c/CMass)
-            _SET_ODE_(self%id_O2o, - fZIO3c*self%urB1_O2X)
+            _SET_ODE_(self%id_O2o, - fZIO3c*self%urB1_O2)
 
             ! -------------------------------
             ! Phosphorus
             ! -------------------------------
 
-            ! Phosphorus dynamics in mesozooplankton, derived from carbon flows.
+            ! Phosphorus loss to dissolved and particulate organic matter.
             fZIRIp = (fZIRDc + fZIRPc) * self%qpc
             fZIRDp = min(fZIRIp, fZIRDc * self%qpc * self%xR1p)
             fZIRPp = fZIRIp - fZIRDp
@@ -366,7 +368,7 @@ contains
             ! Nitrogen
             ! -------------------------------
 
-            ! Nitrogen dynamics in mesozooplankton, derived from carbon flows.
+            ! Nitrogen loss to dissolved and particulate organic matter.
             fZIRIn = (fZIRDc + fZIRPc) * self%qnc
             fZIRDn = min(fZIRIn, fZIRDc * self%qnc * self%xR1n)
             fZIRPn = fZIRIn - fZIRDn
@@ -441,7 +443,7 @@ contains
 
          end if
 
-         _SET_DIAGNOSTIC_(self%id_fZ4O3c,fZIO3c)
+         _SET_DIAGNOSTIC_(self%id_fZIO3c,fZIO3c)
 
       ! Leave spatial loops (if any)
       _LOOP_END_

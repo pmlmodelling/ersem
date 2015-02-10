@@ -14,28 +14,27 @@ module ersem_microzooplankton
 
    type,extends(type_ersem_pelagic_base),public :: type_ersem_microzooplankton
       ! Variables
-      type (type_model_id)                                   :: id_RP
       type (type_model_id),         allocatable,dimension(:) :: id_prey
+      type (type_model_id)                                   :: id_RP
       type (type_dependency_id),    allocatable,dimension(:) :: id_preyc,id_preyn,id_preyp,id_preys,id_preyf,id_preyl
       type (type_state_variable_id),allocatable,dimension(:) :: id_preyf_target
-      type (type_state_variable_id)      :: id_O3c, id_O2o, id_L2c
-      type (type_state_variable_id)      :: id_R1c, id_R2c, id_R6c
-      type (type_state_variable_id)      :: id_R1p, id_R6p
-      type (type_state_variable_id)      :: id_R1n, id_R6n
-      type (type_state_variable_id)      :: id_R6s
+      type (type_state_variable_id)      :: id_O3c,id_O2o,id_L2c
+      type (type_state_variable_id)      :: id_R1c,id_R1p,id_R1n
+      type (type_state_variable_id)      :: id_R2c
+      type (type_state_variable_id)      :: id_RPc,id_RPp,id_RPn,id_RPs
       type (type_state_variable_id)      :: id_N1p,id_N4n
       type (type_dependency_id)          :: id_ETW,id_eO2mO2
 
-      type (type_diagnostic_variable_id) :: id_fZ5O3c
+      type (type_diagnostic_variable_id) :: id_fZIO3c
 
       ! Parameters
       integer  :: nprey
-      real(rk) :: chuz5cX,sumz5X,puz5X,pe_r1z5X,q10z5X,srsz5X,chrz5oX,pu_eaz5X
-      real(rk) :: sdz5oX,sdz5X,qnz5cX,qpz5cX,minfoodz5X,stempz5nX,stempz5pX,gutdiss
+      real(rk) :: chuc,sum,pu,pe_r1,q10,srs,chro,pu_ea
+      real(rk) :: sdo,sd,qnc,qpc,minfood,stempn,stempp,gutdiss
       real(rk),allocatable :: suprey(:)
 
       ! ERSEM global parameters
-      real(rk) :: R1R2X,urB1_O2X
+      real(rk) :: R1R2,urB1_O2
    contains
 !     Model procedures
       procedure :: initialize
@@ -50,7 +49,7 @@ contains
 !
 ! !INPUT PARAMETERS:
       class (type_ersem_microzooplankton),intent(inout),target :: self
-      integer,                        intent(in)           :: configunit
+      integer,                            intent(in)           :: configunit
 !
 ! !REVISION HISTORY:
 !
@@ -61,26 +60,26 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%sumz5X,    'sum',    '1/d',        'maximum specific uptake at reference temperature')
-      call self%get_parameter(self%chuz5cX,   'chuc',   'mg C/m^3',   'Michaelis-Menten constant for food uptake')
-      call self%get_parameter(self%puz5X,     'pu',     '-',          'assimilation efficiency')
-      call self%get_parameter(self%pe_r1z5X,  'pe_r1',  '-',          'dissolved fraction of excreted/dying matter')
-      call self%get_parameter(self%q10z5X,    'q10',    '-',          'Q_10 temperature coefficient')
-      call self%get_parameter(self%srsz5X,    'srs',    '1/d',        'specific rest respiration at reference temperature')
-      call self%get_parameter(self%pu_eaz5X,  'pu_ea',  '-',          'fraction of unassimilated prey that is excreted (not respired)')
-      call self%get_parameter(self%sdz5X,     'sd',     '1/d',        'basal mortality')
-      call self%get_parameter(self%sdz5oX,    'sdo',    '1/d',        'maximum mortality due to oxygen limitation')
-      call self%get_parameter(self%chrz5oX,   'chro',   '-',          'Michaelis-Menten constant for oxygen limitation')
-      call self%get_parameter(self%qnz5cX,    'qnc',    'mmol N/mg C','maximum nitrogen to carbon ratio')
-      call self%get_parameter(self%qpz5cX,    'qpc',    'mmol P/mg C','maximum phosphorus to carbon ratio')
-      call self%get_parameter(self%minfoodz5X,'minfood','mg C/m^3',   'Michaelis-Menten constant to perceive food')
-      call self%get_parameter(self%stempz5nX, 'stempn', '1/d',        'specific ammonium excretion rate')
-      call self%get_parameter(self%stempz5pX, 'stempp', '1/d',        'specific phosphate excretion rate')
+      call self%get_parameter(self%sum,    'sum',    '1/d',        'maximum specific uptake at reference temperature')
+      call self%get_parameter(self%chuc,   'chuc',   'mg C/m^3',   'Michaelis-Menten constant for food uptake')
+      call self%get_parameter(self%pu,     'pu',     '-',          'assimilation efficiency')
+      call self%get_parameter(self%pe_r1,  'pe_r1',  '-',          'dissolved fraction of excreted/dying matter')
+      call self%get_parameter(self%q10,    'q10',    '-',          'Q_10 temperature coefficient')
+      call self%get_parameter(self%srs,    'srs',    '1/d',        'specific rest respiration at reference temperature')
+      call self%get_parameter(self%pu_ea,  'pu_ea',  '-',          'fraction of unassimilated prey that is excreted (not respired)')
+      call self%get_parameter(self%sd,     'sd',     '1/d',        'basal mortality')
+      call self%get_parameter(self%sdo,    'sdo',    '1/d',        'maximum mortality due to oxygen limitation')
+      call self%get_parameter(self%chro,   'chro',   '-',          'Michaelis-Menten constant for oxygen limitation')
+      call self%get_parameter(self%qnc,    'qnc',    'mmol N/mg C','maximum nitrogen to carbon ratio')
+      call self%get_parameter(self%qpc,    'qpc',    'mmol P/mg C','maximum phosphorus to carbon ratio')
+      call self%get_parameter(self%minfood,'minfood','mg C/m^3',   'Michaelis-Menten constant to perceive food')
+      call self%get_parameter(self%stempn, 'stempn', '1/d',        'specific ammonium excretion rate')
+      call self%get_parameter(self%stempp, 'stempp', '1/d',        'specific phosphate excretion rate')
 
-      call self%get_parameter(self%R1R2X,   'R1R2','-','labile fraction of produced DOM')
-      call self%get_parameter(self%xR1p,    'xR1p','-','transfer of phosphorus to DOM, relative to POM')
-      call self%get_parameter(self%xR1n,    'xR1n','-','transfer of nitrogen to DOM, relative to POM')
-      call self%get_parameter(self%urB1_O2X,'urB1_O2','mmol O_2/mg C','oxygen consumed per carbon respired')
+      call self%get_parameter(self%R1R2,   'R1R2','-','labile fraction of produced DOM')
+      call self%get_parameter(self%xR1p,   'xR1p','-','transfer of phosphorus to DOM, relative to POM')
+      call self%get_parameter(self%xR1n,   'xR1n','-','transfer of nitrogen to DOM, relative to POM')
+      call self%get_parameter(self%urB1_O2,'urB1_O2','mmol O_2/mg C','oxygen consumed per carbon respired')
 
       call self%get_parameter(c0,'c0','mg C/m^3','background carbon concentration')
 
@@ -121,15 +120,15 @@ contains
                                              type_bulk_standard_variable(name='total_calcite_in_biota',aggregate_variable=.true.))
 
          if (use_iron) then
-            call self%register_dependency(self%id_preyf(iprey),'prey'//trim(index)//'f','mmol Fe/m^3','Prey '//trim(index)//' Fe')
+            call self%register_dependency(self%id_preyf(iprey),'prey'//trim(index)//'f','mmol Fe/m^3','prey '//trim(index)//' iron')
             call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe/m^3','sink for Fe of prey '//trim(index),required=.false.)
             call self%request_coupling_to_model(self%id_preyf(iprey),self%id_prey(iprey),standard_variables%total_iron)
          end if
       end do
 
       ! Register links to external nutrient pools.
-      call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3', 'phosphate')
-      call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3', 'ammonium')
+      call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
+      call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','ammonium')
 
       ! Register links to external labile dissolved organic matter pools.
       call self%register_state_dependency(self%id_R1c,'R1c','mg C/m^3',  'dissolved organic carbon')
@@ -140,33 +139,33 @@ contains
       call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','semi-labile dissolved organic carbon')
 
       ! Register links to external particulate organic matter pools.
-      call self%register_state_dependency(self%id_R6c,'RPc','mg C/m^3',   'particulate organic carbon')
-      call self%register_state_dependency(self%id_R6p,'RPp','mmol P/m^3', 'particulate organic phosphorus')
-      call self%register_state_dependency(self%id_R6n,'RPn','mmol N/m^3', 'particulate organic nitrogen')
-      call self%register_state_dependency(self%id_R6s,'RPs','mmol Si/m^3','particulate organic silicate')
+      call self%register_state_dependency(self%id_RPc,'RPc','mg C/m^3',   'particulate organic carbon')
+      call self%register_state_dependency(self%id_RPp,'RPp','mmol P/m^3', 'particulate organic phosphorus')
+      call self%register_state_dependency(self%id_RPn,'RPn','mmol N/m^3', 'particulate organic nitrogen')
+      call self%register_state_dependency(self%id_RPs,'RPs','mmol Si/m^3','particulate organic silicate')
+
+      ! Allow coupling of all required particulate organic matter variables to a single source model.
+      call self%register_model_dependency(self%id_RP,'RP')
+      call self%request_coupling_to_model(self%id_RPc,self%id_RP,'c')
+      call self%request_coupling_to_model(self%id_RPn,self%id_RP,'n')
+      call self%request_coupling_to_model(self%id_RPp,self%id_RP,'p')
+      call self%request_coupling_to_model(self%id_RPs,self%id_RP,'s')
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide sink')
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen source')
 
+      call self%register_state_dependency(self%id_L2c,'L2c','mg C/m^3','calcite',required=.false.)
+
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
       call self%register_dependency(self%id_eO2mO2,standard_variables%fractional_saturation_of_oxygen)
 
-      call self%register_state_dependency(self%id_L2c,'L2c','mg C/m^3','calcite',required=.false.)
-
-      ! Allow coupling of all required particulate organic matter variables to a single source model.
-      call self%register_model_dependency(self%id_RP,'RP')
-      call self%request_coupling_to_model(self%id_R6c,self%id_RP,'c')
-      call self%request_coupling_to_model(self%id_R6n,self%id_RP,'n')
-      call self%request_coupling_to_model(self%id_R6p,self%id_RP,'p')
-      call self%request_coupling_to_model(self%id_R6s,self%id_RP,'s')
-
-      ! Register diagnostics.
-      call self%register_diagnostic_variable(self%id_fZ5O3c,'fZIO3c','mg C/m^3/d','respiration',output=output_time_step_averaged)
+      ! Register diagnostics
+      call self%register_diagnostic_variable(self%id_fZIO3c,'fZIO3c','mg C/m^3/d','respiration',output=output_time_step_averaged)
 
       ! Contribute to aggregate fluxes.
-      call self%add_to_aggregate_variable(zooplankton_respiration_rate,self%id_fZ5O3c)
+      call self%add_to_aggregate_variable(zooplankton_respiration_rate,self%id_fZIO3c)
 
    end subroutine
 
@@ -175,172 +174,207 @@ contains
       class (type_ersem_microzooplankton),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_
 
-   ! !LOCAL VARIABLES:
       integer  :: iprey,istate
       real(rk) :: ETW, eO2mO2
-      real(rk) :: Z5c,Z5p,Z5n,Z5cP,Z5nP,Z5pP
+      real(rk) :: c,p,n,cP,nP,pP
       real(rk),dimension(self%nprey) :: preycP,preynP,preypP,preysP,preylP
-      real(rk),dimension(self%nprey) :: spreyZ5,rupreyZ5c,fpreyZ5c
-      real(rk) :: etZ5,CORROX,eO2Z5
-      real(rk) :: rumZ5, put_uZ5,rugZ5
-      real(rk) :: sdZ5,rdZ5
-      real(rk) :: ineffZ5
-      real(rk) :: retZ5,fZ5RDc,fZ5R6c
+      real(rk),dimension(self%nprey) :: sprey,ruprey,fprey
+      real(rk) :: et,CORROX,eO2
+      real(rk) :: rum, put_u,rug
+      real(rk) :: sd,rd
+      real(rk) :: ineff
+      real(rk) :: ret,fZIRDc,fZIRPc
 #ifdef SAVEFLX
       real(rk) :: fZXRDc
 #endif
-      real(rk) :: rrsZ5,rraZ5
-      real(rk) :: fZ5O3c
-      real(rk) :: fZ5RIp,fZ5RDp,fZ5R6p,fZ5N1p
-      real(rk) :: fZ5RIn,fZ5RDn,fZ5R6n,fZ5NIn
-      real(rk) :: qpZ5c,qnZ5c
+      real(rk) :: rrs,rra
+      real(rk) :: fZIO3c
+      real(rk) :: fZIRIp,fZIRDp,fZIRPp,fZIN1p
+      real(rk) :: fZIRIn,fZIRDn,fZIRPn,fZINIn
+      real(rk) :: qpc,qnc
 
       real(rk) :: preyP
 
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
 
-      _GET_(self%id_ETW,ETW)
-      _GET_(self%id_eO2mO2,eO2mO2)
-      eO2mO2 = min(1.0_rk,eO2mO2)
+         _GET_(self%id_ETW,ETW)
+         _GET_(self%id_eO2mO2,eO2mO2)
+         eO2mO2 = min(1.0_rk,eO2mO2)
 
-      _GET_WITH_BACKGROUND_(self%id_c,Z5c)
-      _GET_WITH_BACKGROUND_(self%id_p,Z5p)
-      _GET_WITH_BACKGROUND_(self%id_n,Z5n)
-      _GET_(self%id_c,Z5cP)
-      _GET_(self%id_n,Z5nP)
-      _GET_(self%id_p,Z5pP)
+         ! Get carbon, nitrogen an phosphorus in our own biomass.
+         ! Note c,n,p include background concentration and are used in source terms.
+         ! cP,nP,pP do not include the background concentration and are used in sink terms.
+         _GET_WITH_BACKGROUND_(self%id_c,c)
+         _GET_WITH_BACKGROUND_(self%id_p,p)
+         _GET_WITH_BACKGROUND_(self%id_n,n)
+         _GET_(self%id_c,cP)
+         _GET_(self%id_n,nP)
+         _GET_(self%id_p,pP)
 
-      do iprey=1,self%nprey
-         _GET_(self%id_preyc(iprey), preycP(iprey))
-         _GET_(self%id_preyn(iprey), preynP(iprey))
-         _GET_(self%id_preyp(iprey), preypP(iprey))
-         _GET_(self%id_preys(iprey), preysP(iprey))
-         _GET_(self%id_preyl(iprey), preylP(iprey))
-      end do
-      preycP = preycP*CMass
+         ! Get prey concentrations.
+         do iprey=1,self%nprey
+            _GET_(self%id_preyc(iprey), preycP(iprey))
+            _GET_(self%id_preyn(iprey), preynP(iprey))
+            _GET_(self%id_preyp(iprey), preypP(iprey))
+            _GET_(self%id_preys(iprey), preysP(iprey))
+            _GET_(self%id_preyl(iprey), preylP(iprey))
+         end do
 
-      qpZ5c = Z5p/Z5c
-      qnZ5c = Z5n/Z5c
+         ! Prey carbon was returned in mmol (due to units of standard_variables%total_carbon); convert to mg
+         preycP = preycP*CMass
 
-!..Temperature effect :
-      etZ5 = self%q10Z5X**((ETW-10._rk)/10._rk) - self%q10Z5X**((ETW-32._rk)/3._rk)
+         ! Phosphorus to carbon ratio and nitrogen to carbon ratio.
+         ! Note: these are protected against division by zero because c includes the background concentration.
+         qpc = p/c
+         qnc = n/c
 
-!..Oxygen limitation :
-      CORROX = 1._rk + self%chrZ5oX
-      eO2Z5 = MIN(1._rk,CORROX*(eO2mO2/(self%chrZ5oX + eO2mO2)))
+         ! Temperature effect:
+         et = self%q10**((ETW-10._rk)/10._rk) - self%q10**((ETW-32._rk)/3._rk)
 
-!..Available food :
-      spreyZ5 = self%suprey*preycP/(preycP+self%minfoodZ5X)
-      rupreyZ5c = spreyZ5*preycP
-      rumZ5 = sum(rupreyZ5c)
+         ! Oxygen limitation (based on oxygen saturation eO2mO2):
+         CORROX = 1._rk + self%chro
+         eO2 = MIN(1._rk,CORROX*(eO2mO2/(self%chro + eO2mO2)))
 
-!..Uptake :
-      put_uZ5 = self%sumZ5X/(rumZ5 + self%chuZ5cX)*etZ5*Z5c
-      rugZ5 = put_uZ5*rumZ5
+         ! Compute effective prey preference "sprey" (dimensionless).
+         ! This equals the reference preference value, self%suprey, multiplied by a hyperbolic function
+         ! of prey abundance ranging from 0 in the absence of prey, to 1 at abundant prey. As a result,
+         ! prey preferences are dynamically adapted so that more abundant prey types are preferred.
+         sprey = self%suprey*preycP/(preycP+self%minfood)
 
-!..Fluxes into microplankton :
-      fpreyZ5c = put_uZ5*rupreyZ5c
-      spreyZ5 = put_uZ5*spreyZ5
+         ! Compute total available prey (mg C/m3), weighted according to effective prey preferences.
+         ruprey = sprey*preycP
+         rum = sum(ruprey)
 
-!..Zooplakton Grazing
-!      Z5herb(I) = fP1Z5c(I) + fP2Z5c(I) + fP3Z5c(I) + fP4Z5c(I)
-!      Z5carn(I) = fB1Z5c(I) + fZ6Z5c(I)
+         ! Prey uptake based on a Michaelis-Menten/Type II functional response with dynamic preferences "sprey".
+         ! put_u is the relative rate of uptake (1/d), rug the absolute rateof uptake (mg C/m3/d)
+         put_u = self%sum/(rum + self%chuc)*et*c
+         rug = put_u*rum
 
-!..Mortality
-      sdZ5 = ((1._rk - eO2Z5)*self%sdZ5oX + self%sdZ5X) 
-      rdZ5 = sdZ5*Z5cP
+         ! Loss rates of individual prey types: sprey is the specific loss rate (1/d), fpreyc the absolute loss rate (mg C/m3/d)
+         sprey = put_u*sprey
+         fprey = put_u*ruprey
 
-!..Assimilation inefficiency:
-      ineffZ5 = (1._rk - self%puZ5X)
+         ! Apply specific predation rates to all state variables of every prey.
+         do iprey=1,self%nprey
+            do istate=1,size(self%id_prey(iprey)%state)
+               _GET_(self%id_prey(iprey)%state(istate),preyP)
+               _SET_ODE_(self%id_prey(iprey)%state(istate),-sprey(iprey)*preyP)
+            end do
+         end do
 
-!..Excretion
-      retZ5 = ineffZ5 * rugZ5 * self%pu_eaZ5X
-      fZ5RDc = (retZ5 + rdZ5)*self%pe_R1Z5X
-      fZ5R6c = (retZ5 + rdZ5)*(1._rk - self%pe_R1Z5X)
+         ! Specific mortality (1/d): background mortality + mortality due to oxygen limitation.
+         sd = self%sd + (1._rk - eO2)*self%sdo
+
+         ! Compute abolute mortality (mg C/m3/d) from specific mortality and biomass.
+         rd = sd*cP
+
+         ! Assimilation inefficiency (dimensionless):
+         ineff = 1._rk - self%pu
+
+         ! Excretion of organic matter (part dissolved, part particulate)
+         ret = ineff * rug * self%pu_ea
+         fZIRDc = (ret + rd)*self%pe_R1
+         fZIRPc = (ret + rd)*(1._rk - self%pe_R1)
 #ifdef SAVEFLX
-      fZXRDc = fZXRDc+fZ5RDc
+         fZXRDc = fZXRDc+fZIRDc
 #endif
 
-!..Rest respiration, corrected for prevailing temperature
-      rrsZ5 = self%srsZ5X*etZ5*Z5cP
+         ! Rest respiration (mg C/m3/d), corrected for prevailing temperature
+         rrs = self%srs*et*cP
 
-!..Activity respiration
-      rraZ5 = ineffZ5 * rugZ5 -retZ5
+         ! Activity respiration (mg C/m3/d)
+         rra = ineff * rug - ret
 
-!..Total respiration
-      fZ5O3c = rrsZ5 + rraZ5
-      _SET_DIAGNOSTIC_(self%id_fZ5O3c,fZ5O3c)
+         ! Total respiration (mg C/m3/d)
+         fZIO3c = rrs + rra
+         _SET_DIAGNOSTIC_(self%id_fZIO3c,fZIO3c)
 
-      if (_AVAILABLE_(self%id_L2c)) then
-         _SET_ODE_(self%id_L2c, (1.0_rk-self%gutdiss)*ineffZ5*self%pu_eaZ5X*sum(spreyZ5*preylP))
-         _SET_ODE_(self%id_O3c,-(1.0_rk-self%gutdiss)*ineffZ5*self%pu_eaZ5X*sum(spreyZ5*preylP)/CMass)
-      end if
+         if (_AVAILABLE_(self%id_L2c)) then
+            ! Send non-dissolved fraction of consumed calcite to external calcite pool.
+            ! As the consumed calcite has not yet been taken away from the dissolved
+            ! inorganic carbon pool (prey calcite is "virtual calcite", materializing only
+            ! the moment the prey dies), do so now.
+            _SET_ODE_(self%id_L2c, (1.0_rk-self%gutdiss)*ineff*self%pu_ea*sum(sprey*preylP))
+            _SET_ODE_(self%id_O3c,-(1.0_rk-self%gutdiss)*ineff*self%pu_ea*sum(sprey*preylP)/CMass)
+         end if
 
-!..Source equation
-      _SET_ODE_(self%id_c,rugZ5 - fZ5R6c - fZ5RDc - fZ5O3c)
+         ! Source equation for carbon in biomass.
+         _SET_ODE_(self%id_c,rug - fZIRPc - fZIRDc - fZIO3c)
 
-!..Flows from and to detritus
-      _SET_ODE_(self%id_R1c,(fZ5RDc * self%R1R2X))
-      _SET_ODE_(self%id_R2c,(fZ5RDc * (1._rk-self%R1R2X)))
-      _SET_ODE_(self%id_R6c,fZ5R6c)
+         ! Carbon flux to labile dissolved, refractory dissolved, and particulate organic matter.
+         _SET_ODE_(self%id_R1c, + fZIRDc * self%R1R2)
+         _SET_ODE_(self%id_R2c, + fZIRDc * (1._rk-self%R1R2))
+         _SET_ODE_(self%id_RPc, + fZIRPc)
 
-!..Respiration
-      _SET_ODE_(self%id_O3c,+ fZ5O3c/CMass)
-      _SET_ODE_(self%id_O2o,- fZ5O3c*self%urB1_O2X)
+         ! Account for CO2 production and oxygen consumption in respiration.
+         _SET_ODE_(self%id_O3c, + fZIO3c/CMass)
+         _SET_ODE_(self%id_O2o, - fZIO3c*self%urB1_O2)
 
-!..Nutrient dynamics in microzooplankton, derived from carbon flows
+         ! -------------------------------
+         ! Phosphorus
+         ! -------------------------------
 
-!..Phosphorus dynamics
-      fZ5RIp = retZ5*qpZ5c+sdZ5*Z5pP
-      fZ5RDp = fZ5RIp*min(1._rk,self%pe_R1Z5X*self%xR1p)
-      fZ5R6p = (fZ5RIp - fZ5RDp)
-      fZ5N1p = MAX( 0._rk, Z5pP - self%qpZ5cX*Z5cP)*self%stempZ5pX
+         ! Phosphorus loss to dissolved and particulate organic matter.
+         fZIRIp = ret*qpc + sd*pP
+         fZIRDp = fZIRIp*min(1._rk,self%pe_r1*self%xR1p)
+         fZIRPp = fZIRIp - fZIRDp
 
-!..Source equations
-      _SET_ODE_(self%id_p,sum(spreyZ5*preypP) - fZ5R6p - fZ5RDp - fZ5N1p)
+         ! Phosphorus loss to dissolved inorganic pool.
+         fZIN1p = MAX( 0._rk, pP - self%qpc*cP)*self%stempp
 
-      if (use_iron) then
-! iron dynamics
-! following Vichi et al., 2007 it is assumed that the iron fraction of the ingested phytoplankton
-! is egested as particulate detritus (Luca)
-         do iprey=1,self%nprey
-            _GET_(self%id_preyf(iprey),preyP)
-            if (preyP/=0.0_rk) _SET_ODE_(self%id_preyf_target(iprey),+spreyZ5(iprey)*preyP)
-         end do
-      end if
+         ! Source equation for phosphorus in biomass
+         _SET_ODE_(self%id_p,sum(sprey*preypP) - fZIRPp - fZIRDp - fZIN1p)
 
-!..P-flow to pool
-      _SET_ODE_(self%id_N1p,+ fZ5N1p)
+         ! Phosphorus flux to dissolved and particulate organic matter.
+         _SET_ODE_(self%id_RPp,+ fZIRPp)
+         _SET_ODE_(self%id_R1p,+ fZIRDp)
 
-!..Phosphorus flux from/to detritus
-      _SET_ODE_(self%id_R6p,+ fZ5R6p)
-      _SET_ODE_(self%id_R1p,+ fZ5RDp)
+         ! Phosphate exudation
+         _SET_ODE_(self%id_N1p,+ fZIN1p)
 
-!..Nitrogen dynamics
+         ! -------------------------------
+         ! Nitrogen
+         ! -------------------------------
 
-      fZ5RIn = retZ5*qnZ5c+sdZ5*Z5nP
-      fZ5RDn = fZ5RIn*min(1._rk,self%pe_R1Z5X*self%xR1n)
-      fZ5R6n = (fZ5RIn - fZ5RDn )
+         ! Nitrogen loss to dissolved and particulate organic matter.
+         fZIRIn = ret*qnc + sd*nP
+         fZIRDn = fZIRIn*min(1._rk,self%pe_r1*self%xR1n)
+         fZIRPn = (fZIRIn - fZIRDn )
 
-      fZ5NIn = MAX( 0._rk, Z5nP - self%qnZ5cX*Z5cP)*self%stempZ5nX
-      _SET_ODE_(self%id_N4n,+ fZ5NIn)
-      _SET_ODE_(self%id_n,sum(spreyZ5*preynP) - fZ5R6n - fZ5RDn - fZ5NIn)
+         ! Nitrogen loss to dissolved inorganic pool.
+         fZINIn = MAX( 0._rk, nP - self%qnc*cP)*self%stempn
 
-!..Nitrogen flux from/to detritus
-      _SET_ODE_(self%id_R6n,+ fZ5R6n)
-      _SET_ODE_(self%id_R1n,+ fZ5RDn)
+         ! Source equation for nitrogen in biomass
+         _SET_ODE_(self%id_n,sum(sprey*preynP) - fZIRPn - fZIRDn - fZINIn)
 
-!..Silica-flux from diatoms due to microzooplankton grazing
-      _SET_ODE_(self%id_R6s,sum(spreyZ5*preysP))
+         ! Nitrogen flux to dissolved and particulate organic matter.
+         _SET_ODE_(self%id_RPn,+ fZIRPn)
+         _SET_ODE_(self%id_R1n,+ fZIRDn)
 
-      ! Apply specific predation rates to all state variables of every prey.
-      do iprey=1,self%nprey
-         do istate=1,size(self%id_prey(iprey)%state)
-            _GET_(self%id_prey(iprey)%state(istate),preyP)
-            _SET_ODE_(self%id_prey(iprey)%state(istate),-spreyZ5(iprey)*preyP)
-         end do
-      end do
+         ! Ammonium exudation
+         _SET_ODE_(self%id_N4n,+ fZINIn)
+
+         ! -------------------------------
+         ! Silicate
+         ! -------------------------------
+
+         ! Send all consumed silicate to particulate organic matter pool.
+         _SET_ODE_(self%id_RPs,sum(sprey*preysP))
+
+         ! -------------------------------
+         ! Iron
+         ! -------------------------------
+
+         if (use_iron) then
+            ! Iron dynamics:
+            ! Following Vichi et al., 2007 it is assumed that the iron fraction of the ingested phytoplankton
+            ! is egested as particulate detritus (Luca)
+            do iprey=1,self%nprey
+               _GET_(self%id_preyf(iprey),preyP)
+               if (preyP/=0.0_rk) _SET_ODE_(self%id_preyf_target(iprey),sprey(iprey)*preyP)
+            end do
+         end if
 
       ! Leave spatial loops (if any)
       _LOOP_END_
