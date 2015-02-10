@@ -125,7 +125,7 @@ contains
                                              type_bulk_standard_variable(name='total_calcite_in_biota',aggregate_variable=.true.))
 
          if (use_iron) then
-            call self%register_dependency(self%id_preyf(iprey),'prey'//trim(index)//'f','mmol Fe/m^3','prey '//trim(index)//' iron')
+            call self%register_dependency(self%id_preyf(iprey),'prey'//trim(index)//'f','umol Fe/m^3','prey '//trim(index)//' iron')
             call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe/m^3','sink for Fe of prey '//trim(index),required=.false.)
             call self%request_coupling_to_model(self%id_preyf(iprey),self%id_prey(iprey),standard_variables%total_iron)
          end if
