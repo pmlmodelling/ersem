@@ -24,8 +24,8 @@ module ersem_pelagic_base
       type (type_bottom_state_variable_id)      :: id_Q7c,id_Q7n,id_Q7p
       
       logical  :: sedimentation = .false.
-      real(rk) :: qQ7c,xR7nX,xR7pX
-      real(rk) :: qQ1c,xR1nX,xR1pX
+      real(rk) :: qQ7c,xR7n,xR7p
+      real(rk) :: qQ1c,xR1n,xR1p
       real(rk) :: rm = 0.0_rk
    contains
       procedure :: initialize
@@ -50,7 +50,7 @@ contains
       call self%get_parameter(rRPmX,      'rm',         'm/d',     'sinking velocity',              default=0.0_rk)
 
       call self%initialize_ersem_base(rm=rRPmX)
-      
+
       call self%get_parameter(c0,'c0','mg C/m^3','background carbon concentration',default=0.0_rk)
       if (index(composition,'c')/=0) call self%add_constituent('c',0.0_rk,c0)
       if (index(composition,'n')/=0) call self%add_constituent('n',0.0_rk,qnRPIcX*c0)
@@ -65,7 +65,7 @@ contains
          self%id_c,scale_factor=EPS,include_background=.true.)
 
    end subroutine
-      
+
    subroutine initialize_ersem_base(self,rm,sedimentation)
       class (type_ersem_pelagic_base), intent(inout), target :: self
       real(rk),optional,               intent(in)            :: rm
@@ -89,10 +89,10 @@ contains
          call self%register_dependency(self%id_dens,     standard_variables%density)
          call self%get_parameter(self%qQ1c, 'qQ1c','-','fraction of sedimented matter decomposing into DOM')
          call self%get_parameter(self%qQ7c, 'qQ7c','-','fraction of sedimented matter decomposing into refractory matter')
-         call self%get_parameter(self%xR1nX,'xR1n','-','transfer of sedimented nitrogen to DOM, relative to POM')
-         call self%get_parameter(self%xR1pX,'xR1p','-','transfer of sedimented phosphorus to DOM, relative to POM')
-         call self%get_parameter(self%xR7nX,'xR7n','-','transfer of sedimented nitrogen to refractory matter, relative to POM')
-         call self%get_parameter(self%xR7pX,'xR7p','-','transfer of sedimented phosphorus to refractory matter, relative to POM')
+         call self%get_parameter(self%xR1n,'xR1n','-','transfer of sedimented nitrogen to DOM, relative to POM')
+         call self%get_parameter(self%xR1p,'xR1p','-','transfer of sedimented phosphorus to DOM, relative to POM')
+         call self%get_parameter(self%xR7n,'xR7n','-','transfer of sedimented nitrogen to refractory matter, relative to POM')
+         call self%get_parameter(self%xR7p,'xR7p','-','transfer of sedimented phosphorus to refractory matter, relative to POM')
 
          ! Links to external benthic state variables
          call self%register_state_dependency(self%id_Q1c,'Q1c','mg C/m^2',  'Q1c')
@@ -224,16 +224,16 @@ contains
          fsdp = sdrate*Pp
 
          _SET_BOTTOM_ODE_(self%id_Q6c, fsdc * (1._rk - self%qQ1c - self%qQ7c))
-         _SET_BOTTOM_ODE_(self%id_Q6n, fsdn * (1._rk - MIN(1._rk, self%qQ1c * self%xR1nX) - MIN(1._rk, self%qQ7c * self%xR7nX)))
-         _SET_BOTTOM_ODE_(self%id_Q6p, fsdp * (1._rk - MIN(1._rk, self%qQ1c * self%xR1pX) - MIN(1._rk, self%qQ7c * self%xR7pX)))
+         _SET_BOTTOM_ODE_(self%id_Q6n, fsdn * (1._rk - MIN(1._rk, self%qQ1c * self%xR1n) - MIN(1._rk, self%qQ7c * self%xR7n)))
+         _SET_BOTTOM_ODE_(self%id_Q6p, fsdp * (1._rk - MIN(1._rk, self%qQ1c * self%xR1p) - MIN(1._rk, self%qQ7c * self%xR7p)))
       
          _SET_BOTTOM_ODE_(self%id_Q1c, fsdc * self%qQ1c)
-         _SET_BOTTOM_ODE_(self%id_Q1n, fsdn * MIN(1._rk, self%qQ1c * self%xR1nX))
-         _SET_BOTTOM_ODE_(self%id_Q1p, fsdp * MIN(1._rk, self%qQ1c * self%xR1pX))
+         _SET_BOTTOM_ODE_(self%id_Q1n, fsdn * MIN(1._rk, self%qQ1c * self%xR1n))
+         _SET_BOTTOM_ODE_(self%id_Q1p, fsdp * MIN(1._rk, self%qQ1c * self%xR1p))
       
          _SET_BOTTOM_ODE_(self%id_Q7c, fsdc * self%qQ7c)
-         _SET_BOTTOM_ODE_(self%id_Q7n, fsdn * MIN(1._rk, self%qQ7c * self%xR7nX))
-         _SET_BOTTOM_ODE_(self%id_Q7p, fsdp * MIN(1._rk, self%qQ7c * self%xR7pX))
+         _SET_BOTTOM_ODE_(self%id_Q7n, fsdn * MIN(1._rk, self%qQ7c * self%xR7n))
+         _SET_BOTTOM_ODE_(self%id_Q7p, fsdp * MIN(1._rk, self%qQ7c * self%xR7p))
       
          _SET_BOTTOM_EXCHANGE_(self%id_c,-fsdc)
          _SET_BOTTOM_EXCHANGE_(self%id_n,-fsdn)
@@ -261,5 +261,5 @@ contains
 
       _HORIZONTAL_LOOP_END_
    end subroutine
-   
+
 end module

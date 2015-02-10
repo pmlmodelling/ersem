@@ -78,8 +78,8 @@ contains
       call self%get_parameter(self%stempz5pX, 'stempp', '1/d',        'specific phosphate excretion rate')
 
       call self%get_parameter(self%R1R2X,   'R1R2','-','labile fraction of produced DOM')
-      call self%get_parameter(self%xR1pX,   'xR1p','-','transfer of phosphorus to DOM, relative to POM')
-      call self%get_parameter(self%xR1nX,   'xR1n','-','transfer of nitrogen to DOM, relative to POM')
+      call self%get_parameter(self%xR1p,    'xR1p','-','transfer of phosphorus to DOM, relative to POM')
+      call self%get_parameter(self%xR1n,    'xR1n','-','transfer of nitrogen to DOM, relative to POM')
       call self%get_parameter(self%urB1_O2X,'urB1_O2','mmol O_2/mg C','oxygen consumed per carbon respired')
 
       call self%get_parameter(c0,'c0','mg C/m^3','background carbon concentration')
@@ -293,7 +293,7 @@ contains
 
 !..Phosphorus dynamics
       fZ5RIp = retZ5*qpZ5c+sdZ5*Z5pP
-      fZ5RDp = fZ5RIp*min(1._rk,self%pe_R1Z5X*self%xR1pX)
+      fZ5RDp = fZ5RIp*min(1._rk,self%pe_R1Z5X*self%xR1p)
       fZ5R6p = (fZ5RIp - fZ5RDp)
       fZ5N1p = MAX( 0._rk, Z5pP - self%qpZ5cX*Z5cP)*self%stempZ5pX
 
@@ -320,7 +320,7 @@ contains
 !..Nitrogen dynamics
 
       fZ5RIn = retZ5*qnZ5c+sdZ5*Z5nP
-      fZ5RDn = fZ5RIn*min(1._rk,self%pe_R1Z5X*self%xR1nX)
+      fZ5RDn = fZ5RIn*min(1._rk,self%pe_R1Z5X*self%xR1n)
       fZ5R6n = (fZ5RIn - fZ5RDn )
 
       fZ5NIn = MAX( 0._rk, Z5nP - self%qnZ5cX*Z5cP)*self%stempZ5nX
