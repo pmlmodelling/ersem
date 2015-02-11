@@ -165,7 +165,7 @@ contains
          call self%get_parameter(self%puRP_B1X(iRP),'puRP'//trim(index),'-','fraction of substrate '//trim(index)//' available to bacteria')
       end do
 
-      call self%get_parameter(self%R1R2X,'R1R2','-','labile fraction of produced DOM')
+      call self%get_parameter(self%R1R2X,'R1R2','-','labile fraction of produced dissolved organic carbon')
 #endif
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools

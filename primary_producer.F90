@@ -126,7 +126,7 @@ contains
       call self%get_parameter(self%phiH,  'phiH', 'mg Chl/mg C','minimum effective chlorophyll to carbon photosynthesis ratio')
       call self%get_parameter(self%Limnut,'Limnut','',          'nitrogen-phosphorus colimitation formulation (0: geometric mean, 1: minimum, 2: harmonic mean)')
       call self%get_parameter(self%docdyn,'docdyn','','use dynamic ratio of labile to semi-labile DOM production', default=.false.)
-      if (.not.self%docdyn) call self%get_parameter(self%R1R2,'R1R2','-','labile fraction of produced DOM')
+      if (.not.self%docdyn) call self%get_parameter(self%R1R2,'R1R2','-','labile fraction of produced dissolved organic carbon')
       call self%get_parameter(self%uB1c_O2,'uB1c_O2','mmol O_2/mg C','oxygen produced per unit of carbon fixed')
       call self%get_parameter(self%urB1_O2,'urB1_O2','mmol O_2/mg C','oxygen consumed per unit of carbon respired')
       if (use_iron) then

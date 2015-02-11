@@ -92,7 +92,7 @@ contains
       call self%get_parameter(self%repw,   'repw',   '1/d',        'specific overwintering respiration')
       call self%get_parameter(self%mort,   'mort',   '1/d',        'specific overwintering mortality')
 
-      call self%get_parameter(self%R1R2,   'R1R2','-','labile fraction of produced DOM')
+      call self%get_parameter(self%R1R2,   'R1R2','-','labile fraction of produced dissolved organic carbon')
       call self%get_parameter(self%xR1p,   'xR1p','-','transfer of phosphorus to DOM, relative to POM')
       call self%get_parameter(self%xR1n,   'xR1n','-','transfer of nitrogen to DOM, relative to POM')
       call self%get_parameter(self%urB1_O2,'urB1_O2','mmol O_2/mg C','oxygen consumed per carbon respired')
