@@ -65,30 +65,30 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%qpc,    'qpc',    'mmol P/mg C','maximum phosphorus to carbon ratio')
-      call self%get_parameter(self%qnc,    'qnc',    'mmol N/mg C','maximum nitrogen to carbon ratio')
       call self%get_parameter(self%q10,    'q10',    '-',          'Q_10 temperature coefficient')
-      call self%get_parameter(self%chro,   'chro',   '-',          'Michaelis-Menten constant for oxygen limitation')
       call self%get_parameter(self%minfood,'minfood','mg C/m^3',   'Michaelis-Menten constant to perceive food')
       call self%get_parameter(self%chuc,   'chuc',   'mg C/m^3',   'Michaelis-Menten constant for food uptake')
       call self%get_parameter(self%sum,    'sum',    '1/d',        'maximum specific uptake at reference temperature')
       call self%get_parameter(self%pu,     'pu',     '-',          'assimilation efficiency')
       call self%get_parameter(self%pu_ea,  'pu_ea',  '-',          'fraction of unassimilated prey that is excreted (not respired)')
-      call self%get_parameter(self%pe_R1,  'pe_r1',  '-',          'dissolved fraction of excreted/dying matter')
+      call self%get_parameter(self%pe_R1,  'pe_R1',  '-',          'dissolved fraction of excreted/dying matter')
       call self%get_parameter(self%srs,    'srs',    '1/d',        'specific rest respiration at reference temperature')
       call self%get_parameter(self%sd,     'sd',     '1/d',        'basal mortality')
       call self%get_parameter(self%sdo,    'sdo',    '1/d',        'maximum mortality due to oxygen limitation')
-      call self%get_parameter(self%stempn, 'stempn', '1/d',        'specific ammonium excretion rate')
-      call self%get_parameter(self%stempp, 'stempp', '1/d',        'specific phosphate excretion rate')
+      call self%get_parameter(self%chro,   'chro',   '-',          'Michaelis-Menten constant for oxygen limitation')
+      call self%get_parameter(self%qpc,    'qpc',    'mmol P/mg C','maximum phosphorus to carbon ratio')
+      call self%get_parameter(self%qnc,    'qnc',    'mmol N/mg C','maximum nitrogen to carbon ratio')
+      call self%get_parameter(self%stempp, 'stempp', '1/d',        'specific excretion rate of excess phosphorus')
+      call self%get_parameter(self%stempn, 'stempn', '1/d',        'specific excretion rate of excess nitrogen')
 
       call self%get_parameter(self%R1R2,   'R1R2','-','labile fraction of produced DOM')
       call self%get_parameter(self%xR1p,   'xR1p','-','transfer of phosphorus to DOM, relative to POM')
       call self%get_parameter(self%xR1n,   'xR1n','-','transfer of nitrogen to DOM, relative to POM')
       call self%get_parameter(self%urB1_O2,'urB1_O2','mmol O_2/mg C','oxygen consumed per carbon respired')
 
-      call self%get_parameter(self%gutdiss,'gutdiss','-','fraction of prey calcite that is dissolved after ingestion')
+      call self%get_parameter(self%gutdiss,'gutdiss','-','fraction of prey calcite that dissolves after ingestion')
 
-      call self%get_parameter(c0,'c0','mg C/m^3','background carbon concentration')
+      call self%get_parameter(c0,'c0','mg C/m^3','background concentration')
 
       ! Register state variables
       call self%initialize_ersem_base(sedimentation=.false.)
@@ -96,7 +96,7 @@ contains
       call self%add_constituent('n',1.26e-6_rk, qnRPIcX*c0)
       call self%add_constituent('p',4.288e-8_rk,qpRPIcX*c0)
 
-      ! Register links to carbon contents of prey.
+      ! Determine number of prey types.
       call self%get_parameter(self%nprey,'nprey','','number of prey types',default=0)
       allocate(self%id_prey(self%nprey))
       allocate(self%id_preyc(self%nprey))
@@ -121,8 +121,7 @@ contains
          call self%request_coupling_to_model(self%id_preyn(iprey),self%id_prey(iprey),standard_variables%total_nitrogen)
          call self%request_coupling_to_model(self%id_preyp(iprey),self%id_prey(iprey),standard_variables%total_phosphorus)
          call self%request_coupling_to_model(self%id_preys(iprey),self%id_prey(iprey),standard_variables%total_silicate)
-         call self%request_coupling_to_model(self%id_preyl(iprey),self%id_prey(iprey), &
-                                             type_bulk_standard_variable(name='total_calcite_in_biota',aggregate_variable=.true.))
+         call self%request_coupling_to_model(self%id_preyl(iprey),self%id_prey(iprey),total_calcite_in_biota)
 
          if (use_iron) then
             call self%register_dependency(self%id_preyf(iprey),'prey'//trim(index)//'f','umol Fe/m^3','prey '//trim(index)//' iron')
@@ -180,25 +179,24 @@ contains
       _DECLARE_ARGUMENTS_DO_
 
       integer  :: iprey,istate
-      real(rk) :: ETW, eO2mO2
+      real(rk) :: ETW,eO2mO2
       real(rk) :: c,p,n,cP,nP,pP
-      real(rk),dimension(self%nprey) :: preycP,preynP,preypP,preysP,preylP
+      real(rk),dimension(self%nprey) :: preycP,preypP,preynP,preysP,preylP
       real(rk),dimension(self%nprey) :: sprey,rupreyc,fpreyc
+      real(rk) :: preyP
       real(rk) :: et,CORROX,eO2
-      real(rk) :: rum, put_u,rug
+      real(rk) :: rum,put_u,rug
       real(rk) :: sd,rd
       real(rk) :: ineff
-      real(rk) :: ret,fZIRDc,fZIRPc
 #ifdef SAVEFLX
       real(rk) :: fZXRDc
 #endif
       real(rk) :: rrs,rra
       real(rk) :: fZIO3c
-      real(rk) :: fZIRIp,fZIRDp,fZIRPp,fZIN1p
-      real(rk) :: fZIRIn,fZIRDn,fZIRPn,fZINIn
-      real(rk) :: qpc,qnc
-
-      real(rk) :: preyP
+      real(rk) :: ret,fZIRDc,fZIRPc
+      real(rk) :: fZIRIp,fZIRDp,fZIRPp
+      real(rk) :: fZIRIn,fZIRDn,fZIRPn
+      real(rk) :: qpc,qnc,fZIN1p,fZINIn
 
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
@@ -252,7 +250,7 @@ contains
          rum = sum(rupreyc)
 
          ! Prey uptake based on a Michaelis-Menten/Type II functional response with dynamic preferences "sprey".
-         ! put_u is the relative rate of uptake (1/d), rug the absolute rateof uptake (mg C/m3/d)
+         ! put_u is the relative rate of uptake (1/d), rug the absolute rate of uptake (mg C/m3/d)
          put_u = self%sum/(rum + self%chuc)*et*c
          rug = put_u*rum
 
@@ -277,7 +275,7 @@ contains
          ! Assimilation inefficiency (dimensionless):
          ineff = 1._rk - self%pu
 
-         ! Excretion of organic matter (part dissolved, part particulate)
+         ! Excretion and egestion of organic matter (part dissolved, part particulate)
          ret = ineff * rug * self%pu_ea
          fZIRDc = (ret + rd)*self%pe_R1
          fZIRPc = (ret + rd)*(1._rk - self%pe_R1)

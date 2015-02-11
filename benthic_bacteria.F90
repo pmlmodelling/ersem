@@ -18,6 +18,7 @@ module ersem_benthic_bacteria
       type (type_bottom_state_variable_id) :: id_Q6c,id_Q6n,id_Q6p
       type (type_bottom_state_variable_id) :: id_Q7c,id_Q7n,id_Q7p
       type (type_bottom_state_variable_id) :: id_G2o,id_G3c
+      type (type_horizontal_diagnostic_variable_id) :: id_fHG3c
 
       type (type_horizontal_dependency_id) :: id_Dm
       type (type_dependency_id) :: id_ETW
@@ -102,6 +103,9 @@ contains
       call self%request_coupling_to_model(self%id_Q7c,self%id_Q7,'c')
       call self%request_coupling_to_model(self%id_Q7n,self%id_Q7,'n')
       call self%request_coupling_to_model(self%id_Q7p,self%id_Q7,'p')
+
+      call self%register_diagnostic_variable(self%id_fHG3c,'fHG3c','mg C/m^2/d','respiration',output=output_time_step_averaged,domain=domain_bottom)
+
    end subroutine
 
    subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
@@ -190,6 +194,7 @@ contains
          fHc = -fHG3c
          _SET_BOTTOM_ODE_(self%id_G2o,-fHG3c/CMass)  ! oxygen or reduction equivalent
          _SET_BOTTOM_ODE_(self%id_G3c, fHG3c/CMass)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fHG3c,fHG3c)
 
          ! Mortality (distribute over dissolved organics Q1 and particulate organics Q6)
          sfHQI = self%sd * (1._rk - eOx)

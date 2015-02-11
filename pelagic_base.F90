@@ -87,8 +87,8 @@ contains
       if (self%sedimentation) then
          call self%register_dependency(self%id_bedstress,standard_variables%bottom_stress)
          call self%register_dependency(self%id_dens,     standard_variables%density)
-         call self%get_parameter(self%qQ1c, 'qQ1c','-','fraction of sedimented matter decomposing into DOM')
-         call self%get_parameter(self%qQ7c, 'qQ7c','-','fraction of sedimented matter decomposing into refractory matter')
+         call self%get_parameter(self%qQ1c,'qQ1c','-','fraction of sedimented matter decomposing into DOM')
+         call self%get_parameter(self%qQ7c,'qQ7c','-','fraction of sedimented matter decomposing into refractory matter')
          call self%get_parameter(self%xR1n,'xR1n','-','transfer of sedimented nitrogen to DOM, relative to POM')
          call self%get_parameter(self%xR1p,'xR1p','-','transfer of sedimented phosphorus to DOM, relative to POM')
          call self%get_parameter(self%xR7n,'xR7n','-','transfer of sedimented nitrogen to refractory matter, relative to POM')

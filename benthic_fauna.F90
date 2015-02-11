@@ -21,7 +21,7 @@ module ersem_benthic_fauna
       type (type_dependency_id), allocatable,dimension(:) :: id_foodpelc,id_foodpeln,id_foodpelp,id_foodpels
       type (type_dependency_id) :: id_ETW
       type (type_horizontal_dependency_id) :: id_Dm
-      type (type_horizontal_diagnostic_variable_id) :: id_bioirr,id_biotur
+      type (type_horizontal_diagnostic_variable_id) :: id_bioirr,id_biotur,id_fYG3c
       type (type_model_id),allocatable,dimension(:) :: id_food
       type (type_model_id)                          :: id_Q
 
@@ -207,6 +207,8 @@ contains
       call self%add_to_aggregate_variable(total_bioturbation_activity, self%id_biotur)
       call self%add_to_aggregate_variable(total_bioirrigation_activity, self%id_bioirr) 
 
+      call self%register_diagnostic_variable(self%id_fYG3c,'fYG3c','mg C/m^2/d','respiration',output=output_time_step_averaged,domain=domain_bottom)
+
    end subroutine initialize
 
    subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
@@ -364,6 +366,7 @@ contains
       SYc = SYc - fYG3c
       _SET_BOTTOM_ODE_(self%id_G3c, fYG3c/CMass)
       _SET_BOTTOM_ODE_(self%id_G2o,-fYG3c/CMass)
+      _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fYG3c,fYG3c)
 
       ! Specific mortality fluxes (1/d): background mortality + mortality due to oxygen limitation + mortality due to cold.
       mort_act  = self%sd * eT
