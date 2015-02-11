@@ -100,12 +100,12 @@ contains
       call self%add_child(profile,'per_layer',configunit=configunit)
       profile%ads = self%ads
       profile%last_layer = self%last_layer
-      call profile%register_diagnostic_variable(profile%id_layers(1),trim(composition)//'1','mmol/m^2','total '//trim(long_name)//' in oxygenated layer (absorbed + dissolved)',act_as_state_variable=.true.,domain=domain_bottom)
-      call profile%register_diagnostic_variable(profile%id_layers(2),trim(composition)//'2','mmol/m^2','total '//trim(long_name)//' in oxidized layer (absorbed + dissolved)',act_as_state_variable=.true.,domain=domain_bottom)
-      call profile%register_diagnostic_variable(profile%id_layers(3),trim(composition)//'3','mmol/m^2','total '//trim(long_name)//' in anoxic layer (absorbed + dissolved)',act_as_state_variable=.true.,domain=domain_bottom)
-      call profile%register_diagnostic_variable(profile%id_layers_pw(1),trim(composition)//'1_pw','mmol/m^2','dissolved '//trim(long_name)//' in oxygenated layer',act_as_state_variable=.true.,domain=domain_bottom)
-      call profile%register_diagnostic_variable(profile%id_layers_pw(2),trim(composition)//'2_pw','mmol/m^2','dissolved '//trim(long_name)//' in oxidized layer',act_as_state_variable=.true.,domain=domain_bottom)
-      call profile%register_diagnostic_variable(profile%id_layers_pw(3),trim(composition)//'3_pw','mmol/m^2','dissolved '//trim(long_name)//' in anoxic layer',act_as_state_variable=.true.,domain=domain_bottom)
+      call profile%register_diagnostic_variable(profile%id_layers(1),trim(composition)//'1','mmol/m^2','total '//trim(long_name)//' in oxygenated layer (absorbed + dissolved)',act_as_state_variable=.true.,domain=domain_bottom,output=output_none)
+      call profile%register_diagnostic_variable(profile%id_layers(2),trim(composition)//'2','mmol/m^2','total '//trim(long_name)//' in oxidized layer (absorbed + dissolved)',act_as_state_variable=.true.,domain=domain_bottom,output=output_none)
+      call profile%register_diagnostic_variable(profile%id_layers(3),trim(composition)//'3','mmol/m^2','total '//trim(long_name)//' in anoxic layer (absorbed + dissolved)',act_as_state_variable=.true.,domain=domain_bottom,output=output_none)
+      call profile%register_diagnostic_variable(profile%id_layers_pw(1),trim(composition)//'1_pw','mmol/m^2','dissolved '//trim(long_name)//' in oxygenated layer',act_as_state_variable=.true.,domain=domain_bottom,output=output_none)
+      call profile%register_diagnostic_variable(profile%id_layers_pw(2),trim(composition)//'2_pw','mmol/m^2','dissolved '//trim(long_name)//' in oxidized layer',act_as_state_variable=.true.,domain=domain_bottom,output=output_none)
+      call profile%register_diagnostic_variable(profile%id_layers_pw(3),trim(composition)//'3_pw','mmol/m^2','dissolved '//trim(long_name)//' in anoxic layer',act_as_state_variable=.true.,domain=domain_bottom,output=output_none)
       call profile%register_dependency(profile%id_D1m, 'D1m', 'm','depth of bottom interface of oxygenated layer')
       call profile%register_dependency(profile%id_D2m, 'D2m', 'm','depth of bottom interface of oxidized layer')
       call profile%register_dependency(profile%id_Dtot,depth_of_sediment_column)

@@ -160,7 +160,8 @@ contains
       ! Create a submodel that will compute total prey for us, and create a variable that will contain its depth integral.
       ! This quantity will be depth integrated to determine whether we should be overwintering.
       allocate(total_prey_calculator)
-      total_prey_calculator%output_units = 'mg C/m^3'
+      total_prey_calculator%units = 'mg C/m^3'
+      total_prey_calculator%result_output = output_none
       do iprey=1,self%nprey
          call total_prey_calculator%add_component('prey'//trim(index)//'c',self%suprey(iprey))
       end do
