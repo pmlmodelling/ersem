@@ -78,8 +78,8 @@ contains
       call self%get_parameter(self%srs,    'srs',    '1/d',        'specific rest respiration at reference temperature')
       call self%get_parameter(self%sd,     'sd',     '1/d',        'basal mortality')
       call self%get_parameter(self%sdo,    'sdo',    '1/d',        'maximum mortality due to oxygen limitation')
-      call self%get_parameter(self%stempn, 'stempn', '1/d',        'specific ammonium excretion rate')
-      call self%get_parameter(self%stempp, 'stempp', '1/d',        'specific phosphate excretion rate')
+      call self%get_parameter(self%stempn, 'stempn', '1/d',        'specific excretion rate of excess nitrogen')
+      call self%get_parameter(self%stempp, 'stempp', '1/d',        'specific excretion rate of excess phosphorus')
 
       call self%get_parameter(self%R1R2,   'R1R2','-','labile fraction of produced DOM')
       call self%get_parameter(self%xR1p,   'xR1p','-','transfer of phosphorus to DOM, relative to POM')
