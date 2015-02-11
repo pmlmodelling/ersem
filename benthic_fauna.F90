@@ -32,17 +32,17 @@ module ersem_benthic_fauna
       type (type_model_id),allocatable,dimension(:) :: id_food_loss_source
 
       integer  :: nfood    
-      real(rk) :: qnYIcX,qpYIcX
-      real(rk) :: q10YX
-      real(rk) :: hO2YX,rlO2YX
-      real(rk) :: xclYX,xcsYX,xchYX
-      real(rk) :: suYX,luYX,huYX
-      real(rk),allocatable :: pueYX(:),pufood(:)
+      real(rk) :: qnc,qpc
+      real(rk) :: q10
+      real(rk) :: hO2,rlO2
+      real(rk) :: xcl,xcs,xch
+      real(rk) :: su,lu,hu
+      real(rk),allocatable :: pue(:),pufood(:)
       logical,allocatable ::foodispel(:),food_ll(:)
-      real(rk) :: pudilX
-      real(rk) :: sdYX,sdmO2YX,sdcYX,xdcYX
-      real(rk) :: srYX,purYX
-      real(rk) :: pturYX,pirrYX, dwatYX,dQ6YX
+      real(rk) :: pudil
+      real(rk) :: sd,sdmO2,sdc,xdc
+      real(rk) :: sr,pur
+      real(rk) :: ptur,pirr, dwat,dQ6
    contains
       procedure :: initialize
       procedure :: do_bottom
@@ -57,35 +57,35 @@ contains
       integer           :: ifood
       character(len=16) :: index
       logical           :: foodispom
-      real(rk)          :: pueYX,pueQX
+      real(rk)          :: pue,pueQ
 
       ! Initialize base model type (this will also set the internal time unit to per day)
       call self%initialize_ersem_benthic_base()
 
       ! Register parameters
-      call self%get_parameter(self%qnYIcX, 'qnc',  'mmol N/mg C','nitrogen to carbon ratio')
-      call self%get_parameter(self%qpYIcX, 'qpc',  'mmol P/mg C','phosphorus to carbon ratio')
-      call self%get_parameter(self%q10YX,  'q10',  '-',          'Q_10 temperature coefficient')
-      call self%get_parameter(self%rlO2YX, 'rlO2', 'mmol O2/m^3','minimum pelagic oxygen concentration')
-      call self%get_parameter(self%hO2YX,  'hO2',  'mmol O2/m^3','Michaelis-Menten constant for oxygen limitation')
-      call self%get_parameter(self%xclYX,  'xcl',  'mg C/m^2',   'abundance above which crowding reduces food uptake')
-      call self%get_parameter(self%xcsYX,  'xcs',  'mg C/m^2',   'Michaelis-Menten constant for the impact of crowding')
-      call self%get_parameter(self%xchYX,  'xch',  'mg C/m^2',   'abundance determining asymptotic threshold of crowding limitation (-> xch/(Yc+xch) for Yc-> inf)')
-      call self%get_parameter(self%suYX,   'su',   '1/d',        'specific maximum uptake at reference temperature')
-      call self%get_parameter(self%luYX,   'lu',   'mg C/m^2',   'Michaelis-Menten constant for food preference as function of food concentration')
-      call self%get_parameter(self%huYX,   'hu',   'mg C/m^2',   'Michaelis-Menten constant for gross carbon uptake')
-      call self%get_parameter(pueYX,       'pue',  '-',          'fraction of carbon in consumed live food that goes to faeces')
-      call self%get_parameter(pueQX,       'pueQ',  '-',          'fraction of carbon in consumed detritus that goes to faeces')
-      call self%get_parameter(self%pudilX, 'pudil', '-',          'relative nutrient content of faeces')
-      call self%get_parameter(self%sdYX,   'sd',   '1/d',        'specific mortality at reference temperature')
-      call self%get_parameter(self%sdmO2YX,'sdmO2','1/d',        'specific maximum additional mortality due to oxygen stress')
-      call self%get_parameter(self%sdcYX,  'sdc',  '1/d',        'specific maximum additional mortality induced by cold temperature')
-      call self%get_parameter(self%xdcYX,  'xdc',  '1/degree C', 'e-folding temperature factor of cold mortality response')
-      call self%get_parameter(self%srYX,   'sr',   '1/d',        'specific rest respiration at reference temperature')
-      call self%get_parameter(self%purYX,  'pur',  '-',          'fraction of assimilated food that is respired')
+      call self%get_parameter(self%qnc, 'qnc',  'mmol N/mg C','nitrogen to carbon ratio')
+      call self%get_parameter(self%qpc, 'qpc',  'mmol P/mg C','phosphorus to carbon ratio')
+      call self%get_parameter(self%q10,  'q10',  '-',          'Q_10 temperature coefficient')
+      call self%get_parameter(self%rlO2, 'rlO2', 'mmol O2/m^3','minimum pelagic oxygen concentration')
+      call self%get_parameter(self%hO2,  'hO2',  'mmol O2/m^3','Michaelis-Menten constant for oxygen limitation')
+      call self%get_parameter(self%xcl,  'xcl',  'mg C/m^2',   'abundance above which crowding reduces food uptake')
+      call self%get_parameter(self%xcs,  'xcs',  'mg C/m^2',   'Michaelis-Menten constant for the impact of crowding')
+      call self%get_parameter(self%xch,  'xch',  'mg C/m^2',   'abundance determining asymptotic threshold of crowding limitation (-> xch/(Yc+xch) for Yc-> inf)')
+      call self%get_parameter(self%su,   'su',   '1/d',        'specific maximum uptake at reference temperature')
+      call self%get_parameter(self%lu,   'lu',   'mg C/m^2',   'Michaelis-Menten constant for food preference as function of food concentration')
+      call self%get_parameter(self%hu,   'hu',   'mg C/m^2',   'Michaelis-Menten constant for gross carbon uptake')
+      call self%get_parameter(pue,       'pue',  '-',          'fraction of carbon in consumed live food that goes to faeces')
+      call self%get_parameter(pueQ,       'pueQ',  '-',          'fraction of carbon in consumed detritus that goes to faeces')
+      call self%get_parameter(self%pudil, 'pudil', '-',          'relative nutrient content of faeces')
+      call self%get_parameter(self%sd,   'sd',   '1/d',        'specific mortality at reference temperature')
+      call self%get_parameter(self%sdmO2,'sdmO2','1/d',        'specific maximum additional mortality due to oxygen stress')
+      call self%get_parameter(self%sdc,  'sdc',  '1/d',        'specific maximum additional mortality induced by cold temperature')
+      call self%get_parameter(self%xdc,  'xdc',  '1/degree C', 'e-folding temperature factor of cold mortality response')
+      call self%get_parameter(self%sr,   'sr',   '1/d',        'specific rest respiration at reference temperature')
+      call self%get_parameter(self%pur,  'pur',  '-',          'fraction of assimilated food that is respired')
 
       ! Add carbon pool as our only state variable.
-      call self%add_constituent('c',3000._rk,qn=self%qnYIcX,qp=self%qpYIcX)
+      call self%add_constituent('c',3000._rk,qn=self%qnc,qp=self%qpc)
 
       ! Environmental dependencies
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
@@ -177,13 +177,13 @@ contains
       end do
 
       ! Allocate excretion rates
-      allocate(self%pueYX(self%nfood))
+      allocate(self%pue(self%nfood))
       do ifood=1,self%nfood
          write (index,'(i0)') ifood
          call self%get_parameter(foodispom,'food'//trim(index)//'ispom','','food source '//trim(index)//' is detritus',default=.false.)
          if (foodispom) then
             ! Use assimilation efficiency for particulate organic matter.
-            self%pueYX(ifood) = pueQX
+            self%pue(ifood) = pueQ
 
             ! Legacy ERSEM applies the loss of detritus due to feeding to the same pool that absorbs faeces and dead matter,
             ! even though the availability of detritus for consumption is computed differently. Apply this default behaviour here.
@@ -191,17 +191,17 @@ contains
                call self%couplings%set_string('food'//trim(index)//'_loss_source','Q')
          else
             ! Use assimilation efficiency for living matter.
-            self%pueYX(ifood) = pueYX
+            self%pue(ifood) = pue
          end if
       end do
 
       if (any(self%foodispel)) &
-         call self%get_parameter(self%dwatYX, 'dwat', 'm', 'water layer accessible for pelagic food uptake',default=1._rk)
-      call self%get_parameter(self%dQ6YX,  'dQ6',  'm', 'depth of available sediment layer',default=0._rk)
+         call self%get_parameter(self%dwat, 'dwat', 'm', 'water layer accessible for pelagic food uptake',default=1._rk)
+      call self%get_parameter(self%dQ6,  'dQ6',  'm', 'depth of available sediment layer',default=0._rk)
 
       ! Get contribution for bioturbation and bioirrigation
-      call self%get_parameter(self%pturYX, 'ptur','-','relative contribution to bioturbation',default=0._rk)
-      call self%get_parameter(self%pirrYX, 'pirr','-','relative contribution to bioirrigation',default=0._rk)
+      call self%get_parameter(self%ptur, 'ptur','-','relative contribution to bioturbation',default=0._rk)
+      call self%get_parameter(self%pirr, 'pirr','-','relative contribution to bioirrigation',default=0._rk)
       call self%register_diagnostic_variable(self%id_biotur,'biotur','mg C/m^2/d','bioturbation activity',output=output_time_step_averaged,domain=domain_bottom)
       call self%register_diagnostic_variable(self%id_bioirr,'bioirr','mg C/m^2/d','bioirrigation activity',output=output_time_step_averaged,domain=domain_bottom)
       call self%add_to_aggregate_variable(total_bioturbation_activity, self%id_biotur)
@@ -239,28 +239,28 @@ contains
 
       _GET_(self%id_ETW,ETW)
 
-      Yn = Yc*self%qnYIcX
-      Yp = Yc*self%qpYIcX
+      Yn = Yc*self%qnc
+      Yp = Yc*self%qpc
 
       ! Calculate temperature limitation factor
-      eT = self%q10YX**((ETW-10._rk)/10._rk) - self%q10YX**((ETW-32._rk)/3._rk)
+      eT = self%q10**((ETW-10._rk)/10._rk) - self%q10**((ETW-32._rk)/3._rk)
 
       ! Calculate oxygen limitation factor
-      eO = (O2o-self%rlO2YX)**3/((O2o-self%rlO2YX)**3+(self%hO2YX-self%rlO2YX)**3)
+      eO = (O2o-self%rlO2)**3/((O2o-self%rlO2)**3+(self%hO2-self%rlO2)**3)
 
       ! Calculate limitaiton factor describing a decrease in feeding rate due to oevrcrowding.
-      ! To disable any effect of overcrowding on feeding, set parameter xclY to a very large value.
+      ! To disable any effect of overcrowding on feeding, set parameter xcl to a very large value.
       ! This can for instance be done to disable the overcrowding effect for meiobenthos/Y4, as in SSB-ERSEM.
-      Y = Yc - self%xclYX
+      Y = Yc - self%xcl
       if (Y>0._rk) then
-         x = Y * Y/(Y+self%xcsYX)
-         eC = 1._rk - x/(x+self%xchYX)
+         x = Y * Y/(Y+self%xcs)
+         eC = 1._rk - x/(x+self%xch)
       else
          eC = 1._rk
       end if
 
       ! Calculate uptake rate
-      rate = self%suYX * Yc * eT * eO * eC
+      rate = self%su * Yc * eT * eO * eC
 
       ! Get food concentrations: benthic and pelagic!
       do ifood=1,self%nfood
@@ -290,10 +290,10 @@ contains
       ! Food sources limited in such a way must be specified using logical food{n}_ll in fabm.yaml file.
       do ifood=1,self%nfood
          if (self%foodispel(ifood)) then
-            prefcorr(ifood) = self%pufood(ifood) * self%dwatYX
+            prefcorr(ifood) = self%pufood(ifood) * self%dwat
          else
             if (self%food_ll(ifood)) then
-               prefcorr(ifood) = self%pufood(ifood) * min(1._rk,self%dQ6YX/Dm)
+               prefcorr(ifood) = self%pufood(ifood) * min(1._rk,self%dQ6/Dm)
             else
                prefcorr(ifood) = self%pufood(ifood)
             end if
@@ -302,13 +302,13 @@ contains
 
       ! Compute effective preferences for individual food sources: "feed".
       ! Weighting factors for original preferences increase hyperbolically from 0 at low food density to 1 at high food density.
-      feed = prefcorr * (prefcorr * foodcP/(prefcorr * foodcP + self%luYX))
+      feed = prefcorr * (prefcorr * foodcP/(prefcorr * foodcP + self%lu))
 
       ! Compute specific uptake rates of the different food sources: "sflux" (1/d).
       ! These are based on a Michaelis-Menten/Type II functional response with dynamic preferences "feed".
       foodsum = sum(feed * foodcP)
       if (foodsum>0._rk) then
-         sflux = rate * feed / (foodsum + self%huYX)
+         sflux = rate * feed / (foodsum + self%hu)
       else
          sflux = 0._rk
       end if
@@ -321,9 +321,9 @@ contains
 
       ! Compute net absolute uptake fluxes (matter/m2/d) per food source from
       ! gross fluxes and assimilation inefficiency.
-      netfluxc = grossfluxc * (1._rk -             self%pueYX)
-      netfluxn = grossfluxn * (1._rk - self%pudilX*self%pueYX)
-      netfluxp = grossfluxp * (1._rk - self%pudilX*self%pueYX)
+      netfluxc = grossfluxc * (1._rk -             self%pue)
+      netfluxn = grossfluxn * (1._rk - self%pudil*self%pue)
+      netfluxp = grossfluxp * (1._rk - self%pudil*self%pue)
 
       ! Based on relative uptake rate of each food source, decrease all state variables of that food source.
       do ifood=1,self%nfood
@@ -355,11 +355,11 @@ contains
       _SET_BOTTOM_ODE_(self%id_Q6s,sum(grossfluxs))
 
       ! Compute contribution to bioturbation and bioirrigation from gross food uptake.
-      _SET_HORIZONTAL_DIAGNOSTIC_(self%id_biotur, self%pturYX * fBTYc)
-      _SET_HORIZONTAL_DIAGNOSTIC_(self%id_bioirr, self%pirrYX * fBTYc) 
+      _SET_HORIZONTAL_DIAGNOSTIC_(self%id_biotur, self%ptur * fBTYc)
+      _SET_HORIZONTAL_DIAGNOSTIC_(self%id_bioirr, self%pirr * fBTYc) 
 
       ! Respiration fluxes = activity respiration + basal respiration
-      fYG3c = self%srYX * Yc * eT + self%purYX * nfBTYc
+      fYG3c = self%sr * Yc * eT + self%pur * nfBTYc
 
       ! Store carbon flux resulting from respiration for later use (note: respiration does not affect nitrogen, phosphorus).
       ! Also account for its production of benthic CO2 and consumption of benthic oxygen.
@@ -369,9 +369,9 @@ contains
       _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fYG3c,fYG3c)
 
       ! Specific mortality fluxes (1/d): background mortality + mortality due to oxygen limitation + mortality due to cold.
-      mort_act  = self%sdYX * eT
-      mort_ox   = self%sdmO2YX * (1._rk - eO) * eT
-      mort_cold = self%sdcYX * exp(ETW * self%xdcYX)
+      mort_act  = self%sd * eT
+      mort_ox   = self%sdmO2 * (1._rk - eO) * eT
+      mort_cold = self%sdc * exp(ETW * self%xdc)
 
       ! Total specific mortality rate (1/d)
       mortflux = mort_act + mort_ox + mort_cold
@@ -384,15 +384,15 @@ contains
 
       ! Compute excess carbon flux, given that the maximum realizable carbon flux needs to be balanced
       ! by corresponding nitrogen and phosphorus fluxes to maintain constant stoichiometry.
-      excess_c = max(max(SYc - SYp/self%qpYIcX, SYc - SYn/self%qnYIcX), 0.0_rk)
+      excess_c = max(max(SYc - SYp/self%qpc, SYc - SYn/self%qnc), 0.0_rk)
       SYc = SYc - excess_c
       _SET_BOTTOM_ODE_(self%id_c,SYc)
       _SET_BOTTOM_ODE_(self%id_Q6c,excess_c)
 
       ! Compute excess nitrogen and phosphorus fluxes, based on final carbon flux.
       ! Excess nutrient will be exudated to preserve constant stoichiometry of biomass.
-      excess_n = max(SYn - SYc*self%qnYIcX,0.0_rk)
-      excess_p = max(SYp - SYc*self%qpYIcX,0.0_rk)
+      excess_n = max(SYn - SYc*self%qnc,0.0_rk)
+      excess_p = max(SYp - SYc*self%qpc,0.0_rk)
 
       ! In some cases food or part of it originates from the anaerobic layer.
       ! We distribute excess ammonium and phosphate between aerobic and anaerobic layers proportionally

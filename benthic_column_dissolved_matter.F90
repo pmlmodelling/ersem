@@ -459,7 +459,7 @@ contains
 
       real(rk) :: c_int
       real(rk) :: factor
-      real(rk) :: d(3),D2m,d_totX,poro
+      real(rk) :: d(3),D2m,d_tot,poro
 
       _HORIZONTAL_LOOP_BEGIN_
 
@@ -469,12 +469,12 @@ contains
          ! Layer depths and porosity.
          _GET_HORIZONTAL_(self%id_D1m,d(1))
          _GET_HORIZONTAL_(self%id_D2m,D2m)
-         _GET_HORIZONTAL_(self%id_Dtot,d_totX)
+         _GET_HORIZONTAL_(self%id_Dtot,d_tot)
          _GET_HORIZONTAL_(self%id_poro,poro)
 
          ! Compute layer thicknesses from depth of bottom interface of individual layers.
          d(2) = D2m-d(1)
-         d(3) = d_totX-D2m
+         d(3) = d_tot-D2m
 
          if (self%last_layer==1) then
             ! All in oxygenated layer
