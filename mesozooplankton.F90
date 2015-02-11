@@ -74,23 +74,23 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%q10,    'q10',    '-','Q_10 temperature coefficient')
-      call self%get_parameter(self%chro,   'chro',   '-','Michaelis-Menten constant for oxygen limitation')
-      call self%get_parameter(self%minfood,'minfood','mg C/m^3','Michaelis-Menten constant to perceive food')
-      call self%get_parameter(self%chuc,   'chuc',   'mg C/m^3','Michaelis Menten constant for food uptake')
-      call self%get_parameter(self%sum,    'sum',    '1/d','maximum specific uptake at reference temperature')
-      call self%get_parameter(self%pu,     'pu',     '-','assimilation efficiency')
-      call self%get_parameter(pu_ea,       'pu_ea',  '-','fraction of unassimilated prey that is excreted (not respired)')
-      call self%get_parameter(pu_eaR,      'pu_eaR', '-','fraction of unassimilated detritus that is excreted (not respired)')
-      call self%get_parameter(self%pe_R1,  'pe_R1',  '-','dissolved fraction of excreted/dying matter')
-      call self%get_parameter(self%srs,    'srs',    '1/d','specific rest respiration at reference temperature')
-      call self%get_parameter(self%sd,     'sd',     '1/d','specific basal mortality')
-      call self%get_parameter(self%sdo,    'sdo',    '1/d','specific mortality due to oxygen limitation')
+      call self%get_parameter(self%q10,    'q10',    '-',          'Q_10 temperature coefficient')
+      call self%get_parameter(self%chro,   'chro',   '-',          'Michaelis-Menten constant for oxygen limitation')
+      call self%get_parameter(self%minfood,'minfood','mg C/m^3',   'Michaelis-Menten constant to perceive food')
+      call self%get_parameter(self%chuc,   'chuc',   'mg C/m^3',   'Michaelis-Menten constant for food uptake')
+      call self%get_parameter(self%sum,    'sum',    '1/d',        'maximum specific uptake at reference temperature')
+      call self%get_parameter(self%pu,     'pu',     '-',          'assimilation efficiency')
+      call self%get_parameter(pu_ea,       'pu_ea',  '-',          'fraction of unassimilated prey that is excreted (not respired)')
+      call self%get_parameter(pu_eaR,      'pu_eaR', '-',          'fraction of unassimilated detritus that is excreted (not respired)')
+      call self%get_parameter(self%pe_R1,  'pe_R1',  '-',          'dissolved fraction of excreted/dying matter')
+      call self%get_parameter(self%srs,    'srs',    '1/d',        'specific rest respiration at reference temperature')
+      call self%get_parameter(self%sd,     'sd',     '1/d',        'basal mortality')
+      call self%get_parameter(self%sdo,    'sdo',    '1/d',        'maximum mortality due to oxygen limitation')
       call self%get_parameter(self%qpc,    'qpc',    'mmol P/mg C','phosphorus to carbon ratio')
       call self%get_parameter(self%qnc,    'qnc',    'mmol N/mg C','nitrogen to carbon ratio')
-      call self%get_parameter(self%Minprey,'Minprey','mg C/m^2','food threshold for overwintering state')
-      call self%get_parameter(self%repw,   'repw',   '1/d','specific overwintering respiration')
-      call self%get_parameter(self%mort,   'mort',   '1/d','specific overwintering mortality')
+      call self%get_parameter(self%Minprey,'Minprey','mg C/m^2',   'food threshold for overwintering state')
+      call self%get_parameter(self%repw,   'repw',   '1/d',        'specific overwintering respiration')
+      call self%get_parameter(self%mort,   'mort',   '1/d',        'specific overwintering mortality')
 
       call self%get_parameter(self%R1R2,   'R1R2','-','labile fraction of produced DOM')
       call self%get_parameter(self%xR1p,   'xR1p','-','transfer of phosphorus to DOM, relative to POM')
@@ -136,11 +136,11 @@ contains
       allocate(self%id_preyf_target(self%nprey))
       do iprey=1,self%nprey
          write (index,'(i0)') iprey
-         call self%register_dependency(self%id_preyc(iprey), 'prey'//trim(index)//'c','mmol C/m^3', 'prey '//trim(index)//' carbon')
-         call self%register_dependency(self%id_preyn(iprey), 'prey'//trim(index)//'n','mmol N/m^3', 'prey '//trim(index)//' nitrogen')
-         call self%register_dependency(self%id_preyp(iprey), 'prey'//trim(index)//'p','mmol P/m^3', 'prey '//trim(index)//' phosphorus')
-         call self%register_dependency(self%id_preys(iprey), 'prey'//trim(index)//'s','mmol Si/m^3','prey '//trim(index)//' silicate')
-         call self%register_dependency(self%id_preyl(iprey), 'prey'//trim(index)//'l','mg C/m^3',   'prey '//trim(index)//' calcite')
+         call self%register_dependency(self%id_preyc(iprey),'prey'//trim(index)//'c','mmol C/m^3', 'prey '//trim(index)//' carbon')
+         call self%register_dependency(self%id_preyn(iprey),'prey'//trim(index)//'n','mmol N/m^3', 'prey '//trim(index)//' nitrogen')
+         call self%register_dependency(self%id_preyp(iprey),'prey'//trim(index)//'p','mmol P/m^3', 'prey '//trim(index)//' phosphorus')
+         call self%register_dependency(self%id_preys(iprey),'prey'//trim(index)//'s','mmol Si/m^3','prey '//trim(index)//' silicate')
+         call self%register_dependency(self%id_preyl(iprey),'prey'//trim(index)//'l','mg C/m^3',   'prey '//trim(index)//' calcite')
 
          call self%register_model_dependency(self%id_prey(iprey),'prey'//trim(index))
          call self%request_coupling_to_model(self%id_preyc(iprey),self%id_prey(iprey),standard_variables%total_carbon)
@@ -152,7 +152,7 @@ contains
 
          if (use_iron) then
             call self%register_dependency(self%id_preyf(iprey),'prey'//trim(index)//'f','umol Fe/m^3','prey '//trim(index)//' iron')
-            call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe/m^3','sink for Fe of prey '//trim(index),required=.false.)    
+            call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe/m^3','sink for Fe of prey '//trim(index),required=.false.)
             call self%request_coupling_to_model(self%id_preyf(iprey),self%id_prey(iprey),standard_variables%total_iron)
          end if
       end do
@@ -224,9 +224,9 @@ contains
       real(rk) :: ETW,eO2mO2
       real(rk) :: c,cP
       real(rk),dimension(self%nprey) :: preycP,preypP,preynP,preysP,preylP
-      real(rk) :: SZIc,SZIn,SZIp
-      real(rk) :: et,CORROX,eO2
       real(rk),dimension(self%nprey) :: sprey,rupreyc,fpreyc
+      real(rk) :: preyP
+      real(rk) :: et,CORROX,eO2
       real(rk) :: rum,put_u,rug
       real(rk) :: sd,rd
       real(rk) :: ineff
@@ -235,8 +235,8 @@ contains
       real(rk) :: ret,fZIRDc,fZIRPc
       real(rk) :: fZIRIp,fZIRDp,fZIRPp
       real(rk) :: fZIRIn,fZIRDn,fZIRPn
+      real(rk) :: SZIc,SZIn,SZIp
       real(rk) :: excess_c, excess_n, excess_p
-      real(rk) :: preyP
       real(rk) :: intprey
 
       ! Enter spatial loops (if any)

@@ -72,7 +72,7 @@ contains
       call self%get_parameter(self%sum,    'sum',    '1/d',        'maximum specific uptake at reference temperature')
       call self%get_parameter(self%pu,     'pu',     '-',          'assimilation efficiency')
       call self%get_parameter(self%pu_ea,  'pu_ea',  '-',          'fraction of unassimilated prey that is excreted (not respired)')
-      call self%get_parameter(self%pe_R1,  'pe_r1',  '-',          'dissolved fraction of excreted/dying matter')
+      call self%get_parameter(self%pe_R1,  'pe_R1',  '-',          'dissolved fraction of excreted/dying matter')
       call self%get_parameter(self%srs,    'srs',    '1/d',        'specific rest respiration at reference temperature')
       call self%get_parameter(self%sd,     'sd',     '1/d',        'basal mortality')
       call self%get_parameter(self%sdo,    'sdo',    '1/d',        'maximum mortality due to oxygen limitation')
@@ -86,9 +86,9 @@ contains
       call self%get_parameter(self%xR1n,   'xR1n','-','transfer of nitrogen to DOM, relative to POM')
       call self%get_parameter(self%urB1_O2,'urB1_O2','mmol O_2/mg C','oxygen consumed per carbon respired')
 
-      call self%get_parameter(self%gutdiss,'gutdiss','-','fraction of prey calcite that is dissolved after ingestion')
+      call self%get_parameter(self%gutdiss,'gutdiss','-','fraction of prey calcite that dissolves after ingestion')
 
-      call self%get_parameter(c0,'c0','mg C/m^3','background carbon concentration')
+      call self%get_parameter(c0,'c0','mg C/m^3','background concentration')
 
       ! Register state variables
       call self%initialize_ersem_base(sedimentation=.false.)
@@ -96,7 +96,7 @@ contains
       call self%add_constituent('n',1.26e-6_rk, qnRPIcX*c0)
       call self%add_constituent('p',4.288e-8_rk,qpRPIcX*c0)
 
-      ! Register links to carbon contents of prey.
+      ! Determine number of prey types.
       call self%get_parameter(self%nprey,'nprey','','number of prey types',default=0)
       allocate(self%id_prey(self%nprey))
       allocate(self%id_preyc(self%nprey))
@@ -180,25 +180,24 @@ contains
       _DECLARE_ARGUMENTS_DO_
 
       integer  :: iprey,istate
-      real(rk) :: ETW, eO2mO2
+      real(rk) :: ETW,eO2mO2
       real(rk) :: c,p,n,cP,nP,pP
-      real(rk),dimension(self%nprey) :: preycP,preynP,preypP,preysP,preylP
+      real(rk),dimension(self%nprey) :: preycP,preypP,preynP,preysP,preylP
       real(rk),dimension(self%nprey) :: sprey,rupreyc,fpreyc
+      real(rk) :: preyP
       real(rk) :: et,CORROX,eO2
-      real(rk) :: rum, put_u,rug
+      real(rk) :: rum,put_u,rug
       real(rk) :: sd,rd
       real(rk) :: ineff
-      real(rk) :: ret,fZIRDc,fZIRPc
 #ifdef SAVEFLX
       real(rk) :: fZXRDc
 #endif
       real(rk) :: rrs,rra
       real(rk) :: fZIO3c
-      real(rk) :: fZIRIp,fZIRDp,fZIRPp,fZIN1p
-      real(rk) :: fZIRIn,fZIRDn,fZIRPn,fZINIn
-      real(rk) :: qpc,qnc
-
-      real(rk) :: preyP
+      real(rk) :: ret,fZIRDc,fZIRPc
+      real(rk) :: fZIRIp,fZIRDp,fZIRPp
+      real(rk) :: fZIRIn,fZIRDn,fZIRPn
+      real(rk) :: qpc,qnc,fZIN1p,fZINIn
 
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
