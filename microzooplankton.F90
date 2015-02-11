@@ -251,7 +251,7 @@ contains
          rum = sum(rupreyc)
 
          ! Prey uptake based on a Michaelis-Menten/Type II functional response with dynamic preferences "sprey".
-         ! put_u is the relative rate of uptake (1/d), rug the absolute rateof uptake (mg C/m3/d)
+         ! put_u is the relative rate of uptake (1/d), rug the absolute rate of uptake (mg C/m3/d)
          put_u = self%sum/(rum + self%chuc)*et*c
          rug = put_u*rum
 
@@ -276,7 +276,7 @@ contains
          ! Assimilation inefficiency (dimensionless):
          ineff = 1._rk - self%pu
 
-         ! Excretion of organic matter (part dissolved, part particulate)
+         ! Excretion and egestion of organic matter (part dissolved, part particulate)
          ret = ineff * rug * self%pu_ea
          fZIRDc = (ret + rd)*self%pe_R1
          fZIRPc = (ret + rd)*(1._rk - self%pe_R1)
