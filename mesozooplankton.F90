@@ -75,7 +75,6 @@ contains
 !-----------------------------------------------------------------------
 !BOC
       call self%get_parameter(self%q10,    'q10',    '-',          'Q_10 temperature coefficient')
-      call self%get_parameter(self%chro,   'chro',   '-',          'Michaelis-Menten constant for oxygen limitation')
       call self%get_parameter(self%minfood,'minfood','mg C/m^3',   'Michaelis-Menten constant to perceive food')
       call self%get_parameter(self%chuc,   'chuc',   'mg C/m^3',   'Michaelis-Menten constant for food uptake')
       call self%get_parameter(self%sum,    'sum',    '1/d',        'maximum specific uptake at reference temperature')
@@ -86,6 +85,7 @@ contains
       call self%get_parameter(self%srs,    'srs',    '1/d',        'specific rest respiration at reference temperature')
       call self%get_parameter(self%sd,     'sd',     '1/d',        'basal mortality')
       call self%get_parameter(self%sdo,    'sdo',    '1/d',        'maximum mortality due to oxygen limitation')
+      call self%get_parameter(self%chro,   'chro',   '-',          'Michaelis-Menten constant for oxygen limitation')
       call self%get_parameter(self%qpc,    'qpc',    'mmol P/mg C','phosphorus to carbon ratio')
       call self%get_parameter(self%qnc,    'qnc',    'mmol N/mg C','nitrogen to carbon ratio')
       call self%get_parameter(self%Minprey,'Minprey','mg C/m^2',   'food threshold for overwintering state')
