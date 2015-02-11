@@ -217,14 +217,14 @@ contains
          fHp = fQ7Hp * (1._rk-self%pue7) + fQ6Hp * (1._rk-self%pue6) + fQ1Hp + fK1Hp
 
          ! Compute excess carbon flux, given that the maximum realizable carbon flux needs to be balanced by corresponding nitrogen and phosphorus fluxes to maintain constant stoichiometry.
-      excess_c = max(max(fHc - fHn/self%qpc, fHc - fHn/self%qnc), 0.0_rk)
-       fHc = fHc - excess_c
-      _SET_BOTTOM_ODE_(self%id_c,fHc)
-      _SET_BOTTOM_ODE_(self%id_Q6c,excess_c)
+         excess_c = max(max(fHc - fHp/self%qpc, fHc - fHn/self%qnc), 0.0_rk)
+         fHc = fHc - excess_c
+         _SET_BOTTOM_ODE_(self%id_c,fHc)
+         _SET_BOTTOM_ODE_(self%id_Q6c,excess_c)
 
          ! Compute excess nitrogen and phosphorus fluxes, based on final carbon flux. Excess nutrient will be exudated to preserve constant stoichiometry of biomass.
-      excess_n = max(fHn - fHc*self%qnc,0.0_rk)
-      excess_p = max(fHp - fHc*self%qpc,0.0_rk)
+         excess_n = max(fHn - fHc*self%qnc,0.0_rk)
+         excess_p = max(fHp - fHc*self%qpc,0.0_rk)
 
          _SET_BOTTOM_ODE_(self%id_Q6c,-fQ6Hc + excess_c)
          _SET_BOTTOM_ODE_(self%id_Q6n,-fQ6Hn)
