@@ -48,7 +48,7 @@ contains
 !
 ! !INPUT PARAMETERS:
    class (type_ersem_benthic_base), intent(inout), target :: self
-   integer,                               intent(in)            :: configunit
+   integer,                         intent(in)            :: configunit
 !
 
 !EOP
@@ -139,9 +139,9 @@ contains
 
    subroutine benthic_base_add_constituent(self,name,initial_value,qn,qp)
       class (type_ersem_benthic_base), intent(inout), target :: self
-      character(len=*),                      intent(in)            :: name
-      real(rk),                              intent(in)            :: initial_value
-      real(rk),optional,                     intent(in)            :: qn,qp
+      character(len=*),                intent(in)            :: name
+      real(rk),                        intent(in)            :: initial_value
+      real(rk),optional,               intent(in)            :: qn,qp
 
       select case (name)
          case ('c')
@@ -174,7 +174,7 @@ contains
    subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
       class (type_ersem_benthic_base), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
-      
+
       real(rk) :: bedstress,density,wdepth
       real(rk) :: Q6cP,Q6nP,Q6pP,Q6sP,Q6fP,Q6lP
       real(rk) :: bedsedXc,bedsedXn,bedsedXp,bedsedXs
@@ -220,7 +220,7 @@ contains
             !       min(SQ6c(k)-wsoQ6c(k),0._rk)),0._rk)
             _SET_BOTTOM_ODE_(self%id_c,-FerC)
             _SET_BOTTOM_EXCHANGE_(self%id_resuspension_c,FerC)
-            
+
             ! Nitrogen
             if (_VARIABLE_REGISTERED_(self%id_n)) then
                _GET_HORIZONTAL_(self%id_n,Q6nP)
@@ -242,8 +242,8 @@ contains
                _SET_BOTTOM_ODE_(self%id_p,-FerP)
                _SET_BOTTOM_EXCHANGE_(self%id_resuspension_p,FerP)
             end if
-            
-            ! Silicon
+
+            ! Silicate
             if (_VARIABLE_REGISTERED_(self%id_s)) then
                _GET_HORIZONTAL_(self%id_s,Q6sP)
                ! FerS=fac*Q6sP(k)/(Q6sP(k)+bedsedXs)
@@ -301,7 +301,7 @@ contains
          end if   ! Remineralization (benthic return)
 
       _HORIZONTAL_LOOP_END_
-      
+
    end subroutine
 
 end module
