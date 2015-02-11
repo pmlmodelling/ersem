@@ -38,7 +38,7 @@ contains
 !BOC
       call self%get_parameter(self%ISWO2X,'ISWO2','','saturation formulation (1: legacy ERSEM, 2: Weiss 1970)')
 
-      call self%register_state_variable(self%id_O2o,'o','mmol O_2/m^3','oxygen',300._rk,minimum=0._rk)
+      call self%register_state_variable(self%id_O2o,'o','mmol O_2/m^3','oxygen',300._rk)
    
       call self%register_diagnostic_variable(self%id_eO2mO2,'eO2mO2','1','relative oxygen saturation', &
          standard_variable=standard_variables%fractional_saturation_of_oxygen)
