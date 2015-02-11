@@ -41,7 +41,11 @@ contains
       call self%get_parameter(self%iswCO2X,'iswCO2','','carbonate system diagnostics (0: off, 1: on)',default=1)
       call self%get_parameter(self%iswASFLUX,'iswASFLUX','','air-sea CO2 exchange (0: none, 1: Nightingale and Liss)',default=1)
       call self%get_parameter(self%iswtalk,'iswtalk','','alkalinity formulation (1-4: from salinity and temperature, 5: dynamic alkalinity)',default=5)
-      if (self%iswtalk<1.or.self%iswtalk>5) call self%fatal_error('type_ersem_carbonate::initialize','"iswtalk" out of bounds')
+      if (self%iswtalk<1.or.self%iswtalk>5) call self%fatal_error('initialize','"iswtalk" out of bounds')
+      if (self%iswtalk/=1) then
+         call self%log_message('WARNING: iswtalk is forced to 1 because bioalkalinity is not yet supported.')
+         self%iswtalk = 1
+      end if
 
       call self%register_state_variable(self%id_O3c,'c','mmol C/m^3','total dissolved inorganic carbon', 2200._rk,minimum=0._rk)
       call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_O3c)
