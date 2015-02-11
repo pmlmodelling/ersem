@@ -210,7 +210,7 @@ contains
          ! Create diagnostic variable for cell-bound calcite, and register its contribution to the known quantity "total_calcite_in_biota".
          ! This quantity can be used by other models (e.g., predators) to determine how much calcite is released when phytoplankton is broken down.
          call self%register_diagnostic_variable(self%id_lD,'l','mg C/m^3','bound calcite',missing_value=0._rk,output=output_none)
-         call self%add_to_aggregate_variable(type_bulk_standard_variable(name='total_calcite_in_biota',aggregate_variable=.true.),self%id_lD)
+         call self%add_to_aggregate_variable(total_calcite_in_biota,self%id_lD)
       end if
 
       ! Link to atmospheric CO2 (only if using CO2-enhanced primary production).

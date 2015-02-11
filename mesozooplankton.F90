@@ -147,8 +147,7 @@ contains
          call self%request_coupling_to_model(self%id_preyn(iprey),self%id_prey(iprey),standard_variables%total_nitrogen)
          call self%request_coupling_to_model(self%id_preyp(iprey),self%id_prey(iprey),standard_variables%total_phosphorus)
          call self%request_coupling_to_model(self%id_preys(iprey),self%id_prey(iprey),standard_variables%total_silicate)
-         call self%request_coupling_to_model(self%id_preyl(iprey),self%id_prey(iprey), &
-                                             type_bulk_standard_variable(name='total_calcite_in_biota',aggregate_variable=.true.))
+         call self%request_coupling_to_model(self%id_preyl(iprey),self%id_prey(iprey),total_calcite_in_biota)
 
          if (use_iron) then
             call self%register_dependency(self%id_preyf(iprey),'prey'//trim(index)//'f','umol Fe/m^3','prey '//trim(index)//' iron')
