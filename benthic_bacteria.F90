@@ -24,18 +24,18 @@ module ersem_benthic_bacteria
 
       type (type_model_id) :: id_Q1,id_Q6,id_Q7
       
-      real(rk) :: qnHIcX,qpHIcX
-      real(rk) :: q10HX
-      real(rk) :: ddHX
-      real(rk) :: suQ7HX
-      real(rk) :: suQ6fHX
-      real(rk) :: suQ6sHX
-      real(rk) :: suQ1HX
-      real(rk) :: puincHX
-      real(rk) :: p_ex7ox,p_ex6ox
-      real(rk) :: purHX,srHX
-      real(rk) :: pdHQ1X
-      real(rk) :: sdHX
+      real(rk) :: qnc,qpc
+      real(rk) :: q10
+      real(rk) :: dd
+      real(rk) :: suQ7
+      real(rk) :: suQ6f
+      real(rk) :: suQ6s
+      real(rk) :: suQ1
+      real(rk) :: puinc
+      real(rk) :: pue7,pue6
+      real(rk) :: pur,sr
+      real(rk) :: pdQ1
+      real(rk) :: sd
    contains
       procedure :: initialize
       procedure :: do_bottom
@@ -51,23 +51,23 @@ contains
       call self%initialize_ersem_benthic_base()
 
       ! Register parameters
-      call self%get_parameter(self%qnHIcX, 'qnc',  'mmol N/mg C','nitrogen to carbon ratio')
-      call self%get_parameter(self%qpHIcX, 'qpc',  'mmol P/mg C','phosphorus to carbon ratio')
-      call self%get_parameter(self%q10HX,  'q10',  '-',          'Q_10 temperature coefficient')
-      call self%get_parameter(self%ddHX,   'dd',   '1/m',        'Michaelis-Menten constant for oxygen limitation through layer thickness')
-      call self%get_parameter(self%suQ7HX, 'suQ7', '1/d',        'specific not nutrient limited refractory matter uptake')
-      call self%get_parameter(self%suQ6fHX,'suQ6f','1/d',        'specific nutrient limited detritus uptake')
-      call self%get_parameter(self%suQ6sHX,'suQ6s','1/d',        'specific not nutrient limited detritus uptake')
-      call self%get_parameter(self%suQ1HX, 'suQ1', '1/d',        'specific DOC uptake')
-      call self%get_parameter(self%puincHX,'puinc','1/d',        'preference factor of nutrient content')
-      call self%get_parameter(self%p_ex6ox,'pue6', '-',          'excreted fraction of uptake of POM')
-      call self%get_parameter(self%p_ex7ox,'pue7', '-',          'excreted fraction of uptake of refractory matter')
-      call self%get_parameter(self%purHX,  'pur',  '1/d',        'fraction of carbon uptake that is respired')
-      call self%get_parameter(self%srHX,   'sr',   '1/d',        'specific rest respiration')
-      call self%get_parameter(self%pdHQ1X, 'pdQ1', '-',          'DOM-fraction of mortality')
-      call self%get_parameter(self%sdHX,   'sd',   '1/d',        'specific maximum mortality related to oxygen limitation')
+      call self%get_parameter(self%qnc, 'qnc',  'mmol N/mg C','nitrogen to carbon ratio')
+      call self%get_parameter(self%qpc, 'qpc',  'mmol P/mg C','phosphorus to carbon ratio')
+      call self%get_parameter(self%q10,  'q10',  '-',          'Q_10 temperature coefficient')
+      call self%get_parameter(self%dd,   'dd',   '1/m',        'Michaelis-Menten constant for oxygen limitation through layer thickness')
+      call self%get_parameter(self%suQ7, 'suQ7', '1/d',        'specific not nutrient limited refractory matter uptake')
+      call self%get_parameter(self%suQ6f,'suQ6f','1/d',        'specific nutrient limited detritus uptake')
+      call self%get_parameter(self%suQ6s,'suQ6s','1/d',        'specific not nutrient limited detritus uptake')
+      call self%get_parameter(self%suQ1, 'suQ1', '1/d',        'specific DOC uptake')
+      call self%get_parameter(self%puinc,'puinc','1/d',        'preference factor of nutrient content')
+      call self%get_parameter(self%pue6,'pue6', '-',          'excreted fraction of uptake of POM')
+      call self%get_parameter(self%pue7,'pue7', '-',          'excreted fraction of uptake of refractory matter')
+      call self%get_parameter(self%pur,  'pur',  '1/d',        'fraction of carbon uptake that is respired')
+      call self%get_parameter(self%sr,   'sr',   '1/d',        'specific rest respiration')
+      call self%get_parameter(self%pdQ1, 'pdQ1', '-',          'DOM-fraction of mortality')
+      call self%get_parameter(self%sd,   'sd',   '1/d',        'specific maximum mortality related to oxygen limitation')
 
-      call self%add_constituent('c',0.0_rk,qn=self%qnHIcX,qp=self%qpHIcX)
+      call self%add_constituent('c',0.0_rk,qn=self%qnc,qp=self%qpc)
 
       ! Environmental dependencies
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
@@ -145,22 +145,22 @@ contains
          _GET_HORIZONTAL_(self%id_K4n,K4a)
 
          ! Limitation by temperature, oxygen, nutrient availability.
-         eT  = self%q10HX**((ETW-10._rk)/10._rk) - self%q10HX**((ETW-32._rk)/3._rk)
-         eOx = Dm/(self%ddHX+Dm)
+         eT  = self%q10**((ETW-10._rk)/10._rk) - self%q10**((ETW-32._rk)/3._rk)
+         eOx = Dm/(self%dd+Dm)
          if (AQ6c<=0.0_rk) then
             ! Avoid division by zero: no carbon in substrate means no nutrient limitation
             eN = 1.0_rk
          else
-            eN = min(1._rk,max(0._rk,AQ6n/(self%qnHIcX*AQ6c))) * min(1._rk,max(0._rk,AQ6p/(self%qpHIcX*AQ6c)))
+            eN = min(1._rk,max(0._rk,AQ6n/(self%qnc*AQ6c))) * min(1._rk,max(0._rk,AQ6p/(self%qpc*AQ6c)))
          end if
 
          ! Combined limitation factor
          Limit = eT * eOX * Hc
 
          ! Determine effective uptake rates
-         sfQ7H = ( self%suQ7HX * Limit )
-         sfQ6H = ( self%suQ6fHX * Limit * eN ) + ( self%suQ6sHX * Limit )
-         sfQ1H = ( self%suQ1HX * Limit )
+         sfQ7H = ( self%suQ7 * Limit )
+         sfQ6H = ( self%suQ6f * Limit * eN ) + ( self%suQ6s * Limit )
+         sfQ1H = ( self%suQ1 * Limit )
 
          ! Uptake of substrate carbon
          fQ7Hc = sfQ7H * AQ7c
@@ -172,136 +172,72 @@ contains
          ! (note on Q6: affinity for n and p differs from affinity for c if puincHX/=1)
          fQ7Hn = sfQ7H * AQ7n
          fQ7Hp = sfQ7H * AQ7p
-         fQ6Hn = sfQ6H * AQ6n * self%puincHX
-         fQ6Hp = sfQ6H * AQ6p * self%puincHX
+         fQ6Hn = sfQ6H * AQ6n * self%puinc
+         fQ6Hp = sfQ6H * AQ6p * self%puinc
          fQ1Hn = sfQ1H * Q1nP
          fQ1Hp = sfQ1H * Q1pP
 
          ! (JB: code below seems to want to infer nutrient requirement/flux,
          ! but it makes no sense since K?a and fK?Hn are summed while they have different units)
-         fK4Hn = fQIHc * self%qnHIcX
+         fK4Hn = fQIHc * self%qnc
          fK4Hn = fK4Hn * K4a/(K4a+fK4Hn)
-         fK1Hp = fQIHc * self%qpHIcX
+         fK1Hp = fQIHc * self%qpc
          fK1Hp = fK1Hp * K1a/(K1a+fK1Hp)
 
          ! Respiration (reduction in bacterial carbon and dissolved oxygen, increase in 
          ! dissolved inorganic carbon, ammonium, phosphate)
-         fHG3c = self%purHX * fQIHc + self%srHX * Hc * eT
+         fHG3c = self%pur * fQIHc + self%sr * Hc * eT
          fHc = -fHG3c
          _SET_BOTTOM_ODE_(self%id_G2o,-fHG3c/CMass)  ! oxygen or reduction equivalent
          _SET_BOTTOM_ODE_(self%id_G3c, fHG3c/CMass)
 
          ! Mortality (distribute over dissolved organics Q1 and particulate organics Q6)
-         sfHQI = self%sdHX * (1._rk - eOx)
-         sfHQ6 = sfHQI * (1._rk - self%pdHQ1X)
-         sfHQ1 = sfHQI * self%pdHQ1X
+         sfHQI = self%sd * (1._rk - eOx)
+         sfHQ6 = sfHQI * (1._rk - self%pdQ1)
+         sfHQ1 = sfHQI * self%pdQ1
 
          _SET_BOTTOM_ODE_(self%id_Q6c, sfHQ6 * HcP)
-         _SET_BOTTOM_ODE_(self%id_Q6n, sfHQ6 * HcP * self%qnHIcX)
-         _SET_BOTTOM_ODE_(self%id_Q6p, sfHQ6 * HcP * self%qpHIcX)
+         _SET_BOTTOM_ODE_(self%id_Q6n, sfHQ6 * HcP * self%qnc)
+         _SET_BOTTOM_ODE_(self%id_Q6p, sfHQ6 * HcP * self%qpc)
 
          _SET_BOTTOM_ODE_(self%id_Q1c, sfHQ1 * HcP)
-         _SET_BOTTOM_ODE_(self%id_Q1n, sfHQ1 * HcP * self%qnHIcX)
-         _SET_BOTTOM_ODE_(self%id_Q1p, sfHQ1 * HcP * self%qpHIcX)
+         _SET_BOTTOM_ODE_(self%id_Q1n, sfHQ1 * HcP * self%qnc)
+         _SET_BOTTOM_ODE_(self%id_Q1p, sfHQ1 * HcP * self%qpc)
 
          _SET_BOTTOM_ODE_(self%id_c, -(sfHQ6 + sfHQ1) * HcP)
 
          ! Uptake and excretion
-         fHc = fHc + fQ7Hc * (1._rk-self%p_ex7ox) + fQ6Hc * (1._rk-self%p_ex6ox) + fQ1Hc
-         fHn = fQ7Hn * (1._rk-self%p_ex7ox) + fQ6Hn * (1._rk-self%p_ex6ox) + fQ1Hn + fK4Hn
-         fHp = fQ7Hp * (1._rk-self%p_ex7ox) + fQ6Hp * (1._rk-self%p_ex6ox) + fQ1Hp + fK1Hp
+         fHc = fHc + fQ7Hc * (1._rk-self%pue7) + fQ6Hc * (1._rk-self%pue6) + fQ1Hc
+         fHn = fQ7Hn * (1._rk-self%pue7) + fQ6Hn * (1._rk-self%pue6) + fQ1Hn + fK4Hn
+         fHp = fQ7Hp * (1._rk-self%pue7) + fQ6Hp * (1._rk-self%pue6) + fQ1Hp + fK1Hp
 
-         ! Preserve fixed bacterial stoichiometry by selectively excreting part of N,P,C biomass fluxes
-         ! to ammonia, phosphate and particulate carbon, respectively. adjust_fixed_nutrients computes excess c, n and p,
-         ! and (in the case of non-zero excess carbon) also adjusts the increase in carbon biomass (fHc) downwards.
-         excess_n = 0.0_rk
-         excess_p = 0.0_rk
-         excess_c = 0.0_rk
-         CALL adjust_fixed_nutrients(fHc,fHn,fHp,self%qnHIcX,self%qpHIcX,excess_n,excess_p,excess_c)
+         ! Compute excess carbon flux, given that the maximum realizable carbon flux needs to be balanced by corresponding nitrogen and phosphorus fluxes to maintain constant stoichiometry.
+      excess_c = max(max(fHc - fHn/self%qpc, fHc - fHn/self%qnc), 0.0_rk)
+       fHc = fHc - excess_c
+      _SET_BOTTOM_ODE_(self%id_c,fHc)
+      _SET_BOTTOM_ODE_(self%id_Q6c,excess_c)
 
-         _SET_BOTTOM_ODE_(self%id_c,fHc)
+         ! Compute excess nitrogen and phosphorus fluxes, based on final carbon flux. Excess nutrient will be exudated to preserve constant stoichiometry of biomass.
+      excess_n = max(fHn - fHc*self%qnc,0.0_rk)
+      excess_p = max(fHp - fHc*self%qpc,0.0_rk)
 
          _SET_BOTTOM_ODE_(self%id_Q6c,-fQ6Hc + excess_c)
          _SET_BOTTOM_ODE_(self%id_Q6n,-fQ6Hn)
          _SET_BOTTOM_ODE_(self%id_Q6p,-fQ6Hp)
 
+         _SET_BOTTOM_ODE_(self%id_K4n,-fK4Hn + excess_n)
+         _SET_BOTTOM_ODE_(self%id_K1p,-fK1Hp + excess_p)
+
          _SET_BOTTOM_ODE_(self%id_Q7c,-fQ7Hc)
          _SET_BOTTOM_ODE_(self%id_Q7n,-fQ7Hn)
          _SET_BOTTOM_ODE_(self%id_Q7p,-fQ7Hp)
 
-         _SET_BOTTOM_ODE_(self%id_Q1c,-fQ1Hc + fQ7Hc*self%p_ex7ox + fQ6Hc*self%p_ex6ox)
-         _SET_BOTTOM_ODE_(self%id_Q1n,-fQ1Hn + fQ7Hn*self%p_ex7ox + fQ6Hn*self%p_ex6ox)
-         _SET_BOTTOM_ODE_(self%id_Q1p,-fQ1Hp + fQ7Hp*self%p_ex7ox + fQ6Hp*self%p_ex6ox)
-
-         _SET_BOTTOM_ODE_(self%id_K4n,-fK4Hn + excess_n)
-         _SET_BOTTOM_ODE_(self%id_K1p,-fK1Hp + excess_p)
+         _SET_BOTTOM_ODE_(self%id_Q1c,-fQ1Hc + fQ7Hc*self%pue7 + fQ6Hc*self%pue6)
+         _SET_BOTTOM_ODE_(self%id_Q1n,-fQ1Hn + fQ7Hn*self%pue7 + fQ6Hn*self%pue6)
+         _SET_BOTTOM_ODE_(self%id_Q1p,-fQ1Hp + fQ7Hp*self%pue7 + fQ6Hp*self%pue6)
 
       _HORIZONTAL_LOOP_END_
 
    end subroutine do_bottom
 
-!-----------------------------------------------------------------------
-!BOP
-!
-! !IROUTINE: Adjust_fixed_nutrients \label{sec:AdjustFixedNutrients}
-!
-! !DESCRIPTION:
-!  TODO - description
-!
-!  This routine determines the amount of excess c,n or p in the
-!  source terms and excretes the appropriate amount(s) to Q6 and
-!  nutrients, so that the fixed nutrient ratio is re-established
-!
-!  IN:  Source terms of fixed quota bio-state.(cnp)......SXx
-!       Fixed quota values (np)..........................qx
-!
-!  INT: Excess nutrient in bio-state (np)................ExcessX
-!
-!  OUT: Source terms for Predator (SX), Q6 and nutrients
-!\\
-!\\
-! !INTERFACE:
-      subroutine adjust_fixed_nutrients ( SXc, SXn, SXp,qn, qp, SKn, SKp, SQc )
-!
-! !INPUT/OUTPUT PARAMETERS:
-       real(rk), intent(inout)  :: SXc, SXn, SXp, SKn, SKp, SQc
-       real(rk), intent(in)     :: qn, qp
-!
-! !LOCAL PARAMETERS:
-       real(rk) :: ExcessN, ExcessP, ExcessC
-!
-! !REVISION HISTORY:
-!  Original author(s) TODO
-!
-!EOP
-!-----------------------------------------------------------------------
-
-!-----------------------------------------------------------------------
-!BOC
-!
-       ExcessC = max(max(SXc - SXp/qp,SXc - SXn/qn),0._rk)
-!
-       if (ExcessC>0.0_rk) then
-         SXc = SXc - ExcessC
-         SQc = SQc + ExcessC
-       end if
-
-       ExcessN = max(SXn - SXc*qn,0._rk)
-       ExcessP = max(SXp - SXc*qp,0._rk)
-
-       if (ExcessN>0.0_rk) then
-         SXn = SXn - ExcessN
-         SKn = SKn + ExcessN
-       end if
-
-       if (ExcessP>0.0_rk) then
-         SXp = SXp - ExcessP
-         SKp = SKp + ExcessP
-       end if
-
-       end subroutine adjust_fixed_nutrients
-!
-!EOC
-!-----------------------------------------------------------------------
-   
 end module

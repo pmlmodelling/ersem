@@ -13,11 +13,11 @@ module ersem_benthic_nitrogen_cycle
    type,extends(type_base_model),public :: type_ersem_benthic_nitrogen_cycle
       type (type_bottom_state_variable_id) :: id_K3n,id_K4n,id_G2o,id_K3n2,id_K4n2,id_G2o2,id_G4n
       type (type_state_variable_id)        :: id_N4n
-      type (type_dependency_id)            :: id_ETW,id_phx
+      type (type_dependency_id)            :: id_ETW,id_ph
       type (type_horizontal_dependency_id) :: id_D1m,id_K6_sms,id_layer2_thickness
-      real(rk) :: q10nitX,hM4M3X,sM4M3X,xno3X
-      real(rk) :: pammonX,pdenitX,xn2x,hM3G4X
-      integer :: ISWphx
+      real(rk) :: q10nit,hM4M3,sM4M3,xno3
+      real(rk) :: pammon,pdenit,xn2,hM3G4
+      integer :: ISWph
    contains
       procedure :: initialize
       procedure :: do_bottom
@@ -37,11 +37,11 @@ contains
       ! Set time unit to d-1. This implies that all rates (sink/source terms) are given in d-1.
       self%dt = 86400._rk
 
-      call self%get_parameter(self%q10nitX,'q10nit','-',            'Q_10 temperature coefficient')
-      call self%get_parameter(self%hM4M3X, 'hM4M3', 'mmol/m^3',     'Michaelis-Menten constant for nitrate limitation')
-      call self%get_parameter(self%ISWphx, 'ISWph', '',             'pH impact on nitrification (0: off, 1: on)',default=0)
-      call self%get_parameter(self%sM4M3X, 'sM4M3', '1/d',          'maximum nitrification rate at 10 degrees Celsius')
-      call self%get_parameter(self%xno3X,  'xno3',  'mol O_2/mol N','oxygen consumed per nitrate produced')
+      call self%get_parameter(self%q10nit,'q10nit','-',            'Q_10 temperature coefficient')
+      call self%get_parameter(self%hM4M3, 'hM4M3', 'mmol/m^3',     'Michaelis-Menten constant for nitrate limitation')
+      call self%get_parameter(self%ISWph, 'ISWph', '',             'pH impact on nitrification (0: off, 1: on)',default=0)
+      call self%get_parameter(self%sM4M3, 'sM4M3', '1/d',          'maximum nitrification rate at 10 degrees Celsius')
+      call self%get_parameter(self%xno3,  'xno3',  'mol O_2/mol N','oxygen consumed per nitrate produced')
 
       call self%register_state_dependency(self%id_K3n,'K3n','mmol/m^2','nitrate')
       call self%register_state_dependency(self%id_K4n,'K4n','mmol/m^2','ammonium')
@@ -50,13 +50,13 @@ contains
       call self%register_dependency(self%id_D1m,depth_of_bottom_interface_of_layer_1)
 
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
-      if (self%ISWphx==1) call self%register_dependency(self%id_phx,standard_variables%ph_reported_on_total_scale)
+      if (self%ISWph==1) call self%register_dependency(self%id_ph,standard_variables%ph_reported_on_total_scale)
 
       ! Denitrification
-      call self%get_parameter(self%pammonx,'pammon','-','fraction of oxygen demand fulfilled by denitrification under anaerobic conditions')
-      call self%get_parameter(self%pdenitX,'pdenit','-','fraction of denitrification producing dinitrogen gas (remainder produces ammonium)')
-      call self%get_parameter(self%xn2x,   'xn2','-','oxygen produced per N2 produced')
-      call self%get_parameter(self%hM3G4X,'hM3G4','mmol N/m^3','Michaelis-Menten constant for nitrate limitation of denitrification')
+      call self%get_parameter(self%pammon,'pammon','-','fraction of oxygen demand fulfilled by denitrification under anaerobic conditions')
+      call self%get_parameter(self%pdenit,'pdenit','-','fraction of denitrification producing dinitrogen gas (remainder produces ammonium)')
+      call self%get_parameter(self%xn2,   'xn2','-','oxygen produced per N2 produced')
+      call self%get_parameter(self%hM3G4,'hM3G4','mmol N/m^3','Michaelis-Menten constant for nitrate limitation of denitrification')
 
       ! Create our own state avriable for dinitrogen gas
       ! (only to track its total production, which can then be considered in nitrogen mass balance)
@@ -82,7 +82,7 @@ contains
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
       real(rk) :: K3n,K3nP,K4nP,N4n
-      real(rk) :: ETW,phx
+      real(rk) :: ETW,ph
       real(rk) :: Mu_m,eT,eN,Fph,jM4M3n,D1m
       real(rk) :: K6_sms,layer2_thickness,K3n2
       real(rk) :: MU_m2,eN2,jMIno3,jM3M4n,jM3G4n
@@ -106,24 +106,24 @@ contains
          MU_m = max(0.0_rk,K3n)/D1m
 
          ! Limitation factor for temperature (Q_10)
-         eT = self%q10nitX**((ETW-10._rk)/10._rk)
+         eT = self%q10nit**((ETW-10._rk)/10._rk)
 
          ! Limitation factor for nitrate (hyperbolic, 1 at zero nitrate, dropping to 0 at high nitrate).
-         eN = self%hM4M3X/(self%hM4M3X+MU_m)
+         eN = self%hM4M3/(self%hM4M3+MU_m)
 
          ! Ph influence on nitrification - empirical equation
-         if(self%ISWphx==1) then
-            _GET_(self%id_phx,phx)
-           Fph = min(2._rk,max(0._rk,0.6111_rk*phx-3.8889_rk))
-           jM4M3n = Fph * self%sM4M3X * K4nP * eT * eN
+         if(self%ISWph==1) then
+            _GET_(self%id_ph,ph)
+           Fph = min(2._rk,max(0._rk,0.6111_rk*ph-3.8889_rk))
+           jM4M3n = Fph * self%sM4M3 * K4nP * eT * eN
          else
-           jM4M3n = self%sM4M3X*K4nP*eT*eN
+           jM4M3n = self%sM4M3*K4nP*eT*eN
          end if
 
          ! Impose nitrification source-sink terms for benthic ammonium, nitrate, oxygen.
          _SET_BOTTOM_ODE_(self%id_K3n,jM4M3n)
          _SET_BOTTOM_ODE_(self%id_K4n,-jM4M3n)
-         _SET_BOTTOM_ODE_(self%id_G2o,-self%xno3X*jM4M3n)
+         _SET_BOTTOM_ODE_(self%id_G2o,-self%xno3*jM4M3n)
 
          ! Retrieve oxygen debt to to anaerobic respiration, depth-integrated nitrate in oxidized layer, thickness of oxidized layer.
          _GET_HORIZONTAL_(self%id_K6_sms,K6_sms) 
@@ -136,21 +136,21 @@ contains
          ! From nitrate per m2 in layer 2 to nitrate concentration per unit sediment
          ! (not pore water concentration as it does not consider porosity!)
          MU_m2 = K3n2/layer2_thickness
-         eN2 = MU_m2/(MU_m2+self%hM3G4X)
+         eN2 = MU_m2/(MU_m2+self%hM3G4)
 
          ! Oxygen debt in anaerobic layer:
          ! expression in nitrate reduction (100%):
-        jMIno3 = -K6_sms/(self%xno3X *(1._rk - self%pdenitX) + self%xn2X*self%pdenitX)
-        jM3M4n = jMIno3*eN2*self%pammonX*(1._rk-self%pdenitX)
+        jMIno3 = -K6_sms/(self%xno3 *(1._rk - self%pdenit) + self%xn2*self%pdenit)
+        jM3M4n = jMIno3*eN2*self%pammon*(1._rk-self%pdenit)
 
-        jM3G4n = jMIno3*eN2*self%pammonX*       self%pdenitX
+        jM3G4n = jMIno3*eN2*self%pammon*       self%pdenit
 
         _SET_BOTTOM_ODE_(self%id_K4n2, jM3M4n)
         _SET_BOTTOM_ODE_(self%id_K3n2, -jM3M4n -jM3G4n)
         _SET_BOTTOM_ODE_(self%id_G4n, jM3G4n)
 
         ! Oxygen dynamics: after denitrification is taken into account, use actual oxygen to pay off remaining oxygen debt.
-        _SET_BOTTOM_ODE_(self%id_G2o2, K6_sms + self%xno3X*jM3M4n + self%xn2X*jM3G4n)
+        _SET_BOTTOM_ODE_(self%id_G2o2, K6_sms + self%xno3*jM3M4n + self%xn2*jM3G4n)
 
       _HORIZONTAL_LOOP_END_
 
