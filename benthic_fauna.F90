@@ -157,16 +157,14 @@ contains
             call self%request_coupling_to_model(self%id_foods(ifood),self%id_food(ifood),standard_variables%total_silicate)
             call self%register_dependency(self%id_foodc_an(ifood),'food'//trim(index)//'c_an','mmol C/m^2','food source '//trim(index)//' carbon in anaerobic layer')
             call self%request_coupling(self%id_foodc_an(ifood),'zero_hz')
-
-            if (legacy_ersem_compatibility) then
-               ! Legacy ERSEM computes available detritus based on the predator's depth range, but applies the detritus loss
-               ! to a detritus pool with a different depth distribution. To be able to reproduce this (inconsistent!) behaviour
-               ! we allow separate coupling to the pool that should absorb the detritus loss (this comes in addition to the
-               ! pool representing available detritus).
-               call self%register_model_dependency(self%id_food_loss_source(ifood),'food'//trim(index)//'_loss_source')
-               call self%couplings%set_string('food'//trim(index)//'_loss_source','food'//trim(index))
-            end if
          end if
+
+         ! Legacy ERSEM computes available detritus based on the predator's depth range, but applies the detritus loss
+         ! to a detritus pool with a different depth distribution. To be able to reproduce this (inconsistent!) behaviour
+         ! we allow separate coupling to the pool that should absorb the detritus loss (this comes in addition to the
+         ! pool representing available detritus).
+         call self%register_model_dependency(self%id_food_loss_source(ifood),'food'//trim(index)//'_loss_source')
+         call self%couplings%set_string('food'//trim(index)//'_loss_source','food'//trim(index))
       end do
 
       ! Allocate and obtain food source preferences
@@ -327,17 +325,14 @@ contains
 
       ! Based on relative uptake rate of each food source, decrease all state variables of that food source.
       do ifood=1,self%nfood
-         if (self%foodispel(ifood)) then
-            do istate=1,size(self%id_food(ifood)%state)
-               _GET_(self%id_food(ifood)%state(istate),foodP)
-               _SET_BOTTOM_EXCHANGE_(self%id_food(ifood)%state(istate),-sflux(ifood)*foodP)   
-            end do
-         else
-            do istate=1,size(self%id_food(ifood)%bottom_state)
-               _GET_HORIZONTAL_(self%id_food(ifood)%bottom_state(istate),foodP)
-               _SET_BOTTOM_ODE_(self%id_food_loss_source(ifood)%bottom_state(istate),-sflux(ifood)*foodP)
-            end do
-         end if 
+         do istate=1,size(self%id_food(ifood)%state)
+            _GET_(self%id_food(ifood)%state(istate),foodP)
+            _SET_BOTTOM_EXCHANGE_(self%id_food_loss_source(ifood)%state(istate),-sflux(ifood)*foodP)   
+         end do
+         do istate=1,size(self%id_food(ifood)%bottom_state)
+            _GET_HORIZONTAL_(self%id_food(ifood)%bottom_state(istate),foodP)
+            _SET_BOTTOM_ODE_(self%id_food_loss_source(ifood)%bottom_state(istate),-sflux(ifood)*foodP)
+         end do
       end do
 
       ! Total gross and net food uptake, summed over all food sources (matter/m2/d).
