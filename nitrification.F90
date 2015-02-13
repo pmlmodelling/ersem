@@ -14,7 +14,7 @@ module ersem_nitrification
 
    type,extends(type_ersem_pelagic_base),public :: type_ersem_nitrification
       ! Variables
-      type (type_state_variable_id) :: id_O2o
+      type (type_state_variable_id) :: id_O2o,id_TA
       type (type_state_variable_id) :: id_N3n,id_N4n
       type (type_dependency_id)     :: id_ETW,id_phx
 
@@ -54,6 +54,7 @@ contains
       call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3',  'nitrate')
       call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3',  'ammonium')
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen')
+      call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)    
 
       ! Register environmental dependencies (temperature, pH)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
@@ -93,6 +94,7 @@ contains
 
          _SET_ODE_(self%id_N3n, + fN4N3n)
          _SET_ODE_(self%id_N4n, - fN4N3n)
+         _SET_ODE_(self%id_TA, -2*fN4N3n)  ! Alkalinity contributions: +1 for NH4, -1 for nitrate
 
       ! Leave spatial loops (if any)
       _LOOP_END_

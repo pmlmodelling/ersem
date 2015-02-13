@@ -16,7 +16,7 @@ module ersem_calcification
    type,extends(type_ersem_pelagic_base),public :: type_ersem_calcification
 !     Variable identifiers
       type (type_diagnostic_variable_id)   :: id_RainR
-      type (type_state_variable_id)        :: id_O3c
+      type (type_state_variable_id)        :: id_O3c,id_TA
       type (type_bottom_state_variable_id) :: id_BL2c
       type (type_dependency_id)            :: id_om_cal
 
@@ -65,6 +65,7 @@ contains
 
       call self%register_dependency(self%id_om_cal,'om_cal','-','calcite saturation')
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','total dissolved inorganic carbon')
+      call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)    
 
       if (self%sedimentation) then
           call self%register_bottom_state_dependency(self%id_bL2c,'bL2c','mg C/m^3','benthic calcite')
@@ -79,7 +80,7 @@ contains
 
       real(rk) :: om_cal,L2c
       real(rk) :: fcalc,fdiss
-      
+
       _LOOP_BEGIN_
          _GET_WITH_BACKGROUND_(self%id_c,L2c)  ! Jorn: legacy ersem includes background, but excluding background seems more appropriate
          _GET_(self%id_om_cal,om_cal)
@@ -94,9 +95,10 @@ contains
             fcalc = max(0._rk,(om_cal-1._rk)/(om_cal-1._rk+self%KcalomX))
             fdiss = max(0._rk,(1._rk-om_cal)/(1._rk-om_cal+self%KcalomX))
          end if
-         
+
          _SET_ODE_(self%id_c,  -fdiss*L2c)
          _SET_ODE_(self%id_O3c, fdiss*L2c/CMass)
+         _SET_ODE_(self%id_TA,2*fdiss*L2c/CMass)  ! Dissolution of CaCO3 increases alkalinity by 2 units
          _SET_DIAGNOSTIC_(self%id_RainR,fcalc * self%Rain0)
       _LOOP_END_
 

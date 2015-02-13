@@ -14,11 +14,11 @@ module ersem_bacteria_docdyn
 
    type,extends(type_ersem_pelagic_base),public :: type_ersem_bacteria_docdyn
       ! Variables
-      type (type_state_variable_id) :: id_O3c, id_O2o
+      type (type_state_variable_id) :: id_O3c, id_O2o, id_TA
       type (type_state_variable_id) :: id_R1c, id_R2c, id_R3c
       type (type_state_variable_id) :: id_R1p
       type (type_state_variable_id) :: id_R1n
-      type (type_state_variable_id) :: id_N1p,id_N3n,id_N4n,id_N7f
+      type (type_state_variable_id) :: id_N1p,id_N4n,id_N7f
       type (type_dependency_id)     :: id_ETW,id_eO2mO2
       type (type_state_variable_id),allocatable,dimension(:) :: id_RPc,id_RPp,id_RPn,id_RPf
       type (type_model_id),         allocatable,dimension(:) :: id_RP
@@ -97,7 +97,6 @@ contains
 
       ! Register links to nutrient pools.
       call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
-      call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3','nitrate')
       call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','ammonium')
       if (use_iron) call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3','inorganic iron')
 
@@ -147,6 +146,7 @@ contains
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide')
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O/m^3','oxygen')
+      call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)    
 
       ! Register environmental dependencies (temperature, suspendend sediment, pH, oxygen saturation)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
@@ -323,6 +323,7 @@ contains
          _SET_ODE_(self%id_p, + fR1B1p - fB1N1p - fB1RDp)
          _SET_ODE_(self%id_N1p, + fB1N1p)
          _SET_ODE_(self%id_R1p, + fB1RDp - fR1B1p)
+         _SET_ODE_(self%id_TA,  - fB1N1p)   ! Contribution to alkalinity: -1 for phosphate
 
 !..Nitrogen dynamics in bacteria........................................
 
@@ -352,6 +353,7 @@ contains
          _SET_ODE_(self%id_N4n, + fB1NIn)
          _SET_ODE_(self%id_n,   + fR1B1n - fB1NIn - fB1RDn)
          _SET_ODE_(self%id_R1n, + fB1RDn   - fR1B1n)
+         _SET_ODE_(self%id_TA,  + fB1NIn)   ! Contribution to alkalinity: +1 for ammonium
 
       ! Leave spatial loops (if any)
       _LOOP_END_
@@ -388,7 +390,8 @@ contains
 
          _SET_ODE_(self%id_N1p, + fR1N1p)
          _SET_ODE_(self%id_N4n, + fR1NIn)
-
+         _SET_ODE_(self%id_TA,  - fR1N1p + fR1NIn)   ! Contributions to alkalinity: -1 for phosphate, +1 for ammonium
+         
          if (use_iron) then
             ! remineralization of particulate iron to Fe
             do iRP=1,self%nRP

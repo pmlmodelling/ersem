@@ -36,7 +36,7 @@ module ersem_primary_producer
       ! NB: own state variables (c,n,p,s,f,chl) are added implicitly by deriving from type_ersem_pelagic_base!
       
       ! Identifiers for state variables of other models
-      type (type_state_variable_id) :: id_O3c,id_O2o                        ! dissolved inorganic carbon, oxygen
+      type (type_state_variable_id) :: id_O3c,id_O2o,id_TA                  ! dissolved inorganic carbon, oxygen, total alkalinity
       type (type_state_variable_id) :: id_N1p,id_N3n,id_N4n,id_N5s,id_N7f   ! nutrients: phosphate, nitrate, ammonium, silicate, iron
       type (type_state_variable_id) :: id_R1c,id_R1p,id_R1n,id_R2c          ! dissolved organic carbon (R1: labile, R2: semi-labile)
       type (type_state_variable_id) :: id_R6c,id_R6p,id_R6n,id_R6s,id_R6f   ! particulate organic carbon
@@ -187,6 +187,7 @@ contains
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide')    
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen')    
+      call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)    
 
       ! Register diagnostic variables (i.e., model outputs)
       call self%register_diagnostic_variable(self%id_netPI, 'netPI', 'mg C/m^3/d','net primary production',  output=output_time_step_averaged)
@@ -407,9 +408,9 @@ contains
 
             ! For dying cells: convert virtual cell-attached calcite to actual calcite in free liths.
             ! Update DIC and lith balances accordingly (only now take away the DIC needed to form the calcite)
-            _SET_ODE_(self%id_O3c,-fPIR6c*RainR/Cmass)
-            _SET_ODE_(self%id_L2c, fPIR6c*RainR)
-
+            _SET_ODE_(self%id_L2c,   fPIR6c*RainR)
+            _SET_ODE_(self%id_O3c,  -fPIR6c*RainR/Cmass)
+            _SET_ODE_(self%id_TA, -2*fPIR6c*RainR/Cmass)   ! CaCO3 formation decreases alkalinity by 2 units
          end if
 
          ! Respiration..........................................................
@@ -471,6 +472,7 @@ contains
          ! Source equations
          _SET_ODE_(self%id_p,(fN1PIp-fPIRDp-fPIR6p))
          _SET_ODE_(self%id_N1p,-fN1PIp)
+         _SET_ODE_(self%id_TA,  fN1PIp) ! Alkalinity contributions: -1 for PO4
          _SET_ODE_(self%id_R6p,fPIR6p)
          _SET_ODE_(self%id_R1p,fPIRDp)
 
@@ -502,6 +504,7 @@ contains
          _SET_ODE_(self%id_n,(fN4PIn+fN3PIn-fPIRDn-fPIR6n))
          _SET_ODE_(self%id_N3n,-fN3PIn)
          _SET_ODE_(self%id_N4n,-fN4PIn)
+         _SET_ODE_(self%id_TA,  fN3PIn-fN4PIn) ! Alkalinity contributions: -1 for NO3, +1 for NH4
          _SET_ODE_(self%id_R6n,fPIR6n)
          _SET_ODE_(self%id_R1n,fPIRDn)
 

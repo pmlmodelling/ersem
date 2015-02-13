@@ -51,9 +51,11 @@ contains
       call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_O3c)
    
       if (self%iswtalk==5) then
-         call self%register_state_variable(self%id_TA,'TA','umol/kg','total alkalinity',minimum=0._rk)
+         call self%register_state_variable(self%id_TA,'TA','umol/kg','total alkalinity',minimum=0._rk, &
+            standard_variable=standard_variables%alkalinity_expressed_as_mole_equivalent)
       else
-         call self%register_diagnostic_variable(self%id_TA_diag,'TA','umol/kg','total alkalinity')
+         call self%register_diagnostic_variable(self%id_TA_diag,'TA','umol/kg','total alkalinity', act_as_state_variable=.true., &
+            standard_variable=standard_variables%alkalinity_expressed_as_mole_equivalent)
       end if
 
       call self%register_diagnostic_variable(self%id_ph,    'pH',    '-',      'pH',standard_variable=standard_variables%ph_reported_on_total_scale)
@@ -78,7 +80,7 @@ contains
       self%dt = 3600._rk*24._rk
 
    end subroutine
-   
+
    function approximate_alkalinity(iswtalk,T,S) result(TA)
       integer, intent(in) :: iswtalk
       real(rk),intent(in) :: T,S
@@ -116,7 +118,7 @@ contains
       real(rk) :: pH,PCO2,H2CO3,HCO3,CO3,k0co2
       real(rk) :: Om_cal,Om_arg
       logical  :: success
-      
+
       IF (self%iswCO2X .NE. 1 ) RETURN
 
       _LOOP_BEGIN_

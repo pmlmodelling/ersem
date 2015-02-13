@@ -18,7 +18,7 @@ module ersem_microzooplankton
       type (type_model_id)                                   :: id_RP
       type (type_dependency_id),    allocatable,dimension(:) :: id_preyc,id_preyn,id_preyp,id_preys,id_preyf,id_preyl
       type (type_state_variable_id),allocatable,dimension(:) :: id_preyf_target
-      type (type_state_variable_id)      :: id_O3c,id_O2o,id_L2c
+      type (type_state_variable_id)      :: id_O3c,id_O2o,id_L2c,id_TA
       type (type_state_variable_id)      :: id_R1c,id_R1p,id_R1n
       type (type_state_variable_id)      :: id_R2c
       type (type_state_variable_id)      :: id_RPc,id_RPp,id_RPn,id_RPs
@@ -158,6 +158,7 @@ contains
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide sink')
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen source')
+      call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)    
 
       call self%register_state_dependency(self%id_L2c,'L2c','mg C/m^3','calcite',required=.false.)
 
@@ -298,8 +299,9 @@ contains
             ! As the consumed calcite has not yet been taken away from the dissolved
             ! inorganic carbon pool (prey calcite is "virtual calcite", materializing only
             ! the moment the prey dies), do so now.
-            _SET_ODE_(self%id_L2c, (1.0_rk-self%gutdiss)*ineff*self%pu_ea*sum(sprey*preylP))
-            _SET_ODE_(self%id_O3c,-(1.0_rk-self%gutdiss)*ineff*self%pu_ea*sum(sprey*preylP)/CMass)
+            _SET_ODE_(self%id_L2c,  (1.0_rk-self%gutdiss)*ineff*self%pu_ea*sum(sprey*preylP))
+            _SET_ODE_(self%id_O3c, -(1.0_rk-self%gutdiss)*ineff*self%pu_ea*sum(sprey*preylP)/CMass)
+            _SET_ODE_(self%id_TA,-2*(1.0_rk-self%gutdiss)*ineff*sum(self%pu_ea*sprey*preylP)/CMass)   ! CaCO3 formation decreases alkalinity by 2 units
          end if
 
          ! Source equation for carbon in biomass.
@@ -335,6 +337,7 @@ contains
 
          ! Phosphate exudation
          _SET_ODE_(self%id_N1p,+ fZIN1p)
+         _SET_ODE_(self%id_TA, - fZIN1p)  ! Alkalinity contributions: -1 for PO4
 
          ! -------------------------------
          ! Nitrogen
@@ -357,6 +360,7 @@ contains
 
          ! Ammonium exudation
          _SET_ODE_(self%id_N4n,+ fZINIn)
+         _SET_ODE_(self%id_TA, + fZINIn)  ! Alkalinity contributions: +1 for NH4
 
          ! -------------------------------
          ! Silicate
