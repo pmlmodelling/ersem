@@ -117,16 +117,16 @@ contains
       allocate(self%id_RPf(self%nRP))
       do iRP=1,self%nRP
          write (index,'(i0)') iRP
-         call self%register_state_dependency(self%id_RPc(iRP),'RP'//trim(index)//'c','mg C/m^3',   'POC '//trim(index))    
-         call self%register_state_dependency(self%id_RPn(iRP),'RP'//trim(index)//'n','mmol N/m^3', 'PON '//trim(index))    
-         call self%register_state_dependency(self%id_RPp(iRP),'RP'//trim(index)//'p','mmol P/m^3', 'POP '//trim(index))    
+         call self%register_state_dependency(self%id_RPc(iRP),'RP'//trim(index)//'c','mg C/m^3',   'carbon in substrate '//trim(index))    
+         call self%register_state_dependency(self%id_RPn(iRP),'RP'//trim(index)//'n','mmol N/m^3', 'nitrogen in substrate '//trim(index))    
+         call self%register_state_dependency(self%id_RPp(iRP),'RP'//trim(index)//'p','mmol P/m^3', 'phosphorus in substrate '//trim(index))    
          call self%register_model_dependency(self%id_RP(iRP),'RP'//trim(index))
-         call self%request_coupling_to_model(self%id_RPc(iRP),self%id_RP(iRP),'c')
-         call self%request_coupling_to_model(self%id_RPn(iRP),self%id_RP(iRP),'n')
-         call self%request_coupling_to_model(self%id_RPp(iRP),self%id_RP(iRP),'p')
+         call self%request_coupling_to_model(self%id_RPc(iRP),self%id_RP(iRP),'c')  ! For now link to hardcoded "c" to get a direct link to state mg C/m3 (and not a diagnostic for mmol C/m3)
+         call self%request_coupling_to_model(self%id_RPn(iRP),self%id_RP(iRP),standard_variables%total_nitrogen)
+         call self%request_coupling_to_model(self%id_RPp(iRP),self%id_RP(iRP),standard_variables%total_phosphorus)
          if (use_iron) then
-            call self%register_state_dependency(self%id_RPf(iRP),'RP'//trim(index)//'f','umol Fe/m^3','POFe '//trim(index),required=.false.)    
-            call self%request_coupling_to_model(self%id_RPf(iRP),self%id_RP(iRP),'f')
+            call self%register_state_dependency(self%id_RPf(iRP),'RP'//trim(index)//'f','umol Fe/m^3','iron in substrate '//trim(index))
+            call self%request_coupling_to_model(self%id_RPf(iRP),self%id_RP(iRP),standard_variables%total_iron)
          end if
       end do
       
@@ -145,7 +145,7 @@ contains
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide')
-      call self%register_state_dependency(self%id_O2o,'O2o','mmol O/m^3','oxygen')
+      call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen')
       call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)    
 
       ! Register environmental dependencies (temperature, suspendend sediment, pH, oxygen saturation)

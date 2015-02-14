@@ -529,10 +529,10 @@ contains
       call self%register_dependency(self%id_d_tot,depth_of_sediment_column)
 
       call self%register_model_dependency(self%id_Q,'Q')
-      if (index(composition,'c')/=0) call layer_add_constituent(self,'c','mg C','carbon',    self%id_c_int,self%id_pen_depth_c,self%id_c_sms,self%id_c_local,self%id_c_remin_target)
-      if (index(composition,'n')/=0) call layer_add_constituent(self,'n','mmol','nitrogen',  self%id_n_int,self%id_pen_depth_n,self%id_n_sms,self%id_n_local,self%id_n_remin_target)
-      if (index(composition,'p')/=0) call layer_add_constituent(self,'p','mmol','phosphorus',self%id_p_int,self%id_pen_depth_p,self%id_p_sms,self%id_p_local,self%id_p_remin_target)
-      if (index(composition,'s')/=0) call layer_add_constituent(self,'s','mmol','silicate',  self%id_s_int,self%id_pen_depth_s,self%id_s_sms,self%id_s_local,self%id_s_remin_target)
+      if (index(composition,'c')/=0) call layer_add_constituent(self,'c','mg C',   'carbon',    self%id_c_int,self%id_pen_depth_c,self%id_c_sms,self%id_c_local,self%id_c_remin_target)
+      if (index(composition,'n')/=0) call layer_add_constituent(self,'n','mmol N', 'nitrogen',  self%id_n_int,self%id_pen_depth_n,self%id_n_sms,self%id_n_local,self%id_n_remin_target)
+      if (index(composition,'p')/=0) call layer_add_constituent(self,'p','mmol P', 'phosphorus',self%id_p_int,self%id_pen_depth_p,self%id_p_sms,self%id_p_local,self%id_p_remin_target)
+      if (index(composition,'s')/=0) call layer_add_constituent(self,'s','mmol Si','silicate',  self%id_s_int,self%id_pen_depth_s,self%id_s_sms,self%id_s_local,self%id_s_remin_target)
 
    end subroutine layer_initialize
 
@@ -589,12 +589,12 @@ contains
       call self%request_coupling_to_model(id_pen_depth,self%id_Q,'pen_depth_'//trim(name))
 
       ! Create an alias in the master model for the layer-integrated density computed by layer_content_calculator.
-      call self%add_horizontal_variable(name,trim(units)//'m^2','layer-integrated '//trim(long_name),domain=domain_bottom,act_as_state_variable=.true.)
+      call self%add_horizontal_variable(name,trim(units)//'/m^2','layer-integrated '//trim(long_name),domain=domain_bottom,act_as_state_variable=.true.)
       call self%request_coupling(name,'content_calculator_'//trim(name)//'/c')
 
       ! Register a dependency on the diagnostic that holds the layer-integrated density.
       ! This will be used to compute remineralization
-      call self%register_dependency(id_local,trim(name)//'_local',trim(units)//'m^2','layer-integrated '//trim(long_name))
+      call self%register_dependency(id_local,trim(name)//'_local',trim(units)//'/m^2','layer-integrated '//trim(long_name))
       call self%request_coupling(id_local,'content_calculator_'//trim(name)//'/c')
       if (self%remin/=0.0_rk) call self%register_state_dependency(id_remin_target,trim(name)//'_remin_target',trim(units)//'m^2','sink for remineralized '//trim(long_name))
 

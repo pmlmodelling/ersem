@@ -92,9 +92,9 @@ contains
       call self%register_dependency(self%id_Dm,'Dm','m','depth of limiting layer for uptake')
 
       ! Dependencies on state variables of external modules
-      call self%register_state_dependency(self%id_O2o,'O2o','mmol O2/m^3','pelagic oxygen')
+      call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','pelagic oxygen')
       call self%register_state_dependency(self%id_G3c,'G3c','mmol C/m^2','carbon dioxide')
-      call self%register_state_dependency(self%id_G2o,'G2o','mmol O2/m^2','oxygen')
+      call self%register_state_dependency(self%id_G2o,'G2o','mmol O_2/m^2','oxygen')
       call self%register_state_dependency(self%id_K1p, 'K1p', 'mmol P/m^2','benthic phosphate in aerobic layer')
       call self%register_state_dependency(self%id_K4n, 'K4n', 'mmol N/m^2','benthic ammonium in aerobic layer')
       call self%register_state_dependency(self%id_K1p2,'K1p2','mmol P/m^2','benthic phosphate in anaerobic layer')
@@ -139,23 +139,23 @@ contains
          call self%register_model_dependency(self%id_food(ifood),'food'//trim(index))
          if (self%foodispel(ifood)) then
             call self%register_dependency(self%id_foodpelc(ifood), 'food'//trim(index)//'c','mmol C/m^3','food source '//trim(index)//' carbon') 
-            call self%register_dependency(self%id_foodpeln(ifood), 'food'//trim(index)//'n','mmol C/m^3','food source '//trim(index)//' nitrogen')
-            call self%register_dependency(self%id_foodpelp(ifood), 'food'//trim(index)//'p','mmol C/m^3','food source '//trim(index)//' phosphorus')
-            call self%register_dependency(self%id_foodpels(ifood), 'food'//trim(index)//'s','mmol C/m^3','food source '//trim(index)//' silicate')
+            call self%register_dependency(self%id_foodpeln(ifood), 'food'//trim(index)//'n','mmol N/m^3','food source '//trim(index)//' nitrogen')
+            call self%register_dependency(self%id_foodpelp(ifood), 'food'//trim(index)//'p','mmol P/m^3','food source '//trim(index)//' phosphorus')
+            call self%register_dependency(self%id_foodpels(ifood), 'food'//trim(index)//'s','mmol Si/m^3','food source '//trim(index)//' silicate')
             call self%request_coupling_to_model(self%id_foodpelc(ifood),self%id_food(ifood),standard_variables%total_carbon)
             call self%request_coupling_to_model(self%id_foodpeln(ifood),self%id_food(ifood),standard_variables%total_nitrogen)
             call self%request_coupling_to_model(self%id_foodpelp(ifood),self%id_food(ifood),standard_variables%total_phosphorus)
             call self%request_coupling_to_model(self%id_foodpels(ifood),self%id_food(ifood),standard_variables%total_silicate)
          else
             call self%register_dependency(self%id_foodc(ifood),'food'//trim(index)//'c','mmol C/m^2','Food '//trim(index)//' carbon') 
-            call self%register_dependency(self%id_foodn(ifood),'food'//trim(index)//'n','mmol C/m^2','Food '//trim(index)//' nitrogen')
-            call self%register_dependency(self%id_foodp(ifood),'food'//trim(index)//'p','mmol C/m^2','Food '//trim(index)//' phosphorus')
-            call self%register_dependency(self%id_foods(ifood),'food'//trim(index)//'s','mmol C/m^2','Food '//trim(index)//' silicate')
+            call self%register_dependency(self%id_foodn(ifood),'food'//trim(index)//'n','mmol N/m^2','Food '//trim(index)//' nitrogen')
+            call self%register_dependency(self%id_foodp(ifood),'food'//trim(index)//'p','mmol P/m^2','Food '//trim(index)//' phosphorus')
+            call self%register_dependency(self%id_foods(ifood),'food'//trim(index)//'s','mmol Si/m^2','Food '//trim(index)//' silicate')
             call self%request_coupling_to_model(self%id_foodc(ifood),self%id_food(ifood),standard_variables%total_carbon)
             call self%request_coupling_to_model(self%id_foodn(ifood),self%id_food(ifood),standard_variables%total_nitrogen)
             call self%request_coupling_to_model(self%id_foodp(ifood),self%id_food(ifood),standard_variables%total_phosphorus)
             call self%request_coupling_to_model(self%id_foods(ifood),self%id_food(ifood),standard_variables%total_silicate)
-            call self%register_dependency(self%id_foodc_an(ifood),'food'//trim(index)//'c_an','mmol C/m^2','food source '//trim(index)//' carbon in anaerobic layer')
+            call self%register_dependency(self%id_foodc_an(ifood),'food'//trim(index)//'c_an','mg C/m^2','food source '//trim(index)//' carbon in anaerobic layer')
             call self%request_coupling(self%id_foodc_an(ifood),'zero_hz')
          end if
 

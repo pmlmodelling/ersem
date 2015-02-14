@@ -68,7 +68,7 @@ contains
       call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)    
 
       if (self%sedimentation) then
-          call self%register_bottom_state_dependency(self%id_bL2c,'bL2c','mg C/m^3','benthic calcite')
+          call self%register_bottom_state_dependency(self%id_bL2c,'bL2c','mg C/m^2','benthic calcite')
           call self%register_dependency(self%id_bedstress,standard_variables%bottom_stress)
           call self%register_dependency(self%id_dens,     standard_variables%density)
       end if

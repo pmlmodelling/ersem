@@ -77,7 +77,7 @@ contains
       ! Dependencies on state variables of external modules.
       call self%register_state_dependency(self%id_K4n,'K4n','mmol N/m^2','ammonium')
       call self%register_state_dependency(self%id_K1p,'K1p','mmol N/m^2','phosphate')
-      call self%register_state_dependency(self%id_G2o,'G2o','mmol O2/m^2','oxygen')
+      call self%register_state_dependency(self%id_G2o,'G2o','mmol O_2/m^2','oxygen')
       call self%register_state_dependency(self%id_G3c,'G3c','mmol C/m^2','dissolved inorganic carbon')
       call self%register_state_dependency(self%id_Q1c,'Q1c','mg C/m^2',  'dissolved organic carbon')
       call self%register_state_dependency(self%id_Q1n,'Q1n','mmol N/m^2','dissolved organic nitrogen')

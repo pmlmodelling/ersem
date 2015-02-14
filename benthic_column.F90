@@ -59,7 +59,7 @@ contains
       call self%register_state_variable(self%id_D2m,'D2m','m','depth of bottom interface of oxidized layer',standard_variable=depth_of_bottom_interface_of_layer_2)
       call self%register_diagnostic_variable(self%id_poro,'poro','-','porosity',standard_variable=sediment_porosity,missing_value=self%qPW,output=output_none)
       call self%register_diagnostic_variable(self%id_Dtot,'Dtot','m','depth of sediment column',missing_value=self%d_tot,standard_variable=depth_of_sediment_column,output=output_none)
-      call self%register_diagnostic_variable(self%id_EDZ_mix,'cmix','s/m','equilibrium diffusive speed between sediment surface water',standard_variable=pelagic_benthic_transfer_constant,missing_value=self%EDZ_mix,output=output_none)
+      call self%register_diagnostic_variable(self%id_EDZ_mix,'cmix','d/m','equilibrium diffusive speed between sediment surface water',standard_variable=pelagic_benthic_transfer_constant,missing_value=self%EDZ_mix,output=output_none)
       call self%register_diagnostic_variable(self%id_layer2_thickness,'layer2_thickness','m','thickness of second layer',output=output_none)
 
       ! Create bioturbation submodel and provide it with parameters

@@ -72,7 +72,7 @@ contains
       if (index(self%composition,'c')/=0) then
          call self%add_constituent('c',0.0_rk)
          if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_c,'resuspension_target_c','mmol/m^3','pelagic variable taking up resuspended carbon')
+            call self%register_state_dependency(self%id_resuspension_c,'resuspension_target_c','mg C/m^3','pelagic variable taking up resuspended carbon')
             call self%request_coupling_to_model(self%id_resuspension_c,self%id_resuspension_target,'c')
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_O3c,'O3c','mmol/m^3','dissolved inorganic carbon')
@@ -80,37 +80,37 @@ contains
       if (index(self%composition,'n')/=0) then
          call self%add_constituent('n',0.0_rk)
          if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_n,'resuspension_target_n','mmol/m^3','pelagic variable taking up resuspended nitrogen')
+            call self%register_state_dependency(self%id_resuspension_n,'resuspension_target_n','mmol N/m^3','pelagic variable taking up resuspended nitrogen')
             call self%request_coupling_to_model(self%id_resuspension_n,self%id_resuspension_target,'n')
          end if
          if (self%reminQIX/=0.0_rk) then
-            call self%register_state_dependency(self%id_N3n,'N3n','mmol/m^3','nitrate')
-            call self%register_state_dependency(self%id_N4n,'N4n','mmol/m^3','ammonium')
+            call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3','nitrate')
+            call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','ammonium')
          end if
       end if
       if (index(self%composition,'p')/=0) then
          call self%add_constituent('p',0.0_rk)
          if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_p,'resuspension_target_p','mmol/m^3','pelagic variable taking up resuspended phosphorus')
+            call self%register_state_dependency(self%id_resuspension_p,'resuspension_target_p','mmol P/m^3','pelagic variable taking up resuspended phosphorus')
             call self%request_coupling_to_model(self%id_resuspension_p,self%id_resuspension_target,'p')
          end if
-         if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N1p,'N1p','mmol/m^3','phosphate')
+         if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
       end if
       if (index(self%composition,'s')/=0) then
          call self%add_constituent('s',0.0_rk)
          if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_s,'resuspension_target_s','mmol/m^3','pelagic variable taking up resuspended silicate')
+            call self%register_state_dependency(self%id_resuspension_s,'resuspension_target_s','mmol Si/m^3','pelagic variable taking up resuspended silicate')
             call self%request_coupling_to_model(self%id_resuspension_s,self%id_resuspension_target,'s')
          end if
-         if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N5s,'N5s','mmol/m^3','silicate')
+         if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N5s,'N5s','mmol Si/m^3','silicate')
       end if
       if (index(self%composition,'f')/=0) then
          call self%add_constituent('f',0.0_rk)
          if (use_iron.and.self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_f,'resuspension_target_f','umol/m^3','pelagic variable taking up resuspended iron')
+            call self%register_state_dependency(self%id_resuspension_f,'resuspension_target_f','umol Fe/m^3','pelagic variable taking up resuspended iron')
             call self%request_coupling_to_model(self%id_resuspension_f,self%id_resuspension_target,'f')
          end if
-         if (use_iron.and.self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N7f,'N7f','umol/m^3','dissolved iron')
+         if (use_iron.and.self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3','dissolved iron')
       end if
       if (index(self%composition,'l')/=0) then
          call self%add_constituent('l',0.0_rk)
@@ -124,7 +124,7 @@ contains
 
    subroutine initialize_ersem_benthic_base(self,c_ini,n_ini,p_ini,s_ini,f_ini)
       class (type_ersem_benthic_base), intent(inout), target :: self
-      real(rk),optional,                     intent(in)            :: c_ini,n_ini,p_ini,s_ini,f_ini
+      real(rk),optional,               intent(in)            :: c_ini,n_ini,p_ini,s_ini,f_ini
 
       ! Set time unit to d-1
       ! This implies that all rates (sink/source terms, vertical velocities) are given in d-1.
