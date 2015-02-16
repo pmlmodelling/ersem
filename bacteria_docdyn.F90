@@ -68,7 +68,7 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%iswBlimX,'iswBlim', '',           'nutrient limitation (1=minimum of inorganic and organic availability,2=additive availability)')
+      call self%get_parameter(self%iswBlimX,'iswBlim', '',           'nutrient limitation (1: minimum of inorganic and organic availability, 2: additive availability)')
       call self%get_parameter(self%q10B1X,  'q10',     '-',          'Q_10 temperature coefficient')
       call self%get_parameter(self%chdB1oX, 'chdo',    '-',          'Michaelis-Menten constant for oxygen limitation')
       call self%get_parameter(self%chB1nX,  'chn',     'mmol N/m^3', 'Michaelis-Menten constant for nitrate limitation')
@@ -101,12 +101,12 @@ contains
       if (use_iron) call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3','inorganic iron')
 
       ! Register links to labile dissolved organic matter pools.
-      call self%register_state_dependency(self%id_R1c,'R1c','mg C/m^3',  'DOC')
-      call self%register_state_dependency(self%id_R1p,'R1p','mmol P/m^3','DOP')    
-      call self%register_state_dependency(self%id_R1n,'R1n','mmol N/m^3','DON')    
+      call self%register_state_dependency(self%id_R1c,'R1c','mg C/m^3',  'labile dissolved organic carbon')
+      call self%register_state_dependency(self%id_R1p,'R1p','mmol P/m^3','labile dissolved organic phosphorus')    
+      call self%register_state_dependency(self%id_R1n,'R1n','mmol N/m^3','labile dissolved organic nitrogen')    
 
       ! Register links to semi-labile dissolved organic matter pools.
-      call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','semi-labile DOC')    
+      call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','semi-labile dissolved organic carbon')    
 
       ! Register links to particulate organic matter pools.
       call self%get_parameter(self%nRP,'nRP','','number of substrates',default=0)
