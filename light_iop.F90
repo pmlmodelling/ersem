@@ -78,7 +78,9 @@ contains
          _GET_(self%id_iopBBSp,iopBBS) ! Backscatter coefficient of shortwave radiation, due to particulate organic material (m-1)
          _GET_(self%id_adESS,adESS)   ! Suspended silt adsorption
          !_GET_(self%id_zenithA,zenithA)   ! Zenith angle
-         xEPS = (1.+.005*zenithA)*iopADS+4.18*(1.-.52*exp(-10.8*iopADS))*iopBBS+adESS+self%a0w+bpk+self%b0w
+         iopADS = iopADS+adESS+self%a0w
+         iopBBS = iopBBS+bpk+self%b0w
+         xEPS = (1.+.005*zenithA)*iopADS+4.18*(1.-.52*exp(-10.8*iopADS))*iopBBS
          xtnc = xEPS*dz
          EIR = buffer/xtnc*(1.0_rk-exp(-xtnc))  ! Note: this computes the vertical average, not the value at the layer centre.
          buffer = buffer*exp(-xtnc)
