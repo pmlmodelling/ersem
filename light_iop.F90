@@ -80,7 +80,7 @@ contains
          _GET_HORIZONTAL_(self%id_zenithA,zenithA)   ! Zenith angle
          iopADS = iopADS+adESS+self%a0w
          iopBBS = iopBBS+bpk+self%b0w
-         xEPS = (1.+.005*zenithA)*iopADS+4.18*(1.-.52*exp(-10.8*iopADS))*iopBBS
+         xEPS = (1._rk+.005_rk*zenithA)*iopADS+4.18_rk*(1._rk-.52_rk*exp(-10.8_rk*iopADS))*iopBBS
          xtnc = xEPS*dz
          EIR = buffer/xtnc*(1.0_rk-exp(-xtnc))  ! Note: this computes the vertical average, not the value at the layer centre.
          buffer = buffer*exp(-xtnc)
