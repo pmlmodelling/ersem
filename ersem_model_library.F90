@@ -22,6 +22,7 @@ module ersem_model_library
    use ersem_benthic_bacteria
    use ersem_benthic_fauna
    use ersem_zenith_angle
+   use ersem_shared
 
    implicit none
 
@@ -52,8 +53,8 @@ contains
          case ('bacteria');                                allocate(type_ersem_bacteria::model)
          case ('bacteria_docdyn');                         allocate(type_ersem_bacteria_docdyn::model)
          case ('nitrification');                           allocate(type_ersem_nitrification::model)
-         case ('light');                                   allocate(type_ersem_light::model)
-         case ('light_iop');                                   allocate(type_ersem_light_iop::model)
+         case ('light');                                   allocate(type_ersem_light::model); use_light=.true.
+         case ('light_iop');                                   allocate(type_ersem_light_iop::model); use_light_iop=.true.
          case ('calcification');                           allocate(type_ersem_calcification::model)
          case ('benthic_column');                          allocate(type_ersem_benthic_column::model)
          case ('benthic_column_dissolved_matter');         allocate(type_ersem_benthic_column_dissolved_matter::model)

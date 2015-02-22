@@ -18,6 +18,8 @@ module ersem_shared
    real(rk), parameter :: pi=acos(-1._rk)
    real(rk), parameter :: deg2rad=pi/180._rk
 
+   logical :: use_light_iop = .false.
+   logical :: use_light = .false.
 #ifdef IRON
    logical,parameter :: use_iron = .true.
 #else
@@ -54,5 +56,5 @@ module ersem_shared
 
    ! Zenith angle.
    type (type_horizontal_standard_variable),parameter :: zenith_angle = type_horizontal_standard_variable(name='zenith_angle',units='degrees')
-   
+
 end module
