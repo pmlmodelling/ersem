@@ -13,7 +13,7 @@ module ersem_light_iop
       ! Identifiers for diagnostic variables
       type (type_diagnostic_variable_id)   :: id_EIR, id_parEIR, id_xEPS, id_iopADS, id_iopBBS
       type (type_dependency_id)            :: id_dz, id_adESS ,id_iopADSp, id_iopBBSp
-      type (type_horizontal_dependency_id) :: id_I_0
+      type (type_horizontal_dependency_id) :: id_I_0, id_zenithA
 
       ! Parameters
       real(rk) :: adESSX,a0w,b0w,pEIR_eowX
@@ -61,7 +61,7 @@ contains
       call self%register_dependency(self%id_iopADSp,particulate_organic_adsportion_coefficient)
       call self%register_dependency(self%id_iopBBSp,particulate_organic_backscatter_coefficient)
       call self%register_dependency(self%id_adESS, type_bulk_standard_variable(name='adsorption_of_silt'))
-      !call self%register_dependency(self%zenithA), ??? ) 
+      call self%register_horizontal_dependency(self%id_zenithA, type_horizontal_standard_variable(name='zenith_angle')) 
    end subroutine
    
    subroutine get_light(self,_ARGUMENTS_VERT_)
@@ -77,7 +77,7 @@ contains
          _GET_(self%id_iopADSp,iopADS) ! Adsorption coefficient of shortwave radiation, due to particulate organic material (m-1)
          _GET_(self%id_iopBBSp,iopBBS) ! Backscatter coefficient of shortwave radiation, due to particulate organic material (m-1)
          _GET_(self%id_adESS,adESS)   ! Suspended silt adsorption
-         !_GET_(self%id_zenithA,zenithA)   ! Zenith angle
+         _GET_HORIZONTAL_(self%id_zenithA,zenithA)   ! Zenith angle
          iopADS = iopADS+adESS+self%a0w
          iopBBS = iopBBS+bpk+self%b0w
          xEPS = (1.+.005*zenithA)*iopADS+4.18*(1.-.52*exp(-10.8*iopADS))*iopBBS

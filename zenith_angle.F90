@@ -62,8 +62,8 @@ contains
          _GET_GLOBAL_(self%id_yday,yday)
 
          !Get day integer and day fraction in hours:
-         iday=int(yday)
-         h=(yday-iday)*24._rk
+         iday=int(yday)+1
+         h=(yday+1-iday)*24._rk
 
          ! Leap year not considered:
          th0 = pi*iday/182.5_rk
