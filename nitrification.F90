@@ -17,6 +17,7 @@ module ersem_nitrification
       type (type_state_variable_id) :: id_O2o,id_TA
       type (type_state_variable_id) :: id_N3n,id_N4n
       type (type_dependency_id)     :: id_ETW,id_phx
+      type (type_diagnostic_variable_id)     :: id_nitrification
 
       ! Parameters
       real(rk) :: q10
@@ -49,6 +50,9 @@ contains
       call self%get_parameter(self%ISWphx,'ISWph','',                'pH impact on nitrification (0: off, 1: on)')
       call self%get_parameter(self%sN4N3X,'sN4N3','1/d',             'specific nitrification rate')
       call self%get_parameter(self%chN3oX,'chN3o','(mmol O_2/m^3)^3','Michaelis-Menten constant for cubic oxygen dependence of nitrification')
+
+      ! Register diagnostic variables
+      call self%register_diagnostic_variable(self%id_nitrification,"rate","mmol/m3/d","rate")
 
       ! Register links to nutrient and oxygen pools.
       call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3',  'nitrate')
@@ -95,6 +99,8 @@ contains
          _SET_ODE_(self%id_N3n, + fN4N3n)
          _SET_ODE_(self%id_N4n, - fN4N3n)
          _SET_ODE_(self%id_TA, -2*fN4N3n)  ! Alkalinity contributions: +1 for NH4, -1 for nitrate
+         
+         _SET_DIAGNOSTIC_(self%id_nitrification,fN4N3n)
 
       ! Leave spatial loops (if any)
       _LOOP_END_
