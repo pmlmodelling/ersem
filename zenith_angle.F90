@@ -1,5 +1,9 @@
 #include "fabm_driver.h"
 
+! This module calculates the solar zenith angle as a function of longitude, latitude, day of year, and time of day.
+! The code that performs this calculation has been adapted from the General Ocean Turbulence Model (GOTM, http://www.gotm.net).
+! Original GOTM source file: src/airsea/solar_zenith_angle.F90.
+
 module ersem_zenith_angle
 
    use fabm_types
@@ -52,6 +56,7 @@ contains
       real(rk) :: lon,lat,h,th0,th02,th03,coszen,sundec,thsun,yday,zenithA
       integer :: iday
 
+      ! Retrieve time since beginning of the year
       _GET_GLOBAL_(self%id_yday,yday)
 
       !Get day integer and day fraction in hours:
@@ -71,7 +76,7 @@ contains
       ! Leave spatial loops (if any)
       _HORIZONTAL_LOOP_BEGIN_
 
-         ! Retrieve longitue, latitude and time since beginning of the year
+         ! Retrieve longitude, latitude
          _GET_HORIZONTAL_(self%id_lon,lon)
          _GET_HORIZONTAL_(self%id_lat,lat)
 
