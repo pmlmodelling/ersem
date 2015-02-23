@@ -47,8 +47,8 @@ contains
 
       call self%get_parameter(composition,'composition','',        'elemental composition')
       call self%get_parameter(EPS,        'EPS',        'm^2/mg C','specific shortwave attenuation',default=0.0_rk)
-      call self%get_parameter(iopADS,        'iopADS',        'm^2/mg C','specific shortwave adsorption',default=0.0_rk)
-      call self%get_parameter(iopBBS,        'iopBBS',        'm^2/mg C','specific shortwave backscatter',default=0.0_rk)
+      call self%get_parameter(iopADS,     'iopADS',     'm^2/mg C','specific shortwave absorption', default=0.0_rk)
+      call self%get_parameter(iopBBS,     'iopBBS',     'm^2/mg C','specific shortwave backscatter',default=0.0_rk)
       call self%get_parameter(rRPmX,      'rm',         'm/d',     'sinking velocity',              default=0.0_rk)
 
       call self%initialize_ersem_base(rm=rRPmX)
@@ -63,11 +63,13 @@ contains
       end if
       if (index(composition,'f')/=0) call self%add_constituent('f',0.0_rk)
 
-      if (iopADS/=0.0_rk) call self%add_to_aggregate_variable(particulate_organic_adsportion_coefficient, &
+      ! Add contributions to light attenuation, absorption, scattering.
+      ! Contributions with a scale_factor of 0.0 will automatically be ignored.
+      call self%add_to_aggregate_variable(particulate_organic_absorption_coefficient, &
          self%id_c,scale_factor=iopADS,include_background=.true.)
-      if (iopBBS/=0.0_rk) call self%add_to_aggregate_variable(particulate_organic_backscatter_coefficient, &
+      call self%add_to_aggregate_variable(particulate_organic_backscatter_coefficient, &
          self%id_c,scale_factor=iopBBS,include_background=.true.)
-      if (EPS/=0.0_rk) call self%add_to_aggregate_variable(standard_variables%attenuation_coefficient_of_photosynthetic_radiative_flux, &
+      call self%add_to_aggregate_variable(standard_variables%attenuation_coefficient_of_photosynthetic_radiative_flux, &
          self%id_c,scale_factor=EPS,include_background=.true.)
 
    end subroutine
@@ -232,15 +234,15 @@ contains
          _SET_BOTTOM_ODE_(self%id_Q6c, fsdc * (1._rk - self%qQ1c - self%qQ7c))
          _SET_BOTTOM_ODE_(self%id_Q6n, fsdn * (1._rk - MIN(1._rk, self%qQ1c * self%xR1n) - MIN(1._rk, self%qQ7c * self%xR7n)))
          _SET_BOTTOM_ODE_(self%id_Q6p, fsdp * (1._rk - MIN(1._rk, self%qQ1c * self%xR1p) - MIN(1._rk, self%qQ7c * self%xR7p)))
-      
+
          _SET_BOTTOM_ODE_(self%id_Q1c, fsdc * self%qQ1c)
          _SET_BOTTOM_ODE_(self%id_Q1n, fsdn * MIN(1._rk, self%qQ1c * self%xR1n))
          _SET_BOTTOM_ODE_(self%id_Q1p, fsdp * MIN(1._rk, self%qQ1c * self%xR1p))
-      
+
          _SET_BOTTOM_ODE_(self%id_Q7c, fsdc * self%qQ7c)
          _SET_BOTTOM_ODE_(self%id_Q7n, fsdn * MIN(1._rk, self%qQ7c * self%xR7n))
          _SET_BOTTOM_ODE_(self%id_Q7p, fsdp * MIN(1._rk, self%qQ7c * self%xR7p))
-      
+
          _SET_BOTTOM_EXCHANGE_(self%id_c,-fsdc)
          _SET_BOTTOM_EXCHANGE_(self%id_n,-fsdn)
          _SET_BOTTOM_EXCHANGE_(self%id_p,-fsdp)

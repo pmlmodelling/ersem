@@ -34,7 +34,7 @@ module ersem_primary_producer
 
    type,extends(type_ersem_pelagic_base),public :: type_ersem_primary_producer
       ! NB: own state variables (c,n,p,s,f,chl) are added implicitly by deriving from type_ersem_pelagic_base!
-      
+
       ! Identifiers for state variables of other models
       type (type_state_variable_id) :: id_O3c,id_O2o,id_TA                  ! dissolved inorganic carbon, oxygen, total alkalinity
       type (type_state_variable_id) :: id_N1p,id_N3n,id_N4n,id_N5s,id_N7f   ! nutrients: phosphate, nitrate, ammonium, silicate, iron
@@ -135,11 +135,11 @@ contains
          call self%get_parameter(self%qurf,'qurf','m^3/mg C/d',  'specific affinity for iron')
       end if
       if (use_light) then
-          call self%get_parameter(EPS,         'EPS',    'm^2/mg C','specific extinction coefficient')
+          call self%get_parameter(EPS,     'EPS',    'm^2/mg C','specific shortwave attenuation')
       endif
       if (use_light_iop) then
-          call self%get_parameter(iopADS,           'iopADS', 'm^2/mg C', 'specific adsorption coefficient')
-          call self%get_parameter(iopBBS,           'iopBBS', 'm^2/mg C', 'specific backscatter coefficient')
+          call self%get_parameter(iopADS,  'iopADS', 'm^2/mg C','specific shortwave absorption')
+          call self%get_parameter(iopBBS,  'iopBBS', 'm^2/mg C','specific shortwave backscatter')
       endif
       call self%get_parameter(c0,          'c0',     'mg C/m^3','background carbon concentration', default=0.0_rk)
       call self%get_parameter(self%calcify,'calcify','',        'calcify',                         default=.false.)
@@ -158,27 +158,27 @@ contains
       if (self%use_Si) call self%add_constituent('s',1.e-6_rk,c0*self%qsc)
 
       ! Register links to external nutrient pools.
-      call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')    
-      call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3','nitrate')    
-      call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','ammonium')    
-      if (self%use_Si) call self%register_state_dependency(self%id_N5s,'N5s','mmol Si/m^3','silicate')    
-      if (use_iron)    call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3','inorganic iron')    
+      call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
+      call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3','nitrate')
+      call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','ammonium')
+      if (self%use_Si) call self%register_state_dependency(self%id_N5s,'N5s','mmol Si/m^3','silicate')
+      if (use_iron)    call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3','inorganic iron')
 
       ! Register links to external labile dissolved organic matter pools (sink for excretion and lysis).
       call self%register_state_dependency(self%id_R1c,'R1c','mg C/m^3',  'dissolved organic carbon')
-      call self%register_state_dependency(self%id_R1p,'R1p','mmol P/m^3','dissolved organic phosphorus')    
-      call self%register_state_dependency(self%id_R1n,'R1n','mmol N/m^3','dissolved organic nitrogen')    
+      call self%register_state_dependency(self%id_R1p,'R1p','mmol P/m^3','dissolved organic phosphorus')
+      call self%register_state_dependency(self%id_R1n,'R1n','mmol N/m^3','dissolved organic nitrogen')
 
       ! Register links to external semi-labile dissolved organic matter pool (sink for excretion and lysis).
-      call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','semi-labile dissolved organic carbon')    
+      call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','semi-labile dissolved organic carbon')
 
       ! Register links to external particulate organic matter pools (sink for dead phytoplankton).
       ! At run-time, these can be coupled to any available pools (e.g., R4, R6, R8 in ERSEM)
-      call self%register_state_dependency(self%id_R6c,'RPc','mg C/m^3',   'particulate organic carbon')    
-      call self%register_state_dependency(self%id_R6p,'RPp','mmol P/m^3', 'particulate organic phosphorus')    
-      call self%register_state_dependency(self%id_R6n,'RPn','mmol N/m^3', 'particulate organic nitrogen')    
-      if (self%use_Si) call self%register_state_dependency(self%id_R6s,'RPs','mmol Si/m^3','particulate organic silicate')    
-      if (use_iron)    call self%register_state_dependency(self%id_R6f,'RPf','umol Fe/m^3','particulate organic iron')    
+      call self%register_state_dependency(self%id_R6c,'RPc','mg C/m^3',   'particulate organic carbon')
+      call self%register_state_dependency(self%id_R6p,'RPp','mmol P/m^3', 'particulate organic phosphorus')
+      call self%register_state_dependency(self%id_R6n,'RPn','mmol N/m^3', 'particulate organic nitrogen')
+      if (self%use_Si) call self%register_state_dependency(self%id_R6s,'RPs','mmol Si/m^3','particulate organic silicate')
+      if (use_iron)    call self%register_state_dependency(self%id_R6f,'RPf','umol Fe/m^3','particulate organic iron')
 
       ! Automatically hook up all components of external particulate organic matter,
       ! by obtaining them from a single named model "RP". This takes away the need to couple each RP?
@@ -226,7 +226,7 @@ contains
       ! Register contribution to light extinction
       call self%add_to_aggregate_variable(standard_variables%attenuation_coefficient_of_photosynthetic_radiative_flux, &
          self%id_c,scale_factor=EPS,include_background=.true.)
-      call self%add_to_aggregate_variable(particulate_organic_adsportion_coefficient, &
+      call self%add_to_aggregate_variable(particulate_organic_absorption_coefficient, &
          self%id_chl,scale_factor=iopADS,include_background=.true.)
       call self%add_to_aggregate_variable(particulate_organic_backscatter_coefficient, &
          self%id_chl,scale_factor=iopBBS,include_background=.true.)

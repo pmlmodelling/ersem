@@ -51,7 +51,7 @@ module ersem_shared
    type (type_horizontal_standard_variable),parameter :: pelagic_benthic_transfer_constant = type_horizontal_standard_variable(name='pelagic_benthic_transfer_constant',units='d/m')
 
    ! Aggregate adsorption and backscatter.
-   type (type_bulk_standard_variable),parameter :: particulate_organic_adsportion_coefficient = type_bulk_standard_variable(name='particulate_organic_adsportion_coefficient',units='1/m',aggregate_variable=.true.)
+   type (type_bulk_standard_variable),parameter :: particulate_organic_absorption_coefficient = type_bulk_standard_variable(name='particulate_organic_absorption_coefficient',units='1/m',aggregate_variable=.true.)
    type (type_bulk_standard_variable),parameter :: particulate_organic_backscatter_coefficient = type_bulk_standard_variable(name='particulate_organic_backscatter_coefficient',units='1/m',aggregate_variable=.true.)
 
    ! Zenith angle.
