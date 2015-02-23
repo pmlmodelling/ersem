@@ -93,7 +93,7 @@ contains
 ! !REVISION HISTORY:
 !
 ! !LOCAL VARIABLES:
-      real(rk) :: c0,EPS,iopADS,iopBBS
+      real(rk) :: c0,EPS,iopABS,iopBBS
 !EOP
 !-----------------------------------------------------------------------
 !BOC
@@ -138,7 +138,7 @@ contains
           call self%get_parameter(EPS,     'EPS',    'm^2/mg C','specific shortwave attenuation')
       endif
       if (use_light_iop) then
-          call self%get_parameter(iopADS,  'iopADS', 'm^2/mg C','specific shortwave absorption')
+          call self%get_parameter(iopABS,  'iopABS', 'm^2/mg C','specific shortwave absorption')
           call self%get_parameter(iopBBS,  'iopBBS', 'm^2/mg C','specific shortwave backscatter')
       endif
       call self%get_parameter(c0,          'c0',     'mg C/m^3','background carbon concentration', default=0.0_rk)
@@ -227,7 +227,7 @@ contains
       call self%add_to_aggregate_variable(standard_variables%attenuation_coefficient_of_photosynthetic_radiative_flux, &
          self%id_c,scale_factor=EPS,include_background=.true.)
       call self%add_to_aggregate_variable(particulate_organic_absorption_coefficient, &
-         self%id_chl,scale_factor=iopADS,include_background=.true.)
+         self%id_chl,scale_factor=iopABS,include_background=.true.)
       call self%add_to_aggregate_variable(particulate_organic_backscatter_coefficient, &
          self%id_chl,scale_factor=iopBBS,include_background=.true.)
 

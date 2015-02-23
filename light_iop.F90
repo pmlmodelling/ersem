@@ -11,12 +11,12 @@ module ersem_light_iop
 
    type,extends(type_base_model),public :: type_ersem_light_iop
       ! Identifiers for diagnostic variables
-      type (type_diagnostic_variable_id)   :: id_EIR, id_parEIR, id_xEPS, id_iopADS, id_iopBBS
-      type (type_dependency_id)            :: id_dz, id_adESS ,id_iopADSp, id_iopBBSp
+      type (type_diagnostic_variable_id)   :: id_EIR, id_parEIR, id_xEPS, id_iopABS, id_iopBBS
+      type (type_dependency_id)            :: id_dz, id_abESS ,id_iopABSp, id_iopBBSp
       type (type_horizontal_dependency_id) :: id_I_0, id_zenithA
 
       ! Parameters
-      real(rk) :: adESSX,a0w,b0w,pEIR_eowX
+      real(rk) :: abESSX,a0w,b0w,pEIR_eowX
    contains
 !     Model procedures
       procedure :: initialize
@@ -50,7 +50,7 @@ contains
               standard_variable=standard_variables%downwelling_photosynthetic_radiative_flux,source=source_do_column)
       call self%register_diagnostic_variable(self%id_xEPS,'xEPS','1/m','attenuation coefficient of shortwave flux', &
               source=source_do_column)
-      call self%register_diagnostic_variable(self%id_iopADS,'iopADS','1/m','absorption coefficient of shortwave flux', &
+      call self%register_diagnostic_variable(self%id_iopABS,'iopABS','1/m','absorption coefficient of shortwave flux', &
               source=source_do_column)
       call self%register_diagnostic_variable(self%id_iopBBS,'iopBBS','1/m','backscatter coefficient of shortwave flux', &
               source=source_do_column)
@@ -58,9 +58,9 @@ contains
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_I_0,standard_variables%surface_downwelling_shortwave_flux)
       call self%register_dependency(self%id_dz, standard_variables%cell_thickness)
-      call self%register_dependency(self%id_iopADSp,particulate_organic_absorption_coefficient)
+      call self%register_dependency(self%id_iopABSp,particulate_organic_absorption_coefficient)
       call self%register_dependency(self%id_iopBBSp,particulate_organic_backscatter_coefficient)
-      call self%register_dependency(self%id_adESS, type_bulk_standard_variable(name='absorption_of_silt'))
+      call self%register_dependency(self%id_abESS, type_bulk_standard_variable(name='absorption_of_silt'))
       call self%register_horizontal_dependency(self%id_zenithA, type_horizontal_standard_variable(name='zenith_angle')) 
    end subroutine
    
@@ -68,26 +68,26 @@ contains
       class (type_ersem_light_iop),intent(in) :: self
       _DECLARE_ARGUMENTS_VERT_
 
-      real(rk) :: buffer,dz,xEPS,iopADS,iopBBS,xtnc,EIR,adESS,zenithA
+      real(rk) :: buffer,dz,xEPS,iopABS,iopBBS,xtnc,EIR,abESS,zenithA
       real(rk),parameter :: bpk=.00022_rk
 
       _GET_HORIZONTAL_(self%id_I_0,buffer)
       _VERTICAL_LOOP_BEGIN_
          _GET_(self%id_dz,dz)          ! Layer height (m)
-         _GET_(self%id_iopADSp,iopADS) ! Absorption coefficient of shortwave radiation, due to particulate organic material (m-1)
+         _GET_(self%id_iopABSp,iopABS) ! Absorption coefficient of shortwave radiation, due to particulate organic material (m-1)
          _GET_(self%id_iopBBSp,iopBBS) ! Backscatter coefficient of shortwave radiation, due to particulate organic material (m-1)
-         _GET_(self%id_adESS,adESS)    ! Suspended silt absorption
+         _GET_(self%id_abESS,abESS)    ! Suspended silt absorption
          _GET_HORIZONTAL_(self%id_zenithA,zenithA)   ! Zenith angle
-         iopADS = iopADS+adESS+self%a0w
+         iopABS = iopABS+abESS+self%a0w
          iopBBS = iopBBS+bpk+self%b0w
-         xEPS = (1._rk+.005_rk*zenithA)*iopADS+4.18_rk*(1._rk-.52_rk*exp(-10.8_rk*iopADS))*iopBBS
+         xEPS = (1._rk+.005_rk*zenithA)*iopABS+4.18_rk*(1._rk-.52_rk*exp(-10.8_rk*iopABS))*iopBBS
          xtnc = xEPS*dz
          EIR = buffer/xtnc*(1.0_rk-exp(-xtnc))  ! Note: this computes the vertical average, not the value at the layer centre.
          buffer = buffer*exp(-xtnc)
          _SET_DIAGNOSTIC_(self%id_EIR,EIR)                     ! Local shortwave radiation
          _SET_DIAGNOSTIC_(self%id_parEIR,EIR*self%pEIR_eowX)   ! Local photosynthetically active radiation
          _SET_DIAGNOSTIC_(self%id_xEPS,xEPS)                   ! Vertical attenuation of shortwave radiation
-         _SET_DIAGNOSTIC_(self%id_iopADS,iopADS)               ! Vertical attenuation of shortwave radiation
+         _SET_DIAGNOSTIC_(self%id_iopABS,iopABS)               ! Vertical attenuation of shortwave radiation
          _SET_DIAGNOSTIC_(self%id_iopBBS,iopBBS)               ! Vertical attenuation of shortwave radiation
       _VERTICAL_LOOP_END_
 
