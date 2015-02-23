@@ -56,9 +56,9 @@ contains
 
          ! Add contributions to light attenuation, absorption, scattering.
          ! Contributions with a scale_factor of 0.0 will automatically be ignored.
-         call self%get_parameter(EPS,   'EPS',   'm^2/mg C','specific shortwave attenuation',default=0.0_rk)
-         call self%get_parameter(iopABS,'iopABS','m^2/mg C','specific shortwave absorption', default=0.0_rk)
-         call self%get_parameter(iopBBS,'iopBBS','m^2/mg C','specific shortwave backscatter',default=0.0_rk)
+         call self%get_parameter(EPS,   'EPS',   'm^2/mg C','specific shortwave attenuation',default=1.E-4_rk)
+         call self%get_parameter(iopABS,'iopABS','m^2/mg C','specific shortwave absorption', default=1.9E-4_rk)
+         call self%get_parameter(iopBBS,'iopBBS','m^2/mg C','specific shortwave backscatter',default=1.6E-5_rk)
          call self%add_to_aggregate_variable(particulate_organic_absorption_coefficient, &
             self%id_c,scale_factor=iopABS,include_background=.true.)
          call self%add_to_aggregate_variable(particulate_organic_backscatter_coefficient, &

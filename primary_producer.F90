@@ -134,13 +134,9 @@ contains
          call self%get_parameter(self%qfRc,'qfRc','umol Fe/mg C','maximum/optimal iron to carbon ratio')
          call self%get_parameter(self%qurf,'qurf','m^3/mg C/d',  'specific affinity for iron')
       end if
-      if (use_light) then
-          call self%get_parameter(EPS,     'EPS',    'm^2/mg C','specific shortwave attenuation')
-      endif
-      if (use_light_iop) then
-          call self%get_parameter(iopABS,  'iopABS', 'm^2/mg C','specific shortwave absorption')
-          call self%get_parameter(iopBBS,  'iopBBS', 'm^2/mg C','specific shortwave backscatter')
-      endif
+      call self%get_parameter(EPS,     'EPS',    'm^2/mg C','specific shortwave attenuation', default=4.E-4_rk)
+      call self%get_parameter(iopABS,  'iopABS', 'm^2/mg C','specific shortwave absorption', default=8.E-3_rk)
+      call self%get_parameter(iopBBS,  'iopBBS', 'm^2/mg C','specific shortwave backscatter', default=3.E-3_rk)
       call self%get_parameter(c0,          'c0',     'mg C/m^3','background carbon concentration', default=0.0_rk)
       call self%get_parameter(self%calcify,'calcify','',        'calcify',                         default=.false.)
       call self%get_parameter(self%rm,     'rm',     'm/d',     'background sinking velocity',     default=0.0_rk)

@@ -18,8 +18,6 @@ module ersem_shared
    real(rk), parameter :: pi=acos(-1._rk)
    real(rk), parameter :: deg2rad=pi/180._rk
 
-   logical :: use_light_iop = .false.
-   logical :: use_light = .false.
 #ifdef IRON
    logical,parameter :: use_iron = .true.
 #else
