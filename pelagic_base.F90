@@ -45,16 +45,27 @@ contains
       character(len=10) :: composition
       real(rk)          :: c0,s0,rRPmX,EPS,iopADS,iopBBS
 
-      call self%get_parameter(composition,'composition','',        'elemental composition')
-      call self%get_parameter(EPS,        'EPS',        'm^2/mg C','specific shortwave attenuation',default=0.0_rk)
-      call self%get_parameter(iopADS,     'iopADS',     'm^2/mg C','specific shortwave absorption', default=0.0_rk)
-      call self%get_parameter(iopBBS,     'iopBBS',     'm^2/mg C','specific shortwave backscatter',default=0.0_rk)
-      call self%get_parameter(rRPmX,      'rm',         'm/d',     'sinking velocity',              default=0.0_rk)
+      call self%get_parameter(composition,'composition','',   'elemental composition')
+      call self%get_parameter(rRPmX,      'rm',         'm/d','sinking velocity', default=0.0_rk)
 
       call self%initialize_ersem_base(rm=rRPmX)
 
       call self%get_parameter(c0,'c0','mg C/m^3','background carbon concentration',default=0.0_rk)
-      if (index(composition,'c')/=0) call self%add_constituent('c',0.0_rk,c0)
+      if (index(composition,'c')/=0) then
+         call self%add_constituent('c',0.0_rk,c0)
+
+         ! Add contributions to light attenuation, absorption, scattering.
+         ! Contributions with a scale_factor of 0.0 will automatically be ignored.
+         call self%get_parameter(EPS,   'EPS',   'm^2/mg C','specific shortwave attenuation',default=0.0_rk)
+         call self%get_parameter(iopADS,'iopADS','m^2/mg C','specific shortwave absorption', default=0.0_rk)
+         call self%get_parameter(iopBBS,'iopBBS','m^2/mg C','specific shortwave backscatter',default=0.0_rk)
+         call self%add_to_aggregate_variable(particulate_organic_absorption_coefficient, &
+            self%id_c,scale_factor=iopADS,include_background=.true.)
+         call self%add_to_aggregate_variable(particulate_organic_backscatter_coefficient, &
+            self%id_c,scale_factor=iopBBS,include_background=.true.)
+         call self%add_to_aggregate_variable(standard_variables%attenuation_coefficient_of_photosynthetic_radiative_flux, &
+            self%id_c,scale_factor=EPS,include_background=.true.)
+      end if
       if (index(composition,'n')/=0) call self%add_constituent('n',0.0_rk,qnRPIcX*c0)
       if (index(composition,'p')/=0) call self%add_constituent('p',0.0_rk,qpRPIcX*c0)
       if (index(composition,'s')/=0) then
@@ -62,15 +73,6 @@ contains
          call self%add_constituent('s',0.0_rk,s0)
       end if
       if (index(composition,'f')/=0) call self%add_constituent('f',0.0_rk)
-
-      ! Add contributions to light attenuation, absorption, scattering.
-      ! Contributions with a scale_factor of 0.0 will automatically be ignored.
-      call self%add_to_aggregate_variable(particulate_organic_absorption_coefficient, &
-         self%id_c,scale_factor=iopADS,include_background=.true.)
-      call self%add_to_aggregate_variable(particulate_organic_backscatter_coefficient, &
-         self%id_c,scale_factor=iopBBS,include_background=.true.)
-      call self%add_to_aggregate_variable(standard_variables%attenuation_coefficient_of_photosynthetic_radiative_flux, &
-         self%id_c,scale_factor=EPS,include_background=.true.)
 
    end subroutine
 
