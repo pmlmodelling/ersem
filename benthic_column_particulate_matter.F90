@@ -596,7 +596,7 @@ contains
       ! This will be used to compute remineralization
       call self%register_dependency(id_local,trim(name)//'_local',trim(units)//'/m^2','layer-integrated '//trim(long_name))
       call self%request_coupling(id_local,'content_calculator_'//trim(name)//'/c')
-      if (self%remin/=0.0_rk) call self%register_state_dependency(id_remin_target,trim(name)//'_remin_target',trim(units)//'m^2','sink for remineralized '//trim(long_name))
+      if (self%remin/=0.0_rk) call self%register_state_dependency(id_remin_target,trim(name)//'_remin_target',trim(units)//'/m^2','sink for remineralized '//trim(long_name))
 
       select case (name)
          case ('c'); call layer_content_calculator%add_to_aggregate_variable(standard_variables%total_carbon,layer_content_calculator%id_c,1.0_rk/CMass)
