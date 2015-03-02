@@ -197,8 +197,8 @@ contains
       call self%request_coupling_to_model(self%id_RPs,self%id_RP,'s')
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
-      call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide sink')
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen source')
+      call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide sink')
       call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)    
 
       call self%register_state_dependency(self%id_L2c,'L2c','mg C/m^3','calcite',required=.false.)

@@ -142,8 +142,8 @@ contains
       call self%get_parameter(self%R1R2X,'R1R2','-','labile fraction of produced dissolved organic carbon')
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
-      call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide')
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen')
+      call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide')
       call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)    
 
       ! Register environmental dependencies (temperature, suspendend sediment, pH, oxygen saturation)
