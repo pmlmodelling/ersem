@@ -1,6 +1,16 @@
 #include "fabm_driver.h"
 module ersem_oxygen
 
+! Computes oxygen saturation, apparent oxygen utilization and handles
+! exchange of oxygen across the water surface.
+
+! Note: negative oxygen concentrations are permitted.
+! These reflect an oygen debt (e.g., presence of H2S)
+! In this case, oxygen saturation will be zero (not negative!),
+! while apparent oxygen utilization will still be the difference
+! between saturation concentration and [negative] oxygen concentration.
+! Thus, the oxygen debt is included as part of utilization.
+
    use fabm_types
 
    implicit none
@@ -24,9 +34,9 @@ module ersem_oxygen
       procedure :: do
       procedure :: do_surface
    end type
-      
+
 contains
-      
+
    subroutine initialize(self,configunit)
 !
 ! !INPUT PARAMETERS:
@@ -39,7 +49,7 @@ contains
       call self%get_parameter(self%ISWO2X,'ISWO2','','saturation formulation (1: legacy ERSEM, 2: Weiss 1970)')
 
       call self%register_state_variable(self%id_O2o,'o','mmol O_2/m^3','oxygen',300._rk)
-   
+
       call self%register_diagnostic_variable(self%id_eO2mO2,'eO2mO2','1','relative oxygen saturation', &
          standard_variable=standard_variables%fractional_saturation_of_oxygen)
       call self%register_diagnostic_variable(self%id_osat,'osat','mmol O_2/m^3','oxygen saturation concentration')
@@ -65,7 +75,7 @@ contains
          _GET_(self%id_X1X,X1X)
          OSAT = oxygen_saturation_concentration(self,ETW,X1X)
          _SET_DIAGNOSTIC_(self%id_osat,OSAT)
-         _SET_DIAGNOSTIC_(self%id_eO2mO2,O2o/OSAT)
+         _SET_DIAGNOSTIC_(self%id_eO2mO2,max(0.0_rk,O2o/OSAT))
          _SET_DIAGNOSTIC_(self%id_aou,OSAT-O2o)
       _LOOP_END_
    end subroutine
