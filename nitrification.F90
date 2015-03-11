@@ -101,6 +101,9 @@ contains
          _SET_ODE_(self%id_N4n, - fN4N3n)
          _SET_ODE_(self%id_TA, -2*fN4N3n)  ! Alkalinity contributions: +1 for NH4, -1 for nitrate
 
+         ! Legacy ERSEM did not account for oxygen removal by nitrification
+         if (.not.legacy_ersem_compatibility) _SET_ODE_(self%id_O2o,-2*fN4N3n)
+
          _SET_DIAGNOSTIC_(self%id_nitrification,fN4N3n)
 
       ! Leave spatial loops (if any)
