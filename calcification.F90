@@ -9,9 +9,6 @@ module ersem_calcification
    implicit none
 
    private
-!
-! !REVISION HISTORY:!
-!  Original author(s): Jorn Bruggeman
 
    type,extends(type_ersem_pelagic_base),public :: type_ersem_calcification
 !     Variable identifiers

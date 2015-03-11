@@ -16,9 +16,6 @@ module ersem_oxygen
    implicit none
 
    private
-!
-! !REVISION HISTORY:!
-!  Original author(s): Jorn Bruggeman
 
    type,extends(type_base_model),public :: type_ersem_oxygen
 !     Variable identifiers

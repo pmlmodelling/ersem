@@ -6,9 +6,6 @@ module ersem_carbonate
    implicit none
 
    private
-!
-! !REVISION HISTORY:!
-!  Original author(s): Jorn Bruggeman
 
    type,extends(type_base_model),public :: type_ersem_carbonate
 !     Variable identifiers
@@ -26,9 +23,9 @@ module ersem_carbonate
       procedure :: do
       procedure :: do_surface
    end type
-      
+
 contains
-      
+
    subroutine initialize(self,configunit)
 !
 ! !INPUT PARAMETERS:
@@ -49,7 +46,7 @@ contains
 
       call self%register_state_variable(self%id_O3c,'c','mmol C/m^3','total dissolved inorganic carbon', 2200._rk,minimum=0._rk)
       call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_O3c)
-   
+
       if (self%iswtalk==5) then
          call self%register_state_variable(self%id_TA,'TA','umol/kg','total alkalinity',minimum=0._rk, &
             standard_variable=standard_variables%alkalinity_expressed_as_mole_equivalent)
