@@ -670,20 +670,48 @@ contains
          ! That is, d/dt C(z) within the layer does not depend on depth.
          ! Thus, average depth of mass insertion/removal is the average of surface and bottom depths.
          d_sms = (d_min+d_max)/2
-      elseif (self%source_depth_distribution==2) then
-         ! Assume the relative rate of change in mass is depth-independent.
-         ! That is, 1/C(z) d/dt C(z) within the layer does not depend on depth.
-         ! In addition, this rule assumes that the same relative rate of change applies below
-         ! the bottom of the active layer (till infinite depth) - or alternatively, that the
-         ! bottom interface of the active layer is much deeper than the penetration depth.
-         ! Using the fact that the distribution of mass is exponential, the mean depth of change
-         ! then equals the penetration depth, plus whatever offset the top of the active layer is located at.
-         d_sms = d_min + d_pen
-      elseif (self%source_depth_distribution==3) then
-         ! As for self%source_depth_distribution==2, but derive depth of change from
-         ! penetration depth of carbon, even when changing nitrogen, phosphorous, silicate.
-         _GET_HORIZONTAL_(self%id_pen_depth_c,d_pen_c)
-         d_sms = d_min + d_pen_c
+      elseif (self%source_depth_distribution>=2) then
+         ! Assume the relative rate of change in mass is depth-independent:
+         ! 1/C(z) d/dt C(z) within the active layer does not depend on depth.
+         ! Thus we can define source terms as d/dt C(z) = r C(z)
+         ! The mean depth of these source terms then equals
+         !    \int_d_min^d_max z d/dt C(z) dz / \int_d_min^d_max d/dt C(z) dz
+         ! As d/dt C(z) = r C(z), this is equal to
+         !    \int_d_min^d_max z C(z) dz / \int_d_min^d_max C(z) dz
+         ! In words, the mean depth of source terms within the specified depth interval is equal
+         ! to the mean depth of matter within the same depth interval.
+         !
+         ! Now we need to find the mean depth of matter. With C(z) = C0*exp(-z/z_mean), this can be written as
+         !    \int_d_min^d_max exp(-z/z_mean) z dz / \int_d_min^d_max exp(-z/z_mean) dz
+         ! Anti-derivatives of these expressions are derived near the top to this file.
+         ! For the denominator we found
+         !    \int_d_min^d_max exp(-z/z_mean) dz = [-z_mean exp(-z/z_mean)]_d_min^\d_max
+         !                                       = z_mean [exp(-d_min/z_mean)-exp(-d_max/z_mean)]
+         ! For the numerator we found
+         !    \int_d_min^d_max z exp(-z/z_mean) dz = [-(z+z_mean)z_mean exp(-z/z_mean)]_d_min^\d_max
+         !                                         = z_mean [(d_min+z_mean) exp(-d_min/z_mean)-(d_max+z_mean) exp(-d_max/z_mean)]
+         !                                         = z_mean^2 [exp(-d_min/z_mean)-exp(-d_max/z_mean)] + z_mean [d_min exp(-d_min/z_mean)-d_max exp(-d_max/z_mean)]
+         ! Combining numerator and denominator, we obtain
+         !    z_mean + [d_min exp(-d_min/z_mean)-d_max exp(-d_max/z_mean)] / [exp(-d_min/z_mean)-exp(-d_max/z_mean)]
+         ! This can be rearranged to
+         !    z_mean + d_min - (d_max-d_min) / (numpy.exp((d_max-d_min)/z_mean)-1)
+         if (legacy_ersem_compatibility) then
+            ! If $d_max-d_min>>z_mean$, the above expression simplifies to z_mean + d_min.
+            ! This is the expression used in legacy ERSEM, which thus assumes that
+            ! bottom interface of the active layer is much deeper than the penetration depth.
+            if (self%source_depth_distribution==2) then
+               d_sms = d_min + d_pen
+            elseif (self%source_depth_distribution==3) then
+               ! As for self%source_depth_distribution==2, but derive depth of change from
+               ! the penetration depth of carbon, even when changing nitrogen, phosphorous, silicate.
+               ! This was done in legacy ERSEM, but likely only because Q?Distribution routines
+               ! take a single penetration depth argument that is then applied to all constituents.
+               _GET_HORIZONTAL_(self%id_pen_depth_c,d_pen_c)
+               d_sms = d_min + d_pen_c
+            end if
+         else
+            d_sms = d_min + d_pen - (d_max-d_min)/(exp((d_max-d_min)/d_pen)-1)
+         end if
       end if
 
       ! Compute change in penetration depth. See its derivation in the comments at the top of the file,
