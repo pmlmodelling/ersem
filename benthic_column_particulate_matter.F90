@@ -688,11 +688,21 @@ contains
 
       ! Compute change in penetration depth. See its derivation in the comments at the top of the file,
       ! section "Impact of sources and sinks at different depths".
-      ! JB: correct form would have C_int_infty in the denominator, not C_int [see derivation]
-
-     _GET_HORIZONTAL_(self%id_d_tot,d_tot) 
-      if (d_pen>d_tot .and. sms<0._rk) d_sms = d_tot
-      _SET_BOTTOM_ODE_(id_pen_depth, (d_sms-d_pen)*sms/c_int)
+      _GET_HORIZONTAL_(self%id_d_tot,d_tot) 
+      if (legacy_ersem_compatibility) then
+         ! Legacy ERSEM clips d_sms to avoid positive feedback that leads to $d_pen->\infty$
+         ! This feedback very like stems from the assumption that d_pen<<d_tot.
+         if (d_pen>d_tot .and. sms<0._rk) d_sms = d_tot
+         _SET_BOTTOM_ODE_(id_pen_depth, (d_sms-d_pen)*sms/c_int)
+      else
+         ! New formulation defines d_pen explicitly as mean depth between 0 and \infty, rather than
+         ! between 0 and d_tot [see derivation near top of file]. Thus, it does not assume d_pen<<d_tot.
+         ! The result of this is that C_int_infty (not C_int) appears in the denominator.
+         ! This should already prevent a positive feedback, since the last term in the expression below
+         ! ensures that the change goes to zero when d_pen>>d_tot. When d_pen<<d_tot, the old result
+         ! is recovered. JornB 11/3/2015
+         _SET_BOTTOM_ODE_(id_pen_depth, (d_sms-d_pen)*sms/c_int*(1-exp(-d_tot/d_pen)))
+      end if
 
       ! Apply sinks-sources to depth-integrated mass
       _SET_BOTTOM_ODE_(id_c_int,sms)
