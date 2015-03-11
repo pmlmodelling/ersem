@@ -670,7 +670,7 @@ contains
          ! That is, d/dt C(z) within the layer does not depend on depth.
          ! Thus, average depth of mass insertion/removal is the average of surface and bottom depths.
          d_sms = (d_min+d_max)/2
-      elseif (self%source_depth_distribution>=2) then
+      else
          ! Assume the relative rate of change in mass is depth-independent:
          ! 1/C(z) d/dt C(z) within the active layer does not depend on depth.
          ! Thus we can define source terms as d/dt C(z) = r C(z)
@@ -694,7 +694,7 @@ contains
          ! Combining numerator and denominator, we obtain
          !    z_mean + [d_min exp(-d_min/z_mean)-d_max exp(-d_max/z_mean)] / [exp(-d_min/z_mean)-exp(-d_max/z_mean)]
          ! This can be rearranged to
-         !    z_mean + d_min - (d_max-d_min) / (numpy.exp((d_max-d_min)/z_mean)-1)
+         !    z_mean + d_min - (d_max-d_min)/(exp((d_max-d_min)/z_mean)-1)
          if (legacy_ersem_compatibility) then
             ! If $d_max-d_min>>z_mean$, the above expression simplifies to z_mean + d_min.
             ! This is the expression used in legacy ERSEM, which thus assumes that
