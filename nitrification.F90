@@ -65,7 +65,7 @@ contains
       if (self%ISWphx==1) call self%register_dependency(self%id_phx,standard_variables%ph_reported_on_total_scale)
 
    end subroutine initialize
-   
+
    subroutine do(self,_ARGUMENTS_DO_)
 
       class (type_ersem_nitrification),intent(in) :: self
@@ -83,11 +83,12 @@ contains
 
          ! Oxygen state for nitrogen species transformation
          _GET_(self%id_O2o,O2o)
-         o2state = O2o**3/(O2o**3 + self%chN3oX) ! half saturation    
+         O2o = max(0.0_rk,O2o)
+         o2state = O2o**3/(O2o**3 + self%chN3oX) ! half saturation
 
          !..Nitrification..
          _GET_(self%id_N4n,N4nP)
-         fN4N3n = self%sN4N3X  * N4nP * etB1 * o2state
+         fN4N3n = self%sN4N3X * N4nP * etB1 * o2state
 
          ! Ph influence on nitrification - empirical equation. Use (1) or not (2)
          if (self%ISWphx==1) then
@@ -99,12 +100,12 @@ contains
          _SET_ODE_(self%id_N3n, + fN4N3n)
          _SET_ODE_(self%id_N4n, - fN4N3n)
          _SET_ODE_(self%id_TA, -2*fN4N3n)  ! Alkalinity contributions: +1 for NH4, -1 for nitrate
-         
+
          _SET_DIAGNOSTIC_(self%id_nitrification,fN4N3n)
 
       ! Leave spatial loops (if any)
       _LOOP_END_
 
    end subroutine do
-   
+
 end module
