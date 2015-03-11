@@ -184,7 +184,8 @@ contains
             self%pue(ifood) = pueQ
 
             ! Legacy ERSEM applies the loss of detritus due to feeding to the same pool that absorbs faeces and dead matter,
-            ! even though the availability of detritus for consumption is computed differently. Apply this default behaviour here.
+            ! even though the availability of detritus for consumption is computed over a different depth range.
+            ! Implement the legacy behaviour here.
             if (legacy_ersem_compatibility.and..not.self%foodispel(ifood)) &
                call self%couplings%set_string('food'//trim(index)//'_loss_source','Q')
          else
