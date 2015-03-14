@@ -81,10 +81,10 @@ contains
          _GET_HORIZONTAL_(self%id_lat,lat)
 
          ! Sun hour angle :
-         zenithA = (h-12._rk)*15._rk*deg2rad + lon
+         zenithA = ((h-12._rk)*15._rk + lon)*deg2rad
 
          ! Cosine of the solar zenith angle :
-         zenithA =sin(lat)*sin(sundec)+cos(lat)*cos(sundec)*cos(zenithA)
+         zenithA =sin(lat*deg2rad)*sin(sundec)+cos(lat*deg2rad)*cos(sundec)*cos(zenithA)
          zenithA =acos(max(0._rk,zenithA))/deg2rad
          _SET_HORIZONTAL_DIAGNOSTIC_(self%id_zenith_angle,zenithA)
 
