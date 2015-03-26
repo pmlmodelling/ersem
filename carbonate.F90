@@ -205,8 +205,13 @@ contains
             _GET_(self%id_pco2_in,PCO2)
             PCO2 = PCO2*1.e-6_rk
          end if
-
-         sc=2073.1_rk-125.62_rk*T+3.6276_rk*T**2._rk-0.043219_rk*T**3
+         ! Old formulation for the Schmidt number, valid only for T<30
+         ! left for documentation and back compatibility
+         !sc=2073.1_rk-125.62_rk*T+3.6276_rk*T**2._rk-0.043219_rk*T**3
+         
+         !new formulation for the Schmidt number following Wanninkof, 2014
+         T=max(T,40._rk)
+         sc=2116.8_rk-136.25_rk*T+4.7353_rk*T**2._rk-0.092307_rk*T**3+0.0007555_rk*T**4._rk
          fwind =  (0.222_rk * wnd**2 + 0.333_rk * wnd)*(sc/660._rk)**(-0.5_rk)
          fwind=fwind*24._rk/100._rk   ! convert to m/day
          UPTAKE = fwind * k0co2 * ( PCO2A/1.e6_rk - PCO2 )
