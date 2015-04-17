@@ -443,7 +443,7 @@ contains
 
       real(rk) :: D,z_tur,z_bot
       real(rk) :: z_mean,z_mean_sms,burial_flux,C_int
-
+      call self%type_ersem_benthic_base%do_bottom(_ARGUMENTS_DO_BOTTOM_)
       _HORIZONTAL_LOOP_BEGIN_
          ! Get diffusivity and maximum depth of bioturbation
          _GET_HORIZONTAL_(self%id_D,D)
