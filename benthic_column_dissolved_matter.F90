@@ -168,7 +168,7 @@ contains
       class (type_ersem_benthic_column_dissolved_matter),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
-      real(rk) :: c_pel,c_int,sms_l1,sms_l2,sms,pw_sms_l1,pw_sms_l2
+      real(rk) :: c_pel,c_int,sms_l1,sms_l2,sms_l3,sms,pw_sms_l1,pw_sms_l2,pw_sms_l3
       real(rk) :: d1,d2,d3
       real(rk) :: c_bot1_eq,c_int1_eq,H1_eq
       real(rk) :: c_bot2_eq,c_int2_eq,H2_eq
@@ -184,13 +184,16 @@ contains
       _GET_HORIZONTAL_(self%id_tot,c_int)
       _GET_HORIZONTAL_(self%id_sms(1),sms_l1)
       _GET_HORIZONTAL_(self%id_sms(2),sms_l2)
+      _GET_HORIZONTAL_(self%id_sms(3),sms_l3)
       _GET_HORIZONTAL_(self%id_pw_sms(1),pw_sms_l1)
       _GET_HORIZONTAL_(self%id_pw_sms(2),pw_sms_l2)
+      _GET_HORIZONTAL_(self%id_pw_sms(3),pw_sms_l3)
       _GET_(self%id_pel,c_pel)
 
       ! Sink-source terms are always /s, and we need /d.
       sms_l1 = (sms_l1+pw_sms_l1)*86400._rk
       sms_l2 = (sms_l2+pw_sms_l2)*86400._rk
+      sms_l3 = (sms_l3+pw_sms_l3)*86400._rk
 
       ! Retrieve physical properties of sediment column:
       ! layer depths, porosity, pelagic-benthic transfer coefficient, diffusivities.
@@ -204,7 +207,7 @@ contains
       _GET_HORIZONTAL_(self%id_diff(3),diff3)
 
       ! Column-integrated source-sink terms
-      sms = sms_l1 + sms_l2
+      sms = sms_l1 + sms_l2 + sms_l3
 
       ! Estimate steady state concentration at sediment interface from current pelagic concentration
       ! (typically at centre of lowermost pelagic layer), and column-integrated production/destruction term.
@@ -258,11 +261,12 @@ contains
          _SET_BOTTOM_ODE_(self%id_D2m,(max(self%minD,d1+H2_eq)-d2)/self%relax)
       else
          ! Oxygenated layer: compute steady-state concentration at bottom interface c_bot1_eq and layer integral c_int1_eq
-         call compute_equilibrium_profile(diff1,c_pel,    sms_l1,sms_l2,d1,   c_bot1_eq,c_int1_eq)
+         call compute_equilibrium_profile(diff1,c_pel,    sms_l1,sms_l2+sms_l3,d1,   c_bot1_eq,c_int1_eq)
          ! Oxidized layer: compute steady-state concentration at bottom interface c_bot2_eq and layer integral c_int2_eq
-         call compute_equilibrium_profile(diff2,c_bot1_eq,sms_l2,0.0_rk,d2-d1,c_bot2_eq,c_int2_eq)
-         ! Anoxic layer: no sources or sinks: homogeneous equilibrium concentration c_bot2_eq
-         c_int3_eq = (d3-d2)*c_bot2_eq
+         call compute_equilibrium_profile(diff2,c_bot1_eq,sms_l2,sms_l3,d2-d1,c_bot2_eq,c_int2_eq)
+         ! Anoxic layer: compute steady-state concentration at bottom interface c_bot3_eq and layer integral c_int3_eq
+         ! Assume zero production/destruction below this layer.
+         call compute_equilibrium_profile(diff3,c_bot2_eq,sms_l3,0.0_rk,d3-d2,c_bot3_eq,c_int3_eq)
          c_int_eq = poro*(self%ads(1)*c_int1_eq+self%ads(2)*c_int2_eq+self%ads(3)*c_int3_eq)
 
          ! The equilibrium depth-integrated mass c_int_eq usually differs from the current depth-integrated mass.
