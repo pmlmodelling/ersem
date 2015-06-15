@@ -33,7 +33,7 @@ module ersem_model_library
       procedure :: create
    end type
 
-   type (type_factory),save,target,public :: ersem_factory
+   type (type_factory),save,target,public :: ersem_model_factory
 
 contains
 
