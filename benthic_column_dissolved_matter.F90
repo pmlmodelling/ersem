@@ -14,7 +14,7 @@ module ersem_benthic_column_dissolved_matter
    ! to determine pelagic-benthic diffusive flux, and to determine steady state depth of
    ! first and second layer (layer depth will be relaxed to steady state value).
    type,extends(type_base_model),public :: type_ersem_benthic_column_dissolved_matter
-      type (type_bottom_state_variable_id) :: id_tot
+      type (type_bottom_state_variable_id) :: id_tot,id_tot_deep
       type (type_state_variable_id)        :: id_pel
       type (type_bottom_state_variable_id) :: id_D1m,id_D2m
       type (type_horizontal_dependency_id) :: id_sms(3),id_pw_sms(3),id_Dtot,id_poro,id_cmix,id_diff(3)
@@ -62,13 +62,22 @@ contains
          case ('o'); long_name = 'oxygen'
          case default
             call self%fatal_error('benthic_dissolved_matter_initialize','Invalid value for parameter "composition". Permitted: c,n,p,s,o.')
-      end select
+         end select
+
+      ! Register state variable for depth-integrated pore water concentration.
       call self%register_state_variable(self%id_tot,trim(composition),'mmol/m^2',long_name)
+
       select case (composition)
-         case ('c'); call self%add_to_aggregate_variable(standard_variables%total_carbon,    self%id_tot)
-         case ('n'); call self%add_to_aggregate_variable(standard_variables%total_nitrogen,  self%id_tot)
-         case ('p'); call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_tot)
-         case ('s'); call self%add_to_aggregate_variable(standard_variables%total_silicate,  self%id_tot)
+      case ('c')
+         call self%add_to_aggregate_variable(standard_variables%total_carbon,    self%id_tot)
+      case ('n')
+         call self%add_to_aggregate_variable(standard_variables%total_nitrogen,  self%id_tot)
+      case ('p')
+         call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_tot)
+      case ('s')
+         call self%add_to_aggregate_variable(standard_variables%total_silicate,  self%id_tot)
+      case ('o')
+         call self%register_state_variable(self%id_tot_deep,trim(composition)//'_deep','mmol/m^2',trim(long_name)//' below oxygenated layer')
       end select
 
       ! Obtain parameter values
@@ -168,7 +177,8 @@ contains
       class (type_ersem_benthic_column_dissolved_matter),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
-      real(rk) :: c_pel,c_int,sms_l1,sms_l2,sms_l3,sms,pw_sms_l1,pw_sms_l2,pw_sms_l3
+
+      real(rk) :: c_pel,c_int,c_int_deep,sms_l1,sms_l2,sms_l3,sms,pw_sms_l1,pw_sms_l2,pw_sms_l3
       real(rk) :: d1,d2,d3
       real(rk) :: c_bot1_eq,c_int1_eq,H1_eq
       real(rk) :: c_bot2_eq,c_int2_eq,H2_eq
@@ -212,7 +222,7 @@ contains
       ! Estimate steady state concentration at sediment interface from current pelagic concentration
       ! (typically at centre of lowermost pelagic layer), and column-integrated production/destruction term.
       ! JB: the logic behind the expressions below is UNKNOWN (in original ERSEM, this was handled by the modconc subroutine)
-      if (sms>0._rk) then
+      if (sms>0._rk .or. self%last_layer==1) then
          ! Sediment column produces tracer. Steady state concentration at sediment interface > lowermost pelagic concentration.
          ! One way to arrive at this formulation is to assume no production or destruction of the tracer
          ! within the lowermost pelagic layer. In that case, the equilibrium concentration profile near the bed has a slope
@@ -231,15 +241,26 @@ contains
          ! Oxygenated layer: compute steady-state layer height H1_eq and layer integral c_int1_eq
          call compute_final_equilibrium_profile(diff1,c_pel,sms_l1,sms_l2,d3,H1_eq,c_int1_eq)
 
-         ! Benthic dynamics: relax depth-integrated mass towards equilibrium value
-         c_int_eq = poro*self%ads(1)*c_int1_eq
-         _SET_BOTTOM_ODE_(self%id_tot,(c_int_eq-c_int)/self%relax)
+         ! If sms_l2 is non-zero [typically negative!], the concentration gradient at the bottom of the oxygenated layer will be non-zero too.
+         ! As a result, the oxidized layer will contain [possibly negative] matter. Integrate this and add it to the column integral.
+         if (H1_eq<=0.0_rk) c_int1_eq = 0.0_rk  ! NB could also call compute_equilibrium_profile(diff1,c_pel,sms_l1,sms_l2,self%minD,c_bot1_eq,c_int1_eq)
+         call compute_equilibrium_profile(diff2,0.0_rk,sms_l2,0.0_rk,d2-max(0.0_rk,H1_eq),c_bot2_eq,c_int2_eq)
+         c_int3_eq = (d3-d2)*c_bot2_eq
+         c_int_eq = poro*(self%ads(1)*c_int1_eq+self%ads(2)*c_int2_eq+self%ads(3)*c_int3_eq)
 
-         ! Net change in benthos must equal local production - surface exchange.
+         ! Benthic dynamics: relax depth-integrated mass towards equilibrium value
+         ! This is done separately for oxygenated layer (positive oxygen) and oxidized+anoxic layer (negative oxygen = oxygen debt)
+         ! The sum of these two relaxation terms equals the net change in oxygen across the entire sediment column,
+         ! which is used below to infer surface exchange.
+         _GET_HORIZONTAL_(self%id_tot_deep,c_int_deep)
+         _SET_BOTTOM_ODE_(self%id_tot,(poro*self%ads(1)*c_int1_eq-c_int)/self%relax)
+         _SET_BOTTOM_ODE_(self%id_tot_deep,(poro*(self%ads(2)*c_int2_eq+self%ads(3)*c_int3_eq)-c_int_deep)/self%relax)
+
+         ! Net change in sediment column must equal local production - surface exchange.
          ! Thus, surface exchange = local production - net change (net change = relaxation)
-         _SET_BOTTOM_EXCHANGE_(self%id_pel,sms-(c_int_eq-c_int)/self%relax)
-         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_pbf,sms-(c_int_eq-c_int)/self%relax)
-      
+         _SET_BOTTOM_EXCHANGE_(self%id_pel,sms-(c_int_eq-(c_int+c_int_deep))/self%relax)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_pbf,sms-(c_int_eq-(c_int+c_int_deep))/self%relax)
+
          ! Relax depth of first/oxic layer towards equilibrium value (H1_eq)
          _SET_BOTTOM_ODE_(self%id_D1m,(max(self%minD,H1_eq)-d1)/self%relax)
       elseif (self%last_layer==2) then
