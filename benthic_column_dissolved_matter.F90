@@ -22,6 +22,7 @@ module ersem_benthic_column_dissolved_matter
       real(rk) :: ads(3)
       real(rk) :: relax, minD
       integer :: last_layer
+      logical :: correction
    contains
       procedure :: initialize => benthic_dissolved_matter_initialize
       procedure :: do_bottom  => benthic_dissolved_matter_do_bottom
@@ -90,6 +91,7 @@ contains
          call self%get_parameter(self%relax,'relax','1/d','rate of relaxation towards equilibrium concentration profile')
          call self%get_parameter(self%minD, 'minD','m',  'minimum depth of bottom interface of deepest layer')
       end if
+     call self%get_parameter(self%correction,'correction','',default=.false.)
 
       ! Register state variable for bottom-most pelagic concentration.
       call self%register_state_dependency(self%id_pel,trim(composition)//'_pel','mmol/m^3','pelagic '//trim(long_name))
@@ -185,7 +187,7 @@ contains
       real(rk) :: c_bot3_eq,c_int3_eq
       real(rk) :: c_int_eq
       real(rk) :: norm_res_int,P_res_int
-
+      real(rk) :: smscorr
       real(rk) :: diff1,diff2,diff3,poro,cmix
 
       _HORIZONTAL_LOOP_BEGIN_
@@ -281,6 +283,21 @@ contains
          ! Relax depth of bottom interface of second/oxidised layer towards equilibrium value (d1+H2_eq)
          _SET_BOTTOM_ODE_(self%id_D2m,(max(self%minD,d1+H2_eq)-d2)/self%relax)
       else
+         ! Apply a "technical correction" in case flux from the oxygenated
+         ! layer is negative by scaling flux using pelagic concentration and
+         ! redistributing it between benthic layers. Note, that in current
+         ! version pelagic concentration at sediment interface is used
+         ! instead of mean pelagic concentration of the older code.
+         ! This "techincal correction" is a hack that was initially applied to
+         ! ammonium as an attempt to preserve positive concentrations and should
+         ! be replaced in future.
+        if (self%correction) then
+          smscorr = sms_l1
+          if (smscorr .lt. 0._rk) then
+             sms_l1 = smscorr*c_pel/(c_pel+0.5_rk)
+             sms_l2 = sms_l2 + (smscorr-sms_l1)
+          end if
+         end if
          ! Oxygenated layer: compute steady-state concentration at bottom interface c_bot1_eq and layer integral c_int1_eq
          call compute_equilibrium_profile(diff1,c_pel,    sms_l1,sms_l2+sms_l3,d1,   c_bot1_eq,c_int1_eq)
          ! Oxidized layer: compute steady-state concentration at bottom interface c_bot2_eq and layer integral c_int2_eq
