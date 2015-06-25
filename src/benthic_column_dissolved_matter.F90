@@ -10,32 +10,54 @@ module ersem_benthic_column_dissolved_matter
 
    private
 
+   integer, parameter :: nlayers = 3
+
+   type type_single_constituent_rates
+      type (type_bottom_state_variable_id) :: id_tot             ! depth-integrated mass in the benthic column
+      type (type_bottom_state_variable_id) :: id_tot_deep        ! depth-integrated [negative] mass below the zero-concentration isocline
+      type (type_state_variable_id)        :: id_pel             ! concentration in bottom-most pelagic cell
+      type (type_horizontal_dependency_id) :: id_sms(nlayers)    ! sources-sinks specified for layer-integrated variables (pore water and adsorbed)
+      type (type_horizontal_dependency_id) :: id_pw_sms(nlayers) ! sources-sinks specified for layer-integrated pore water concentration
+      type (type_horizontal_diagnostic_variable_id) :: id_pbf    ! pelagic-benthic flux
+      logical :: nonnegative = .true.                            ! Flag specifying whether constituent is non-negative
+   end type
+
    ! Model for dissolved matter in sediment, using idealized equilibrium profiles
-   ! to determine pelagic-benthic diffusive flux, and to determine steady state depth of
-   ! first and second layer (layer depth will be relaxed to steady state value).
+   ! to determine pelagic-benthic diffusive flux, and to determine equilibrium depths of
+   ! all but the last layer (NB layer depth will be relaxed to equilibrium value).
    type,extends(type_base_model),public :: type_ersem_benthic_column_dissolved_matter
-      type (type_bottom_state_variable_id) :: id_tot,id_tot_deep
-      type (type_state_variable_id)        :: id_pel
-      type (type_bottom_state_variable_id) :: id_D1m,id_D2m
-      type (type_horizontal_dependency_id) :: id_sms(3),id_pw_sms(3),id_Dtot,id_poro,id_cmix,id_diff(3)
-      type (type_horizontal_diagnostic_variable_id) :: id_pbf
-      real(rk) :: ads(3)
+      type (type_horizontal_dependency_id) :: id_Dm(nlayers)    ! depth of bottom interface of individual layers (last is total column height)
+      type (type_horizontal_dependency_id) :: id_poro           ! porosity (currently one single value is used across all layers)
+      type (type_horizontal_dependency_id) :: id_cmix           ! pelagic-benthic transfer in bottom boundary layer (height of BBL divided by diffusivity within BBL)
+      type (type_horizontal_dependency_id) :: id_diff(nlayers)  ! effective diffusivity within individual layers [includes bioirrigation contribution, if any]
+      type (type_bottom_state_variable_id) :: id_layer          ! depth of bottom interface of own layer (where own concentration drops to zero)
+      real(rk) :: ads(nlayers)
       real(rk) :: relax, minD
       integer :: last_layer
       logical :: correction
+      type (type_single_constituent_rates),allocatable :: constituents(:)
    contains
       procedure :: initialize => benthic_dissolved_matter_initialize
       procedure :: do_bottom  => benthic_dissolved_matter_do_bottom
    end type
 
-   ! Model for dissolved matter for a single sediment layer
+   type type_single_constituent_estimates
+      type (type_horizontal_dependency_id)          :: id_tot                         ! depth-integrated total mass (mass/m2) in entire column [pore water + adsorbed]
+      type (type_horizontal_diagnostic_variable_id) :: id_per_layer_total(nlayers)    ! depth-integrated total mass (mass/m2) per layer [pore water + adsorbed]
+      type (type_horizontal_diagnostic_variable_id) :: id_per_layer_pw_total(nlayers) ! depth-integrated pore water mass (mass/m2) per layer
+   end type
+
+   ! Model that provides estimates of the depth-integrated mass within individual layers.
+   ! This model is not meant to be instantiated by users, but is created automatically
+   ! as child "per_layer" of the main model, type_ersem_benthic_column_dissolved_matter.
+   ! Other models can access the layer-specific mass variables and provide them with
+   ! source and sink terms.
    type,extends(type_base_model) :: type_dissolved_matter_per_layer
-      type (type_horizontal_dependency_id)          :: id_tot
-      type (type_horizontal_dependency_id)          :: id_D1m,id_D2m,id_Dtot,id_poro
-      type (type_horizontal_diagnostic_variable_id) :: id_layers(3)    ! mass density (mass/m2) within the layer
-      type (type_horizontal_diagnostic_variable_id) :: id_layers_pw(3) ! mass density (mass/m2) within layer pore water
-      real(rk) :: ads(3)
+      type (type_horizontal_dependency_id) :: id_Dm(nlayers)
+      type (type_horizontal_dependency_id) :: id_poro
+      real(rk) :: ads(nlayers)
       integer :: last_layer
+      type (type_single_constituent_estimates),allocatable :: constituents(:)
    contains
       procedure :: do_bottom => dissolved_matter_per_layer_do_bottom
    end type
@@ -46,266 +68,288 @@ contains
       class (type_ersem_benthic_column_dissolved_matter),intent(inout),target :: self
       integer,                                           intent(in)           :: configunit
 
-      class (type_dissolved_matter_per_layer), pointer :: profile
       character(len=10) :: composition
-      character(len=attribute_length) :: long_name
+      integer           :: ilayer, iconstituent
+      character(len=16) :: index
+      class (type_dissolved_matter_per_layer), pointer :: profile
 
       ! Set time unit to d-1. This implies that all rates (sink/source terms) are given in d-1.
       self%dt = 86400._rk
 
-      ! Create state variable for depth-integrated concentration.
-      call self%get_parameter(composition,'composition','','composition')
-      select case (composition)
-         case ('c'); long_name = 'carbon'
-         case ('n'); long_name = 'nitrogen'
-         case ('p'); long_name = 'phosphorus'
-         case ('s'); long_name = 'silicate'
-         case ('o'); long_name = 'oxygen'
-         case default
-            call self%fatal_error('benthic_dissolved_matter_initialize','Invalid value for parameter "composition". Permitted: c,n,p,s,o.')
-         end select
-
-      ! Register state variable for depth-integrated pore water concentration.
-      call self%register_state_variable(self%id_tot,trim(composition),'mmol/m^2',long_name)
-
-      select case (composition)
-      case ('c')
-         call self%add_to_aggregate_variable(standard_variables%total_carbon,    self%id_tot)
-      case ('n')
-         call self%add_to_aggregate_variable(standard_variables%total_nitrogen,  self%id_tot)
-      case ('p')
-         call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_tot)
-      case ('s')
-         call self%add_to_aggregate_variable(standard_variables%total_silicate,  self%id_tot)
-      case ('o')
-         call self%register_state_variable(self%id_tot_deep,trim(composition)//'_deep','mmol/m^2',trim(long_name)//' below oxygenated layer')
-      end select
-
       ! Obtain parameter values
-      call self%get_parameter(self%last_layer,  'last_layer','','deepest sediment layer',default=3)
-      self%ads = 1.0_rk
-      call self%get_parameter(self%ads(1),'ads1','-','adsorption in oxygenated layer (total:dissolved)',default=1.0_rk)
-      if (self%last_layer>1) call self%get_parameter(self%ads(2),'ads2','-','adsorption in oxidized layer (total:dissolved)',default=1.0_rk)
-      if (self%last_layer>2) call self%get_parameter(self%ads(3),'ads3','-','adsorption in anoxic layer (total:dissolved)',default=1.0_rk)
-      if (self%last_layer/=3) then
+      call self%get_parameter(composition,'composition','','composition (any combination of c,n,p,s,o,a')
+      call self%get_parameter(self%last_layer,'last_layer','','sediment layer where concentration drops to zero',default=nlayers)
+      if (composition=='') call self%fatal_error('benthic_dissolved_matter_initialize','composition must include at least one chemical constituent')
+      if (self%last_layer/=nlayers .and. len_trim(composition)>1) call self%fatal_error('benthic_dissolved_matter_initialize','last_layer cannot be set for solutes with more than one chemical constituent')
+      if (self%last_layer/=nlayers) then
          call self%get_parameter(self%relax,'relax','1/d','rate of relaxation towards equilibrium concentration profile')
-         call self%get_parameter(self%minD, 'minD','m',  'minimum depth of bottom interface of deepest layer')
-      end if
-     call self%get_parameter(self%correction,'correction','',default=.false.)
+         call self%get_parameter(self%minD, 'minD','m',  'minimum depth of zero-concentration isocline')
 
-      ! Register state variable for bottom-most pelagic concentration.
-      call self%register_state_dependency(self%id_pel,trim(composition)//'_pel','mmol/m^3','pelagic '//trim(long_name))
-      call self%register_diagnostic_variable(self%id_pbf,'pb_flux','mmol/m^2/day','pelagic-benthic flux')      
+         write (index,'(i0)') self%last_layer
+         call self%register_state_dependency(self%id_layer,'layer','m','depth of bottom interface of final layer', &
+            standard_variable=type_horizontal_standard_variable(name='depth_of_bottom_interface_of_layer_'//trim(index)))
+      end if
+      self%ads = 1.0_rk
+      do ilayer=1,self%last_layer
+         write (index,'(i0)') ilayer
+         call self%get_parameter(self%ads(ilayer),'ads'//trim(index),'-','adsorption in layer '//trim(index)//' (total:dissolved)',default=1.0_rk)
+      end do
+      call self%get_parameter(self%correction,'correction','',default=.false.)
+
+      ! Create model that computes concentrations per benthic layer.
+      allocate(profile)
+      call self%add_child(profile,'per_layer',configunit=-1)
+      profile%ads = self%ads
+      profile%last_layer = self%last_layer
+      call profile%register_dependency(profile%id_poro,sediment_porosity)
+      do ilayer=1,nlayers
+         write (index,'(i0)') ilayer
+         call profile%register_dependency(profile%id_Dm(ilayer), 'D'//trim(index)//'m', 'm','depth of bottom interface of layer '//trim(index))
+         call profile%request_coupling(profile%id_Dm(ilayer),'D'//trim(index)//'m')
+      end do
+
+      ! Create constituent-specific variables.
+      allocate(self%constituents(len_trim(composition)))
+      allocate(profile%constituents(len_trim(composition)))
+      do iconstituent=1,len_trim(composition)
+         select case (composition(iconstituent:iconstituent))
+         case ('c')
+            call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'c','mmol/m^2','carbon',standard_variables%total_carbon)
+         case ('n')
+            call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'n','mmol/m^2','nitrogen',standard_variables%total_nitrogen)
+         case ('p')
+            call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'p','mmol/m^2','phosphorus',standard_variables%total_phosphorus)
+         case ('s')
+            call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'s','mmol/m^2','silicate',standard_variables%total_silicate)
+         case ('o')
+            call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'o','mmol/m^2','oxygen')
+            call self%register_state_variable(self%constituents(iconstituent)%id_tot_deep,'o_deep','mmol/m^2','oxygen below oxygenated layer')
+            self%constituents(iconstituent)%nonnegative = .false.
+         case ('a')
+            call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'a','mEq/m^2','alkalinity')
+         case default
+            call self%fatal_error('benthic_dissolved_matter_initialize','Invalid value for parameter "composition". Permitted: c,n,p,s,o,a.')
+         end select
+      end do
+
       ! Dependencies
-      call self%register_state_dependency(self%id_D1m, 'D1m', 'm','depth of bottom interface of oxygenated layer',standard_variable=depth_of_bottom_interface_of_layer_1)
-      call self%register_state_dependency(self%id_D2m, 'D2m', 'm','depth of bottom interface of oxidized layer',standard_variable=depth_of_bottom_interface_of_layer_2)
-      call self%register_dependency(self%id_Dtot,depth_of_sediment_column)
+      call self%register_dependency(self%id_Dm(1), 'D1m', 'm','depth of bottom interface of layer 1',standard_variable=depth_of_bottom_interface_of_layer_1)
+      call self%register_dependency(self%id_Dm(2), 'D2m', 'm','depth of bottom interface of layer 2',standard_variable=depth_of_bottom_interface_of_layer_2)
+      call self%register_dependency(self%id_Dm(3), 'D3m', 'm','depth of bottom interface of layer 3',standard_variable=depth_of_sediment_column)
       call self%register_dependency(self%id_poro,sediment_porosity)
       call self%register_dependency(self%id_diff(1),diffusivity_in_sediment_layer_1)
       call self%register_dependency(self%id_diff(2),diffusivity_in_sediment_layer_2)
       call self%register_dependency(self%id_diff(3),diffusivity_in_sediment_layer_3)
       call self%register_dependency(self%id_cmix,pelagic_benthic_transfer_constant)
 
-      ! Create model that computes concentrations per benthic layer.
-      allocate(profile)
-      call self%add_child(profile,'per_layer',configunit=configunit)
-      profile%ads = self%ads
-      profile%last_layer = self%last_layer
-      call profile%register_diagnostic_variable(profile%id_layers(1),trim(composition)//'1','mmol/m^2','total '//trim(long_name)//' in oxygenated layer (absorbed + dissolved)',act_as_state_variable=.true.,domain=domain_bottom,output=output_none)
-      call profile%register_diagnostic_variable(profile%id_layers(2),trim(composition)//'2','mmol/m^2','total '//trim(long_name)//' in oxidized layer (absorbed + dissolved)',act_as_state_variable=.true.,domain=domain_bottom,output=output_none)
-      call profile%register_diagnostic_variable(profile%id_layers(3),trim(composition)//'3','mmol/m^2','total '//trim(long_name)//' in anoxic layer (absorbed + dissolved)',act_as_state_variable=.true.,domain=domain_bottom,output=output_none)
-      call profile%register_diagnostic_variable(profile%id_layers_pw(1),trim(composition)//'1_pw','mmol/m^2','dissolved '//trim(long_name)//' in oxygenated layer',act_as_state_variable=.true.,domain=domain_bottom,output=output_none)
-      call profile%register_diagnostic_variable(profile%id_layers_pw(2),trim(composition)//'2_pw','mmol/m^2','dissolved '//trim(long_name)//' in oxidized layer',act_as_state_variable=.true.,domain=domain_bottom,output=output_none)
-      call profile%register_diagnostic_variable(profile%id_layers_pw(3),trim(composition)//'3_pw','mmol/m^2','dissolved '//trim(long_name)//' in anoxic layer',act_as_state_variable=.true.,domain=domain_bottom,output=output_none)
-      call profile%register_dependency(profile%id_D1m, 'D1m', 'm','depth of bottom interface of oxygenated layer')
-      call profile%register_dependency(profile%id_D2m, 'D2m', 'm','depth of bottom interface of oxidized layer')
-      call profile%register_dependency(profile%id_Dtot,depth_of_sediment_column)
-      call profile%register_dependency(profile%id_poro,sediment_porosity)
-      call profile%register_dependency(profile%id_tot,trim(composition)//'_int','mmol/m^2',trim(long_name)//', depth-integrated')
-      call profile%request_coupling(profile%id_D1m,'D1m')
-      call profile%request_coupling(profile%id_D2m,'D2m')
-      call profile%request_coupling(profile%id_tot,composition)
-
-      ! Make sure that sources-sinks of layer-specific mass are counted in mass budgets.
-      select case (composition)
-         case ('c')
-            call profile%add_to_aggregate_variable(standard_variables%total_carbon,profile%id_layers(1))
-            call profile%add_to_aggregate_variable(standard_variables%total_carbon,profile%id_layers(2))
-            call profile%add_to_aggregate_variable(standard_variables%total_carbon,profile%id_layers(3))
-            call profile%add_to_aggregate_variable(standard_variables%total_carbon,profile%id_layers_pw(1))
-            call profile%add_to_aggregate_variable(standard_variables%total_carbon,profile%id_layers_pw(2))
-            call profile%add_to_aggregate_variable(standard_variables%total_carbon,profile%id_layers_pw(3))
-         case ('n'); long_name = 'nitrogen'
-            call profile%add_to_aggregate_variable(standard_variables%total_nitrogen,profile%id_layers(1))
-            call profile%add_to_aggregate_variable(standard_variables%total_nitrogen,profile%id_layers(2))
-            call profile%add_to_aggregate_variable(standard_variables%total_nitrogen,profile%id_layers(3))
-            call profile%add_to_aggregate_variable(standard_variables%total_nitrogen,profile%id_layers_pw(1))
-            call profile%add_to_aggregate_variable(standard_variables%total_nitrogen,profile%id_layers_pw(2))
-            call profile%add_to_aggregate_variable(standard_variables%total_nitrogen,profile%id_layers_pw(3))
-         case ('p'); long_name = 'phosphorus'
-            call profile%add_to_aggregate_variable(standard_variables%total_phosphorus,profile%id_layers(1))
-            call profile%add_to_aggregate_variable(standard_variables%total_phosphorus,profile%id_layers(2))
-            call profile%add_to_aggregate_variable(standard_variables%total_phosphorus,profile%id_layers(3))
-            call profile%add_to_aggregate_variable(standard_variables%total_phosphorus,profile%id_layers_pw(1))
-            call profile%add_to_aggregate_variable(standard_variables%total_phosphorus,profile%id_layers_pw(2))
-            call profile%add_to_aggregate_variable(standard_variables%total_phosphorus,profile%id_layers_pw(3))
-         case ('s'); long_name = 'silicate'
-            call profile%add_to_aggregate_variable(standard_variables%total_silicate,profile%id_layers(1))
-            call profile%add_to_aggregate_variable(standard_variables%total_silicate,profile%id_layers(2))
-            call profile%add_to_aggregate_variable(standard_variables%total_silicate,profile%id_layers(3))
-            call profile%add_to_aggregate_variable(standard_variables%total_silicate,profile%id_layers_pw(1))
-            call profile%add_to_aggregate_variable(standard_variables%total_silicate,profile%id_layers_pw(2))
-            call profile%add_to_aggregate_variable(standard_variables%total_silicate,profile%id_layers_pw(3))
-      end select
-
-      ! Couple to layer-specific "sinks minus sources".
-      call self%register_dependency(self%id_sms(1),'sms_l1','mmol/m^2/s','sources-sinks of total '//trim(long_name)//' in oxygenated layer')
-      call self%register_dependency(self%id_sms(2),'sms_l2','mmol/m^2/s','sources-sinks of total '//trim(long_name)//' in oxidized layer')
-      call self%register_dependency(self%id_sms(3),'sms_l3','mmol/m^2/s','sources-sinks of total '//trim(long_name)//' in anoxic layer')
-      call self%request_coupling('sms_l1','per_layer/'//trim(composition)//'1_sms_tot')
-      call self%request_coupling('sms_l2','per_layer/'//trim(composition)//'2_sms_tot')
-      call self%request_coupling('sms_l3','per_layer/'//trim(composition)//'3_sms_tot')
-
-      ! Couple to layer-specific "sinks minus sources" for matter in pore water.
-      call self%register_dependency(self%id_pw_sms(1),'pw_sms_l1','mmol/m^2/s','sources-sinks of dissolved '//trim(long_name)//' in oxygenated layer')
-      call self%register_dependency(self%id_pw_sms(2),'pw_sms_l2','mmol/m^2/s','sources-sinks of dissolved '//trim(long_name)//' in oxidized layer')
-      call self%register_dependency(self%id_pw_sms(3),'pw_sms_l3','mmol/m^2/s','sources-sinks of dissolved '//trim(long_name)//' in anoxic layer')
-      call self%request_coupling('pw_sms_l1','per_layer/'//trim(composition)//'1_pw_sms_tot')
-      call self%request_coupling('pw_sms_l2','per_layer/'//trim(composition)//'2_pw_sms_tot')
-      call self%request_coupling('pw_sms_l3','per_layer/'//trim(composition)//'3_pw_sms_tot')
    end subroutine benthic_dissolved_matter_initialize
+
+   subroutine initialize_constituent(self,info,profile,profile_info,name,units,long_name,aggregate_target)
+      class (type_ersem_benthic_column_dissolved_matter),intent(inout),target :: self
+      type (type_single_constituent_rates),              intent(inout),target :: info
+      class (type_dissolved_matter_per_layer),           intent(inout),target :: profile
+      type (type_single_constituent_estimates),          intent(inout),target :: profile_info
+      character(len=*),                                  intent(in)           :: name,units,long_name
+      type (type_bulk_standard_variable),optional,       intent(in)           :: aggregate_target
+
+      integer           :: ilayer
+      character(len=16) :: index
+
+      ! State variable for depth-integrated matter [adsorbed + in pore water]
+      call self%register_state_variable(info%id_tot,name,units,long_name)
+
+      ! Contribution of state variable to aggregate quantity (if any).
+      if (present(aggregate_target)) call self%add_to_aggregate_variable(aggregate_target,info%id_tot)
+
+      ! Dependency on lowermost pelagic concentration.
+      call self%register_state_dependency(info%id_pel,trim(name)//'_pel','mmol/m^3','pelagic '//trim(long_name))
+
+      ! Diagnostic for pelagic-benthic flux.
+      call self%register_diagnostic_variable(info%id_pbf,trim(name)//'_pb_flux','mmol/m^2/day','flux of '//trim(long_name)//' from benthos to pelagic')
+
+      ! Register new constituent with child model that comoutes mass per benthic layer.
+      call profile%register_dependency(profile_info%id_tot,trim(name)//'_int',units,'depth-integrated '//trim(long_name))
+      call profile%request_coupling(profile_info%id_tot,name)
+      do ilayer=1,nlayers
+         write (index,'(i0)') ilayer
+
+         ! Register diagnostics for total [adsorbed + pore water] layer integral, and pore water integral.
+         ! These act as state variables, in order to allow other modules to provide source terms for them.
+         call profile%register_diagnostic_variable(profile_info%id_per_layer_total(ilayer),trim(name)//trim(index),units,'total '//trim(long_name)//' in layer '//trim(index)//' (absorbed + dissolved)',act_as_state_variable=.true.,domain=domain_bottom,output=output_none)
+         call profile%register_diagnostic_variable(profile_info%id_per_layer_pw_total(ilayer),trim(name)//trim(index)//'_pw',units,'total '//trim(long_name)//' in pore water of layer '//trim(index),act_as_state_variable=.true.,domain=domain_bottom,output=output_none)
+
+         ! Make sure that sources-sinks of layer-integrated mass are counted in conservation checks on source/sink basis (e.g., with check_conservation).
+         if (present(aggregate_target)) then
+            call profile%add_to_aggregate_variable(aggregate_target,profile_info%id_per_layer_total(ilayer))
+            call profile%add_to_aggregate_variable(aggregate_target,profile_info%id_per_layer_pw_total(ilayer))
+         end if
+
+         ! Collect sources for depth-integrated total [pore water + adsorbed] matter
+         call self%register_dependency(info%id_sms(ilayer),trim(name)//'_sms_l'//trim(index),trim(units)//'/s','sources-sinks of total '//trim(long_name)//' in layer '//trim(index))
+         call self%request_coupling(info%id_sms(ilayer),'per_layer/'//trim(name)//trim(index)//'_sms_tot')
+
+         ! Collect sources for depth-integrated pore water concentration
+         call self%register_dependency(info%id_pw_sms(ilayer),trim(name)//'_pw_sms_l'//trim(index),trim(units)//'/s','sources-sinks of dissolved '//trim(long_name)//' in layer '//trim(index))
+         call self%request_coupling(info%id_pw_sms(ilayer),'per_layer/'//trim(name)//trim(index)//'_pw_sms_tot')
+      end do
+
+   end subroutine initialize_constituent
 
    subroutine benthic_dissolved_matter_do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
       class (type_ersem_benthic_column_dissolved_matter),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
+      integer :: iconstituent
 
-      real(rk) :: c_pel,c_int,c_int_deep,sms_l1,sms_l2,sms_l3,sms,pw_sms_l1,pw_sms_l2,pw_sms_l3
-      real(rk) :: d1,d2,d3
-      real(rk) :: c_bot1_eq,c_int1_eq,H1_eq
-      real(rk) :: c_bot2_eq,c_int2_eq,H2_eq
-      real(rk) :: c_bot3_eq,c_int3_eq
+      do iconstituent=1,size(self%constituents)
+         call process_constituent(self,_ARGUMENTS_DO_BOTTOM_,self%constituents(iconstituent))
+      end do
+   end subroutine benthic_dissolved_matter_do_bottom
+   
+   subroutine process_constituent(self,_ARGUMENTS_DO_BOTTOM_,info)
+      class (type_ersem_benthic_column_dissolved_matter),intent(in) :: self
+      _DECLARE_ARGUMENTS_DO_BOTTOM_
+      type (type_single_constituent_rates),              intent(in) :: info
+
+      integer  :: ilayer
+      real(rk) :: c_pel,c_top,c_int,c_int_deep
+      real(rk) :: sms_per_layer(nlayers),pw_sms_per_layer(nlayers),sms
+      real(rk) :: Dm(nlayers)
+      real(rk) :: c_bot,c_int_per_layer_eq(nlayers),H_eq,d_top
       real(rk) :: c_int_eq
       real(rk) :: norm_res_int,P_res_int
       real(rk) :: smscorr
-      real(rk) :: diff1,diff2,diff3,poro,cmix
+      real(rk) :: diff(nlayers),poro,cmix
 
       _HORIZONTAL_LOOP_BEGIN_
 
-      ! Retrieve column-integrated mass, layer-specific source-sink terms, and the lowermost pelagic concentration.
-      _GET_HORIZONTAL_(self%id_tot,c_int)
-      _GET_HORIZONTAL_(self%id_sms(1),sms_l1)
-      _GET_HORIZONTAL_(self%id_sms(2),sms_l2)
-      _GET_HORIZONTAL_(self%id_sms(3),sms_l3)
-      _GET_HORIZONTAL_(self%id_pw_sms(1),pw_sms_l1)
-      _GET_HORIZONTAL_(self%id_pw_sms(2),pw_sms_l2)
-      _GET_HORIZONTAL_(self%id_pw_sms(3),pw_sms_l3)
-      _GET_(self%id_pel,c_pel)
-
-      ! Sink-source terms are always /s, and we need /d.
-      sms_l1 = (sms_l1+pw_sms_l1)*86400._rk
-      sms_l2 = (sms_l2+pw_sms_l2)*86400._rk
-      sms_l3 = (sms_l3+pw_sms_l3)*86400._rk
-
       ! Retrieve physical properties of sediment column:
-      ! layer depths, porosity, pelagic-benthic transfer coefficient, diffusivities.
-      _GET_HORIZONTAL_(self%id_D1m,d1)
-      _GET_HORIZONTAL_(self%id_D2m,d2)
-      _GET_HORIZONTAL_(self%id_Dtot,d3)
+      ! porosity, pelagic-bentic transfer coefficient, per-layer diffusivities, per-layer depth of the bottom interface.
       _GET_HORIZONTAL_(self%id_poro,poro)
       _GET_HORIZONTAL_(self%id_cmix,cmix)
-      _GET_HORIZONTAL_(self%id_diff(1),diff1)
-      _GET_HORIZONTAL_(self%id_diff(2),diff2)
-      _GET_HORIZONTAL_(self%id_diff(3),diff3)
+      do ilayer=1,nlayers
+         _GET_HORIZONTAL_(self%id_diff(ilayer),diff(ilayer))
+         _GET_HORIZONTAL_(self%id_Dm(ilayer),Dm(ilayer))
+      end do
 
-      ! Column-integrated source-sink terms
-      sms = sms_l1 + sms_l2 + sms_l3
+      ! Retrieve column-integrated mass, lowermost pelagic concentration, and layer-specific depth-integrated sources.
+      _GET_HORIZONTAL_(info%id_tot,c_int)
+      _GET_(info%id_pel,c_pel)
+      do ilayer=1,nlayers
+         _GET_HORIZONTAL_(info%id_sms(ilayer),sms_per_layer(ilayer))
+         _GET_HORIZONTAL_(info%id_pw_sms(ilayer),pw_sms_per_layer(ilayer))
+      end do
 
-      ! Estimate steady state concentration at sediment interface from current pelagic concentration
+      ! Combine depth-integrated sources applied to total and pore-water-only matter.
+      ! Also convert time units: FABM source terms are given in s-1, and we need d-1.
+      sms_per_layer = (sms_per_layer+pw_sms_per_layer)*86400
+
+      ! Column-integrated sources minus sinks (# m-2 d-1)
+      sms = sum(sms_per_layer)
+
+      ! Estimate steady state concentration at bed from current pelagic concentration
       ! (typically at centre of lowermost pelagic layer), and column-integrated production/destruction term.
       ! JB: the logic behind the expressions below is UNKNOWN (in original ERSEM, this was handled by the modconc subroutine)
-      if (sms>0._rk .or. self%last_layer==1) then
+      if (sms>0._rk .or. .not. info%nonnegative) then
          ! Sediment column produces tracer. Steady state concentration at sediment interface > lowermost pelagic concentration.
-         ! One way to arrive at this formulation is to assume no production or destruction of the tracer
-         ! within the lowermost pelagic layer. In that case, the equilibrium concentration profile near the bed has a slope
-         ! equal to sms/diffusivity. The change between centre of the pelagic layer and the sediment interface equals
-         ! sms/D*H/2, with D representing diffusivity within the lowermost pelagic layer and H representing the height of the 
-         ! lowermost pelagic layer. Thus, cmix must equal H/2/D. In practice, however, H is defined by the vertical grid and
-         ! and D is defined by the level of turbulence - it then seems unreasonable to treat cmix=H/2/D as constant - JB 4/2/2015.
-         c_pel = c_pel + cmix*sms
+         ! One way to arrive at the formulation below is to assume the lowermost pelagic layer includes a diffusion barrier
+         ! in the form of a bottom boundary layer (BBL) with height H, [low] diffusivity D, and no production or destruction
+         ! of the tracer. At equilibrium, the vertical flux at any point in the BBL must be equal to the pelagic-benthic flux, which
+         ! in turn equals the production within the benthic column, sms. That implies the equilibrium concentration profile within
+         ! the BBL is linear with a slope equal to sms/D. The change within the BBL thus equals sms/D*H. If the structure
+         ! (height H, diffusivity D) of the BBL are constant in time and space, this can be rewritten as sms*cmix, with transfer
+         ! coefficient cmix = H/D in d/m. If the lowermost layer excluding BBL is well-mixed, the concentration at the top of the
+         ! BBL is equal to the lowermost pelagic concentration c_pel, which is typically vertically positioned at the
+         ! centre of the lowermost grid cell. Thus, the bed concentration equals c_pel + cmix*sms. JB 24/06/2015
+         c_top = c_pel + cmix*sms
       else
          ! Sediment column destroys tracer. Steady state concentration at sediment interface < lowermost pelagic concentration.
          ! Note cmix*sms<0, thus c_pel/(c_pel - cmix*sms)<1
-         c_pel = c_pel*c_pel/(c_pel - cmix*sms)
+         c_top = c_pel*c_pel/(c_pel - cmix*sms)
       end if
+      d_top = 0
 
-      if (self%last_layer==1) then
-         ! Oxygenated layer: compute steady-state layer height H1_eq and layer integral c_int1_eq
-         call compute_final_equilibrium_profile(diff1,c_pel,sms_l1,sms_l2,d3,H1_eq,c_int1_eq)
+      if (self%last_layer/=nlayers) then
+         ! This constituent drops to zero in layer number self%last_layer
+         ! (and the depth where it equals zero acts as this last layer's lower boundary).
 
-         ! If sms_l2 is non-zero [typically negative!], the concentration gradient at the bottom of the oxygenated layer will be non-zero too.
-         ! As a result, the oxidized layer will contain [possibly negative] matter. Integrate this and add it to the column integral.
-         if (H1_eq<=0.0_rk) c_int1_eq = 0.0_rk  ! NB could also call compute_equilibrium_profile(diff1,c_pel,sms_l1,sms_l2,self%minD,c_bot1_eq,c_int1_eq)
-         call compute_equilibrium_profile(diff2,0.0_rk,sms_l2,0.0_rk,d2-max(0.0_rk,H1_eq),c_bot2_eq,c_int2_eq)
-         c_int3_eq = (d3-d2)*c_bot2_eq
-         c_int_eq = poro*(self%ads(1)*c_int1_eq+self%ads(2)*c_int2_eq+self%ads(3)*c_int3_eq)
+         c_int_per_layer_eq = 0
 
-         ! Benthic dynamics: relax depth-integrated mass towards equilibrium value
-         ! This is done separately for oxygenated layer (positive oxygen) and oxidized+anoxic layer (negative oxygen = oxygen debt)
-         ! The sum of these two relaxation terms equals the net change in oxygen across the entire sediment column,
-         ! which is used below to infer surface exchange.
-         _GET_HORIZONTAL_(self%id_tot_deep,c_int_deep)
-         _SET_BOTTOM_ODE_(self%id_tot,(poro*self%ads(1)*c_int1_eq-c_int)/self%relax)
-         _SET_BOTTOM_ODE_(self%id_tot_deep,(poro*(self%ads(2)*c_int2_eq+self%ads(3)*c_int3_eq)-c_int_deep)/self%relax)
+         ! First compute equilibrium concentration profiles in all layers but the last in order to obtain equilibrium values for
+         ! the concentration at their bottom interface, c_bot, and their depth-integrated concentration, c_int_per_layer_eq(ilayer)
+         ! NB depth-integrated concentration refers to the integral of the pore water concentration profile from layer top to layer bottom,
+         ! without accounting for porosity or adsorption.
+         do ilayer=1,self%last_layer-1
+            call compute_equilibrium_profile(diff(ilayer),c_top,sms_per_layer(ilayer),sum(sms_per_layer(ilayer+1:)),Dm(ilayer)-d_top,c_bot,c_int_per_layer_eq(ilayer))
+            d_top = Dm(ilayer)
+            c_top = c_bot
+         end do
 
-         ! Net change in sediment column must equal local production - surface exchange.
-         ! Thus, surface exchange = local production - net change (net change = relaxation)
-         _SET_BOTTOM_EXCHANGE_(self%id_pel,sms-(c_int_eq-(c_int+c_int_deep))/self%relax)
-         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_pbf,sms-(c_int_eq-(c_int+c_int_deep))/self%relax)
+         ! Last layer: the pore water concentration drops to zero.
+         ! Compute equilibrium layer height H_eq and depth-integrated concentration c_int_per_layer_eq(self%last_layer).
+         ! The concentration at the bottom interface is zero by definition.
+         call compute_final_equilibrium_profile(diff(self%last_layer),c_top,sms_per_layer(self%last_layer),sum(sms_per_layer(self%last_layer+1:)),Dm(nlayers)-d_top,H_eq,c_int_per_layer_eq(self%last_layer))
 
-         ! Relax depth of first/oxic layer towards equilibrium value (H1_eq)
-         _SET_BOTTOM_ODE_(self%id_D1m,(max(self%minD,H1_eq)-d1)/self%relax)
-      elseif (self%last_layer==2) then
-         ! Oxygenated layer: compute steady-state concentration at bottom interface c_bot1_eq and layer integral c_int1_eq
-         call compute_equilibrium_profile(diff1,c_pel,sms_l1,sms_l2,d1,c_bot1_eq,c_int1_eq)
-         ! Oxidized layer: compute steady-state layer height H2_eq and layer integral c_int2_eq
-         call compute_final_equilibrium_profile(diff2,c_bot1_eq,sms_l2,0.0_rk,d3-d1,H2_eq,c_int2_eq)
+         ! Relax depth-integrated mass c_int towards its equilibrium value (sum of depth-integrated equilibrium values of all layers)
+         _SET_BOTTOM_ODE_(info%id_tot, (poro*sum(self%ads(:self%last_layer)*c_int_per_layer_eq(:self%last_layer))-c_int)/self%relax)
 
-         ! Benthic dynamics: relax depth-integrated mass towards equilibrium value
-         c_int_eq = poro*(self%ads(1)*c_int1_eq+self%ads(2)*c_int2_eq)
-         _SET_BOTTOM_ODE_(self%id_tot,(c_int_eq-c_int)/self%relax)
+         ! Relax the depth of the bottom interface of the last layer towards equilibrium value, d_top+max(self%minD,H_eq)
+         _SET_BOTTOM_ODE_(self%id_layer,(d_top+max(self%minD,H_eq)-Dm(self%last_layer))/self%relax)
 
-         ! Net change in benthos must equal local production - surface exchange.
-         ! Thus, surface exchange = local production - net change (net change = relaxation)
-         _SET_BOTTOM_EXCHANGE_(self%id_pel,sms-(c_int_eq-c_int)/self%relax)
-         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_pbf,sms-(c_int_eq-c_int)/self%relax)
+         if (.not.info%nonnegative) then
+            ! Deeper source terms are allowed to be non-zero [typically negative].
+            ! In that case, the concentration gradient at the bottom of the last layer will be non-zero too,
+            ! and the deeper layers will contain [typically negative] matter. Integrate this and add it to the column integral.
+            if (H_eq<=0.0_rk) c_int_per_layer_eq(self%last_layer) = 0  ! NB could also call compute_equilibrium_profile(diff(self%last_layer),c_top,sms_per_layer(self%last_layer),sum(sms_per_layer(self%last_layer+1:)),self%minD,c_bot,c_int_per_layer_eq(self%last_layer))
+            c_top = 0
+            d_top = d_top + max(0.0_rk,H_eq)
+            do ilayer=self%last_layer+1,nlayers
+               call compute_equilibrium_profile(diff(ilayer),c_top,sms_per_layer(ilayer),sum(sms_per_layer(ilayer+1:)),Dm(ilayer)-d_top,c_bot,c_int_per_layer_eq(ilayer))
+               d_top = Dm(ilayer)
+               c_top = c_bot
+            end do
 
-         ! Relax depth of bottom interface of second/oxidised layer towards equilibrium value (d1+H2_eq)
-         _SET_BOTTOM_ODE_(self%id_D2m,(max(self%minD,d1+H2_eq)-d2)/self%relax)
+            ! Relax depth-integrated mass within deeper layers towards equilibrium value.
+            _GET_HORIZONTAL_(info%id_tot_deep,c_int_deep)
+            _SET_BOTTOM_ODE_(info%id_tot_deep,(poro*sum(self%ads(self%last_layer+1:)*c_int_per_layer_eq(self%last_layer+1:))-c_int_deep)/self%relax)
+         else
+            c_int_deep = 0
+         end if
+
+         ! From layer-specific depth integrals of the pore water concentration profile to column-integrated mass [adsorbed + in pore water]
+         c_int_eq = poro*sum(self%ads*c_int_per_layer_eq)
+
+         ! Net change in column-integrated mass must equal column-integrated production - surface exchange.
+         ! Thus, surface exchange = column-integrated production - net change (net change = relaxation)
+         _SET_BOTTOM_EXCHANGE_(info%id_pel,sms-(c_int_eq-(c_int+c_int_deep))/self%relax)
+         _SET_HORIZONTAL_DIAGNOSTIC_(info%id_pbf,sms-(c_int_eq-(c_int+c_int_deep))/self%relax)
       else
          ! Apply a "technical correction" in case flux from the oxygenated
          ! layer is negative by scaling flux using pelagic concentration and
          ! redistributing it between benthic layers. Note, that in current
          ! version pelagic concentration at sediment interface is used
          ! instead of mean pelagic concentration of the older code.
-         ! This "techincal correction" is a hack that was initially applied to
+         ! This "technical correction" is a hack that was initially applied to
          ! ammonium as an attempt to preserve positive concentrations and should
          ! be replaced in future.
-        if (self%correction) then
-          smscorr = sms_l1
-          if (smscorr .lt. 0._rk) then
-             sms_l1 = smscorr*c_pel/(c_pel+0.5_rk)
-             sms_l2 = sms_l2 + (smscorr-sms_l1)
-          end if
+         if (self%correction) then
+            smscorr = sms_per_layer(1)
+            if (smscorr .lt. 0._rk) then
+               sms_per_layer(1) = smscorr*c_top/(c_top+0.5_rk)
+               sms_per_layer(2) = sms_per_layer(2) + (smscorr-sms_per_layer(1))
+            end if
          end if
-         ! Oxygenated layer: compute steady-state concentration at bottom interface c_bot1_eq and layer integral c_int1_eq
-         call compute_equilibrium_profile(diff1,c_pel,    sms_l1,sms_l2+sms_l3,d1,   c_bot1_eq,c_int1_eq)
-         ! Oxidized layer: compute steady-state concentration at bottom interface c_bot2_eq and layer integral c_int2_eq
-         call compute_equilibrium_profile(diff2,c_bot1_eq,sms_l2,sms_l3,d2-d1,c_bot2_eq,c_int2_eq)
-         ! Anoxic layer: compute steady-state concentration at bottom interface c_bot3_eq and layer integral c_int3_eq
-         ! Assume zero production/destruction below this layer.
-         call compute_equilibrium_profile(diff3,c_bot2_eq,sms_l3,0.0_rk,d3-d2,c_bot3_eq,c_int3_eq)
-         c_int_eq = poro*(self%ads(1)*c_int1_eq+self%ads(2)*c_int2_eq+self%ads(3)*c_int3_eq)
+
+         ! Compute equilibrium concentration profiles in all layers in order to obtain equilibrium values for
+         ! the concentration at their bottom interface, c_bot, and their depth-integrated concentration, c_int_per_layer_eq(ilayer)
+         do ilayer=1,nlayers
+            call compute_equilibrium_profile(diff(ilayer),c_top,sms_per_layer(ilayer),sum(sms_per_layer(ilayer+1:)),Dm(ilayer)-d_top,c_bot,c_int_per_layer_eq(ilayer))
+            d_top = Dm(ilayer)
+            c_top = c_bot
+         end do
+
+         ! From layer-specific depth integrals of the pore water concentration profile to column-integrated mass [adsorbed + in pore water]
+         c_int_eq = poro*sum(self%ads*c_int_per_layer_eq)
 
          ! The equilibrium depth-integrated mass c_int_eq usually differs from the current depth-integrated mass.
          ! We can view the actual [unknown] pore water concentration profile as the sum of the equilibrium profile
@@ -326,19 +370,23 @@ contains
          ! computed for layer production terms d1, d2-d1, d3-d2. As we are assuming the residual profile was previously an equilibrium
          ! profile, the necessary depth-integrated production rate P_int must equal the exchange across the surface, i.e., diffusivity*gradient.
          ! Thus, we can now simply add the P_int as a additional surface exchange term, accounting for the move towards equilibrium.
-         call compute_equilibrium_profile(diff1,0.0_rk,   d1,   d3-d1, d1,   c_bot1_eq,c_int1_eq)
-         call compute_equilibrium_profile(diff2,c_bot1_eq,d2-d1,d3-d2, d2-d1,c_bot2_eq,c_int2_eq)
-         call compute_equilibrium_profile(diff3,c_bot2_eq,d3-d2,0.0_rk,d3-d2,c_bot3_eq,c_int3_eq)
-         norm_res_int = poro*(self%ads(1)*c_int1_eq+self%ads(2)*c_int2_eq+self%ads(3)*c_int3_eq)
-         P_res_int = (c_int-c_int_eq)/norm_res_int*d3
-         _SET_BOTTOM_EXCHANGE_(self%id_pel,sms+P_res_int) ! Equilibrium flux = sms, residual flux = P_res_int
-         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_pbf,sms+P_res_int)
-         _SET_BOTTOM_ODE_(self%id_tot,-P_res_int)         ! Local sources-sinks (sms) minus surface flux (sms+P_res_int)
+         d_top = 0
+         c_top = 0
+         do ilayer=1,nlayers
+            call compute_equilibrium_profile(diff(ilayer),c_top,Dm(ilayer)-d_top,Dm(nlayers)-Dm(ilayer),Dm(ilayer)-d_top,c_bot,c_int_per_layer_eq(ilayer))
+            d_top = Dm(ilayer)
+            c_top = c_bot
+         end do
+         norm_res_int = poro*sum(self%ads*c_int_per_layer_eq)
+         P_res_int = (c_int-c_int_eq)/norm_res_int*Dm(nlayers)
+         _SET_BOTTOM_EXCHANGE_(info%id_pel,sms+P_res_int) ! Equilibrium flux = depth-integrated production sms + residual flux P_res_int
+         _SET_HORIZONTAL_DIAGNOSTIC_(info%id_pbf,sms+P_res_int)
+         _SET_BOTTOM_ODE_(info%id_tot,-P_res_int)         ! Depth-integrated sources-sinks (sms) - surface flux (sms+P_res_int) = -P_res_int
 
       end if
 
       _HORIZONTAL_LOOP_END_
-   end subroutine benthic_dissolved_matter_do_bottom
+   end subroutine process_constituent
 
    subroutine compute_equilibrium_profile(sigma,C0,P,P_deep,D,C_bot,C_int)
       real(rk),intent(in)  :: sigma,c0,P,P_deep,D
@@ -499,68 +547,66 @@ contains
       class (type_dissolved_matter_per_layer),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
+      integer  :: iconstituent
+      integer  :: ilayer
       real(rk) :: c_int
       real(rk) :: factor
-      real(rk) :: d(3),D2m,d_tot,poro
+      real(rk) :: d(nlayers),poro
 
       _HORIZONTAL_LOOP_BEGIN_
 
-         ! Get depth-integrated concentration.
-         _GET_HORIZONTAL_(self%id_tot,c_int)
-
-         ! Layer depths and porosity.
-         _GET_HORIZONTAL_(self%id_D1m,d(1))
-         _GET_HORIZONTAL_(self%id_D2m,D2m)
-         _GET_HORIZONTAL_(self%id_Dtot,d_tot)
+         ! Layer depths (compute from depth of bottom interfaces) and porosity.
+         do ilayer=1,nlayers
+            _GET_HORIZONTAL_(self%id_Dm(ilayer),d(ilayer))
+         end do
+         d(2:nlayers) = d(2:nlayers) - d(1:nlayers-1)
          _GET_HORIZONTAL_(self%id_poro,poro)
 
-         ! Compute layer thicknesses from depth of bottom interface of individual layers.
-         d(2) = D2m-d(1)
-         d(3) = d_tot-D2m
+         do iconstituent=1,size(self%constituents)
+            ! Get depth-integrated concentration.
+            _GET_HORIZONTAL_(self%constituents(iconstituent)%id_tot,c_int)
 
-         if (self%last_layer==1) then
-            ! All in oxygenated layer
-            ! Typically used for oxygen
-            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(1),c_int)
-            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(2),0.0_rk)
-            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(3),0.0_rk)
+            if (self%last_layer/=nlayers) then
+               ! Vertically homogeneous in top layers, quadratically decreasing in last layer (zero concentration at bottom interface)
 
-            ! Pore water contents: layer contents divided by adsorption [total:dissolved]
-            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(1),c_int/self%ads(1))
-            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(2),0.0_rk)
-            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(3),0.0_rk)
-         elseif (self%last_layer==2) then
-            ! Vertically homogeneous in oxygenated layer, quadratically decreasing in oxidized layer (zero concentration at bottom interface)
-            ! Typically used for nitrate
+               ! Compute pore water concentration in upper layers (above self%last_layer), in matter/m3
+               ! Note that concentration in last layer is 1/3 of that of the top layers,
+               ! due to the fact that it has a quadratic profile decreasing from the top concentration to zero.
+               factor = c_int/(poro*(sum(self%ads(:self%last_layer-1)*d(:self%last_layer-1)) + self%ads(self%last_layer)*d(self%last_layer)/3))
 
-            ! Mean concentration in pore water (matter/m3)
-            factor = c_int/(poro*(self%ads(1)*d(1)+self%ads(2)*d(2)/3.0_rk))
+               ! Top layers: homogeneous pore water concentration.
+               do ilayer=1,self%last_layer-1
+                  ! Total depth-integrated layer contents [pore water + adsorbed]
+                  _SET_HORIZONTAL_DIAGNOSTIC_(self%constituents(iconstituent)%id_per_layer_total(ilayer),poro*d(ilayer)*factor*self%ads(ilayer))
 
-            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(1),poro*self%ads(1)*d(1)*factor)
-            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(2),poro*self%ads(2)*d(2)/3.0_rk*factor)
-            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(3),0.0_rk)
-            
-            ! Pore water contents: layer contents divided by adsorption [total:dissolved]
-            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(1),poro*d(1)*factor)
-            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(2),poro*d(2)/3.0_rk*factor)
-            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(3),0.0_rk)
-         else
-            ! Vertically homogeneous in all individual layers (oxygenated, oxidized, anoxic).
-            ! Typically used for all tracers but oxygen and nitrate.
+                  ! Pore water contents: layer contents divided by adsorption [total:dissolved]
+                  _SET_HORIZONTAL_DIAGNOSTIC_(self%constituents(iconstituent)%id_per_layer_pw_total(ilayer),poro*d(ilayer)*factor)
+               end do
 
-            ! Mean concentration in pore water (matter/m3)
-            factor = c_int/sum(poro*self%ads*d)
+               ! Last layer: 1/3 of top concentration.
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%constituents(iconstituent)%id_per_layer_total   (self%last_layer),poro*d(self%last_layer)/3*factor*self%ads(self%last_layer))
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%constituents(iconstituent)%id_per_layer_pw_total(self%last_layer),poro*d(self%last_layer)/3*factor)
 
-            ! Layer contents (matter/m2)
-            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(1),poro*self%ads(1)*d(1)*factor)
-            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(2),poro*self%ads(2)*d(2)*factor)
-            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers(3),poro*self%ads(3)*d(3)*factor)
+               ! Deeper layers: pore water concentration is zero.
+               do ilayer=self%last_layer+1,nlayers
+                  _SET_HORIZONTAL_DIAGNOSTIC_(self%constituents(iconstituent)%id_per_layer_total   (ilayer),0.0_rk)
+                  _SET_HORIZONTAL_DIAGNOSTIC_(self%constituents(iconstituent)%id_per_layer_pw_total(ilayer),0.0_rk)
+               end do
+            else
+               ! Vertically homogeneous in all layers.
 
-            ! Pore water contents: layer contents divided by adsorption [total:dissolved]
-            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(1),poro*d(1)*factor)
-            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(2),poro*d(2)*factor)
-            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_layers_pw(3),poro*d(3)*factor)
-         end if
+               ! Compute pore water concentration in matter/m3.
+               factor = c_int/sum(poro*self%ads*d)
+
+               do ilayer=1,nlayers
+                  ! Total depth-integrated layer contents [pore water + adsorbed]
+                  _SET_HORIZONTAL_DIAGNOSTIC_(self%constituents(iconstituent)%id_per_layer_total(ilayer),poro*self%ads(ilayer)*d(ilayer)*factor)
+
+                  ! Pore water contents: layer contents divided by adsorption [total:dissolved]
+                  _SET_HORIZONTAL_DIAGNOSTIC_(self%constituents(iconstituent)%id_per_layer_pw_total(ilayer),poro*d(ilayer)*factor)
+               end do
+            end if
+         end do
 
       _HORIZONTAL_LOOP_END_
 
