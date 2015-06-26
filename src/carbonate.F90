@@ -18,6 +18,8 @@ module ersem_carbonate
       type (type_diagnostic_variable_id) :: id_ph,id_pco2,id_CarbA, id_BiCarb, id_Carb, id_TA_diag
       type (type_diagnostic_variable_id) :: id_Om_cal,id_Om_arg
 
+      type (type_horizontal_diagnostic_variable_id) :: id_fairmg
+
       integer :: iswCO2X,iswtalk,iswASFLUX
    contains
       procedure :: initialize
@@ -39,7 +41,7 @@ contains
 !-----------------------------------------------------------------------
 !BOC
       call self%get_parameter(self%iswCO2X,'iswCO2','','carbonate system diagnostics (0: off, 1: on)',default=1)
-      call self%get_parameter(self%iswASFLUX,'iswASFLUX','','air-sea CO2 exchange (0: none, 1: Nightingale and Liss)',default=1)
+      call self%get_parameter(self%iswASFLUX,'iswASFLUX','','air-sea CO2 exchange (0: none, 1: Nightingale and Liss, 2: Wanninkhof 1992 without chemical enhancement, 3: Wanninkhof 1992 with chemical enhancement, 4: Wanninkhof 1999)',default=1)
       call self%get_parameter(self%iswtalk,'iswtalk','','alkalinity formulation (1-4: from salinity and temperature, 5: dynamic alkalinity)',default=5)
       if (self%iswtalk<1.or.self%iswtalk>5) call self%fatal_error('initialize','iswtalk takes values between 1 and 5 only')
 
@@ -75,6 +77,8 @@ contains
 
       call self%register_diagnostic_variable(self%id_Om_cal,'Om_cal','-','calcite saturation')
       call self%register_diagnostic_variable(self%id_Om_arg,'Om_arg','-','aragonite saturation')
+
+      call self%register_diagnostic_variable(self%id_fairmg,'fairmg','mmol C/m^2/d','air-sea flux of CO2')
 
       call self%register_dependency(self%id_ETW, standard_variables%temperature)
       call self%register_dependency(self%id_X1X, standard_variables%practical_salinity)
@@ -222,8 +226,6 @@ contains
          Ctot  = O3C / 1.e3_rk / density ! from mmol m-3 to mol kg-1
 
 !  for surface box only calculate air-sea flux
-!Nightingale and Liss parameterisation
-
 !..Only call after 2 days, because the derivation of instability in the
 !..
          CALL CO2dyn(T, S, PRSS*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success)
@@ -234,17 +236,28 @@ contains
          ! Old formulation for the Schmidt number, valid only for T<30
          ! left for documentation and back compatibility
          !sc=2073.1_rk-125.62_rk*T+3.6276_rk*T**2._rk-0.043219_rk*T**3
-         
+
          !new formulation for the Schmidt number following Wanninkof, 2014
          T=max(T,40._rk)
          sc=2116.8_rk-136.25_rk*T+4.7353_rk*T**2._rk-0.092307_rk*T**3+0.0007555_rk*T**4._rk
-         fwind =  (0.222_rk * wnd**2 + 0.333_rk * wnd)*(sc/660._rk)**(-0.5_rk)
+
+         if   (self%ISWASFLUX==1) then        !Nightingale and Liss parameterisation
+               fwind =  (0.222_rk *wnd**2.0_rk + 0.333_rk * wnd)*(sc/600._rk)**(-0.5_rk)
+         elseif (self%iswASFLUX==2) then      ! Wanninkhof 1992 without chemical enhancement
+               fwind=0.31_rk*wnd**2.0_rk*(sc/660._rk)**(-0.5_rk)
+         elseif (self%iswASFLUX==3)THEN       ! Wanninkhof 1992 with chemical enhancement
+               fwind=(2.5_rk*(0.5246_rk+0.016256_rk*T+0.00049946_rk*T**2.0_rk)+0.3_rk*wnd**2.0_rk)*(sc/660._rk)**(-0.5_rk)
+         elseif(self%iswASFLUX==4)THEN             ! Wanninkhof 1999 
+              fwind=0.0283_rk*wnd**3.0_rk*(sc/660._rk)**(-0.5_rk)
+         endif
+
          fwind=fwind*24._rk/100._rk   ! convert to m/day
          UPTAKE = fwind * k0co2 * ( PCO2A/1.e6_rk - PCO2 )
 
          FAIRCO2 = UPTAKE * 1.e3_rk * density
 
          _SET_SURFACE_EXCHANGE_(self%id_O3c,FAIRCO2)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fairmg,FAIRCO2)
       _HORIZONTAL_LOOP_END_
    end subroutine
 
