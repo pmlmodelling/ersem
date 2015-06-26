@@ -2,6 +2,7 @@
 module ersem_carbonate
 
    use fabm_types
+   use fabm_builtin_models
 
    implicit none
 
@@ -9,7 +10,7 @@ module ersem_carbonate
 
    type,extends(type_base_model),public :: type_ersem_carbonate
 !     Variable identifiers
-      type (type_state_variable_id)     :: id_O3c,id_TA
+      type (type_state_variable_id)     :: id_O3c,id_TA,id_bioalk
       type (type_dependency_id)         :: id_ETW, id_X1X, id_dens, id_pres
       type (type_dependency_id)         :: id_Carb_in,id_pco2_in
       type (type_horizontal_dependency_id) :: id_wnd,id_PCO2A
@@ -31,6 +32,8 @@ contains
 ! !INPUT PARAMETERS:
       class (type_ersem_carbonate), intent(inout), target :: self
       integer,                      intent(in)            :: configunit
+
+      integer :: iswbioalk
 !
 !EOP
 !-----------------------------------------------------------------------
@@ -38,21 +41,30 @@ contains
       call self%get_parameter(self%iswCO2X,'iswCO2','','carbonate system diagnostics (0: off, 1: on)',default=1)
       call self%get_parameter(self%iswASFLUX,'iswASFLUX','','air-sea CO2 exchange (0: none, 1: Nightingale and Liss)',default=1)
       call self%get_parameter(self%iswtalk,'iswtalk','','alkalinity formulation (1-4: from salinity and temperature, 5: dynamic alkalinity)',default=5)
-      if (self%iswtalk<1.or.self%iswtalk>5) call self%fatal_error('initialize','"iswtalk" out of bounds')
-      if (self%iswtalk/=1) then
-         call self%log_message('WARNING: iswtalk is forced to 1 because bioalkalinity is not yet supported.')
-         self%iswtalk = 1
-      end if
+      if (self%iswtalk<1.or.self%iswtalk>5) call self%fatal_error('initialize','iswtalk takes values between 1 and 5 only')
 
       call self%register_state_variable(self%id_O3c,'c','mmol C/m^3','total dissolved inorganic carbon', 2200._rk,minimum=0._rk)
       call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_O3c)
 
       if (self%iswtalk==5) then
+         ! Total alkalinity is a state variable.
          call self%register_state_variable(self%id_TA,'TA','umol/kg','total alkalinity',minimum=0._rk, &
             standard_variable=standard_variables%alkalinity_expressed_as_mole_equivalent)
       else
+         ! Total alkalinity is a diagnostic variable, parameterized as function of salinity and temperature.
          call self%register_diagnostic_variable(self%id_TA_diag,'TA','umol/kg','total alkalinity', act_as_state_variable=.true., &
             standard_variable=standard_variables%alkalinity_expressed_as_mole_equivalent)
+
+         call self%get_parameter(iswbioalk,'iswbioalk','','use bioalkalinity (0: off, 1: on)',default=1)
+         if (iswbioalk==1) then
+            ! Register state variable to track "bioalkalinity", i.e., the difference between parameterized
+            ! and actual alkalinity that is created by biogeochemical processes modifying alkalinity.
+            call self%register_state_variable(self%id_bioalk,'bioalk','umol/kg','bioalkalinity')
+
+            ! Redirect all source terms and boundary fluxes imposed on total alkalinity [a diagnostic]
+            ! to bioalkalinity [a state variable]
+            call copy_fluxes(self,self%id_TA_diag,self%id_bioalk)
+         end if
       end if
 
       call self%register_diagnostic_variable(self%id_ph,    'pH',    '-',      'pH',standard_variable=standard_variables%ph_reported_on_total_scale)
@@ -111,7 +123,7 @@ contains
       _DECLARE_ARGUMENTS_DO_
 
       real(rk) :: O3c,ETW,X1X,density,pres
-      real(rk) :: TA,Ctot
+      real(rk) :: TA,bioalk,Ctot
       real(rk) :: pH,PCO2,H2CO3,HCO3,CO3,k0co2
       real(rk) :: Om_cal,Om_arg
       logical  :: success
@@ -125,39 +137,44 @@ contains
          _GET_(self%id_dens,density)
          _GET_(self%id_pres,pres)
 
-! Calculate total alkalinity
-
+         ! Calculate total alkalinity
          if (self%iswtalk/=5) then
+            ! Alkalinity is parameterized as function of salinity and temperature.
             TA = approximate_alkalinity(self%iswtalk,ETW,X1X)
+            if (_VARIABLE_REGISTERED_(self%id_bioalk)) then
+               ! We separately track bioalkalinity - include this in total alkalinity.
+               _GET_(self%id_bioalk,bioalk)
+               TA = TA + bioalk/1.0e6_rk
+            end if
             _SET_DIAGNOSTIC_(self%id_TA_diag,TA*1.e6_rk) ! TOTA expressed as umol/kg
          else
+            ! Alkalinity is a state variable.
             _GET_(self%id_TA,TA)
             TA = TA/1.0e6_rk
          end if
 
-         !if (iswbioalk.eq.1)then
-         !   TA = TA + bioalk(I)/1.0e6_rk
-         !endif
-
-!scale DIC for iteration - all the CO2 sys routines need umol/kg as unit
-
+         ! Convert DIC from mmol m-3 to mol kg-1
          Ctot  = O3C / 1.e3_rk / density
 
          CALL CO2DYN (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success)   ! NB pressure from dbar to bar
 
-!scaled for output (mmols C m-3)
          if (success) then
+            ! Carbonate system iterative scheme converged -  save associated diagnostics.
+            ! Convert outputs from fraction to ppm (pCO2) and from mol kg-1 to mmol m-3 (concentrations).
             _SET_DIAGNOSTIC_(self%id_ph,pH)
             _SET_DIAGNOSTIC_(self%id_pco2,PCO2*1.e6_rk)
-            _SET_DIAGNOSTIC_(self%id_CarbA, H2CO3*1.e3_rk*density) ! from mol/kg to mmol/m3
-            _SET_DIAGNOSTIC_(self%id_Bicarb,HCO3*1.e3_rk*density) ! from mol/kg to mmol/m3
-            _SET_DIAGNOSTIC_(self%id_Carb,  CO3*1.e3_rk*density) ! from mol/kg to mmol/m3
+            _SET_DIAGNOSTIC_(self%id_CarbA, H2CO3*1.e3_rk*density)
+            _SET_DIAGNOSTIC_(self%id_Bicarb,HCO3*1.e3_rk*density)
+            _SET_DIAGNOSTIC_(self%id_Carb,  CO3*1.e3_rk*density)
          else
+            ! Carbonate system iterative scheme did not converge.
+            ! All diagnostics retain their previous value.
+            ! Use previous carbonate concentration (but current environment) for carbonate saturation states.
             _GET_(self%id_Carb_in,CO3)
             CO3 = CO3/1.e3_rk/density  ! from mmol/m3 to mol/kg
          end if
 
-!Call carbonate saturation state subroutine
+         ! Call carbonate saturation state subroutine
          CALL CaCO3_Saturation (ETW, X1X, pres*1.e4_rk, CO3, Om_cal, Om_arg)  ! NB pressure from dbar to Pa
 
          _SET_DIAGNOSTIC_(self%id_Om_cal,Om_cal)
@@ -169,7 +186,7 @@ contains
       class (type_ersem_carbonate), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_SURFACE_
 
-      real(rk) :: O3c,T,S,PRSS,density
+      real(rk) :: O3c,T,S,PRSS,density,bioalk
       real(rk) :: wnd,PCO2A
       real(rk) :: sc,fwind,UPTAKE,FAIRCO2
 
@@ -188,8 +205,15 @@ contains
          _GET_HORIZONTAL_(self%id_PCO2A,PCO2A)
 
          if (self%iswtalk/=5) then
+            ! Alkalinity is parameterized as function of salinity and temperature.
             TA = approximate_alkalinity(self%iswtalk,T,S)
+            if (_VARIABLE_REGISTERED_(self%id_bioalk)) then
+               ! We separately track bioalkalinity - include this in total alkalinity.
+               _GET_(self%id_bioalk,bioalk)
+               TA = TA + bioalk/1.0e6_rk
+            end if
          else
+            ! Alkalinity is a state variable.
             _GET_(self%id_TA,TA)
             TA = TA/1.0e6_rk
          end if
