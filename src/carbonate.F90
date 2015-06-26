@@ -95,25 +95,27 @@ contains
       real(rk),intent(in) :: T,S
       real(rk)            :: TA
 
+      ! NB total alkalinity must be given in umol kg-1
+
       if (iswtalk==1) then       !!!!   Old formulation
          IF (S .GE. 34.65_rk) THEN
-            TA =  (66.96_rk*S - 36.803_rk) / 1.0e6_rk ! From Bellerby & Canoba
+            TA =  66.96_rk*S - 36.803_rk   ! Bellerby & Canoba
          ELSE
-            TA = (3887._rk-46.25_rk*S) / 1.0e6_rk ! From Borges & Frankignoulle & Canoba
+            TA = 3887._rk - 46.25_rk*S     ! Borges & Frankignoulle & Canoba
          END IF
       elseif (iswtalk==2) then
-         TA = (520.1_rk+51.24_rk*S)/1.0e6_rk        ! from Millero et al, MarChem, 1998
+         TA = 520.1_rk + 51.24_rk*S        ! from Millero et al, MarChem, 1998
       elseif (iswtalk==3) then
          IF (T.lt.20._rk) then
-            TA = (S/35._rk*(2291._rk-2.69_rk*(T-20._rk)-0.046_rk*(T-20._rk)**2))/1.0e6_rk            ! from Millero et al, MarChem, 1998
+            TA = S/35._rk*(2291._rk-2.69_rk*(T-20._rk)-0.046_rk*(T-20._rk)**2)   ! Millero et al, MarChem, 1998
          else
-            TA = (520.1_rk+51.24_rk*S)/1.0e6_rk                               !    from Millero et al, MarChem, 1998
+            TA = 520.1_rk+51.24_rk*S                                             ! Millero et al, MarChem, 1998
          ENDIF
       elseif (iswtalk==4) then
          IF (T.lt.20._rk) then
-            TA = (2305._rk+53.97_rk*(S-35._rk)+2.74_rk*(S-35._rk)**2-1.16_rk*(T-20._rk)-0.04_rk*(T-20._rk)**2)/1.0e6_rk            ! from Lee et al., Geophys REs Lett, 1998
+            TA = 2305._rk+53.97_rk*(S-35._rk)+2.74_rk*(S-35._rk)**2-1.16_rk*(T-20._rk)-0.04_rk*(T-20._rk)**2   ! Lee et al., Geophys Res Lett, 1998
          else
-            TA = (2305._rk+58.66_rk*(S-35._rk)+2.32_rk*(S-35._rk)**2-1.41_rk*(T-20._rk)+0.04_rk*(T-20._rk)**2)/1.0e6_rk                               !    from Lee et al., Geophys REs Lett, 1998
+            TA = 2305._rk+58.66_rk*(S-35._rk)+2.32_rk*(S-35._rk)**2-1.41_rk*(T-20._rk)+0.04_rk*(T-20._rk)**2   ! Lee et al., Geophys Res Lett, 1998
          ENDIF
       end if
    end function
@@ -144,17 +146,16 @@ contains
             if (_VARIABLE_REGISTERED_(self%id_bioalk)) then
                ! We separately track bioalkalinity - include this in total alkalinity.
                _GET_(self%id_bioalk,bioalk)
-               TA = TA + bioalk/1.0e6_rk
+               TA = TA + bioalk
             end if
-            _SET_DIAGNOSTIC_(self%id_TA_diag,TA*1.e6_rk) ! TOTA expressed as umol/kg
+            _SET_DIAGNOSTIC_(self%id_TA_diag,TA) ! in umol/kg
          else
             ! Alkalinity is a state variable.
             _GET_(self%id_TA,TA)
-            TA = TA/1.0e6_rk
          end if
 
-         ! Convert DIC from mmol m-3 to mol kg-1
-         Ctot  = O3C / 1.e3_rk / density
+         TA = TA/1.0e6_rk                ! from umol kg-1 to mol kg-1
+         Ctot  = O3C / 1.e3_rk / density ! from mmol m-3 to mol kg-1
 
          CALL CO2DYN (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success)   ! NB pressure from dbar to bar
 
@@ -210,20 +211,21 @@ contains
             if (_VARIABLE_REGISTERED_(self%id_bioalk)) then
                ! We separately track bioalkalinity - include this in total alkalinity.
                _GET_(self%id_bioalk,bioalk)
-               TA = TA + bioalk/1.0e6_rk
+               TA = TA + bioalk
             end if
          else
             ! Alkalinity is a state variable.
             _GET_(self%id_TA,TA)
-            TA = TA/1.0e6_rk
          end if
+
+         TA = TA/1.0e6_rk                ! from umol kg-1 to mol kg-1
+         Ctot  = O3C / 1.e3_rk / density ! from mmol m-3 to mol kg-1
 
 !  for surface box only calculate air-sea flux
 !Nightingale and Liss parameterisation
 
 !..Only call after 2 days, because the derivation of instability in the
 !..
-         Ctot  = O3C / 1.e3_rk / density
          CALL CO2dyn(T, S, PRSS*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success)
          if (.not.success) then
             _GET_(self%id_pco2_in,PCO2)
