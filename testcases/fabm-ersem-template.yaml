@@ -1,0 +1,1183 @@
+# This file contains a template for ERSEM versions of fabm.yaml.
+# It is used by import_legacy_setup.py to create a working fabm.yaml
+# from the BioParams and include directories of a legacy ERSEM setup.
+# This template itself contains settings for both benthic returns and
+# Oldenburg benthos; import_legacy_setup.py is responsible for deleting
+# section not used by the legacy setup.
+# Legacy ERSEM parameters are denoted by their name prefixed with a dollar sign.
+check_conservation: false
+require_initialization: true
+instances:
+  zenithAngle:
+    model: ersem/zenith_angle
+  light:
+    model: ersem/light
+    parameters:
+      EPS0r: $EPS0Xr # without IOPMODEL only
+      EPSESS: $EPSESSX # without IOPMODEL only  
+      a0w: $a0w # IOPMODEL only
+      b0w: $b0w # IOPMODEL only
+      pEIR_eow: $peir_eowX
+  N1:
+    long_name: phosphate
+    model: ersem/pelagic_base
+    parameters:
+      composition: p
+      c0: 0.001
+    initialization:
+      p: $N1pr
+  N3:
+    long_name: nitrate
+    model: ersem/pelagic_base
+    parameters:
+      composition: n
+      c0: 0.001
+    initialization:
+      n: $N3nr
+  N4:
+    long_name: ammonium
+    model: ersem/pelagic_base
+    parameters:
+      composition: n
+      c0: 0.001
+    initialization:
+      n: $N4nr
+  N5:
+    long_name: silicate
+    model: ersem/pelagic_base
+    parameters:
+      composition: s
+      s0: 0.0003
+    initialization:
+      s: $N5sr
+  O2:
+    long_name: oxygen
+    model: ersem/oxygen
+    parameters:
+      ISWO2: $iswO2X
+    initialization:
+      o: $O2or
+  O3:
+    long_name: carbonate
+    model: ersem/carbonate
+    parameters:
+      iswCO2: $iswCO2X
+      iswASFLUX: 1
+      iswtalk: $iswtalk
+    initialization:
+      c: $O3cr
+  R1:
+    long_name: labile dissolved organic matter
+    model: ersem/pelagic_base
+    parameters:
+      composition: cnp
+      c0: 0.005
+    initialization:
+      c: $R1cr
+      n: $R1nr
+      p: $R1pr
+  R2:
+    long_name: semi-labile dissolved organic matter
+    model: ersem/pelagic_base
+    parameters:
+      composition: c
+      c0: 0.005
+    initialization:
+      c: $R2cr
+  R3:   # DOCDYN only
+    long_name: semi-refractory dissolved organic matter
+    model: ersem/pelagic_base
+    parameters:
+      composition: c
+      c0: 0.0033
+    initialization:
+      c: $R3cr
+  R4:
+    long_name: small-size pom
+    model: ersem/pelagic_base
+    parameters:
+      composition: cnpf
+      EPS: $EPSR6X
+      iopABS: $adR4
+      iopBBS: $bbR4
+      rm: $rR4mX
+      sedimentation: true
+      qQ1c: 0.0
+      qQ7c: $pe_R7R6X
+      xR1n: $xR1nX
+      xR1p: $xR1pX
+      xR7n: $xR7nX
+      xR7p: $xR7pX
+      c0: 0.0033
+    initialization:
+      c: $R4cr
+      n: $R4nr
+      p: $R4pr
+    coupling:
+      Q1: Q1
+      Q6: Q6/surface
+      Q7: Q7/surface
+  R6:
+    long_name: medium-size pom
+    model: ersem/pelagic_base
+    parameters:
+      composition: cnpsf
+      EPS: $EPSR6X
+      iopABS: $adR6
+      iopBBS: $bbR6
+      rm: $rR6mX
+      sedimentation: true
+      qQ1c: 0.0
+      qQ7c: $pe_R7R6X
+      xR1n: $xR1nX
+      xR1p: $xR1pX
+      xR7n: $xR7nX
+      xR7p: $xR7pX
+      c0: 0.0033
+    initialization:
+      c: $R6cr
+      n: $R6nr
+      p: $R6pr
+      s: $R6sr
+    coupling:
+      Q1: Q1
+      Q6: Q6/surface
+      Q7: Q7/surface
+  R8:
+    long_name: large-size pom
+    model: ersem/pelagic_base
+    parameters:
+      composition: cnps
+      EPS: $EPSR6X
+      iopABS: $adR8
+      iopBBS: $bbR8
+      rm: $rR8mX
+      sedimentation: true
+      qQ1c: 0.0
+      qQ7c: $pe_R7R6X
+      xR1n: $xR1nX
+      xR1p: $xR1pX
+      xR7n: $xR7nX
+      xR7p: $xR7pX
+      c0: 0.0033
+    initialization:
+      c: $R8cr
+      n: $R8nr
+      p: $R8pr
+      s: $R8sr
+    coupling:
+      Q1: Q1
+      Q6: Q6/surface
+      Q7: Q7/surface
+  Q1:
+    long_name: benthic dissolved organic matter
+    model: ersem/benthic_base
+    parameters:
+      composition: cnp
+      remin: $reminQ1X
+      pN3: $pQIN3X
+    initialization:
+      c: $Q1cr
+      n: $Q1nr
+      p: $Q1pr
+    coupling:
+      O3c: O3/c
+      N1p: N1/p
+      N3n: N3/n
+      N4n: N4/n
+  Q6:
+    long_name: benthic particulate organic matter
+    model: ersem/benthic_column_particulate_matter
+    parameters:
+      composition: cnpsf
+      resuspension: true
+      remin: $reminQ6X
+      pN3: $pQIN3X
+    initialization:
+      c: $Q6cr
+      n: $Q6nr
+      p: $Q6pr
+      s: $Q6sr
+      pen_depth_c: $D6MR
+      pen_depth_n: $D7MR
+      pen_depth_p: $D8MR
+      pen_depth_s: $D9MR
+    coupling:
+      O3c: O3/c
+      N1p: N1/p
+      N3n: N3/n
+      N4n: N4/n
+      N5s: N5/s
+      RP: R6
+  Q7:
+    long_name: benthic refractory matter
+    model: ersem/benthic_column_particulate_matter
+    parameters:
+      composition: cnp
+      burial: true
+      remin: $reminQ7X
+      pN3: $pQIN3X
+    initialization:
+      c: $Q7cr
+      n: $Q7nr
+      p: $Q7pr
+      pen_depth_c: $D3MR
+      pen_depth_n: $D4MR
+      pen_depth_p: $D5MR
+    coupling:
+      O3c: O3/c
+      N1p: N1/p
+      N3n: N3/n
+      N4n: N4/n
+      burial_target: Q17
+  Q17:
+    long_name: benthic buried matter
+    model: ersem/benthic_base
+    parameters:
+      composition: cnp
+    initialization:
+      c: $Q17cr
+      n: $Q17nr
+      p: $Q17pr
+  B1:
+    long_name: bacteria
+    model: ersem/bacteria
+    parameters:
+      iswBlim: $iswBlimX
+      q10: $q10B1X
+      chdo: $chdB1oX
+      chn: $chB1nX
+      chp: $chB1pX
+      sd: $sdB1X
+      sum: $sumB1X
+      pu: $puB1X
+      puo: $puB1oX
+      srs: $srsB1X
+      qpc: $qpB1cX
+      qnc: $qnB1cX
+      ur_O2: $urB1_O2X
+      sR1N1: $sR1N1X
+      sR1N4: $sR1N4X
+      fsink: $fsinkX
+      c0: 0.01
+      nRP: 3
+      puRP1: $puR4_B1X     # without DOCDYN only
+      puRP2: $puR6_B1X     # without DOCDYN only
+      puRP3: $puR8_B1X     # without DOCDYN only
+      redfield: $redfieldX # without DOCDYN only
+      rR2R1: $rR2R1X       # without DOCDYN only
+      R1R2: $R1R2X         # without DOCDYN only
+      sRP1R1: $sR4R1       # DOCDYN only
+      sRP2R1: $sR6R1       # DOCDYN only
+      sRP3R1: $sR8R1       # DOCDYN only
+      rR2: $rR2B1X         # DOCDYN only
+      rR3: $rR3B1X         # DOCDYN only
+      frR3: $frB1R3        # DOCDYN only
+    initialization:
+      c: $B1cr
+      n: $B1nr
+      p: $B1pr
+    coupling:
+      N1p: N1/p
+      N4n: N4/n
+      R1c: R1/c
+      R1p: R1/p
+      R1n: R1/n
+      R2c: R2/c
+      R3c: R3/c
+      RP1: R4
+      RP2: R6
+      RP3: R8
+      O2o: O2/o
+      O3c: O3/c
+  pel_nit:
+    long_name: pelagic nitrification
+    model: ersem/nitrification
+    parameters:
+      q10: $q10B1X
+      ISWph: $ISWPHX
+      sN4N3: $sN4N3X
+      chN3o: $chN3oX
+    coupling:
+      N3n: N3/n
+      N4n: N4/n
+      O2o: O2/o
+  P1:
+    long_name: diatoms
+    model: ersem/primary_producer
+    parameters:
+      sum: $sumP1X
+      q10: $q10P1X
+      srs: $srsP1X
+      pu_ea: $pu_eaP1X
+      pu_ra: $pu_raP1X
+      qnlc: $qnlP1cX
+      qplc: $qplP1cX
+      xqcp: $xqcP1pX
+      xqcn: $xqcP1nX
+      xqp: $xqpP1X
+      xqn: $xqnP1X
+      qun3: $quP1n3X
+      qun4: $quP1n4X
+      qurp: $qurP1pX
+      use_Si: true
+      qsc: $qsP1cX
+      chs: $chP1sX
+      sdo: $sdoP1X
+      alpha: $alphaP1X
+      beta: $betaP1X
+      phim: $phimP1X
+      phiH: $phiP1HX
+      Limnut: $LimnutX
+      R1R2: $R1R2X
+      uB1c_O2: $uB1c_O2X
+      urB1_O2: $urB1_O2X
+      EPS: $EPSP1X
+      iopABS: $aphP1
+      iopBBS: $bphP1
+      c0: 0.0001
+      resm: $resP1mX
+      esni: $esNIP1X
+      cenh: false
+      sedimentation: true
+      qQ1c: $pe_R1P1X
+      qQ7c: $pe_R7P1X
+      xR1n: $xR1nX
+      xR1p: $xR1pX
+      xR7n: $xR7nX
+      xR7p: $xR7pX
+    initialization:
+      c: $P1cr
+      n: $P1nr
+      p: $P1pr
+      s: $P1sr
+      Chl: $Chl1r
+    coupling:
+      N1p: N1/p
+      N3n: N3/n
+      N4n: N4/n
+      N5s: N5/s
+      R1c: R1/c
+      R1p: R1/p
+      R1n: R1/n
+      R2c: R2/c
+      RP: R6
+      O2o: O2/o
+      O3c: O3/c
+      Q1: Q1
+      Q6: Q6/surface
+      Q7: Q7/surface
+  P2:
+    long_name: nanophytoplankton
+    model: ersem/primary_producer
+    parameters:
+      sum: $sumP2X
+      q10: $q10P2X
+      srs: $srsP2X
+      pu_ea: $pu_eaP2X
+      pu_ra: $pu_raP2X
+      qnlc: $qnlP2cX
+      qplc: $qplP2cX
+      xqcp: $xqcP2pX
+      xqcn: $xqcP2nX
+      xqp: $xqpP2X
+      xqn: $xqnP2X
+      qun3: $quP2n3X
+      qun4: $quP2n4X
+      qurp: $qurP2pX
+      use_Si: false
+      sdo: $sdoP2X
+      alpha: $alphaP2X
+      beta: $betaP2X
+      phim: $phimP2X
+      phiH: $phiP2HX
+      Limnut: $LimnutX
+      R1R2: $R1R2X
+      uB1c_O2: $uB1c_O2X
+      urB1_O2: $urB1_O2X
+      EPS: $EPSP2X
+      iopABS: $aphP2
+      iopBBS: $bphP2
+      c0: 0.001
+      calcify: true
+      resm: $resP2mX
+      esni: $esNIP2X
+      cenh: false
+      sedimentation: true
+      qQ1c: $pe_R1P2X
+      qQ7c: $pe_R7P2X
+      xR1n: $xR1nX
+      xR1p: $xR1pX
+      xR7n: $xR7nX
+      xR7p: $xR7pX
+    initialization:
+      c: $P2cr
+      n: $P2nr
+      p: $P2pr
+      Chl: $Chl2r
+    coupling:
+      N1p: N1/p
+      N3n: N3/n
+      N4n: N4/n
+      R1c: R1/c
+      R1p: R1/p
+      R1n: R1/n
+      R2c: R2/c
+      RP: R4
+      O2o: O2/o
+      O3c: O3/c
+      Q1: Q1
+      Q6: Q6/surface
+      Q7: Q7/surface
+      L2c: L2/c
+      RainR: L2/RainR
+  P3:
+    long_name: picophytoplankton
+    model: ersem/primary_producer
+    parameters:
+      sum: $sumP3X
+      q10: $q10P3X
+      srs: $srsP3X
+      pu_ea: $pu_eaP3X
+      pu_ra: $pu_raP3X
+      qnlc: $qnlP3cX
+      qplc: $qplP3cX
+      xqcp: $xqcP3pX
+      xqcn: $xqcP3nX
+      xqp: $xqpP3X
+      xqn: $xqnP3X
+      qun3: $quP3n3X
+      qun4: $quP3n4X
+      qurp: $qurP3pX
+      use_Si: false
+      sdo: $sdoP3X
+      alpha: $alphaP3X
+      beta: $betaP3X
+      phim: $phimP3X
+      phiH: $phiP3HX
+      Limnut: $LimnutX
+      R1R2: $R1R2X
+      uB1c_O2: $uB1c_O2X
+      urB1_O2: $urB1_O2X
+      EPS: $EPSP3X
+      iopABS: $aphP3
+      iopBBS: $bphP3
+      c0: 0.0088
+      resm: $resP3mX
+      esni: $esNIP3X
+      cenh: false
+      sedimentation: true
+      qQ1c: $pe_R1P3X
+      qQ7c: 0.05
+      xR1n: $xR1nX
+      xR1p: $xR1pX
+      xR7n: $xR7nX
+      xR7p: $xR7pX
+    initialization:
+      c: $P3cr
+      n: $P3nr
+      p: $P3pr
+      Chl: $Chl3r
+    coupling:
+      N1p: N1/p
+      N3n: N3/n
+      N4n: N4/n
+      R1c: R1/c
+      R1p: R1/p
+      R1n: R1/n
+      R2c: R2/c
+      RP: R4
+      O2o: O2/o
+      O3c: O3/c
+      Q1: Q1
+      Q6: Q6/surface
+      Q7: Q7/surface
+  P4:
+    long_name: microphytoplankton
+    model: ersem/primary_producer
+    parameters:
+      sum: $sumP4X
+      q10: $q10P4X
+      srs: $srsP4X
+      pu_ea: $pu_eaP4X
+      pu_ra: $pu_raP4X
+      qnlc: $qnlP4cX
+      qplc: $qplP4cX
+      xqcp: $xqcP4pX
+      xqcn: $xqcP4nX
+      xqp: $xqpP4X
+      xqn: $xqnP4X
+      qun3: $quP4n3X
+      qun4: $quP4n4X
+      qurp: $qurP4pX
+      use_Si: false
+      sdo: $sdoP4X
+      alpha: $alphaP4X
+      beta: $betaP4X
+      phim: $phimP4X
+      phiH: $phiP4HX
+      Limnut: $LimnutX
+      R1R2: $R1R2X
+      uB1c_O2: $uB1c_O2X
+      urB1_O2: $urB1_O2X
+      EPS: $EPSP4X
+      iopABS: $aphP4
+      iopBBS: $bphP4
+      c0: 0.0001
+      resm: $resP4mX
+      esni: $esNIP4X
+      cenh: false
+      sedimentation: true
+      qQ1c: $pe_R1P4X
+      qQ7c: 0.05
+      xR1n: $xR1nX
+      xR1p: $xR1pX
+      xR7n: $xR7nX
+      xR7p: $xR7pX
+    initialization:
+      c: $P4cr
+      n: $P4nr
+      p: $P4pr
+      Chl: $Chl4r
+    coupling:
+      N1p: N1/p
+      N3n: N3/n
+      N4n: N4/n
+      R1c: R1/c
+      R1p: R1/p
+      R1n: R1/n
+      R2c: R2/c
+      RP: R6
+      O2o: O2/o
+      O3c: O3/c
+      Q1: Q1
+      Q6: Q6/surface
+      Q7: Q7/surface
+  Z4:
+    long_name: mesozooplankton
+    model: ersem/mesozooplankton
+    parameters:
+      q10: $q10Z4X
+      minfood: $minfoodZ4X
+      chuc: $chuZ4cX
+      sum: $sumZ4X
+      pu: $puZ4X
+      pu_ea: $pu_eaZ4X
+      pu_eaR: $pu_eaRZ4X
+      pe_R1: $pe_R1Z4X
+      srs: $srsZ4X
+      sd: $sdZ4X
+      sdo: $sdZ4oX
+      chro: $chrZ4oX
+      qpc: $qpZIcX
+      qnc: $qnZIcX
+      Minprey: $MinpreyX
+      repw: $Z4repwX
+      mort: $Z4mortX
+      R1R2: $R1R2X
+      xR1p: $xR1pX
+      xR1n: $xR1nX
+      urB1_O2: $urB1_O2X
+      gutdiss: $gutdiss
+      c0: 0.0033
+      nprey: 9
+      suprey1: $suP1_Z4X
+      suprey2: $suP2_Z4X
+      suprey3: $suP3_Z4X
+      suprey4: $suP4_Z4X
+      suprey5: $suZ4_Z4X
+      suprey6: $suZ5_Z4X
+      suprey7: $suZ6_Z4X
+      suprey8: $suB1_Z4X
+      suprey9: $suR6_Z4X
+      prey9ispom: true
+    initialization:
+      c: $Z4cr
+    coupling:
+      prey1: P1
+      prey2: P2
+      prey3: P3
+      prey4: P4
+      prey5: Z4
+      prey6: Z5
+      prey7: Z6
+      prey8: B1
+      prey9: R6
+      N1p: N1/p
+      N4n: N4/n
+      R1c: R1/c
+      R1p: R1/p
+      R1n: R1/n
+      R2c: R2/c
+      RP: R8
+      O2o: O2/o
+      O3c: O3/c
+      L2c: L2/c
+  Z5:
+    long_name: microzooplankton
+    model: ersem/microzooplankton
+    parameters:
+      q10: $q10Z5X
+      minfood: $minfoodZ5X
+      chuc: $chuZ5cX
+      sum: $sumZ5X
+      pu: $puZ5X
+      pu_ea: $pu_eaZ5X
+      pe_R1: $pe_R1Z5X
+      srs: $srsZ5X
+      sd: $sdZ5X
+      sdo: $sdZ5oX
+      chro: $chrZ5oX
+      qpc: $qpZ5cX
+      qnc: $qnZ5cX
+      stempp: $stempZ5pX
+      stempn: $stempZ5nX
+      R1R2: $R1R2X
+      xR1p: $xR1pX
+      xR1n: $xR1nX
+      urB1_O2: $urB1_O2X
+      gutdiss: $gutdiss
+      c0: 0.0033
+      nprey: 7
+      suprey1: $suB1_Z5X
+      suprey2: $suP1_Z5X
+      suprey3: $suP2_Z5X
+      suprey4: $suP3_Z5X
+      suprey5: $suP4_Z5X
+      suprey6: $suZ5_Z5X
+      suprey7: $suZ6_Z5X
+    initialization:
+      c: $Z5cr
+      n: $Z5nr
+      p: $Z5pr
+    coupling:
+      prey1: B1
+      prey2: P1
+      prey3: P2
+      prey4: P3
+      prey5: P4
+      prey6: Z5
+      prey7: Z6
+      N1p: N1/p
+      N4n: N4/n
+      R1c: R1/c
+      R1p: R1/p
+      R1n: R1/n
+      R2c: R2/c
+      RP: R6
+      O2o: O2/o
+      O3c: O3/c
+      L2c: L2/c
+  Z6:
+    long_name: nanoflagellates
+    model: ersem/microzooplankton
+    parameters:
+      q10: $q10Z6X
+      minfood: $minfoodZ6X
+      chuc: $chuZ6cX
+      sum: $sumZ6X
+      pu: $puZ6X
+      pu_ea: $pu_eaZ6X
+      pe_R1: $pe_R1Z6X
+      srs: $srsZ6X
+      sd: $sdZ6X
+      sdo: $sdZ6oX
+      chro: $chrZ6oX
+      qpc: $qpZ6cX
+      qnc: $qnZ6cX
+      stempp: $stempZ6pX
+      stempn: $stempZ6nX
+      R1R2: $R1R2X
+      xR1p: $xR1pX
+      xR1n: $xR1nX
+      urB1_O2: $urB1_O2X
+      gutdiss: 1.0
+      c0: 0.0033
+      nprey: 4
+      suprey1: $suB1_Z6X
+      suprey2: $suP2_Z6X
+      suprey3: $suP3_Z6X
+      suprey4: $suZ6_Z6X
+    initialization:
+      c: $Z6cr
+      n: $Z6nr
+      p: $Z6pr
+    coupling:
+      prey1: B1
+      prey2: P2
+      prey3: P3
+      prey4: Z6
+      N1p: N1/p
+      N4n: N4/n
+      R1c: R1/c
+      R1p: R1/p
+      R1n: R1/n
+      R2c: R2/c
+      RP: R4
+      RPs: R6/s
+      O2o: O2/o
+      O3c: O3/c
+      L2c: L2/c
+  L2:
+    long_name: calcite
+    model: ersem/calcification
+    parameters:
+      iswcal: $iswcal
+      ncalc: $ncalc
+      ndiss: $ndiss
+      Rain0: $Rain0
+      sedL2: $sedL2
+      c0: 1.0e-05
+    initialization:
+      c: $L2cr
+    coupling:
+      om_cal: O3/Om_cal
+      O3c: O3/c
+      bL2c: bL2/l
+  bL2:
+    long_name: benthic calcite
+    model: ersem/benthic_base
+    parameters:
+      composition: l
+      remin: $bendiss
+    initialization:
+      l: $bL2cR
+    coupling:
+      O3c: O3/c
+  ben_col:
+    long_name: benthic column
+    model: ersem/benthic_column
+    parameters:
+      qPW: $qPWX
+      EDZ_mix: $EDZ_mixX
+      d_tot: $d_totX
+      Etur: $EturX
+      mtur: $mturX
+      htur: $hturX
+      dtur: $dturX
+      EDZ_1: $EDZ_1X
+      EDZ_2: $EDZ_2X
+      EDZ_3: $EDZ_3X
+      irr_min: $irr_minX
+      mirr: $mirrX
+      hirr: $hirrX
+    initialization:
+      D1m: $D1MR
+      D2m: $D2MR
+  K1:
+    long_name: benthic phosphate
+    model: ersem/benthic_column_dissolved_matter
+    parameters:
+      composition: p
+      ads1: $pM1Xr
+      ads2: $pM1Xr
+      ads3: $M11adsX
+    initialization:
+      p: $K1pr
+    coupling:
+      p_pel: N1/p
+  K3:
+    long_name: benthic nitrate
+    model: ersem/benthic_column_dissolved_matter
+    parameters:
+      composition: n
+      last_layer: 2
+      relax: $relax_mX
+      minD: 0.0001
+    initialization:
+      n: $K3nr
+    coupling:
+      n_pel: N3/n
+  K4:
+    long_name: benthic ammonium
+    model: ersem/benthic_column_dissolved_matter
+    parameters:
+      composition: n
+      ads1: $M4adsX
+      ads2: $M4adsX
+      ads3: $M4adsX
+    initialization:
+      n: $K4nr
+    coupling:
+      n_pel: N4/n
+  K5:
+    long_name: benthic silicate
+    model: ersem/benthic_column_dissolved_matter
+    parameters:
+      composition: s
+    initialization:
+      s: $K5sr
+    coupling:
+      s_pel: N5/s
+  G2:
+    long_name: benthic oxygen
+    model: ersem/benthic_column_dissolved_matter
+    parameters:
+      composition: o
+      last_layer: 1
+      relax: $relax_oX
+      minD: 0.0001
+    initialization:
+      o: $G2or
+    coupling:
+      o_pel: O2/o
+  G3:
+    long_name: benthic dissolved inorganic carbon
+    model: ersem/benthic_column_dissolved_matter
+    parameters:
+      composition: c
+    initialization:
+      c: $G3cr
+    coupling:
+      c_pel: O3/c
+  Q6s_aerobic:
+    long_name: aerobic particulate silicate
+    model: ersem/benthic_column_particulate_matter_layer
+    parameters:
+      composition: s
+      remin: $sQ6M5X
+      minimum_depth: 0.0
+      variable_maximum_depth: true
+    coupling:
+      maximum_depth: ben_col/D1m
+      Q: Q6
+      s_remin_target: K5/per_layer/s1
+  Q6s_anaerobic:
+    long_name: anaerobic particulate silicate
+    model: ersem/benthic_column_particulate_matter_layer
+    parameters:
+      composition: s
+      remin: $sQ6M5X
+      variable_minimum_depth: true
+      maximum_depth: $d_totX
+      source_depth_distribution: 2
+    coupling:
+      minimum_depth: ben_col/D1m
+      Q: Q6
+      s_remin_target: K5/per_layer/s2
+  ben_nit:
+    long_name: benthic nitrogen cycle
+    model: ersem/benthic_nitrogen_cycle
+    parameters:
+      q10nit: $q10nitX
+      hM4M3: $hM4M3X
+      ISWph: $ISWphx
+      sM4M3: $sM4M3X
+      xno3: 2.0
+      pammon: $pammonX
+      pdenit: $pdenitX
+      xn2: 1.25
+      hM3G4: $hM3G4X
+    coupling:
+      K3n: K3/per_layer/n1
+      K4n: K4/per_layer/n1
+      G2o: G2/per_layer/o1
+      N4n: N4/n
+      K3n2: K3/per_layer/n2
+      K4n2: K4/per_layer/n2
+      G2o2: G2/per_layer/o2
+      layer2_thickness: ben_col/layer2_thickness
+  H1:
+    long_name: benthic aerobic bacteria
+    model: ersem/benthic_bacteria
+    parameters:
+      qnc: $qnHIcX
+      qpc: $qpHIcX
+      q10: $q10h1x
+      dd: $ddH1X
+      suQ7: $suQ7H1X
+      suQ6f: $suQ6fH1X
+      suQ6s: $suQ6sH1X
+      suQ1: $suQ1H1X
+      puinc: $puincH1X
+      pue6: $pue6H1Q1X
+      pue7: $pue7H1Q1X
+      pur: $purH1X
+      sr: $srH1X
+      pdQ1: $pdH1Q1X
+      sd: $sdH1X
+    initialization:
+      c: $H1cr
+    coupling:
+      K1p: K1/per_layer/p1_pw
+      K4n: K4/per_layer/n1_pw
+      G2o: G2/per_layer/o1
+      G3c: G3/per_layer/c1
+      Dm: ben_col/D1m
+      Q1: Q1
+      Q6: H1_Q6
+      Q7: H1_Q7
+  H1_Q6:
+    long_name: benthic aerobic bacteria POM
+    model: ersem/benthic_column_particulate_matter_layer
+    parameters:
+      composition: cnps
+      minimum_depth: 0.0
+      variable_maximum_depth: true
+    coupling:
+      maximum_depth: ben_col/D1m
+      Q: Q6
+  H1_Q7:
+    long_name: benthic aerobic bacteria refractory POM
+    model: ersem/benthic_column_particulate_matter_layer
+    parameters:
+      composition: cnp
+      minimum_depth: 0.0
+      variable_maximum_depth: true
+    coupling:
+      maximum_depth: ben_col/D1m
+      Q: Q7
+  H2:
+    long_name: benthic anaerobic bacteria
+    model: ersem/benthic_bacteria
+    parameters:
+      qnc: $qnHIcX
+      qpc: $qpHIcX
+      q10: $q10h2x
+      dd: $ddH2X
+      suQ7: $suQ7H2X
+      suQ6f: $suQ6fH2X
+      suQ6s: $suQ6sH2X
+      suQ1: 0.0
+      puinc: $puincH2X
+      pue6: 0.0
+      pue7: 0.0
+      pur: $purH2X
+      sr: $srH2X
+      pdQ1: 0.0
+      sd: $sdH2X
+    initialization:
+      c: $H2cr
+    coupling:
+      K1p: K1/per_layer/p2_pw
+      K4n: K4/per_layer/n2_pw
+      G2o: ben_nit/K6_calculator/K6
+      G3c: G3/per_layer/c2
+      Dm: ben_col/layer2_thickness
+      Q1: Q1
+      Q6: H2_Q6
+      Q7: H2_Q7
+  H2_Q6:
+    long_name: benthic anaerobic bacteria POM
+    model: ersem/benthic_column_particulate_matter_layer
+    parameters:
+      composition: cnps
+      variable_minimum_depth: true
+      maximum_depth: $d_totX
+      source_depth_distribution: 3
+    coupling:
+      minimum_depth: ben_col/D1m
+      Q: Q6
+  H2_Q7:
+    long_name: benthic anaerobic bacteria refractory POM
+    model: ersem/benthic_column_particulate_matter_layer
+    parameters:
+      composition: cnp
+      variable_minimum_depth: true
+      maximum_depth: $d_totX
+      source_depth_distribution: 3
+    coupling:
+      minimum_depth: ben_col/D1m
+      Q: Q7
+  Y2:
+    long_name: benthic deposit feeder
+    model: ersem/benthic_fauna
+    parameters:
+      qnc: $qnYIcX
+      qpc: $qpYIcX
+      q10: $q10Y2X
+      rlO2: $rlO2Y2x
+      hO2: $hO2Y2X
+      xcl: $xclY2X
+      xcs: $xcsY2X
+      xch: $xchY2X
+      su: $suY2X
+      lu: $luY2X
+      hu: $huY2X
+      pue: $pueY2X
+      pueQ: $pueQ6Y2X
+      pudil: $pudilY2X
+      sd: $sdY2X
+      sdmO2: $sdmO2Y2X
+      sdc: $sdcY2X
+      xdc: $xdcY2X
+      sr: $srY2X
+      pur: $purY2X
+      nfood: 4
+      pufood1: $puH1Y2X
+      pufood2: $puH2Y2X
+      pufood3: $puQ6Y2X
+      pufood4: $puY4Y2X
+      food3ispom: true
+      ptur: $pturY2X
+      pirr: $pirrY2X
+    initialization:
+      c: $Y2cr
+    coupling:
+      food1: H1
+      food2: H2
+      food3: Y2_Q6_source
+      food4: Y4
+      food2c_an: H2/c
+      food3c_an: Y2_Q6_source_anaerobic/c
+      O2o: O2/o
+      G3c: G3/per_layer/c1
+      G2o: G2/per_layer/o1
+      Q: Y2_Q6_sink
+      K1p: K1/per_layer/p1
+      K4n: K4/per_layer/n1
+      K1p2: K1/per_layer/p2
+      K4n2: K4/per_layer/n2
+      Dm: ben_col/D1m
+  Y2_Q6_source:
+    long_name: benthic deposit feeder total POM
+    model: ersem/benthic_column_particulate_matter_layer
+    parameters:
+      composition: cnps
+      minimum_depth: $dQ6Y3X
+      maximum_depth: $d_totX
+    coupling:
+      Q: Q6
+  Y2_Q6_source_anaerobic:
+    long_name: benthic deposit feeder anaerobic POM
+    model: ersem/benthic_column_particulate_matter_layer
+    parameters:
+      composition: cnps
+      variable_minimum_depth: true
+      maximum_depth: $d_totX
+    coupling:
+      minimum_depth: ben_col/D1m
+      Q: Q6
+  Y2_Q6_sink:
+    long_name: benthic deposit feeder POM sink
+    model: ersem/benthic_column_particulate_matter_layer
+    parameters:
+      composition: cnps
+      minimum_depth: 0.0
+      variable_maximum_depth: true
+    coupling:
+      maximum_depth: Q6/pen_depth_c
+      Q: Q6
+  Y3:
+    long_name: benthic suspension feeder
+    model: ersem/benthic_fauna
+    parameters:
+      qnc: $qnYIcX
+      qpc: $qpYIcX
+      q10: $q10Y3X
+      rlO2: $rlO2Y3x
+      hO2: $hO2Y3X
+      xcl: $xclY3X
+      xcs: $xcsY3X
+      xch: $xchY3X
+      su: $suY3X
+      lu: $luY3X
+      hu: $huY3X
+      pue: $pueY3X
+      pueQ: $pueQ6Y3X
+      pudil: $pudilY3X
+      sd: $sdY3X
+      sdmO2: $sdmO2Y3X
+      sdc: $sdcY3X
+      xdc: $xdcY3X
+      sr: $srY3X
+      pur: $purY3X
+      nfood: 6
+      food1ispel: true
+      food2ispel: true
+      food3ispel: true
+      food4ispel: true
+      food5_ll: true
+      pufood1: $puP1Y3X
+      pufood2: $puP2Y3X
+      pufood3: $puP3Y3X
+      pufood4: $puR6Y3X
+      pufood5: $puH1Y3X
+      pufood6: $puQ6Y3X
+      food4ispom: true
+      food6ispom: true
+      dwat: $dwatY3X
+      dQ6: $dQ6Y3X
+    initialization:
+      c: $Y3cr
+    coupling:
+      food1: P1
+      food2: P2
+      food3: P3
+      food4: R6
+      food5: H1
+      food6: Y3_Q6
+      O2o: O2/o
+      G3c: G3/per_layer/c1
+      G2o: G2/per_layer/o1
+      Q: Y3_Q6
+      K1p: K1/per_layer/p1
+      K4n: K4/per_layer/n1
+      K1p2: K1/per_layer/p2
+      K4n2: K4/per_layer/n2
+      Dm: ben_col/D1m
+  Y3_Q6:
+    long_name: benthic suspension feeder POM
+    model: ersem/benthic_column_particulate_matter_layer
+    parameters:
+      composition: cnps
+      minimum_depth: 0.0
+      maximum_depth: $dQ6Y3X
+    coupling:
+      Q: Q6
+  Y4:
+    long_name: benthic meiofauna
+    model: ersem/benthic_fauna
+    parameters:
+      qnc: $qnYIcX
+      qpc: $qpYIcX
+      q10: $q10Y4X
+      rlO2: $rlO2Y4x
+      hO2: $hO2Y4X
+      xcl: 25000.0
+      xcs: 3000.0
+      xch: 5000.0
+      su: $suY4X
+      lu: $luY4X
+      hu: $huY4X
+      pue: $pueY4X
+      pueQ: $pueQ6Y4X
+      pudil: $pudilY4X
+      sd: $sdY4X
+      sdmO2: $sdmO2Y4X
+      sdc: $sdcY4X
+      xdc: $xdcY4X
+      sr: $srY4X
+      pur: $purY4X
+      nfood: 4
+      pufood1: $puH1Y4X
+      pufood2: $puH2Y4X
+      pufood3: $puY4Y4X
+      pufood4: $puQ6Y4X
+      food4ispom: true
+      pirr: $pirrY4X
+    initialization:
+      c: $Y4cr
+    coupling:
+      food1: H1
+      food2: H2
+      food3: Y4
+      food4: Y4_Q6
+      O2o: O2/o
+      G3c: G3/per_layer/c1
+      G2o: G2/per_layer/o1
+      Q: Y4_Q6
+      K1p: K1/per_layer/p1
+      K4n: K4/per_layer/n1
+      K1p2: K1/per_layer/p2
+      K4n2: K4/per_layer/n2
+      Dm: ben_col/D1m
+  Y4_Q6:
+    long_name: benthic meiofauna POM
+    model: ersem/benthic_column_particulate_matter_layer
+    parameters:
+      composition: cnps
+      minimum_depth: 0.0
+      maximum_depth: $dQ6Y4x
+    coupling:
+      Q: Q6
