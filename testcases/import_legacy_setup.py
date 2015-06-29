@@ -128,10 +128,6 @@ def replaceValue(old,new,d=root,path=''):
 # Configure ERSEM
 # -------------------------------------------------
 
-# Bioalkalinity not supported yet
-if int(ersemdict['iswtalk'])!=1:
-    print 'WARNING: iswtalk=%i will be forced to 1 due to missing bioalkalinity support.' % int(ersemdict['iswtalk'])
-
 if options.ibenxin is None: options.ibenxin = int(ersemdict['ibenxin'])
 if options.ibenxin==0:
     print 'Configuration without benthos is currently not supported.'
@@ -190,32 +186,17 @@ if options.iop:
     setValue('instances/light/model','ersem/light_iop')
     deleteValue('instances/light/parameters/EPS0r')
     deleteValue('instances/light/parameters/EPSESS')
-    deleteValue('instances/P1/parameters/EPS')
-    deleteValue('instances/P2/parameters/EPS')
-    deleteValue('instances/P3/parameters/EPS')
-    deleteValue('instances/P4/parameters/EPS')
-    deleteValue('instances/R4/parameters/EPS')
-    deleteValue('instances/R6/parameters/EPS')
-    deleteValue('instances/R8/parameters/EPS')
+    deleteValue('instances/P?/parameters/EPS')
+    deleteValue('instances/R?/parameters/EPS')
 else:
     # replicate legacy ERSEM without IOPMODEL defined
     deleteValue('instances/zenithAngle')
     deleteValue('instances/light/parameters/a0w')
     deleteValue('instances/light/parameters/b0w')
-    deleteValue('instances/P1/parameters/iopABS')
-    deleteValue('instances/P2/parameters/iopABS')
-    deleteValue('instances/P3/parameters/iopABS')
-    deleteValue('instances/P4/parameters/iopABS')
-    deleteValue('instances/R4/parameters/iopABS')
-    deleteValue('instances/R6/parameters/iopABS')
-    deleteValue('instances/R8/parameters/iopABS')
-    deleteValue('instances/P1/parameters/iopBBS')
-    deleteValue('instances/P2/parameters/iopBBS')
-    deleteValue('instances/P3/parameters/iopBBS')
-    deleteValue('instances/P4/parameters/iopBBS')
-    deleteValue('instances/R4/parameters/iopBBS')
-    deleteValue('instances/R6/parameters/iopBBS')
-    deleteValue('instances/R8/parameters/iopBBS')
+    deleteValue('instances/P?/parameters/iopABS')
+    deleteValue('instances/R?/parameters/iopABS')
+    deleteValue('instances/P?/parameters/iopBBS')
+    deleteValue('instances/R?/parameters/iopBBS')
 
 print 'NOTE: legacy setup has pCO2 = %s. In FABM this is set through forcing.' % float(ersemdict['pco2a3'])
 if 'essxr' in ersemdict.keys(): print 'NOTE: legacy setup has silt = %s (for default light model). In FABM this is set through forcing.' % float(ersemdict['essxr'])
