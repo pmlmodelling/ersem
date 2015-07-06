@@ -69,16 +69,19 @@ contains
          end if
       end if
 
-      call self%register_diagnostic_variable(self%id_ph,    'pH',    '-',      'pH',standard_variable=standard_variables%ph_reported_on_total_scale)
-      call self%register_diagnostic_variable(self%id_pco2,  'pCO2',  '1e-6',    'partial pressure of CO2')
-      call self%register_diagnostic_variable(self%id_CarbA, 'CarbA', 'mmol/m^3','carbonic acid concentration')
-      call self%register_diagnostic_variable(self%id_BiCarb,'BiCarb','mmol/m^3','bicarbonate concentration')
-      call self%register_diagnostic_variable(self%id_Carb,  'Carb',  'mmol/m^3','carbonate concentration',standard_variable=standard_variables%mole_concentration_of_carbonate_expressed_as_carbon)
+      if (self%iswCO2X==1) then
+         call self%register_diagnostic_variable(self%id_ph,    'pH',    '-',      'pH',standard_variable=standard_variables%ph_reported_on_total_scale)
+         call self%register_diagnostic_variable(self%id_pco2,  'pCO2',  '1e-6',    'partial pressure of CO2')
+         call self%register_diagnostic_variable(self%id_CarbA, 'CarbA', 'mmol/m^3','carbonic acid concentration')
+         call self%register_diagnostic_variable(self%id_BiCarb,'BiCarb','mmol/m^3','bicarbonate concentration')
+         call self%register_diagnostic_variable(self%id_Carb,  'Carb',  'mmol/m^3','carbonate concentration',standard_variable=standard_variables%mole_concentration_of_carbonate_expressed_as_carbon)
 
-      call self%register_diagnostic_variable(self%id_Om_cal,'Om_cal','-','calcite saturation')
-      call self%register_diagnostic_variable(self%id_Om_arg,'Om_arg','-','aragonite saturation')
-
-      call self%register_diagnostic_variable(self%id_fairmg,'fairmg','mmol C/m^2/d','air-sea flux of CO2')
+         call self%register_diagnostic_variable(self%id_Om_cal,'Om_cal','-','calcite saturation')
+         call self%register_diagnostic_variable(self%id_Om_arg,'Om_arg','-','aragonite saturation')
+      end if
+      if (self%iswASFLUX>=1) then
+         call self%register_diagnostic_variable(self%id_fairmg,'fairmg','mmol C/m^2/d','air-sea flux of CO2')
+      end if
 
       call self%register_dependency(self%id_ETW, standard_variables%temperature)
       call self%register_dependency(self%id_X1X, standard_variables%practical_salinity)
