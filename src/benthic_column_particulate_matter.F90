@@ -294,7 +294,7 @@ module ersem_benthic_column_particulate_matter
 !
 ! The split of functionality across two modules is needed because the mass within the interval must be known
 ! early, so all other modules can use it, while the change in column-integrated mass and penetration depth
-! must be computed late, after all other idividual modules have computed interval-specific rates of change.
+! must be computed late, after all other individual modules have computed interval-specific rates of change.
 ! Thus we have the dependency chain:
 !      1 mass within the desired depth interval (type_layer_content_calculator)
 !   -> 2 interval-specific sink-source terms (all other modules)

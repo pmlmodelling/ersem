@@ -87,8 +87,8 @@ contains
          _SET_DIAGNOSTIC_(self%id_EIR,EIR)                     ! Local shortwave radiation
          _SET_DIAGNOSTIC_(self%id_parEIR,EIR*self%pEIR_eowX)   ! Local photosynthetically active radiation
          _SET_DIAGNOSTIC_(self%id_xEPS,xEPS)                   ! Vertical attenuation of shortwave radiation
-         _SET_DIAGNOSTIC_(self%id_iopABS,iopABS)               ! Vertical attenuation of shortwave radiation
-         _SET_DIAGNOSTIC_(self%id_iopBBS,iopBBS)               ! Vertical attenuation of shortwave radiation
+         _SET_DIAGNOSTIC_(self%id_iopABS,iopABS)               ! Vertical absorption of shortwave radiation
+         _SET_DIAGNOSTIC_(self%id_iopBBS,iopBBS)               ! Vertical backscattering of shortwave radiation
       _VERTICAL_LOOP_END_
 
    end subroutine get_light
