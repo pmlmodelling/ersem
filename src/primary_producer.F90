@@ -39,7 +39,7 @@ module ersem_primary_producer
       type (type_state_variable_id) :: id_O3c,id_O2o,id_TA                  ! dissolved inorganic carbon, oxygen, total alkalinity
       type (type_state_variable_id) :: id_N1p,id_N3n,id_N4n,id_N5s,id_N7f   ! nutrients: phosphate, nitrate, ammonium, silicate, iron
       type (type_state_variable_id) :: id_R1c,id_R1p,id_R1n,id_R2c          ! dissolved organic carbon (R1: labile, R2: semi-labile)
-      type (type_state_variable_id) :: id_R6c,id_R6p,id_R6n,id_R6s,id_R6f   ! particulate organic carbon
+      type (type_state_variable_id) :: id_RPc,id_RPp,id_RPn,id_RPs,id_RPf   ! particulate organic carbon
       type (type_state_variable_id) :: id_L2c                               ! Free calcite (liths) - used by calcifiers only
 
       ! Environmental dependencies
@@ -170,21 +170,21 @@ contains
 
       ! Register links to external particulate organic matter pools (sink for dead phytoplankton).
       ! At run-time, these can be coupled to any available pools (e.g., R4, R6, R8 in ERSEM)
-      call self%register_state_dependency(self%id_R6c,'RPc','mg C/m^3',   'particulate organic carbon')
-      call self%register_state_dependency(self%id_R6p,'RPp','mmol P/m^3', 'particulate organic phosphorus')
-      call self%register_state_dependency(self%id_R6n,'RPn','mmol N/m^3', 'particulate organic nitrogen')
-      if (self%use_Si) call self%register_state_dependency(self%id_R6s,'RPs','mmol Si/m^3','particulate organic silicate')
-      if (use_iron)    call self%register_state_dependency(self%id_R6f,'RPf','umol Fe/m^3','particulate organic iron')
+      call self%register_state_dependency(self%id_RPc,'RPc','mg C/m^3',   'particulate organic carbon')
+      call self%register_state_dependency(self%id_RPp,'RPp','mmol P/m^3', 'particulate organic phosphorus')
+      call self%register_state_dependency(self%id_RPn,'RPn','mmol N/m^3', 'particulate organic nitrogen')
+      if (self%use_Si) call self%register_state_dependency(self%id_RPs,'RPs','mmol Si/m^3','particulate organic silicate')
+      if (use_iron)    call self%register_state_dependency(self%id_RPf,'RPf','umol Fe/m^3','particulate organic iron')
 
       ! Automatically hook up all components of external particulate organic matter,
       ! by obtaining them from a single named model "RP". This takes away the need to couple each RP?
       ! constituent individually.
       call self%register_model_dependency(self%id_RP,'RP')
-      call self%request_coupling_to_model(self%id_R6c,self%id_RP,'c')
-      call self%request_coupling_to_model(self%id_R6n,self%id_RP,'n')
-      call self%request_coupling_to_model(self%id_R6p,self%id_RP,'p')
-      if (_VARIABLE_REGISTERED_(self%id_R6s)) call self%request_coupling_to_model(self%id_R6s,self%id_RP,'s')
-      if (_VARIABLE_REGISTERED_(self%id_R6f)) call self%request_coupling_to_model(self%id_R6f,self%id_RP,'f')
+      call self%request_coupling_to_model(self%id_RPc,self%id_RP,'c')
+      call self%request_coupling_to_model(self%id_RPn,self%id_RP,'n')
+      call self%request_coupling_to_model(self%id_RPp,self%id_RP,'p')
+      if (_VARIABLE_REGISTERED_(self%id_RPs)) call self%request_coupling_to_model(self%id_RPs,self%id_RP,'s')
+      if (_VARIABLE_REGISTERED_(self%id_RPf)) call self%request_coupling_to_model(self%id_RPf,self%id_RP,'f')
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen')
@@ -243,22 +243,22 @@ contains
       real(rk) :: qpc,qnc
 
       real(rk) :: srs
-      real(rk) :: fPIR6c,fPIRDc
+      real(rk) :: fPIRPc,fPIRDc
       real(rk) :: fPIO3c,fO3PIc
-      real(rk) :: fPIR6p,fPIRDp,fN1PIp
-      real(rk) :: fPIR6n,fPIRDn
+      real(rk) :: fPIRPp,fPIRDp,fN1PIp
+      real(rk) :: fPIRPn,fPIRDn
       real(rk) :: fNIPIn,fN3PIn,fN4PIn
-      real(rk) :: fPIR6s,fPIN5s,fN5PIs
+      real(rk) :: fPIRPs,fPIN5s,fN5PIs
 
-      real(rk) :: sdo,sum,sug,seo,sea,sra,sun,run,sPIR6
+      real(rk) :: sdo,sum,sug,seo,sea,sra,sun,run,sPIRP
       real(rk) :: runp,misp,rump
       real(rk) :: runn,misn,rumn,rumn3,rumn4
-      real(rk) :: et,pe_R6
+      real(rk) :: et,pe_RP
       real(rk) :: rho,Chl_inc,Chl_loss
       real(rk) :: phi,ChlCpp
       real(rk) :: N7fP,f,fP,qfc
       real(rk) :: runf,rumf,misf
-      real(rk) :: fN7PIf,fPIR6f
+      real(rk) :: fN7PIf,fPIRPf
       real(rk) :: fPIR1c,fPIR2c
       real(rk) :: pco2a3,cenh
       real(rk) :: RainR, t
@@ -381,19 +381,19 @@ contains
          sug = sum-seo-sea
 
          ! Apportioning of LOC- and DET- fraction of excretion/lysis fluxes:
-         pe_R6 = MIN(self%qplc/(qpc+ZeroX),self%qnlc/(qnc+ZeroX))
+         pe_RP = MIN(self%qplc/(qpc+ZeroX),self%qnlc/(qnc+ZeroX))
 
-         sPIR6 = pe_R6*sdo
-         fPIR6c = sPIR6*cP
+         sPIRP = pe_RP*sdo
+         fPIRPc = sPIRP*cP
 
          if (self%docdyn) then
             ! Lysis produces labile DOM, excretion produces semi-labile DOM.
-            fPIR1c = (1._rk-pe_R6)*sdo*cP
+            fPIR1c = (1._rk-pe_RP)*sdo*cP
             fPIR2c = (seo + sea)*c
             fPIRDc = fPIR1c+fPIR2c
          else
             ! Fixed ratio between production of labile and semi-labile DOM.
-            fPIRDc = (1._rk-pe_R6)*sdo*cP + (seo + sea)*c
+            fPIRDc = (1._rk-pe_RP)*sdo*cP + (seo + sea)*c
             fPIR1c = fPIRDc*self%R1R2
             fPIR2c = fPIRDc*(1._rk-self%R1R2)
          end if
@@ -414,9 +414,9 @@ contains
 
             ! For dying cells: convert virtual cell-attached calcite to actual calcite in free liths.
             ! Update DIC and lith balances accordingly (only now take away the DIC needed to form the calcite)
-            _SET_ODE_(self%id_L2c,   fPIR6c*RainR)
-            _SET_ODE_(self%id_O3c,  -fPIR6c*RainR/Cmass)
-            _SET_ODE_(self%id_TA, -2*fPIR6c*RainR/Cmass)   ! CaCO3 formation decreases alkalinity by 2 units
+            _SET_ODE_(self%id_L2c,   fPIRPc*RainR)
+            _SET_ODE_(self%id_O3c,  -fPIRPc*RainR/Cmass)
+            _SET_ODE_(self%id_TA, -2*fPIRPc*RainR/Cmass)   ! CaCO3 formation decreases alkalinity by 2 units
          end if
 
          ! Respiration..........................................................
@@ -449,11 +449,11 @@ contains
          Chl_inc = rho*(sum-sra-seo-sea)*c 
          Chl_loss = (sdo+srs)*ChlP 
 
-         _SET_ODE_(self%id_c,(fO3PIc-fPIO3c-fPIR6c-fPIRDc))
+         _SET_ODE_(self%id_c,(fO3PIc-fPIO3c-fPIRPc-fPIRDc))
 
          _SET_ODE_(self%id_R1c,fPIR1c)
          _SET_ODE_(self%id_R2c,fPIR2c)
-         _SET_ODE_(self%id_R6c,fPIR6c)
+         _SET_ODE_(self%id_RPc,fPIRPc)
          _SET_ODE_(self%id_chl,(Chl_inc - Chl_loss))
 
          _SET_ODE_(self%id_O3c,(fPIO3c - fO3PIc)/CMass)
@@ -466,8 +466,8 @@ contains
          ! Phosphorus flux...........................................
 
          ! Lysis loss of phosphorus
-         fPIR6p = sPIR6 * min(self%qplc*cP,pP)
-         fPIRDp = sdo * pP - fPIR6p
+         fPIRPp = sPIRP * min(self%qplc*cP,pP)
+         fPIRDp = sdo * pP - fPIRPp
 
          ! Net phosphorus uptake
          rump = self%qurp * N1pP * c
@@ -476,17 +476,17 @@ contains
          fN1PIp = MIN(rump, runp+misp)
 
          ! Source equations
-         _SET_ODE_(self%id_p,(fN1PIp-fPIRDp-fPIR6p))
+         _SET_ODE_(self%id_p,(fN1PIp-fPIRDp-fPIRPp))
          _SET_ODE_(self%id_N1p,-fN1PIp)
          _SET_ODE_(self%id_TA,  fN1PIp) ! Alkalinity contributions: -1 for PO4
-         _SET_ODE_(self%id_R6p,fPIR6p)
+         _SET_ODE_(self%id_RPp,fPIRPp)
          _SET_ODE_(self%id_R1p,fPIRDp)
 
          ! Nitrogen flux.............................................
 
          ! Nitrogen loss by lysis
-         fPIR6n = sPIR6 * min(self%qnlc*cP,nP)
-         fPIRDn = sdo * nP - fPIR6n
+         fPIRPn = sPIRP * min(self%qnlc*cP,nP)
+         fPIRDn = sdo * nP - fPIRPn
 
          ! Net nitrogen uptake
          rumn3 = self%qun3 * N3nP * c
@@ -507,11 +507,11 @@ contains
          ENDIF
 
          ! Source equations
-         _SET_ODE_(self%id_n,(fN4PIn+fN3PIn-fPIRDn-fPIR6n))
+         _SET_ODE_(self%id_n,(fN4PIn+fN3PIn-fPIRDn-fPIRPn))
          _SET_ODE_(self%id_N3n,-fN3PIn)
          _SET_ODE_(self%id_N4n,-fN4PIn)
          _SET_ODE_(self%id_TA,  fN3PIn-fN4PIn) ! Alkalinity contributions: -1 for NO3, +1 for NH4
-         _SET_ODE_(self%id_R6n,fPIR6n)
+         _SET_ODE_(self%id_RPn,fPIRPn)
          _SET_ODE_(self%id_R1n,fPIRDn)
 
          if (self%use_Si) then
@@ -519,7 +519,7 @@ contains
             _GET_(self%id_s,sP)
 
             ! Excretion loss of silicate
-            fPIR6s = sdo * sP
+            fPIRPs = sdo * sP
 
             ! Loss of excess silicate (qsP1c > qsc)
             fPIN5s = MAX ( 0._rk, sP-self%qsc * cP)
@@ -531,9 +531,9 @@ contains
 #endif
 
             ! Source equations
-            _SET_ODE_(self%id_s,(fN5PIs - fPIR6s))
+            _SET_ODE_(self%id_s,(fN5PIs - fPIRPs))
             _SET_ODE_(self%id_N5s,-fN5PIs)
-            _SET_ODE_(self%id_R6s, fPIR6s)
+            _SET_ODE_(self%id_RPs, fPIRPs)
          end if
 
          if (use_iron) then
@@ -547,7 +547,7 @@ contains
             !  Because its high affinity with particles all the iron lost from phytoplankton by lysis is supposed to be 
             !  associated to organic particulate detritus. (luca)
 
-            fPIR6f = sdo * fP
+            fPIRPf = sdo * fP
 
             ! Net iron uptake
             rumf = self%qurf * N7fP * c
@@ -556,9 +556,9 @@ contains
             fN7PIf = MIN(rumf, runf+misf)
 
             ! Source equations
-            _SET_ODE_(self%id_f,(fN7PIf-fPIR6f))
+            _SET_ODE_(self%id_f,(fN7PIf-fPIRPf))
             _SET_ODE_(self%id_N7f,-fN7PIf)
-            _SET_ODE_(self%id_R6f,fPIR6f)
+            _SET_ODE_(self%id_RPf,fPIRPf)
          end if
 
       ! Leave spatial loops (if any)
