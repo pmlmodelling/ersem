@@ -42,6 +42,7 @@ module ersem_benthic_column_dissolved_matter
    end type
 
    type type_single_constituent_estimates
+      type (type_horizontal_diagnostic_variable_id) :: id_conc                        ! depth-averaged pore water concentration
       type (type_horizontal_dependency_id)          :: id_tot                         ! depth-integrated total mass (mass/m2) in entire column [pore water + adsorbed]
       type (type_horizontal_diagnostic_variable_id) :: id_per_layer_total(nlayers)    ! depth-integrated total mass (mass/m2) per layer [pore water + adsorbed]
       type (type_horizontal_diagnostic_variable_id) :: id_per_layer_pw_total(nlayers) ! depth-integrated pore water mass (mass/m2) per layer
@@ -167,7 +168,7 @@ contains
       ! Diagnostic for pelagic-benthic flux.
       call self%register_diagnostic_variable(info%id_pbf,trim(name)//'_pb_flux','mmol/m^2/day','flux of '//trim(long_name)//' from benthos to pelagic')
 
-      ! Register new constituent with child model that comoutes mass per benthic layer.
+      ! Register new constituent with child model that computes mass per benthic layer.
       call profile%register_dependency(profile_info%id_tot,trim(name)//'_int',units,'depth-integrated '//trim(long_name))
       call profile%request_coupling(profile_info%id_tot,name)
       do ilayer=1,nlayers
@@ -192,6 +193,9 @@ contains
          call self%register_dependency(info%id_pw_sms(ilayer),trim(name)//'_pw_sms_l'//trim(index),trim(units)//'/s','sources-sinks of dissolved '//trim(long_name)//' in layer '//trim(index))
          call self%request_coupling(info%id_pw_sms(ilayer),'per_layer/'//trim(name)//trim(index)//'_pw_sms_tot')
       end do
+
+      ! Create diagnostic for depth-averaged pore water concentration (currently only for solutes that span entire column)
+      if (profile%last_layer==nlayers) call profile%register_diagnostic_variable(profile_info%id_conc,trim(name)//'_conc',trim(units)//'/m','depth-averaged pore water concentration of '//trim(long_name),domain=domain_bottom)
 
    end subroutine initialize_constituent
 
@@ -550,7 +554,7 @@ contains
       integer  :: iconstituent
       integer  :: ilayer
       real(rk) :: c_int
-      real(rk) :: factor
+      real(rk) :: pwconc
       real(rk) :: d(nlayers),poro
 
       _HORIZONTAL_LOOP_BEGIN_
@@ -572,20 +576,20 @@ contains
                ! Compute pore water concentration in upper layers (above self%last_layer), in matter/m3
                ! Note that concentration in last layer is 1/3 of that of the top layers,
                ! due to the fact that it has a quadratic profile decreasing from the top concentration to zero.
-               factor = c_int/(poro*(sum(self%ads(:self%last_layer-1)*d(:self%last_layer-1)) + self%ads(self%last_layer)*d(self%last_layer)/3))
+               pwconc = c_int/(poro*(sum(self%ads(:self%last_layer-1)*d(:self%last_layer-1)) + self%ads(self%last_layer)*d(self%last_layer)/3))
 
                ! Top layers: homogeneous pore water concentration.
                do ilayer=1,self%last_layer-1
                   ! Total depth-integrated layer contents [pore water + adsorbed]
-                  _SET_HORIZONTAL_DIAGNOSTIC_(self%constituents(iconstituent)%id_per_layer_total(ilayer),poro*d(ilayer)*factor*self%ads(ilayer))
+                  _SET_HORIZONTAL_DIAGNOSTIC_(self%constituents(iconstituent)%id_per_layer_total(ilayer),poro*d(ilayer)*pwconc*self%ads(ilayer))
 
                   ! Pore water contents: layer contents divided by adsorption [total:dissolved]
-                  _SET_HORIZONTAL_DIAGNOSTIC_(self%constituents(iconstituent)%id_per_layer_pw_total(ilayer),poro*d(ilayer)*factor)
+                  _SET_HORIZONTAL_DIAGNOSTIC_(self%constituents(iconstituent)%id_per_layer_pw_total(ilayer),poro*d(ilayer)*pwconc)
                end do
 
                ! Last layer: 1/3 of top concentration.
-               _SET_HORIZONTAL_DIAGNOSTIC_(self%constituents(iconstituent)%id_per_layer_total   (self%last_layer),poro*d(self%last_layer)/3*factor*self%ads(self%last_layer))
-               _SET_HORIZONTAL_DIAGNOSTIC_(self%constituents(iconstituent)%id_per_layer_pw_total(self%last_layer),poro*d(self%last_layer)/3*factor)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%constituents(iconstituent)%id_per_layer_total   (self%last_layer),poro*d(self%last_layer)/3*pwconc*self%ads(self%last_layer))
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%constituents(iconstituent)%id_per_layer_pw_total(self%last_layer),poro*d(self%last_layer)/3*pwconc)
 
                ! Deeper layers: pore water concentration is zero.
                do ilayer=self%last_layer+1,nlayers
@@ -596,14 +600,15 @@ contains
                ! Vertically homogeneous in all layers.
 
                ! Compute pore water concentration in matter/m3.
-               factor = c_int/sum(poro*self%ads*d)
+               pwconc = c_int/sum(poro*self%ads*d)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%constituents(iconstituent)%id_conc,pwconc)
 
                do ilayer=1,nlayers
                   ! Total depth-integrated layer contents [pore water + adsorbed]
-                  _SET_HORIZONTAL_DIAGNOSTIC_(self%constituents(iconstituent)%id_per_layer_total(ilayer),poro*self%ads(ilayer)*d(ilayer)*factor)
+                  _SET_HORIZONTAL_DIAGNOSTIC_(self%constituents(iconstituent)%id_per_layer_total(ilayer),poro*self%ads(ilayer)*d(ilayer)*pwconc)
 
                   ! Pore water contents: layer contents divided by adsorption [total:dissolved]
-                  _SET_HORIZONTAL_DIAGNOSTIC_(self%constituents(iconstituent)%id_per_layer_pw_total(ilayer),poro*d(ilayer)*factor)
+                  _SET_HORIZONTAL_DIAGNOSTIC_(self%constituents(iconstituent)%id_per_layer_pw_total(ilayer),poro*d(ilayer)*pwconc)
                end do
             end if
          end do
