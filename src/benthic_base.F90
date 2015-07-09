@@ -22,7 +22,6 @@ module ersem_benthic_base
       ! Coupled state variables for resuspension and remineralization
       type (type_state_variable_id) :: id_resuspension_c,id_resuspension_n,id_resuspension_p,id_resuspension_s,id_resuspension_f,id_resuspension_l
       type (type_state_variable_id) :: id_O3c,id_N1p,id_N3n,id_N4n,id_N5s,id_N7f
-      type (type_model_id)          :: id_resuspension_target
 
       ! Dependencies for resuspension
       type (type_horizontal_dependency_id) :: id_bedstress,id_wdepth
@@ -63,7 +62,6 @@ contains
       call self%initialize_ersem_benthic_base()
 
       if (self%resuspension) then
-         call self%register_model_dependency(self%id_resuspension_target,'RP')
          call self%register_dependency(self%id_bedstress,standard_variables%bottom_stress)
          call self%register_dependency(self%id_wdepth,   standard_variables%bottom_depth_below_geoid)
          call self%register_dependency(self%id_dens,     standard_variables%density)
@@ -73,7 +71,7 @@ contains
          call self%add_constituent('c',0.0_rk)
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_c,'resuspension_target_c','mg C/m^3','pelagic variable taking up resuspended carbon')
-            call self%request_coupling_to_model(self%id_resuspension_c,self%id_resuspension_target,'c')
+            call self%request_coupling_to_model(self%id_resuspension_c,'RP','c')
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_O3c,'O3c','mmol/m^3','dissolved inorganic carbon')
       end if
@@ -81,7 +79,7 @@ contains
          call self%add_constituent('p',0.0_rk)
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_p,'resuspension_target_p','mmol P/m^3','pelagic variable taking up resuspended phosphorus')
-            call self%request_coupling_to_model(self%id_resuspension_p,self%id_resuspension_target,'p')
+            call self%request_coupling_to_model(self%id_resuspension_p,'RP','p')
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
       end if
@@ -89,7 +87,7 @@ contains
          call self%add_constituent('n',0.0_rk)
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_n,'resuspension_target_n','mmol N/m^3','pelagic variable taking up resuspended nitrogen')
-            call self%request_coupling_to_model(self%id_resuspension_n,self%id_resuspension_target,'n')
+            call self%request_coupling_to_model(self%id_resuspension_n,'RP','n')
          end if
          if (self%reminQIX/=0.0_rk) then
             call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3','nitrate')
@@ -100,7 +98,7 @@ contains
          call self%add_constituent('s',0.0_rk)
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_s,'resuspension_target_s','mmol Si/m^3','pelagic variable taking up resuspended silicate')
-            call self%request_coupling_to_model(self%id_resuspension_s,self%id_resuspension_target,'s')
+            call self%request_coupling_to_model(self%id_resuspension_s,'RP','s')
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N5s,'N5s','mmol Si/m^3','silicate')
       end if
@@ -108,7 +106,7 @@ contains
          call self%add_constituent('f',0.0_rk)
          if (use_iron.and.self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_f,'resuspension_target_f','umol Fe/m^3','pelagic variable taking up resuspended iron')
-            call self%request_coupling_to_model(self%id_resuspension_f,self%id_resuspension_target,'f')
+            call self%request_coupling_to_model(self%id_resuspension_f,'RP','f')
          end if
          if (use_iron.and.self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3','dissolved iron')
       end if
@@ -116,7 +114,7 @@ contains
          call self%add_constituent('l',0.0_rk)
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_l,'resuspension_target_l','mg/m^3','pelagic variable taking up resuspended calcite')
-            call self%request_coupling_to_model(self%id_resuspension_l,self%id_resuspension_target,'l')
+            call self%request_coupling_to_model(self%id_resuspension_l,'RP','l')
          end if
          if (index(self%composition,'c')==0) call self%register_state_dependency(self%id_O3c,'O3c','umol/m^3','dissolved inorganic carbon')
       end if

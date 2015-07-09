@@ -321,7 +321,6 @@ module ersem_benthic_column_particulate_matter
       type (type_bottom_state_variable_id) :: id_penetration_c,id_penetration_n,id_penetration_p,id_penetration_s
       type (type_bottom_state_variable_id) :: id_buried_c,id_buried_n,id_buried_p,id_buried_s
       type (type_horizontal_dependency_id) :: id_D, id_z_tur, id_d_tot
-      type (type_model_id)                 :: id_buried_Q
 
       logical :: burial
    contains
@@ -338,8 +337,6 @@ module ersem_benthic_column_particulate_matter
       type (type_horizontal_dependency_id) :: id_c_sms,id_n_sms,id_p_sms,id_s_sms,id_d_tot
       type (type_bottom_state_variable_id) :: id_c_remin_target,id_n_remin_target,id_p_remin_target,id_s_remin_target
       type (type_horizontal_dependency_id) :: id_c_local,id_n_local,id_p_local,id_s_local
-
-      type (type_model_id) :: id_Q
 
       real(rk) :: remin
       integer :: source_depth_distribution
@@ -403,25 +400,22 @@ contains
       ! Burial
       call self%get_parameter(self%burial,'burial','','enable burial',default=.false.)
       if (self%burial) then
-         ! Enable wholesale linking to model "burial_target", which would hook up all buried mass constituents.
-         call self%register_model_dependency(self%id_buried_Q,'burial_target')
-
          ! Add burial modules for all constituents
          if (_VARIABLE_REGISTERED_(self%id_c)) then
             call self%register_state_dependency(self%id_buried_c,'buried_c','mg C/m^2','buried carbon')
-            call self%request_coupling_to_model(self%id_buried_c,self%id_buried_Q,'c')
+            call self%request_coupling_to_model(self%id_buried_c,'burial_target','c')
          end if
          if (_VARIABLE_REGISTERED_(self%id_p)) then
             call self%register_state_dependency(self%id_buried_p,'buried_p','mmol P/m^2','buried phosphorus')
-            call self%request_coupling_to_model(self%id_buried_p,self%id_buried_Q,'p')
+            call self%request_coupling_to_model(self%id_buried_p,'burial_target','p')
          end if
          if (_VARIABLE_REGISTERED_(self%id_n)) then
             call self%register_state_dependency(self%id_buried_n,'buried_n','mmol N/m^2','buried nitrogen')
-            call self%request_coupling_to_model(self%id_buried_n,self%id_buried_Q,'n')
+            call self%request_coupling_to_model(self%id_buried_n,'burial_target','n')
          end if
          if (_VARIABLE_REGISTERED_(self%id_s)) then
             call self%register_state_dependency(self%id_buried_s,'buried_s','mmol Si/m^2','buried silicate')
-            call self%request_coupling_to_model(self%id_buried_s,self%id_buried_Q,'s')
+            call self%request_coupling_to_model(self%id_buried_s,'burial_target','s')
          end if
       end if
 
@@ -528,7 +522,6 @@ contains
       call self%get_parameter(self%source_depth_distribution,'source_depth_distribution', '','vertical distribution of changes (1: constant absolute rate, 2: constant relative rate, 3: constant carbon-based relative rate)',default=1)
       call self%register_dependency(self%id_d_tot,depth_of_sediment_column)
 
-      call self%register_model_dependency(self%id_Q,'Q')
       if (index(composition,'c')/=0) call layer_add_constituent(self,'c','mg C',   'carbon',    self%id_c_int,self%id_pen_depth_c,self%id_c_sms,self%id_c_local,self%id_c_remin_target)
       if (index(composition,'n')/=0) call layer_add_constituent(self,'n','mmol N', 'nitrogen',  self%id_n_int,self%id_pen_depth_n,self%id_n_sms,self%id_n_local,self%id_n_remin_target)
       if (index(composition,'p')/=0) call layer_add_constituent(self,'p','mmol P', 'phosphorus',self%id_p_int,self%id_pen_depth_p,self%id_p_sms,self%id_p_local,self%id_p_remin_target)
@@ -579,14 +572,14 @@ contains
 
       ! Register the only diagnostic exported by layer_content_calculator: mass integrated over desired depth interval.
       call layer_content_calculator%register_diagnostic_variable(layer_content_calculator%id_c,'c',trim(units)//'/m^2','mass', &
-         act_as_state_variable=.true.,domain=domain_bottom,output=output_none)
+         act_as_state_variable=.true.,domain=domain_bottom,output=output_none,source=source_do_bottom)
 
       ! Link source-sink terms associated with layer-specific mass to the master module.
       call self%request_coupling(id_sms,'content_calculator_'//trim(name)//'/c_sms_tot')
 
       ! Allow bulk coupling to a particulate organic matter module (rather than requiring the user to provide links per constituent and penetration depth)
-      call self%request_coupling_to_model(id_c_int,self%id_Q,name)
-      call self%request_coupling_to_model(id_pen_depth,self%id_Q,'pen_depth_'//trim(name))
+      call self%request_coupling_to_model(id_c_int,'Q',name)
+      call self%request_coupling_to_model(id_pen_depth,'Q','pen_depth_'//trim(name))
 
       ! Create an alias in the master model for the layer-integrated density computed by layer_content_calculator.
       call self%add_horizontal_variable(name,trim(units)//'/m^2','layer-integrated '//trim(long_name),domain=domain_bottom,act_as_state_variable=.true.)

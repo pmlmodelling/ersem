@@ -17,7 +17,6 @@ module ersem_mesozooplankton
    type,extends(type_ersem_pelagic_base),public :: type_ersem_mesozooplankton
       ! Variables
       type (type_model_id),         allocatable,dimension(:) :: id_prey
-      type (type_model_id)                                   :: id_RP
       type (type_dependency_id),    allocatable,dimension(:) :: id_preyc,id_preyn,id_preyp,id_preys,id_preyf,id_preyl
       type (type_state_variable_id),allocatable,dimension(:) :: id_preyf_target
       type (type_state_variable_id)      :: id_O3c,id_O2o,id_L2c,id_TA
@@ -190,11 +189,10 @@ contains
       call self%register_state_dependency(self%id_RPs,'RPs','mmol Si/m^3','particulate organic silicate')
 
       ! Allow coupling of all required particulate organic matter variables to a single source model.
-      call self%register_model_dependency(self%id_RP,'RP')
-      call self%request_coupling_to_model(self%id_RPc,self%id_RP,'c')
-      call self%request_coupling_to_model(self%id_RPn,self%id_RP,'n')
-      call self%request_coupling_to_model(self%id_RPp,self%id_RP,'p')
-      call self%request_coupling_to_model(self%id_RPs,self%id_RP,'s')
+      call self%request_coupling_to_model(self%id_RPc,'RP','c')
+      call self%request_coupling_to_model(self%id_RPn,'RP','n')
+      call self%request_coupling_to_model(self%id_RPp,'RP','p')
+      call self%request_coupling_to_model(self%id_RPs,'RP','s')
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen source')

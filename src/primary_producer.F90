@@ -53,9 +53,6 @@ module ersem_primary_producer
       type (type_diagnostic_variable_id) :: id_netPI   ! Net primary production rate
       type (type_diagnostic_variable_id) :: id_lD      ! Cell-bound calcite - used by calcifiers only
 
-      ! Identifiers for coupled models
-      type (type_model_id) :: id_RP   ! Model that provides all POM constituents
-
       ! Parameters (described in subroutine initialize, below)
       real(rk) :: sum
       real(rk) :: q10,srs,pu_ea,pu_ra,chs,qnlc,qplc,xqcp
@@ -179,12 +176,11 @@ contains
       ! Automatically hook up all components of external particulate organic matter,
       ! by obtaining them from a single named model "RP". This takes away the need to couple each RP?
       ! constituent individually.
-      call self%register_model_dependency(self%id_RP,'RP')
-      call self%request_coupling_to_model(self%id_RPc,self%id_RP,'c')
-      call self%request_coupling_to_model(self%id_RPn,self%id_RP,'n')
-      call self%request_coupling_to_model(self%id_RPp,self%id_RP,'p')
-      if (_VARIABLE_REGISTERED_(self%id_RPs)) call self%request_coupling_to_model(self%id_RPs,self%id_RP,'s')
-      if (_VARIABLE_REGISTERED_(self%id_RPf)) call self%request_coupling_to_model(self%id_RPf,self%id_RP,'f')
+      call self%request_coupling_to_model(self%id_RPc,'RP','c')
+      call self%request_coupling_to_model(self%id_RPn,'RP','n')
+      call self%request_coupling_to_model(self%id_RPp,'RP','p')
+      if (_VARIABLE_REGISTERED_(self%id_RPs)) call self%request_coupling_to_model(self%id_RPs,'RP','s')
+      if (_VARIABLE_REGISTERED_(self%id_RPf)) call self%request_coupling_to_model(self%id_RPf,'RP','f')
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen')
@@ -345,7 +341,7 @@ contains
 
          ! Production...........................................................
 
-         ! Gross photosynthetic activity (1/d), limited by avaialbility of silicate and iron,
+         ! Gross photosynthetic activity (1/d), limited by availability of silicate and iron,
          ! but not nitrogen and phosphorus.
          sum = self%sum*et*iNs*iNf
 

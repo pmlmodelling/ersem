@@ -23,7 +23,6 @@ module ersem_benthic_fauna
       type (type_horizontal_dependency_id) :: id_Dm
       type (type_horizontal_diagnostic_variable_id) :: id_bioirr,id_biotur,id_fYG3c
       type (type_model_id),allocatable,dimension(:) :: id_food
-      type (type_model_id)                          :: id_Q
 
       ! To achieve compatibility with legacy ERSEM, we need to be able to decouple the variable
       ! from which food availability is derived from the variable that absorbs the loss due to
@@ -107,11 +106,10 @@ contains
       call self%register_state_dependency(self%id_Q6s,'Q6s','mmol Si/m^2','particulate organic silicate')
 
       ! Make it possible to hook up all POM sinks at once by coupling to a whole model "Q".
-      call self%register_model_dependency(self%id_Q,'Q')
-      call self%request_coupling_to_model(self%id_Q6c,self%id_Q,'c')
-      call self%request_coupling_to_model(self%id_Q6n,self%id_Q,'n')
-      call self%request_coupling_to_model(self%id_Q6p,self%id_Q,'p')
-      call self%request_coupling_to_model(self%id_Q6s,self%id_Q,'s')
+      call self%request_coupling_to_model(self%id_Q6c,'Q','c')
+      call self%request_coupling_to_model(self%id_Q6n,'Q','n')
+      call self%request_coupling_to_model(self%id_Q6p,'Q','p')
+      call self%request_coupling_to_model(self%id_Q6s,'Q','s')
 
       ! Determine number of food sources
       call self%get_parameter(self%nfood, 'nfood', '', 'number of food sources',default=0)   
