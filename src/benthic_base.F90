@@ -21,7 +21,7 @@ module ersem_benthic_base
 
       ! Coupled state variables for resuspension and remineralization
       type (type_state_variable_id) :: id_resuspension_c,id_resuspension_n,id_resuspension_p,id_resuspension_s,id_resuspension_f,id_resuspension_l
-      type (type_state_variable_id) :: id_O3c,id_N1p,id_N3n,id_N4n,id_N5s,id_N7f
+      type (type_state_variable_id) :: id_O3c,id_N1p,id_N3n,id_N4n,id_N5s,id_N7f,id_TA
 
       ! Dependencies for resuspension
       type (type_horizontal_dependency_id) :: id_bedstress,id_wdepth
@@ -81,7 +81,10 @@ contains
             call self%register_state_dependency(self%id_resuspension_p,'resuspension_target_p','mmol P/m^3','pelagic variable taking up resuspended phosphorus')
             call self%request_coupling_to_model(self%id_resuspension_p,'RP','p')
          end if
-         if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
+         if (self%reminQIX/=0.0_rk) then
+            call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
+            if (.not._VARIABLE_REGISTERED_(self%id_TA)) call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)
+         end if
       end if
       if (index(self%composition,'n')/=0) then
          call self%add_constituent('n',0.0_rk)
@@ -92,6 +95,7 @@ contains
          if (self%reminQIX/=0.0_rk) then
             call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3','nitrate')
             call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','ammonium')
+            if (.not._VARIABLE_REGISTERED_(self%id_TA)) call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)
          end if
       end if
       if (index(self%composition,'s')/=0) then
@@ -274,12 +278,14 @@ contains
                _GET_HORIZONTAL_(self%id_p,Q6pP)
                _SET_BOTTOM_ODE_(self%id_p,-self%reminQIX*Q6pP)
                _SET_BOTTOM_EXCHANGE_(self%id_N1p,self%reminQIX*Q6pP)
+               _SET_ODE_(self%id_TA, -self%reminQIX*Q6pP)
             end if
             if (_VARIABLE_REGISTERED_(self%id_n)) then
                _GET_HORIZONTAL_(self%id_n,Q6nP)
                _SET_BOTTOM_ODE_(self%id_n,-self%reminQIX*Q6nP)
                _SET_BOTTOM_EXCHANGE_(self%id_N3n,self%pQIN3X*self%reminQIX*Q6nP)
                _SET_BOTTOM_EXCHANGE_(self%id_N4n,(1.0_rk-self%pQIN3X)*self%reminQIX*Q6nP)
+               _SET_ODE_(self%id_TA,(1.0_rk-self%pQIN3X)*self%reminQIX*Q6nP -self%pQIN3X*self%reminQIX*Q6nP)
             end if
             if (_VARIABLE_REGISTERED_(self%id_s)) then
                _GET_HORIZONTAL_(self%id_s,Q6sP)

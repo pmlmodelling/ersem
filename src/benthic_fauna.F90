@@ -14,7 +14,7 @@ module ersem_benthic_fauna
 
    type,extends(type_ersem_benthic_base),public :: type_ersem_benthic_fauna
       type (type_state_variable_id)   :: id_O2o
-      type (type_bottom_state_variable_id) :: id_Q6c,id_Q6n,id_Q6p,id_Q6s
+      type (type_bottom_state_variable_id) :: id_Q6c,id_Q6n,id_Q6p,id_Q6s,id_benTA,id_benTA2
       type (type_bottom_state_variable_id) :: id_G3c,id_G2o,id_K4n,id_K1p,id_K4n2,id_K1p2
       type (type_horizontal_dependency_id), allocatable,dimension(:) :: id_foodc,id_foodn,id_foodp,id_foods
       type (type_horizontal_dependency_id), allocatable,dimension(:) :: id_foodc_an
@@ -98,6 +98,10 @@ contains
       call self%register_state_dependency(self%id_K4n, 'K4n', 'mmol N/m^2','benthic ammonium in aerobic layer')
       call self%register_state_dependency(self%id_K1p2,'K1p2','mmol P/m^2','benthic phosphate in anaerobic layer')
       call self%register_state_dependency(self%id_K4n2,'K4n2','mmol N/m^2','benthic ammonium in anaerobic layer')
+      if (.not.legacy_ersem_compatibility) then
+         call self%register_state_dependency(self%id_benTA,'benTA','mEq/m^2','benthic alkalinity in aerobic layer')
+         call self%register_state_dependency(self%id_benTA2,'benTA2','mEq/m^2','benthic alkalinity in anaerobic layer')
+      end if
 
       ! Dependencies on state variables of external modules: POM sinks that will take faeces and dead matter.
       call self%register_state_dependency(self%id_Q6c,'Q6c','mg C/m^2',   'particulate organic carbon')
@@ -401,6 +405,12 @@ contains
       _SET_BOTTOM_ODE_(self%id_K4n2,p_an       *excess_n)
       _SET_BOTTOM_ODE_(self%id_K1p,(1._rk-p_an)*excess_p)
       _SET_BOTTOM_ODE_(self%id_K1p2,p_an       *excess_p)
+
+      if (.not.legacy_ersem_compatibility) then
+         ! Alkalinity contributions: +1 for NH4, -1 for PO4
+         _SET_BOTTOM_ODE_(self%id_benTA,(1._rk-p_an)*(excess_n-excess_p)) 
+         _SET_BOTTOM_ODE_(self%id_benTA2,p_an       *(excess_n-excess_p))
+      end if
 
       _HORIZONTAL_LOOP_END_
 

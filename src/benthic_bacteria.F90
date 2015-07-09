@@ -17,7 +17,7 @@ module ersem_benthic_bacteria
       type (type_bottom_state_variable_id) :: id_Q1c,id_Q1n,id_Q1p
       type (type_bottom_state_variable_id) :: id_Q6c,id_Q6n,id_Q6p
       type (type_bottom_state_variable_id) :: id_Q7c,id_Q7n,id_Q7p
-      type (type_bottom_state_variable_id) :: id_G2o,id_G3c
+      type (type_bottom_state_variable_id) :: id_G2o,id_G3c,id_benTA
       type (type_horizontal_diagnostic_variable_id) :: id_fHG3c
 
       type (type_horizontal_dependency_id) :: id_Dm
@@ -79,6 +79,7 @@ contains
       call self%register_state_dependency(self%id_K1p,'K1p','mmol N/m^2','phosphate')
       call self%register_state_dependency(self%id_G2o,'G2o','mmol O_2/m^2','oxygen')
       call self%register_state_dependency(self%id_G3c,'G3c','mmol C/m^2','dissolved inorganic carbon')
+      if (.not.legacy_ersem_compatibility) call self%register_state_dependency(self%id_benTA,'benTA','mEq/m^2','benthic alkalinity')
       call self%register_state_dependency(self%id_Q1c,'Q1c','mg C/m^2',  'dissolved organic carbon')
       call self%register_state_dependency(self%id_Q1n,'Q1n','mmol N/m^2','dissolved organic nitrogen')
       call self%register_state_dependency(self%id_Q1p,'Q1p','mmol P/m^2','dissolved organic phosphorus')
@@ -232,6 +233,9 @@ contains
 
          _SET_BOTTOM_ODE_(self%id_K4n,-fK4Hn + excess_n)
          _SET_BOTTOM_ODE_(self%id_K1p,-fK1Hp + excess_p)
+
+         ! Alkalinity contributions: +1 for NH4, -1 for PO4
+         if (.not.legacy_ersem_compatibility) _SET_BOTTOM_ODE_(self%id_benTA,-fK4Hn + excess_n + fK1Hp -excess_p)
 
          _SET_BOTTOM_ODE_(self%id_Q7c,-fQ7Hc)
          _SET_BOTTOM_ODE_(self%id_Q7n,-fQ7Hn)

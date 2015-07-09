@@ -31,6 +31,8 @@ module ersem_benthic_column_dissolved_matter
       type (type_horizontal_dependency_id) :: id_cmix           ! pelagic-benthic transfer in bottom boundary layer (height of BBL divided by diffusivity within BBL)
       type (type_horizontal_dependency_id) :: id_diff(nlayers)  ! effective diffusivity within individual layers [includes bioirrigation contribution, if any]
       type (type_bottom_state_variable_id) :: id_layer          ! depth of bottom interface of own layer (where own concentration drops to zero)
+      type (type_horizontal_diagnostic_variable_id) :: id_conc_eq(nlayers)  ! mean equilibrium pore water concentration in individual layers
+      type (type_horizontal_diagnostic_variable_id) :: id_conc_tot(nlayers) ! mean pore water concentration in individual layers
       real(rk) :: ads(nlayers)
       real(rk) :: relax, minD
       integer :: last_layer
@@ -192,6 +194,12 @@ contains
          ! Collect sources for depth-integrated pore water concentration
          call self%register_dependency(info%id_pw_sms(ilayer),trim(name)//'_pw_sms_l'//trim(index),trim(units)//'/s','sources-sinks of dissolved '//trim(long_name)//' in layer '//trim(index))
          call self%request_coupling(info%id_pw_sms(ilayer),'per_layer/'//trim(name)//trim(index)//'_pw_sms_tot')
+
+         ! Register diagnostics for layer-specific pore water concentrations (equilibrium and actual)
+         if (self%last_layer==nlayers) then
+            call self%register_diagnostic_variable(self%id_conc_eq(ilayer),trim(name)//trim(index)//'_eq_conc','mmol/m^3','equilibrium pore water concentration of '//trim(long_name)// ' in layer '//trim(index),domain=domain_bottom)
+            call self%register_diagnostic_variable(self%id_conc_tot(ilayer),trim(name)//trim(index)//'_conc','mmol/m^3','pore water concentration of '//trim(long_name)// ' in layer '//trim(index),domain=domain_bottom)
+         end if
       end do
 
       ! Create diagnostic for depth-averaged pore water concentration (currently only for solutes that span entire column)
@@ -224,6 +232,7 @@ contains
       real(rk) :: norm_res_int,P_res_int
       real(rk) :: smscorr
       real(rk) :: diff(nlayers),poro,cmix
+      real(rk) :: residual_per_layer(nlayers)
 
       _HORIZONTAL_LOOP_BEGIN_
 
@@ -348,6 +357,7 @@ contains
          ! the concentration at their bottom interface, c_bot, and their depth-integrated concentration, c_int_per_layer_eq(ilayer)
          do ilayer=1,nlayers
             call compute_equilibrium_profile(diff(ilayer),c_top,sms_per_layer(ilayer),sum(sms_per_layer(ilayer+1:)),Dm(ilayer)-d_top,c_bot,c_int_per_layer_eq(ilayer))
+          _SET_HORIZONTAL_DIAGNOSTIC_(self%id_conc_eq(ilayer),c_int_per_layer_eq(ilayer)/(Dm(ilayer)-d_top))
             d_top = Dm(ilayer)
             c_top = c_bot
          end do
@@ -377,15 +387,22 @@ contains
          d_top = 0
          c_top = 0
          do ilayer=1,nlayers
-            call compute_equilibrium_profile(diff(ilayer),c_top,Dm(ilayer)-d_top,Dm(nlayers)-Dm(ilayer),Dm(ilayer)-d_top,c_bot,c_int_per_layer_eq(ilayer))
+            call compute_equilibrium_profile(diff(ilayer),c_top,Dm(ilayer)-d_top,Dm(nlayers)-Dm(ilayer),Dm(ilayer)-d_top,c_bot,residual_per_layer(ilayer))
             d_top = Dm(ilayer)
             c_top = c_bot
          end do
-         norm_res_int = poro*sum(self%ads*c_int_per_layer_eq)
+         norm_res_int = poro*sum(self%ads*residual_per_layer)
          P_res_int = (c_int-c_int_eq)/norm_res_int*Dm(nlayers)
          _SET_BOTTOM_EXCHANGE_(info%id_pel,sms+P_res_int) ! Equilibrium flux = depth-integrated production sms + residual flux P_res_int
          _SET_HORIZONTAL_DIAGNOSTIC_(info%id_pbf,sms+P_res_int)
          _SET_BOTTOM_ODE_(info%id_tot,-P_res_int)         ! Depth-integrated sources-sinks (sms) - surface flux (sms+P_res_int) = -P_res_int
+
+         ! Save final estimates of mean pore water concentration per layer.
+         d_top = 0
+         do ilayer=1,nlayers
+            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_conc_tot(ilayer),(P_res_int/Dm(nlayers)*residual_per_layer(ilayer)+c_int_per_layer_eq(ilayer))/(Dm(ilayer)-d_top))
+            d_top = Dm(ilayer)
+         end do
 
       end if
 

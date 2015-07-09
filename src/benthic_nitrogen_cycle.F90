@@ -11,10 +11,11 @@ module ersem_benthic_nitrogen_cycle
 
    ! Model for nitrogen cycle
    type,extends(type_base_model),public :: type_ersem_benthic_nitrogen_cycle
-      type (type_bottom_state_variable_id) :: id_K3n,id_K4n,id_G2o,id_K3n2,id_K4n2,id_G2o2,id_G4n
+      type (type_bottom_state_variable_id) :: id_K3n,id_K4n,id_G2o,id_K3n2,id_K4n2,id_G2o2,id_G4n,id_benTA,id_benTA2
       type (type_state_variable_id)        :: id_N4n
       type (type_dependency_id)            :: id_ETW,id_ph
       type (type_horizontal_dependency_id) :: id_D1m,id_K6_sms,id_layer2_thickness
+      type (type_horizontal_diagnostic_variable_id) :: id_nrate
       real(rk) :: q10nit,hM4M3,sM4M3,xno3
       real(rk) :: pammon,pdenit,xn2,hM3G4
       integer :: ISWph
@@ -43,10 +44,15 @@ contains
       call self%get_parameter(self%sM4M3, 'sM4M3', '1/d',          'maximum nitrification rate at 10 degrees Celsius')
       call self%get_parameter(self%xno3,  'xno3',  'mol O_2/mol N','oxygen consumed per nitrate produced')
 
+      call self%register_diagnostic_variable(self%id_nrate,'nrate','mmol N/m^2/day','benthic nitrification rate',domain=domain_bottom)
       call self%register_state_dependency(self%id_K3n,'K3n','mmol N/m^2','nitrate')
       call self%register_state_dependency(self%id_K4n,'K4n','mmol N/m^2','ammonium')
       call self%register_state_dependency(self%id_G2o,'G2o','mmol O_2/m^2','oxygen')
       call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','pelagic ammonium')
+      if (.not.legacy_ersem_compatibility) then
+         call self%register_state_dependency(self%id_benTA,'benTA','mEq/m^2','benthic alkalinity in aerobic layer')
+         call self%register_state_dependency(self%id_benTA2,'benTA2','mEq/m^2','benthic alkalinity in anaerobic layer')
+      end if
       call self%register_dependency(self%id_D1m,depth_of_bottom_interface_of_layer_1)
 
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
@@ -94,7 +100,7 @@ contains
          _GET_(self%id_N4n,N4n)
 
          _GET_HORIZONTAL_(self%id_D1m,D1m)
-      
+
          _GET_(self%id_ETW,ETW)
 
          ! Nitrification (oxygenated layer only):
@@ -119,11 +125,15 @@ contains
          else
            jM4M3n = self%sM4M3*K4nP*eT*eN
          end if
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_nrate,jM4M3n)
 
          ! Impose nitrification source-sink terms for benthic ammonium, nitrate, oxygen.
          _SET_BOTTOM_ODE_(self%id_K3n,jM4M3n)
          _SET_BOTTOM_ODE_(self%id_K4n,-jM4M3n)
          _SET_BOTTOM_ODE_(self%id_G2o,-self%xno3*jM4M3n)
+
+         ! Alkalinity contributions: +1 for NH4, -1 for nitrate
+         if (.not.legacy_ersem_compatibility) _SET_BOTTOM_ODE_(self%id_benTA,-2*jM4M3n)
 
          ! Retrieve oxygen debt to to anaerobic respiration, depth-integrated nitrate in oxidized layer, thickness of oxidized layer.
          _GET_HORIZONTAL_(self%id_K6_sms,K6_sms) 
@@ -148,6 +158,9 @@ contains
         _SET_BOTTOM_ODE_(self%id_K4n2, jM3M4n)
         _SET_BOTTOM_ODE_(self%id_K3n2, -jM3M4n -jM3G4n)
         _SET_BOTTOM_ODE_(self%id_G4n, jM3G4n)
+
+         ! Alkalinity contributions: +1 for NH4, -1 for nitrate
+        if (.not.legacy_ersem_compatibility) _SET_BOTTOM_ODE_(self%id_benTA2, 2*jM3M4n + jM3G4n)
 
         ! Oxygen dynamics: after denitrification is taken into account, use actual oxygen to pay off remaining oxygen debt.
         _SET_BOTTOM_ODE_(self%id_G2o2, K6_sms + self%xno3*jM3M4n + self%xn2*jM3G4n)
