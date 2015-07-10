@@ -27,6 +27,8 @@ module ersem_carbonate
       procedure :: do_surface
    end type
 
+   public :: co2dyn
+
 contains
 
    subroutine initialize(self,configunit)

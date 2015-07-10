@@ -21,6 +21,7 @@ module ersem_model_library
    use ersem_benthic_nitrogen_cycle
    use ersem_benthic_bacteria
    use ersem_benthic_fauna
+   use ersem_benthic_carbonate
    use ersem_zenith_angle
    use ersem_shared
 
@@ -63,7 +64,8 @@ contains
          case ('benthic_bacteria');                        allocate(type_ersem_benthic_bacteria::model)
          case ('benthic_column_particulate_matter_layer'); allocate(type_ersem_benthic_pom_layer::model)
          case ('benthic_fauna');                           allocate(type_ersem_benthic_fauna::model)
-         case ('zenith_angle');                           allocate(type_ersem_zenith_angle::model)
+         case ('benthic_carbonate');                       allocate(type_ersem_benthic_carbonate::model)
+         case ('zenith_angle');                            allocate(type_ersem_zenith_angle::model)
          ! Add new models here
          case default
             call self%type_base_model_factory%create(name,model)

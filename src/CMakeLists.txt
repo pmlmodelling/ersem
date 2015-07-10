@@ -25,6 +25,7 @@ add_library(fabm_models_ersem OBJECT
             benthic_nitrogen_cycle.F90
             benthic_bacteria.F90
             benthic_fauna.F90
+            benthic_carbonate.F90
             zenith_angle.F90
            )
 
