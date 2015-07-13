@@ -13,9 +13,10 @@ module ersem_pelagic_base
    private
 
    type,extends(type_particle_model),public :: type_ersem_pelagic_base
-      type (type_state_variable_id)        :: id_c,id_n,id_p,id_f,id_s,id_chl
-      type (type_horizontal_dependency_id) :: id_bedstress,id_wdepth
-      type (type_dependency_id)            :: id_dens
+      type (type_state_variable_id)                 :: id_c,id_n,id_p,id_f,id_s,id_chl
+      type (type_horizontal_dependency_id)          :: id_bedstress,id_wdepth
+      type (type_dependency_id)                     :: id_dens
+      type (type_horizontal_diagnostic_variable_id) :: id_w_bot
 
       ! Target variables for sedimentation
       type (type_model_id)                      :: id_Q1,id_Q6,id_Q7
@@ -40,7 +41,7 @@ contains
 
    subroutine initialize(self,configunit)
       class (type_ersem_pelagic_base), intent(inout), target :: self
-      integer,                               intent(in)            :: configunit
+      integer,                         intent(in)            :: configunit
 
       character(len=10) :: composition
       real(rk)          :: c0,s0,rRPmX,EPS,iopABS,iopBBS
@@ -139,7 +140,9 @@ contains
       ! Vertical velocity (positive: downwards, negative: upwards)
       if (present(rm)) self%rm = rm
 
-   end subroutine
+      call self%register_diagnostic_variable(self%id_w_bot,'w_bot','m/s','near-bed vertical velocity',output=output_none,source=source_do_bottom)
+
+   end subroutine initialize_ersem_base
 
    subroutine add_constituent(self,name,initial_value,background_value,qn,qp)
       class (type_ersem_pelagic_base), intent(inout), target :: self
@@ -197,12 +200,17 @@ contains
       real(rk) :: Pc,Pn,Pp,P
       real(rk) :: fsd,fsdc,fsdn,fsdp
 
-      if (.not.self%sedimentation) return
-
       _HORIZONTAL_LOOP_BEGIN_
 
          ! Retrieve sinking rate (at centre of cell closest to the bottom)
          fsd = self%get_sinking_rate(_ARGUMENTS_LOCAL_)
+
+         ! Store near-bed vertical velocity. Use FABM convention (m/s, negative for downward) to
+         ! allow this custom fuctionality to be ultimately be replaced by a FABM API.
+         ! The near-bed vertical velocity may be used by other modules to compute e.g. near-bed Rouse profiles.
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_w_bot,-fsd/86400)
+
+         if (self%sedimentation) then
 
          ! Retrieve bed stress and local density - needed to determine sedimentation rate from sinking rate.
          _GET_HORIZONTAL_(self%id_bedstress,tbed)
@@ -267,6 +275,8 @@ contains
             ! Chlorophyll is simply lost by sinking:
             _GET_(self%id_chl,P)
             _SET_BOTTOM_EXCHANGE_(self%id_chl,-sdrate*P)
+         end if
+
          end if
 
       _HORIZONTAL_LOOP_END_
