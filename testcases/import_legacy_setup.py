@@ -248,10 +248,13 @@ if options.clean:
     f.close()
 
     # Clean-up file
-    sys.path.append(os.path.join(os.path.dirname(__file__),'python'))
-    import fabm_complete_yaml
+    try:
+       import pyfabm.complete_yaml
+    except ImportError:
+       print 'Unable to load pyfabm. Please build and install python-fabm by running cmake+make for source directory $FABMDIR/src/drivers/python.'
+       sys.exit(1)
     print 'Cleaning YAML...'
-    fabm_complete_yaml.processFile(f.name,outfile,subtract_background=options.subtract_background)
+    pyfabm.complete_yaml.processFile(f.name,outfile,subtract_background=options.subtract_background)
 
     os.remove(f.name) 
 else:
