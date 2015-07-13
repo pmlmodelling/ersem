@@ -79,7 +79,12 @@ contains
       real(rk) :: fcalc,fdiss
 
       _LOOP_BEGIN_
-         _GET_WITH_BACKGROUND_(self%id_c,L2c)  ! Jorn: legacy ersem includes background, but excluding background seems more appropriate
+         if (legacy_ersem_compatibility) then
+            ! Legacy ERSEM includes background value, but this is inappropriate as it is used in a sink term.
+            _GET_WITH_BACKGROUND_(self%id_c,L2c)
+         else
+            _GET_(self%id_c,L2c)
+         end if
          _GET_(self%id_om_cal,om_cal)
 
          if (self%iswcal==0) then  ! NB select case would be cleaner but makes vectorization impossible for ifort 14
