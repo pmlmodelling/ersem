@@ -278,14 +278,14 @@ contains
                _GET_HORIZONTAL_(self%id_p,Q6pP)
                _SET_BOTTOM_ODE_(self%id_p,-self%reminQIX*Q6pP)
                _SET_BOTTOM_EXCHANGE_(self%id_N1p,self%reminQIX*Q6pP)
-               _SET_ODE_(self%id_TA, -self%reminQIX*Q6pP)
+               _SET_BOTTOM_EXCHANGE_(self%id_TA, -self%reminQIX*Q6pP)
             end if
             if (_VARIABLE_REGISTERED_(self%id_n)) then
                _GET_HORIZONTAL_(self%id_n,Q6nP)
                _SET_BOTTOM_ODE_(self%id_n,-self%reminQIX*Q6nP)
                _SET_BOTTOM_EXCHANGE_(self%id_N3n,self%pQIN3X*self%reminQIX*Q6nP)
                _SET_BOTTOM_EXCHANGE_(self%id_N4n,(1.0_rk-self%pQIN3X)*self%reminQIX*Q6nP)
-               _SET_ODE_(self%id_TA,(1.0_rk-self%pQIN3X)*self%reminQIX*Q6nP -self%pQIN3X*self%reminQIX*Q6nP)
+               _SET_BOTTOM_EXCHANGE_(self%id_TA,(1.0_rk-self%pQIN3X)*self%reminQIX*Q6nP -self%pQIN3X*self%reminQIX*Q6nP)
             end if
             if (_VARIABLE_REGISTERED_(self%id_s)) then
                _GET_HORIZONTAL_(self%id_s,Q6sP)
