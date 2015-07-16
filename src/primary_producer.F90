@@ -442,7 +442,11 @@ contains
 
          ! Chl changes (note that Chl is a component of PXc and not involved
          ! in mass balance)
-         Chl_inc = rho*(sum-sra-seo-sea)*c 
+         if (use_iron) then
+           Chl_inc = iNf*iNI*rho*(sum-sra-seo-sea)*c 
+         else
+           Chl_inc = iNI*rho*(sum-sra-seo-sea)*c 
+         endif
          Chl_loss = (sdo+srs)*ChlP 
 
          _SET_ODE_(self%id_c,(fO3PIc-fPIO3c-fPIRPc-fPIRDc))
