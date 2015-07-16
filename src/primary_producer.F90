@@ -58,7 +58,7 @@ module ersem_primary_producer
       real(rk) :: q10,srs,pu_ea,pu_ra,chs,qnlc,qplc,xqcp
       real(rk) :: xqcn,xqn,xqp,qun3,qun4,qurp,qsc,esni
       real(rk) :: resm,sdo
-      real(rk) :: alpha,beta,phim,phiH
+      real(rk) :: alpha,beta,phim
       real(rk) :: R1R2,uB1c_O2,urB1_O2
       real(rk) :: qflc,qfRc,qurf
       integer :: Limnut
@@ -120,7 +120,6 @@ contains
       call self%get_parameter(self%alpha, 'alpha','mg C m^2/mg Chl/W/d', 'initial slope of PI-curve')
       call self%get_parameter(self%beta,  'beta', 'mg C m^2/mg Chl/W/d','photoinhibition parameter')
       call self%get_parameter(self%phim,  'phim', 'mg Chl/mg C','maximum effective chlorophyll to carbon photosynthesis ratio')
-      call self%get_parameter(self%phiH,  'phiH', 'mg Chl/mg C','minimum effective chlorophyll to carbon photosynthesis ratio')
       call self%get_parameter(self%Limnut,'Limnut','',          'nitrogen-phosphorus colimitation formulation (0: geometric mean, 1: minimum, 2: harmonic mean)')
       call self%get_parameter(self%docdyn,'docdyn','','use dynamic ratio of labile to semi-labile DOM production', default=.false.)
       if (.not.self%docdyn) call self%get_parameter(self%R1R2,'R1R2','-','labile fraction of produced dissolved organic carbon')
@@ -251,7 +250,7 @@ contains
       real(rk) :: runn,misn,rumn,rumn3,rumn4
       real(rk) :: et,pe_RP
       real(rk) :: rho,Chl_inc,Chl_loss
-      real(rk) :: phi,ChlCpp
+      real(rk) :: ChlCpp
       real(rk) :: N7fP,f,fP,qfc
       real(rk) :: runf,rumf,misf
       real(rk) :: fN7PIf,fPIRPf
@@ -345,11 +344,9 @@ contains
          ! but not nitrogen and phosphorus.
          sum = self%sum*et*iNs*iNf
 
-         phi = self%phiH + (ChlCpp/self%phim)*(self%phim-self%phiH)
-
          if (parEIR>zeroX) then
             sum = sum * (1._rk-exp(-self%alpha*parEIR*ChlCpp/sum)) * exp(-self%beta*parEIR*ChlCpp/sum)
-            rho = (phi - ChlCmin) * (sum/(self%alpha*parEIR*ChlCpp)) + ChlCmin
+            rho = (self%phim - ChlCmin) * (sum/(self%alpha*parEIR*ChlCpp)) + ChlCmin
          else
             sum = 0._rk
             rho = ChlCmin

@@ -327,7 +327,6 @@ instances:
       alpha: $alphaP1X
       beta: $betaP1X
       phim: $phimP1X
-      phiH: $phiP1HX
       Limnut: $LimnutX
       R1R2: $R1R2X
       uB1c_O2: $uB1c_O2X
@@ -390,7 +389,6 @@ instances:
       alpha: $alphaP2X
       beta: $betaP2X
       phim: $phimP2X
-      phiH: $phiP2HX
       Limnut: $LimnutX
       R1R2: $R1R2X
       uB1c_O2: $uB1c_O2X
@@ -454,7 +452,6 @@ instances:
       alpha: $alphaP3X
       beta: $betaP3X
       phim: $phimP3X
-      phiH: $phiP3HX
       Limnut: $LimnutX
       R1R2: $R1R2X
       uB1c_O2: $uB1c_O2X
@@ -515,7 +512,6 @@ instances:
       alpha: $alphaP4X
       beta: $betaP4X
       phim: $phimP4X
-      phiH: $phiP4HX
       Limnut: $LimnutX
       R1R2: $R1R2X
       uB1c_O2: $uB1c_O2X

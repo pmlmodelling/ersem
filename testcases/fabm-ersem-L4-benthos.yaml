@@ -275,7 +275,6 @@ instances:
       alpha: 2.98                                          # initial slope of PI-curve (mg C m^2/mg Chl/W/d)
       beta: 0.02                                           # photoinhibition parameter (mg C m^2/mg Chl/W/d)
       phim: 0.075                                          # maximum effective chlorophyll to carbon photosynthesis ratio (mg Chl/mg C)
-      phiH: 0.05                                           # minimum effective chlorophyll to carbon photosynthesis ratio (mg Chl/mg C)
       Limnut: 0                                            # nitrogen-phosphorus colimitation formulation (0: geometric mean, 1: minimum, 2: harmonic mean)
       R1R2: 0.25                                           # labile fraction of produced dissolved organic carbon (-)
       uB1c_O2: 0.11                                        # oxygen produced per unit of carbon fixed (mmol O_2/mg C)
