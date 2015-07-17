@@ -21,7 +21,7 @@ module ersem_nitrification
 
       ! Parameters
       real(rk) :: q10
-      real(rk) :: sN4N3X,chN3oX
+      real(rk) :: sN4N3X,chN3oX,chN4nX
       integer  :: ISWphx
    contains
 !     Model procedures
@@ -50,6 +50,7 @@ contains
       call self%get_parameter(self%ISWphx,'ISWph','',                'pH impact on nitrification (0: off, 1: on)')
       call self%get_parameter(self%sN4N3X,'sN4N3','1/d',             'specific nitrification rate')
       call self%get_parameter(self%chN3oX,'chN3o','(mmol O_2/m^3)^3','Michaelis-Menten constant for cubic oxygen dependence of nitrification')
+      call self%get_parameter(self%chN4nX,'chN4n','(mmol N/m^3)^3','Michaelis-Menten constant for cubic ammonium dependence of nitrification')
 
       ! Register diagnostic variables
       call self%register_diagnostic_variable(self%id_nitrification,"rate","mmol/m3/d","rate")
@@ -71,8 +72,8 @@ contains
       class (type_ersem_nitrification),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_
 
-      real(rk) :: ETW,phx,O2o,N4nP
-      real(rk) :: etB1,o2state,Fph,fN4N3n
+      real(rk) :: ETW,phx,O2o,N4n,N4nP
+      real(rk) :: etB1,o2state,n4state,Fph,fN4N3n
 
       ! Leave spatial loops (if any)
       _LOOP_BEGIN_
@@ -86,9 +87,13 @@ contains
          O2o = max(0.0_rk,O2o)
          o2state = O2o**3/(O2o**3 + self%chN3oX) ! half saturation
 
+         ! Ammonium state for nitrogen species transformation
+         _GET_WITH_BACKGROUND_(self%id_N4n,N4n)
+         n4state = N4n**3/(N4n**3 + self%chN4nX) ! half saturation
+
          !..Nitrification..
          _GET_(self%id_N4n,N4nP)
-         fN4N3n = self%sN4N3X * N4nP * etB1 * o2state
+         fN4N3n = self%sN4N3X * N4nP * etB1 * o2state * n4state
 
          ! Ph influence on nitrification - empirical equation. Use (1) or not (2)
          if (self%ISWphx==1) then

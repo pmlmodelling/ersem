@@ -298,6 +298,7 @@ instances:
       ISWph: $ISWPHX
       sN4N3: $sN4N3X
       chN3o: $chN3oX
+      chN4n: $chN4nX
     coupling:
       N3n: N3/n
       N4n: N4/n
