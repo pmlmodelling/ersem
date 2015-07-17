@@ -433,10 +433,6 @@ contains
          ! Save net production (equals run if cenh=1)
          _SET_DIAGNOSTIC_(self%id_netPI,(sum*cenh-seo-sea-sra*cenh)*c-srs*cP)
 
-         ! Carbon Source equations
-
-         rho = MIN(rho,0.1_rk)
-
          ! Chl changes (note that Chl is a component of PXc and not involved
          ! in mass balance)
          if (use_iron) then
