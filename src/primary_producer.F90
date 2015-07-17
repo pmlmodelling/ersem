@@ -56,7 +56,7 @@ module ersem_primary_producer
       ! Parameters (described in subroutine initialize, below)
       real(rk) :: sum
       real(rk) :: q10,srs,pu_ea,pu_ra,chs,qnlc,qplc,xqcp
-      real(rk) :: xqcn,xqn,xqp,qun3,qun4,qurp,qsc,esni
+      real(rk) :: xqcn,xqn,xqp,qun3,qun4,qurp,qsc,esni,snplux
       real(rk) :: resm,sdo
       real(rk) :: alpha,beta,phim
       real(rk) :: R1R2,uB1c_O2,urB1_O2
@@ -111,6 +111,7 @@ contains
       call self%get_parameter(self%qun3,  'qun3', 'm^3/mg C/d', 'nitrate affinity')
       call self%get_parameter(self%qun4,  'qun4', 'm^3/mg C/d', 'ammonium affinity')
       call self%get_parameter(self%qurp,  'qurp', 'm^3/mg C/d', 'phosphate affinity')
+      call self%get_parameter(self%snplux,  'snplux', '1/d', 'specific tendency of luxuary uptake of nutrients towards maximum quoata')
       call self%get_parameter(self%use_Si,'use_Si','',          'use silicate',default=.false.)
       if (self%use_Si) then
          call self%get_parameter(self%qsc,'qsc', 'mmol Si/mg C','maximum silicate to carbon ratio')
@@ -464,7 +465,7 @@ contains
 
          ! Net phosphorus uptake
          rump = self%qurp * N1pP * c
-         misp = self%xqp * qpRPIcX*cP - pP
+         misp = self%snplux*(self%xqp * qpRPIcX*cP - pP)
          runp = sun*c * qpRPIcX*self%xqp - srs*pP
          fN1PIp = MIN(rump, runp+misp)
 
@@ -486,7 +487,7 @@ contains
          rumn4 = self%qun4 * N4nP * c
          rumn = rumn3 + rumn4
 
-         misn = self%xqn * qnRPIcX*cP - nP
+         misn = self%snplux * (self%xqn * qnRPIcX*cP - nP)
          runn = sun*c * qnRPIcX*self%xqn - srs*nP
          fNIPIn = MIN(rumn, runn + misn)
 

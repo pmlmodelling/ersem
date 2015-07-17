@@ -321,6 +321,7 @@ instances:
       qun3: $quP1n3X
       qun4: $quP1n4X
       qurp: $qurP1pX
+      snplux: $sNPlux
       use_Si: true
       qsc: $qsP1cX
       chs: $chP1sX
@@ -385,6 +386,7 @@ instances:
       qun3: $quP2n3X
       qun4: $quP2n4X
       qurp: $qurP2pX
+      snplux: $sNPlux
       use_Si: false
       sdo: $sdoP2X
       alpha: $alphaP2X
@@ -448,6 +450,7 @@ instances:
       qun3: $quP3n3X
       qun4: $quP3n4X
       qurp: $qurP3pX
+      snplux: $sNPlux
       use_Si: false
       sdo: $sdoP3X
       alpha: $alphaP3X
@@ -508,6 +511,7 @@ instances:
       qun3: $quP4n3X
       qun4: $quP4n4X
       qurp: $qurP4pX
+      snplux: $sNPlux
       use_Si: false
       sdo: $sdoP4X
       alpha: $alphaP4X
