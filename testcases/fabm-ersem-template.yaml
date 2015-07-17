@@ -466,7 +466,7 @@ instances:
       cenh: false
       sedimentation: true
       qQ1c: $pe_R1P3X
-      qQ7c: 0.05
+      qQ7c: $pe_R7P3X
       xR1n: $xR1nX
       xR1p: $xR1pX
       xR7n: $xR7nX
@@ -526,7 +526,7 @@ instances:
       cenh: false
       sedimentation: true
       qQ1c: $pe_R1P4X
-      qQ7c: 0.05
+      qQ7c: $pe_R7P4X
       xR1n: $xR1nX
       xR1p: $xR1pX
       xR7n: $xR7nX
