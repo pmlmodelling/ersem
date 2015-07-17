@@ -30,7 +30,7 @@ module ersem_bacteria
       real(rk) :: chB1nX,chB1pX
       real(rk) :: sdB1X
       real(rk) :: sumB1X
-      real(rk) :: puB1X,puB1oX,srsB1X
+      real(rk) :: puB1X,puB1oX,srsB1X,sR1B1X
       real(rk) :: qpB1cX,qnB1cX
       real(rk) :: urB1_O2X
       real(rk) :: R1R2X
@@ -78,6 +78,7 @@ contains
       call self%get_parameter(self%puB1X,   'pu',      '-',          'efficiency at high oxygen levels')
       call self%get_parameter(self%puB1oX,  'puo',     '-',          'efficiency at low oxygen levels')
       call self%get_parameter(self%srsB1X,  'srs',     '1/d',        'specific rest respiration at reference temperature')
+      call self%get_parameter(self%sR1B1X,  'sR1B1',     '1/d',        'maximum turn-over rate of DOM')
       call self%get_parameter(self%qpB1cX,  'qpc',     'mmol P/mg C','maximum phosphorus to carbon ratio')
       call self%get_parameter(self%qnB1cX,  'qnc',     'mmol N/mg C','maximum nitrogen to carbon ratio')
       call self%get_parameter(self%urB1_O2X,'ur_O2',   'mmol O_2/mg C','oxygen consumed per carbon respired')
@@ -228,11 +229,12 @@ contains
 
 !..Total amount of substrate available
 
-         sutB1 = 1._rk  ! DOM-specific uptake rate
+         sutB1 = self%sR1B1X  ! DOM-specific uptake rate
          ! rutB1 = sutB1*R1cP(I)
 
 !..Potential uptake :
          rumB1 = self%sumB1X*etB1*eO2B1*min(Nlim,Plim)*B1c
+
 !..Actual uptake
 
       ! rugB1 = MIN(rumB1,rutB1)
@@ -270,7 +272,7 @@ contains
          _SET_ODE_(self%id_O3c,+ fB1O3c/CMass)
          _SET_ODE_(self%id_O2o,- fB1O3c*self%urB1_O2X)
 
-!..Phosporous dynamics in bacteria........................................
+!..Phosphorus dynamics in bacteria........................................
 
          IF ((qpB1c - self%qpB1cX).gt.0._rk) THEN
            fB1N1p = (qpB1c - self%qpB1cX ) * B1cP /onedayX ! sink
