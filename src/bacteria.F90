@@ -176,6 +176,7 @@ contains
       real(rk) :: fB1N1p,fR1B1p,fB1RDp
       real(rk) :: fB1NIn,fR1B1n,fB1RDn
       real(rk) :: Nlim,Plim
+      real(rk) :: CORROX
 
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
@@ -207,7 +208,8 @@ contains
 
 !..Prevailing Oxygen limitation for bacteria:
 
-         eO2B1 = eO2mO2/( eO2mO2 + self%chdB1oX )
+         CORROX = 1._rk + self%chdB1oX
+         eO2B1 = min(1._rk,CORROX*(eO2mO2/( eO2mO2 + self%chdB1oX )))
 
 !..Potential nutrient limitation on bacterial growth after Anderson
 
