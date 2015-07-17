@@ -766,8 +766,8 @@ instances:
     model: ersem/benthic_column_dissolved_matter
     parameters:
       composition: p
-      ads1: $pM1Xr
-      ads2: $pM1Xr
+      ads1: $M1adsX
+      ads2: $M1adsX
       ads3: $M11adsX
     initialization:
       p: $K1pr
