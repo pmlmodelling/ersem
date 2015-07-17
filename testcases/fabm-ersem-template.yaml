@@ -745,7 +745,7 @@ instances:
     long_name: benthic column
     model: ersem/benthic_column
     parameters:
-      qPW: $qPWX
+      qPW: $poroXr
       EDZ_mix: $EDZ_mixX
       d_tot: $d_totX
       Etur: $EturX
