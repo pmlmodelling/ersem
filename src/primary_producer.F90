@@ -75,7 +75,7 @@ module ersem_primary_producer
    end type type_ersem_primary_producer
 
    ! Constants
-   real(rk),parameter :: ChlCmin = 0.0067_rk
+   real(rk),parameter :: ChlCmin = 0.002_rk
 
 contains
 
