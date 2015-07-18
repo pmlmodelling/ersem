@@ -18,7 +18,7 @@ module ersem_calcification
       type (type_dependency_id)            :: id_om_cal
 
       integer  :: iswcal
-      real(rk) :: Rain0
+      real(rk) :: Rain0,sL2O3X
       real(rk) :: ncalc,ndiss,KcalomX
    contains
       procedure :: initialize
@@ -52,6 +52,7 @@ contains
       end select
       call self%get_parameter(self%Rain0,'Rain0','-','maximum rain ratio from PISCES')
       call self%get_parameter(sedL2,'sedL2','m/d','sinking velocity')
+      call self%get_parameter(self%sL2O3X,'sL2O3','1/d','maixumum specific dissolution rate')
       call self%get_parameter(c0,'c0','mg C/m^3','background concentration',default=0.0_rk)
 
       call self%initialize_ersem_base(rm=sedL2,sedimentation=.false.)
@@ -97,6 +98,8 @@ contains
             fcalc = max(0._rk,(om_cal-1._rk)/(om_cal-1._rk+self%KcalomX))
             fdiss = max(0._rk,(1._rk-om_cal)/(1._rk-om_cal+self%KcalomX))
          end if
+
+         fdiss = fdiss * self%sL2O3X
 
          _SET_ODE_(self%id_c,  -fdiss*L2c)
          _SET_ODE_(self%id_O3c, fdiss*L2c/CMass)
