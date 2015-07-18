@@ -181,6 +181,7 @@ contains
       real(rk) :: R3c,R2cP,R3cP
       real(rk) :: fB1R1c
       real(rk) :: totsubst
+      real(rk) :: CORROX
       integer  :: iRP
       real(rk),dimension(self%nRP) :: RPc,RPcP,RPnP,RPpP
       real(rk),dimension(self%nRP) :: fRPB1p,fRPB1n
@@ -225,7 +226,8 @@ contains
 
 !..Prevailing Oxygen limitation for bacteria:
 
-         eO2B1 = eO2mO2/( eO2mO2 + self%chdB1oX )
+         CORROX = 1._rk + self%chdB1oX
+         eO2B1 = min(1._rk,CORROX*(eO2mO2/( eO2mO2 + self%chdB1oX )))
 
 !..bacterial mortality
 
