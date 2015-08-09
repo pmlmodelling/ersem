@@ -437,7 +437,7 @@ contains
          ! Chl changes (note that Chl is a component of PXc and not involved
          ! in mass balance)
          if (use_iron) then
-           Chl_inc = iNf*iNI*rho*(sum-sra-seo-sea)*c 
+           Chl_inc = min(iNf,iNI)*rho*(sum-sra-seo-sea)*c 
          else
            Chl_inc = iNI*rho*(sum-sra-seo-sea)*c 
          endif
