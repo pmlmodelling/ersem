@@ -161,6 +161,7 @@ contains
       total_prey_calculator%units = 'mg C/m^3'
       total_prey_calculator%result_output = output_none
       do iprey=1,self%nprey
+         write (index,'(i0)') iprey
          call total_prey_calculator%add_component('prey'//trim(index)//'c',self%suprey(iprey))
       end do
       call self%add_child(total_prey_calculator,'totprey_calculator',configunit=-1)
