@@ -398,7 +398,8 @@ contains
       ! enter the aerobic layer. This behaviour can be changed by specifying anaerobic food sources as
       ! food{n}c_an. The sum of food uptake from the anaerobic domain, of those relative to total food
       ! uptake defines how much of the exudated nutrients go into the anaerobic layer.
-      p_an = sum(foodcP_an/foodcP*grossfluxc)/max(fBTYc,1.e-8_rk)
+
+      p_an = sum(foodcP_an/(foodcP+1.e-15_rk)*grossfluxc)/max(fBTYc,1.e-8_rk)
 
       ! Send excess nutrients to phosphate, ammonium pools.
       _SET_BOTTOM_ODE_(self%id_K4n,(1._rk-p_an)*excess_n)
