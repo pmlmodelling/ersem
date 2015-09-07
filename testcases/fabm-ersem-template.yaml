@@ -693,7 +693,7 @@ instances:
       xR1p: $xR1pX
       xR1n: $xR1nX
       urB1_O2: $urB1_O2X
-      gutdiss: 1.0
+      gutdiss: $gutdiss
       c0: 0.0033
       nprey: 4
       suprey1: $suB1_Z6X
