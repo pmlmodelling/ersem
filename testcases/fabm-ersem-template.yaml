@@ -253,7 +253,7 @@ instances:
       pu: $puB1X
       puo: $puB1oX
       srs: $srsB1X
-      sR1B1: $sR1B1X
+      sR1: $sR1B1X
       qpc: $qpB1cX
       qnc: $qnB1cX
       ur_O2: $urB1_O2X
