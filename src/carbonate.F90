@@ -3,6 +3,7 @@ module ersem_carbonate
 
    use fabm_types
    use fabm_builtin_models
+   use ersem_shared
 
    implicit none
 
@@ -238,14 +239,15 @@ contains
             _GET_(self%id_pco2_in,PCO2)
             PCO2 = PCO2*1.e-6_rk
          end if
-         ! Old formulation for the Schmidt number, valid only for T<30
-         ! left for documentation and back compatibility
-         sc=2073.1_rk-125.62_rk*T+3.6276_rk*T**2._rk-0.043219_rk*T**3
-
-         !new formulation for the Schmidt number following Wanninkof, 2014
-         !T=max(T,40._rk)
-         !sc=2116.8_rk-136.25_rk*T+4.7353_rk*T**2._rk-0.092307_rk*T**3+0.0007555_rk*T**4._rk
-
+         if (legacy_ersem_compatibility) then
+           ! Old formulation for the Schmidt number, valid only for T<30
+           ! left for documentation and back compatibility
+           sc=2073.1_rk-125.62_rk*T+3.6276_rk*T**2._rk-0.043219_rk*T**3
+         else
+           !new formulation for the Schmidt number following Wanninkof, 2014
+           T=max(T,40._rk)
+           sc=2116.8_rk-136.25_rk*T+4.7353_rk*T**2._rk-0.092307_rk*T**3+0.0007555_rk*T**4._rk
+         endif
          if   (self%ISWASFLUX==1) then        !Nightingale and Liss parameterisation
                fwind =  (0.222_rk *wnd**2.0_rk + 0.333_rk * wnd)*(sc/600._rk)**(-0.5_rk)
          elseif (self%iswASFLUX==2) then      ! Wanninkhof 1992 without chemical enhancement
