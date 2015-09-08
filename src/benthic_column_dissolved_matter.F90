@@ -127,7 +127,7 @@ contains
          case ('o')
             call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'o','mmol/m^2','oxygen')
             call self%register_state_variable(self%constituents(iconstituent)%id_tot_deep,'o_deep','mmol/m^2','oxygen below oxygenated layer')
-            self%constituents(iconstituent)%nonnegative = .false.
+            if (.not.legacy_ersem_compatibility) self%constituents(iconstituent)%nonnegative = .false.
          case ('a')
             call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'a','mEq/m^2','alkalinity')
          case default
