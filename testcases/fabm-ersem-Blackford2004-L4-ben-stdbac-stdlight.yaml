@@ -739,6 +739,7 @@ instances:
       ads1: 3.0                                            # adsorption in layer 1 (total:dissolved) (-), default = 1.0
       ads2: 3.0                                            # adsorption in layer 2 (total:dissolved) (-), default = 1.0
       ads3: 3.0                                            # adsorption in layer 3 (total:dissolved) (-), default = 1.0
+      correction: true                                     # use of ammonia flux limiter correction to avoid negativity
     initialization:
       n: 25.0                                              # nitrogen (mmol/m^2)
     coupling:
