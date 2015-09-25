@@ -111,7 +111,7 @@ contains
       call self%get_parameter(self%qun3,  'qun3', 'm^3/mg C/d', 'nitrate affinity')
       call self%get_parameter(self%qun4,  'qun4', 'm^3/mg C/d', 'ammonium affinity')
       call self%get_parameter(self%qurp,  'qurp', 'm^3/mg C/d', 'phosphate affinity')
-      call self%get_parameter(self%snplux,  'snplux', '1/d', 'specific tendency of luxuary uptake of nutrients towards maximum quoata')
+      call self%get_parameter(self%snplux,'snplux','1/d',       'specific tendency of luxury uptake of nutrients towards maximum quota',default=1.0_rk)
       call self%get_parameter(self%use_Si,'use_Si','',          'use silicate',default=.false.)
       if (self%use_Si) then
          call self%get_parameter(self%qsc,'qsc', 'mmol Si/mg C','maximum silicate to carbon ratio')

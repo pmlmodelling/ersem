@@ -50,7 +50,7 @@ contains
       call self%get_parameter(self%ISWphx,'ISWph','',                'pH impact on nitrification (0: off, 1: on)')
       call self%get_parameter(self%sN4N3X,'sN4N3','1/d',             'specific nitrification rate')
       call self%get_parameter(self%chN3oX,'chN3o','(mmol O_2/m^3)^3','Michaelis-Menten constant for cubic oxygen dependence of nitrification')
-      call self%get_parameter(self%chN4nX,'chN4n','(mmol N/m^3)^3','Michaelis-Menten constant for cubic ammonium dependence of nitrification')
+      call self%get_parameter(self%chN4nX,'chN4n','(mmol N/m^3)^3','Michaelis-Menten constant for cubic ammonium dependence of nitrification', default=0.0_rk)
 
       ! Register diagnostic variables
       call self%register_diagnostic_variable(self%id_nitrification,"rate","mmol/m3/d","rate")

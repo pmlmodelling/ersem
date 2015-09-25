@@ -52,7 +52,7 @@ contains
       end select
       call self%get_parameter(self%Rain0,'Rain0','-','maximum rain ratio from PISCES')
       call self%get_parameter(sedL2,'sedL2','m/d','sinking velocity')
-      call self%get_parameter(self%sL2O3X,'sL2O3','1/d','maximum specific dissolution rate')
+      call self%get_parameter(self%sL2O3X,'sL2O3','1/d','maximum specific dissolution rate', default=1.0_rk)
       call self%get_parameter(c0,'c0','mg C/m^3','background concentration',default=0.0_rk)
 
       call self%initialize_ersem_base(rm=sedL2,sedimentation=.false.)

@@ -78,7 +78,7 @@ contains
       call self%get_parameter(self%puB1X,   'pu',      '-',          'efficiency at high oxygen levels')
       call self%get_parameter(self%puB1oX,  'puo',     '-',          'efficiency at low oxygen levels')
       call self%get_parameter(self%srsB1X,  'srs',     '1/d',        'specific rest respiration at reference temperature')
-      call self%get_parameter(self%sR1B1X,  'sR1',     '1/d',        'maximum turn-over rate of DOM')
+      call self%get_parameter(self%sR1B1X,  'sR1',     '1/d',        'maximum turn-over rate of DOM', default=1.0_rk)
       call self%get_parameter(self%qpB1cX,  'qpc',     'mmol P/mg C','maximum phosphorus to carbon ratio')
       call self%get_parameter(self%qnB1cX,  'qnc',     'mmol N/mg C','maximum nitrogen to carbon ratio')
       call self%get_parameter(self%urB1_O2X,'ur_O2',   'mmol O_2/mg C','oxygen consumed per carbon respired')
