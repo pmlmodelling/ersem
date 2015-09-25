@@ -93,8 +93,10 @@ contains
       call self%register_dependency(self%id_pco2_in,'pCO2','1e-6','previous pCO2')
       call self%register_dependency(self%id_Carb_in,'Carb','mmol/m^3','previous carbonate concentration')
 
-      call self%register_dependency(self%id_wnd,  standard_variables%wind_speed)
-      call self%register_dependency(self%id_PCO2A,standard_variables%mole_fraction_of_carbon_dioxide_in_air)
+      if (self%iswASFLUX>=1) then
+         call self%register_dependency(self%id_wnd,  standard_variables%wind_speed)
+         call self%register_dependency(self%id_PCO2A,standard_variables%mole_fraction_of_carbon_dioxide_in_air)
+      end if
 
       self%dt = 3600._rk*24._rk
 
