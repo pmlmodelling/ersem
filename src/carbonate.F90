@@ -53,7 +53,7 @@ contains
 
       if (self%iswtalk==5) then
          ! Total alkalinity is a state variable.
-         call self%register_state_variable(self%id_TA,'TA','umol/kg','total alkalinity',minimum=1.e-4_rk, &
+         call self%register_state_variable(self%id_TA,'TA','umol/kg','total alkalinity',2300._rk,minimum=1.e-4_rk, &
             standard_variable=standard_variables%alkalinity_expressed_as_mole_equivalent)
       else
          ! Total alkalinity is a diagnostic variable, parameterized as function of salinity and temperature.
