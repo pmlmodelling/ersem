@@ -247,7 +247,7 @@ contains
       ! rugB1 = MIN(rumB1,rutB1)
       ! specific in substrate concentration:
 
-      totsubst = R1c+R2c*self%rR2B1X+R3c*self%rR3B1X+sum(RPc*self%sRPR1/sutB1)
+      totsubst = R1cP+R2cP*self%rR2B1X+R3cP*self%rR3B1X+sum(RPcP*self%sRPR1/sutB1)
       ! Jorn: check whether total substrate>0 to prevent NaNs
       if (totsubst>0.0_rk) then
          sugB1 = rumB1/max(rumB1/sutB1,totsubst)
@@ -255,7 +255,7 @@ contains
          sugB1 = 0.0_rk
       end if
             ! = MIN(rumB1,rutB1)=MIN(rumB1/(R1cP+R2cP*rR2B1X,sutB1) avoid pot. div. by 0
-      rugB1 = sugB1*(R1cP+R2cP*self%rR2B1X+R3c*self%rR3B1X+sum(RPc*self%sRPR1/sutB1))
+      rugB1 = sugB1*(R1cP+R2cP*self%rR2B1X+R3cP*self%rR3B1X+sum(RPcP*self%sRPR1/sutB1))
 
 !..Respiration :
 

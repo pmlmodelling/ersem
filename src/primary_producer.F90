@@ -383,11 +383,11 @@ contains
          if (self%docdyn) then
             ! Lysis produces labile DOM, excretion produces semi-labile DOM.
             fPIR1c = (1._rk-pe_RP)*sdo*cP
-            fPIR2c = (seo + sea)*c
+            fPIR2c = (seo + sea)*cP
             fPIRDc = fPIR1c+fPIR2c
          else
             ! Fixed ratio between production of labile and semi-labile DOM.
-            fPIRDc = (1._rk-pe_RP)*sdo*cP + (seo + sea)*c
+            fPIRDc = (1._rk-pe_RP)*sdo*cP + (seo + sea)*cP
             fPIR1c = fPIRDc*self%R1R2
             fPIR2c = fPIRDc*(1._rk-self%R1R2)
          end if
