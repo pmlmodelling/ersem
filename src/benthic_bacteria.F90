@@ -221,7 +221,6 @@ contains
          excess_c = max(max(fHc - fHp/self%qpc, fHc - fHn/self%qnc), 0.0_rk)
          fHc = fHc - excess_c
          _SET_BOTTOM_ODE_(self%id_c,fHc)
-         _SET_BOTTOM_ODE_(self%id_Q6c,excess_c)
 
          ! Compute excess nitrogen and phosphorus fluxes, based on final carbon flux. Excess nutrient will be exudated to preserve constant stoichiometry of biomass.
          excess_n = max(fHn - fHc*self%qnc,0.0_rk)
