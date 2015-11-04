@@ -28,7 +28,7 @@ module ersem_carbonate
       procedure :: do_surface
    end type
 
-   public :: co2dyn
+   public :: co2dyn, CaCO3_Saturation
 
 contains
 
