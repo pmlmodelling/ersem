@@ -262,22 +262,28 @@ contains
 
       ! Estimate steady state concentration at bed from current pelagic concentration
       ! (typically at centre of lowermost pelagic layer), and column-integrated production/destruction term.
-      ! JB: the logic behind the expressions below is UNKNOWN (in original ERSEM, this was handled by the modconc subroutine)
+      !
+      ! This assumes the lowermost pelagic layer includes a diffusion barrier in the form of a bottom boundary layer (BBL),
+      ! characterized by height H, [low] diffusivity D, and no production or destruction of the tracer.
+      ! At equilibrium, the vertical flux at any point in the BBL must equal the pelagic-benthic flux, which
+      ! in turn equals the production within the benthic column, sms. That implies the equilibrium concentration profile within
+      ! the BBL is linear with a slope equal to sms/D. The change between top and bottom of the BBL thus equals sms/D*H.
+      ! If the structure (height H, diffusivity D) of the BBL are constant in time and space, this can be rewritten as sms*cmix,
+      ! with transfer coefficient cmix = H/D in units d/m. If the lowermost layer excluding BBL is well-mixed, the concentration
+      ! at the top of the BBL is equal to the lowermost pelagic concentration c_pel, which is typically vertically positioned at the
+      ! centre of the lowermost grid cell. Thus, the concentration at the top of the sediment bed equals:
+      !
+      !    c_top = c_pel + cmix*sms
+      !
+      ! For positive definite tracers, this expression presents problems if the sediment column destroys tracer at a fast pace:
+      ! if sms<-c_pel/cmix, c_top would become negative. To counter that problem, we apply the Patankar trick
+      ! (Patankar 1980; Burchard et al. 2003 ApNumMat Eq 16), which guarantees a positive c_top while preserving first order
+      ! accuracy of the (originally linear) relation. JB 24/06/2015, 10/11/2015
       if (sms>0._rk .or. .not. info%nonnegative) then
-         ! Sediment column produces tracer. Steady state concentration at sediment interface > lowermost pelagic concentration.
-         ! One way to arrive at the formulation below is to assume the lowermost pelagic layer includes a diffusion barrier
-         ! in the form of a bottom boundary layer (BBL) with height H, [low] diffusivity D, and no production or destruction
-         ! of the tracer. At equilibrium, the vertical flux at any point in the BBL must be equal to the pelagic-benthic flux, which
-         ! in turn equals the production within the benthic column, sms. That implies the equilibrium concentration profile within
-         ! the BBL is linear with a slope equal to sms/D. The change within the BBL thus equals sms/D*H. If the structure
-         ! (height H, diffusivity D) of the BBL are constant in time and space, this can be rewritten as sms*cmix, with transfer
-         ! coefficient cmix = H/D in d/m. If the lowermost layer excluding BBL is well-mixed, the concentration at the top of the
-         ! BBL is equal to the lowermost pelagic concentration c_pel, which is typically vertically positioned at the
-         ! centre of the lowermost grid cell. Thus, the bed concentration equals c_pel + cmix*sms. JB 24/06/2015
+         ! Sediment column produces tracer or tracer does not need to be positive definite. Use original linear relation.
          c_top = c_pel + cmix*sms
       else
-         ! Sediment column destroys tracer. Steady state concentration at sediment interface < lowermost pelagic concentration.
-         ! Note cmix*sms<0, thus c_pel/(c_pel - cmix*sms)<1
+         ! Sediment column destroys tracer while tracer needs to be positive definite. Apply Patankar trick.
          c_top = c_pel*c_pel/(c_pel - cmix*sms)
       end if
       d_top = 0
