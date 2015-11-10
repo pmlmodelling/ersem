@@ -462,7 +462,7 @@ contains
       ! ----------------------------------------------------------------------------------------------------
       ! Problem 1: find the concentration at the bottom interface of the layer (units: #/m3):
       !
-      ! The concentration at the bottom equal the value of the parabola at depth D:
+      ! The concentration at the bottom equals the value of the parabola at depth D:
       !    C(D) = a D^2 + b D + c
       ! ----------------------------------------------------------------------------------------------------
       ! Problem 2: find the concentration integrated over the layer (units: #/m2)
@@ -473,9 +473,9 @@ contains
       !                     = a/3 D^3 + b/2 D^2 + c D
       ! ----------------------------------------------------------------------------------------------------
       ! Preventing division by zero (due to D=0):
-      ! As $a$ always occurs multiplied with $D^2$, and $b$ always multiplied with $D$,
-      ! we define the combined constants $a_D2 = a D^2$ and $b_D = b D$. This avoids division by 0 when
-      ! computing $a$ while $D$ tends to zero.
+      ! As $a$ always occurs multiplied with $D^2$, and $b$ always multiplied with $D$ (when solving
+      ! problems 1 and 2), we define the combined constants $a_D2 = a D^2$ and $b_D = b D$. This avoids
+      ! division by 0 when computing $a$ while $D$ tends to zero.
       ! ----------------------------------------------------------------------------------------------------
       a_D2 = -P/sigma/2*D
       b_D = (P+P_deep)/sigma*D
