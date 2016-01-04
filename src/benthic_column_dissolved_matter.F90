@@ -80,7 +80,7 @@ contains
       self%dt = 86400._rk
 
       ! Obtain parameter values
-      call self%get_parameter(composition,'composition','','composition (any combination of c,n,p,s,o,a')
+      call self%get_parameter(composition,'composition','','composition (any combination of c,n,p,s,o,a)')
       call self%get_parameter(self%last_layer,'last_layer','','sediment layer where concentration drops to zero',default=nlayers)
       if (composition=='') call self%fatal_error('benthic_dissolved_matter_initialize','composition must include at least one chemical constituent')
       if (self%last_layer/=nlayers .and. len_trim(composition)>1) call self%fatal_error('benthic_dissolved_matter_initialize','last_layer cannot be set for solutes with more than one chemical constituent')
