@@ -57,9 +57,9 @@ contains
       call self%register_dependency(self%id_ESS, type_bulk_standard_variable(name='mass_concentration_of_silt'))
    end subroutine
    
-   subroutine get_light(self,_ARGUMENTS_VERT_)
+   subroutine get_light(self,_ARGUMENTS_VERTICAL_)
       class (type_ersem_light),intent(in) :: self
-      _DECLARE_ARGUMENTS_VERT_
+      _DECLARE_ARGUMENTS_VERTICAL_
 
       real(rk) :: buffer,dz,xEPS,xtnc,EIR,ESS
 

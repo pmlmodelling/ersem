@@ -64,9 +64,9 @@ contains
       call self%register_horizontal_dependency(self%id_zenithA, type_horizontal_standard_variable(name='zenith_angle')) 
    end subroutine
    
-   subroutine get_light(self,_ARGUMENTS_VERT_)
+   subroutine get_light(self,_ARGUMENTS_VERTICAL_)
       class (type_ersem_light_iop),intent(in) :: self
-      _DECLARE_ARGUMENTS_VERT_
+      _DECLARE_ARGUMENTS_VERTICAL_
 
       real(rk) :: buffer,dz,xEPS,iopABS,iopBBS,xtnc,EIR,abESS,zenithA
       real(rk),parameter :: bpk=.00022_rk
