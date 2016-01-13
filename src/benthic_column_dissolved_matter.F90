@@ -136,9 +136,9 @@ contains
       end do
 
       ! Dependencies
-      call self%register_dependency(self%id_Dm(1), 'D1m', 'm','depth of bottom interface of layer 1',standard_variable=depth_of_bottom_interface_of_layer_1)
-      call self%register_dependency(self%id_Dm(2), 'D2m', 'm','depth of bottom interface of layer 2',standard_variable=depth_of_bottom_interface_of_layer_2)
-      call self%register_dependency(self%id_Dm(3), 'D3m', 'm','depth of bottom interface of layer 3',standard_variable=depth_of_sediment_column)
+      call self%register_dependency(self%id_Dm(1),depth_of_bottom_interface_of_layer_1)
+      call self%register_dependency(self%id_Dm(2),depth_of_bottom_interface_of_layer_2)
+      call self%register_dependency(self%id_Dm(3),depth_of_sediment_column)
       call self%register_dependency(self%id_poro,sediment_porosity)
       call self%register_dependency(self%id_diff(1),diffusivity_in_sediment_layer_1)
       call self%register_dependency(self%id_diff(2),diffusivity_in_sediment_layer_2)
