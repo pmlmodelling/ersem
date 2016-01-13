@@ -104,12 +104,6 @@ contains
       call self%add_child(profile,'per_layer',configunit=-1)
       profile%ads = self%ads
       profile%last_layer = self%last_layer
-      call profile%register_dependency(profile%id_poro,sediment_porosity)
-      do ilayer=1,nlayers
-         write (index,'(i0)') ilayer
-         call profile%register_dependency(profile%id_Dm(ilayer), 'D'//trim(index)//'m', 'm','depth of bottom interface of layer '//trim(index))
-         call profile%request_coupling(profile%id_Dm(ilayer),'D'//trim(index)//'m')
-      end do
 
       ! Create constituent-specific variables.
       allocate(self%constituents(len_trim(composition)))
@@ -136,14 +130,17 @@ contains
       end do
 
       ! Dependencies
-      call self%register_dependency(self%id_Dm(1),depth_of_bottom_interface_of_layer_1)
-      call self%register_dependency(self%id_Dm(2),depth_of_bottom_interface_of_layer_2)
-      call self%register_dependency(self%id_Dm(3),depth_of_sediment_column)
-      call self%register_dependency(self%id_poro,sediment_porosity)
-      call self%register_dependency(self%id_diff(1),diffusivity_in_sediment_layer_1)
-      call self%register_dependency(self%id_diff(2),diffusivity_in_sediment_layer_2)
-      call self%register_dependency(self%id_diff(3),diffusivity_in_sediment_layer_3)
       call self%register_dependency(self%id_cmix,pelagic_benthic_transfer_constant)
+      call self%register_dependency(self%id_poro,sediment_porosity)
+      call profile%register_dependency(profile%id_poro,sediment_porosity)
+      do ilayer=1,nlayers
+         write (index,'(i0)') ilayer
+         call self%register_dependency(self%id_diff(ilayer),    type_horizontal_standard_variable(name='diffusivity_in_sediment_layer_'//trim(index)))
+         call self%register_dependency(self%id_Dm(ilayer),      type_horizontal_standard_variable(name='depth_of_bottom_interface_of_layer_'//trim(index)))
+         call profile%register_dependency(profile%id_Dm(ilayer),type_horizontal_standard_variable(name='depth_of_bottom_interface_of_layer_'//trim(index)))
+      end do
+      call self%request_coupling   (self%id_Dm(nlayers),   depth_of_sediment_column)
+      call profile%request_coupling(profile%id_Dm(nlayers),depth_of_sediment_column)
 
    end subroutine benthic_dissolved_matter_initialize
 
