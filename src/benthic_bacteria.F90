@@ -191,7 +191,7 @@ contains
 
          ! Respiration (reduction in bacterial carbon and dissolved oxygen, increase in 
          ! dissolved inorganic carbon, ammonium, phosphate)
-         fHG3c = self%pur * fQIHc + self%sr * Hc * eT
+         fHG3c = self%pur * fQIHc + self%sr * HcP * eT
          fHc = -fHG3c
          _SET_BOTTOM_ODE_(self%id_G2o,-fHG3c/CMass)  ! oxygen or reduction equivalent
          _SET_BOTTOM_ODE_(self%id_G3c, fHG3c/CMass)
