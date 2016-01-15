@@ -87,7 +87,7 @@ contains
       class (type_ersem_benthic_nitrogen_cycle),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
-      real(rk) :: K3n,K3nP,K4nP,N4n
+      real(rk) :: K3nP,K4nP,N4n
       real(rk) :: ETW,ph
       real(rk) :: Mu_m,eT,eN,Fph,jM4M3n,D1m
       real(rk) :: K6_sms,layer2_thickness,K3n2
