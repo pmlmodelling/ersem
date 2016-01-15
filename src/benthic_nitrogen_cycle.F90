@@ -94,7 +94,6 @@ contains
       real(rk) :: MU_m2,eN2,jMIno3,jM3M4n,jM3G4n
 
       _HORIZONTAL_LOOP_BEGIN_
-         _GET_HORIZONTAL_WITH_BACKGROUND_(self%id_K3n,K3n)
          _GET_HORIZONTAL_(self%id_K3n,K3nP)
          _GET_HORIZONTAL_(self%id_K4n,K4nP)
          _GET_(self%id_N4n,N4n)
@@ -109,7 +108,7 @@ contains
          ! Average nitrate density (mmol/m3): MU_m
 
          ! Average nitrate density in first/oxygenated layer
-         MU_m = max(0.0_rk,K3n)/D1m
+         MU_m = max(0.0_rk,K3nP)/D1m
 
          ! Limitation factor for temperature (Q_10)
          eT = self%q10nit**((ETW-10._rk)/10._rk)
