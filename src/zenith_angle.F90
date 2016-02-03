@@ -44,7 +44,7 @@ contains
       ! Register environmental dependencies (lon,lat,zenith,day of year)
       call self%register_horizontal_dependency(self%id_lon,standard_variables%longitude)
       call self%register_horizontal_dependency(self%id_lat,standard_variables%latitude)
-      call self%register_horizontal_diagnostic_variable(self%id_zenith_angle,'zenithA','degrees','zenith_angle',standard_variable=zenith_angle,source=source_do_surface)
+      call self%register_horizontal_diagnostic_variable(self%id_zenith_angle,'zenithA','degrees','zenith_angle',standard_variable=zenith_angle,source=source_do_surface,missing_value=0._rk)
       call self%register_global_dependency(self%id_yday,standard_variables%number_of_days_since_start_of_the_year)
 
    end subroutine initialize
