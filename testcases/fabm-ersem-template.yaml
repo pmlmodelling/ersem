@@ -880,6 +880,8 @@ instances:
       K4n2: K4/per_layer/n2
       G2o2: G2/per_layer/o2
       layer2_thickness: ben_col/layer2_thickness
+      benTA: zero_hz
+      benTA2: zero_hz
   H1:
     long_name: benthic aerobic bacteria
     model: ersem/benthic_bacteria
@@ -910,6 +912,7 @@ instances:
       Q1: Q1
       Q6: H1_Q6
       Q7: H1_Q7
+      benTA: zero_hz
   H1_Q6:
     long_name: benthic aerobic bacteria POM
     model: ersem/benthic_column_particulate_matter_layer
@@ -960,6 +963,7 @@ instances:
       Q1: Q1
       Q6: H2_Q6
       Q7: H2_Q7
+      benTA: zero_hz
   H2_Q6:
     long_name: benthic anaerobic bacteria POM
     model: ersem/benthic_column_particulate_matter_layer
@@ -1032,6 +1036,8 @@ instances:
       K1p2: K1/per_layer/p2
       K4n2: K4/per_layer/n2
       Dm: ben_col/D1m
+      benTA: zero_hz
+      benTA2: zero_hz
   Y2_Q6_source:
     long_name: benthic deposit feeder total POM
     model: ersem/benthic_column_particulate_matter_layer
