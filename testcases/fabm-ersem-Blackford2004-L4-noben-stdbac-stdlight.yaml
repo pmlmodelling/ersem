@@ -210,7 +210,7 @@ instances:
       pu: 0.4                                         # efficiency at high oxygen levels (-)
       puo: 0.2                                        # efficiency at low oxygen levels (-)
       srs: 0.1                                        # specific rest respiration at reference temperature (1/d)
-      sR1: 1.0                                        # maximum turn-over rate of DOM (1/d)
+      sR1: 1.0                                        # maximum turn-over rate of DOM (1/d), default = 1.0
       qpc: 0.000786                                   # maximum phosphorus to carbon ratio (mmol P/mg C)
       qnc: 0.0126                                     # maximum nitrogen to carbon ratio (mmol N/mg C)
       ur_O2: 0.1                                      # oxygen consumed per carbon respired (mmol O_2/mg C)
@@ -249,7 +249,7 @@ instances:
       ISWph: 1                                        # pH impact on nitrification (0: off, 1: on)
       sN4N3: 0.05                                     # specific nitrification rate (1/d)
       chN3o: 2700.0                                   # Michaelis-Menten constant for cubic oxygen dependence of nitrification ((mmol O_2/m^3)^3)
-      chN4n: 0.0                                      # Michaelis-Menten constant for cubic ammonium dependence of nitrification ((mmol N/m^3)^3)
+      chN4n: 0.0                                      # Michaelis-Menten constant for cubic ammonium dependence of nitrification ((mmol N/m^3)^3), default = 0.0
     coupling:
       N3n: N3/n                                       # nitrate (mmol N/m^3)
       N4n: N4/n                                       # ammonium (mmol N/m^3)
@@ -272,7 +272,7 @@ instances:
       qun3: 0.0025                                    # nitrate affinity (m^3/mg C/d)
       qun4: 0.01                                      # ammonium affinity (m^3/mg C/d)
       qurp: 0.0025                                    # phosphate affinity (m^3/mg C/d)
-      snplux: 1.0                                     # specific tendency of luxuary uptake of nutrients towards maximum quoata (1/d)
+      snplux: 1.0                                     # specific tendency of luxury uptake of nutrients towards maximum quota (1/d), default = 1.0
       use_Si: true                                    # use silicate, default = false
       qsc: 0.03                                       # maximum silicate to carbon ratio (mmol Si/mg C)
       chs: 0.3                                        # Michaelis-Menten constant for silicate limitation (mmol/m^3)
@@ -335,7 +335,7 @@ instances:
       qun3: 0.0025                                    # nitrate affinity (m^3/mg C/d)
       qun4: 0.01                                      # ammonium affinity (m^3/mg C/d)
       qurp: 0.0025                                    # phosphate affinity (m^3/mg C/d)
-      snplux: 1.0                                     # specific tendency of luxuary uptake of nutrients towards maximum quoata (1/d)
+      snplux: 1.0                                     # specific tendency of luxury uptake of nutrients towards maximum quota (1/d), default = 1.0
       use_Si: false                                   # use silicate, default = false
       sdo: 0.05                                       # 1.1 of minimal specific lysis rate (1/d)
       alpha: 2.98                                     # initial slope of PI-curve (mg C m^2/mg Chl/W/d)
@@ -397,7 +397,7 @@ instances:
       qun3: 0.0025                                    # nitrate affinity (m^3/mg C/d)
       qun4: 0.02                                      # ammonium affinity (m^3/mg C/d)
       qurp: 0.0025                                    # phosphate affinity (m^3/mg C/d)
-      snplux: 1.0                                     # specific tendency of luxuary uptake of nutrients towards maximum quoata (1/d)
+      snplux: 1.0                                     # specific tendency of luxury uptake of nutrients towards maximum quota (1/d), default = 1.0
       use_Si: false                                   # use silicate, default = false
       sdo: 0.05                                       # 1.1 of minimal specific lysis rate (1/d)
       alpha: 2.98                                     # initial slope of PI-curve (mg C m^2/mg Chl/W/d)
@@ -456,7 +456,7 @@ instances:
       qun3: 0.0025                                    # nitrate affinity (m^3/mg C/d)
       qun4: 0.01                                      # ammonium affinity (m^3/mg C/d)
       qurp: 0.0025                                    # phosphate affinity (m^3/mg C/d)
-      snplux: 1.0                                     # specific tendency of luxuary uptake of nutrients towards maximum quoata (1/d)
+      snplux: 1.0                                     # specific tendency of luxury uptake of nutrients towards maximum quota (1/d), default = 1.0
       use_Si: false                                   # use silicate, default = false
       sdo: 0.05                                       # 1.1 of minimal specific lysis rate (1/d)
       alpha: 2.98                                     # initial slope of PI-curve (mg C m^2/mg Chl/W/d)
@@ -671,7 +671,7 @@ instances:
       ndiss: 2.22                                     # power of the dissolution law (Keir 1980) (-)
       Rain0: 0.6                                      # maximum rain ratio from PISCES (-)
       sedL2: 10.0                                     # sinking velocity (m/d)
-      sL2O3: 0.03                                     # maximum specific dissolution rate (1/d)
+      sL2O3: 0.03                                     # maximum specific dissolution rate (1/d), default = 1.0
       c0: 1e-05                                       # background concentration (mg C/m^3), default = 0.0
     initialization:
       c: 0.05                                         # carbon (mg C/m^3)
