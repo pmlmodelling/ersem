@@ -10,6 +10,7 @@ add_library(fabm_models_ersem OBJECT
             benthic_base.F90
             light.F90
             light_iop.F90
+            light_iop_ady.F90
             primary_producer.F90
             microzooplankton.F90
             mesozooplankton.F90

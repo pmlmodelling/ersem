@@ -14,6 +14,7 @@ module ersem_model_library
    use ersem_nitrification
    use ersem_light
    use ersem_light_iop
+   use ersem_light_iop_ady
    use ersem_calcification
    use ersem_benthic_column
    use ersem_benthic_column_dissolved_matter
@@ -56,6 +57,7 @@ contains
          case ('nitrification');                           allocate(type_ersem_nitrification::model)
          case ('light');                                   allocate(type_ersem_light::model)
          case ('light_iop');                                   allocate(type_ersem_light_iop::model)
+         case ('light_iop_ady');                                   allocate(type_ersem_light_iop_ady::model)
          case ('calcification');                           allocate(type_ersem_calcification::model)
          case ('benthic_column');                          allocate(type_ersem_benthic_column::model)
          case ('benthic_column_dissolved_matter');         allocate(type_ersem_benthic_column_dissolved_matter::model)
