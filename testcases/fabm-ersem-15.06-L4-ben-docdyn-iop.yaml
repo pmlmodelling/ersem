@@ -221,7 +221,7 @@ instances:
       pu: 0.6                                              # efficiency at high oxygen levels (-)
       puo: 0.2                                             # efficiency at low oxygen levels (-)
       srs: 0.1                                             # specific rest respiration at reference temperature (1/d)
-      sR1: 1.0                                             # maximum turn-over rate of DOM (1/d)
+      sR1: 1.0                                             # maximum turn-over rate of DOM (1/d), default = 1.0
       qpc: 0.0019                                          # maximum phosphorus to carbon ratio (mmol P/mg C)
       qnc: 0.0167                                          # maximum nitrogen to carbon ratio (mmol N/mg C)
       ur_O2: 0.1                                           # oxygen consumed per carbon respired (mmol O_2/mg C)
@@ -261,7 +261,7 @@ instances:
       ISWph: 1                                             # pH impact on nitrification (0: off, 1: on)
       sN4N3: 0.5                                           # specific nitrification rate (1/d)
       chN3o: 2700.0                                        # Michaelis-Menten constant for cubic oxygen dependence of nitrification ((mmol O_2/m^3)^3)
-      chN4n: 0.5                                           # Michaelis-Menten constant for cubic ammonium dependence of nitrification ((mmol N/m^3)^3)
+      chN4n: 0.5                                           # Michaelis-Menten constant for cubic ammonium dependence of nitrification ((mmol N/m^3)^3), default = 0.0
     coupling:
       N3n: N3/n                                            # nitrate (mmol N/m^3)
       N4n: N4/n                                            # ammonium (mmol N/m^3)
@@ -284,7 +284,7 @@ instances:
       qun3: 0.0025                                         # nitrate affinity (m^3/mg C/d)
       qun4: 0.0025                                         # ammonium affinity (m^3/mg C/d)
       qurp: 0.003                                          # phosphate affinity (m^3/mg C/d)
-      snplux: 1.0                                          # specific tendency of luxuary uptake of nutrients towards maximum quoata (1/d)
+      snplux: 1.0                                          # specific tendency of luxury uptake of nutrients towards maximum quota (1/d), default = 1.0
       use_Si: true                                         # use silicate, default = false
       qsc: 0.0118                                          # maximum silicate to carbon ratio (mmol Si/mg C)
       chs: 0.2                                             # Michaelis-Menten constant for silicate limitation (mmol/m^3)
@@ -296,8 +296,8 @@ instances:
       docdyn: true                                         # use dynamic ratio of labile to semi-labile DOM production, default = false
       uB1c_O2: 0.11                                        # oxygen produced per unit of carbon fixed (mmol O_2/mg C)
       urB1_O2: 0.1                                         # oxygen consumed per unit of carbon respired (mmol O_2/mg C)
-      iopABS: 0.007                                        # specific shortwave absorption (m^2/mg C), default = 0.008
-      iopBBS: 0.00048                                      # specific shortwave backscatter (m^2/mg C), default = 0.003
+      iopABS: 0.007                                        # specific shortwave absorption (m^2/mg Chl), default = 0.008
+      iopBBS: 0.00048                                      # specific shortwave backscatter (m^2/mg Chl), default = 0.003
       c0: 0.0001                                           # background carbon concentration (mg C/m^3), default = 0.0
       resm: 5.0                                            # maximum nutrient-limitation-induced sinking velocity (m/d), default = 0.0
       esni: 0.7                                            # level of nutrient limitation below which sinking commences (-)
@@ -348,7 +348,7 @@ instances:
       qun3: 0.004                                          # nitrate affinity (m^3/mg C/d)
       qun4: 0.004                                          # ammonium affinity (m^3/mg C/d)
       qurp: 0.004                                          # phosphate affinity (m^3/mg C/d)
-      snplux: 1.0                                          # specific tendency of luxuary uptake of nutrients towards maximum quoata (1/d)
+      snplux: 1.0                                          # specific tendency of luxury uptake of nutrients towards maximum quota (1/d), default = 1.0
       use_Si: false                                        # use silicate, default = false
       sdo: 0.05                                            # 1.1 of minimal specific lysis rate (1/d)
       alpha: 5.0                                           # initial slope of PI-curve (mg C m^2/mg Chl/W/d)
@@ -358,8 +358,8 @@ instances:
       docdyn: true                                         # use dynamic ratio of labile to semi-labile DOM production, default = false
       uB1c_O2: 0.11                                        # oxygen produced per unit of carbon fixed (mmol O_2/mg C)
       urB1_O2: 0.1                                         # oxygen consumed per unit of carbon respired (mmol O_2/mg C)
-      iopABS: 0.0041                                       # specific shortwave absorption (m^2/mg C), default = 0.008
-      iopBBS: 0.003                                        # specific shortwave backscatter (m^2/mg C), default = 0.003
+      iopABS: 0.0041                                       # specific shortwave absorption (m^2/mg Chl), default = 0.008
+      iopBBS: 0.003                                        # specific shortwave backscatter (m^2/mg Chl), default = 0.003
       c0: 0.001                                            # background carbon concentration (mg C/m^3), default = 0.0
       calcify: true                                        # calcify, default = false
       resm: 0.0                                            # maximum nutrient-limitation-induced sinking velocity (m/d), default = 0.0
@@ -411,7 +411,7 @@ instances:
       qun3: 0.006                                          # nitrate affinity (m^3/mg C/d)
       qun4: 0.007                                          # ammonium affinity (m^3/mg C/d)
       qurp: 0.006                                          # phosphate affinity (m^3/mg C/d)
-      snplux: 1.0                                          # specific tendency of luxuary uptake of nutrients towards maximum quoata (1/d)
+      snplux: 1.0                                          # specific tendency of luxury uptake of nutrients towards maximum quota (1/d), default = 1.0
       use_Si: false                                        # use silicate, default = false
       sdo: 0.055                                           # 1.1 of minimal specific lysis rate (1/d)
       alpha: 6.0                                           # initial slope of PI-curve (mg C m^2/mg Chl/W/d)
@@ -421,8 +421,8 @@ instances:
       docdyn: true                                         # use dynamic ratio of labile to semi-labile DOM production, default = false
       uB1c_O2: 0.11                                        # oxygen produced per unit of carbon fixed (mmol O_2/mg C)
       urB1_O2: 0.1                                         # oxygen consumed per unit of carbon respired (mmol O_2/mg C)
-      iopABS: 0.023                                        # specific shortwave absorption (m^2/mg C), default = 0.008
-      iopBBS: 0.003                                        # specific shortwave backscatter (m^2/mg C), default = 0.003
+      iopABS: 0.023                                        # specific shortwave absorption (m^2/mg Chl), default = 0.008
+      iopBBS: 0.003                                        # specific shortwave backscatter (m^2/mg Chl), default = 0.003
       c0: 0.0088                                           # background carbon concentration (mg C/m^3), default = 0.0
       resm: 0.0                                            # maximum nutrient-limitation-induced sinking velocity (m/d), default = 0.0
       esni: 0.7                                            # level of nutrient limitation below which sinking commences (-)
@@ -471,7 +471,7 @@ instances:
       qun3: 0.002                                          # nitrate affinity (m^3/mg C/d)
       qun4: 0.002                                          # ammonium affinity (m^3/mg C/d)
       qurp: 0.002                                          # phosphate affinity (m^3/mg C/d)
-      snplux: 1.0                                          # specific tendency of luxuary uptake of nutrients towards maximum quoata (1/d)
+      snplux: 1.0                                          # specific tendency of luxury uptake of nutrients towards maximum quota (1/d), default = 1.0
       use_Si: false                                        # use silicate, default = false
       sdo: 0.045                                           # 1.1 of minimal specific lysis rate (1/d)
       alpha: 3.0                                           # initial slope of PI-curve (mg C m^2/mg Chl/W/d)
@@ -481,8 +481,8 @@ instances:
       docdyn: true                                         # use dynamic ratio of labile to semi-labile DOM production, default = false
       uB1c_O2: 0.11                                        # oxygen produced per unit of carbon fixed (mmol O_2/mg C)
       urB1_O2: 0.1                                         # oxygen consumed per unit of carbon respired (mmol O_2/mg C)
-      iopABS: 0.008                                        # specific shortwave absorption (m^2/mg C), default = 0.008
-      iopBBS: 0.00048                                      # specific shortwave backscatter (m^2/mg C), default = 0.003
+      iopABS: 0.008                                        # specific shortwave absorption (m^2/mg Chl), default = 0.008
+      iopBBS: 0.00048                                      # specific shortwave backscatter (m^2/mg Chl), default = 0.003
       c0: 0.0001                                           # background carbon concentration (mg C/m^3), default = 0.0
       resm: 5.0                                            # maximum nutrient-limitation-induced sinking velocity (m/d), default = 0.0
       esni: 0.7                                            # level of nutrient limitation below which sinking commences (-)
@@ -687,7 +687,7 @@ instances:
       ndiss: 2.22                                          # power of the dissolution law (Keir 1980) (-)
       Rain0: 0.6                                           # maximum rain ratio from PISCES (-)
       sedL2: 10.0                                          # sinking velocity (m/d)
-      sL2O3: 0.03                                          # maximum specific dissolution rate (1/d)
+      sL2O3: 0.03                                          # maximum specific dissolution rate (1/d), default = 1.0
       c0: 1e-05                                            # background concentration (mg C/m^3), default = 0.0
     initialization:
       c: 0.05                                              # carbon (mg C/m^3)
@@ -729,7 +729,7 @@ instances:
     long_name: benthic phosphate
     model: ersem/benthic_column_dissolved_matter
     parameters:
-      composition: p                                       # composition (any combination of c,n,p,s,o,a
+      composition: p                                       # composition (any combination of c,n,p,s,o,a)
       ads1: 100.0                                          # adsorption in layer 1 (total:dissolved) (-), default = 1.0
       ads2: 100.0                                          # adsorption in layer 2 (total:dissolved) (-), default = 1.0
       ads3: 2.0                                            # adsorption in layer 3 (total:dissolved) (-), default = 1.0
@@ -741,7 +741,7 @@ instances:
     long_name: benthic nitrate
     model: ersem/benthic_column_dissolved_matter
     parameters:
-      composition: n                                       # composition (any combination of c,n,p,s,o,a
+      composition: n                                       # composition (any combination of c,n,p,s,o,a)
       last_layer: 2                                        # sediment layer where concentration drops to zero, default = 3
       relax: 5.0                                           # rate of relaxation towards equilibrium concentration profile (1/d)
       minD: 0.0001                                         # minimum depth of zero-concentration isocline (m)
@@ -753,11 +753,11 @@ instances:
     long_name: benthic ammonium
     model: ersem/benthic_column_dissolved_matter
     parameters:
-      composition: n                                       # composition (any combination of c,n,p,s,o,a
+      composition: n                                       # composition (any combination of c,n,p,s,o,a)
       ads1: 3.0                                            # adsorption in layer 1 (total:dissolved) (-), default = 1.0
       ads2: 3.0                                            # adsorption in layer 2 (total:dissolved) (-), default = 1.0
       ads3: 3.0                                            # adsorption in layer 3 (total:dissolved) (-), default = 1.0
-      correction: true                                     # use of ammonia flux limiter correction to avoid negativity
+      correction: true                                     # move losses in oxygenic layer to deeper layers if pelagic concentration is limiting, default = false
     initialization:
       n: 25.0                                              # nitrogen (mmol/m^2)
     coupling:
@@ -766,7 +766,7 @@ instances:
     long_name: benthic silicate
     model: ersem/benthic_column_dissolved_matter
     parameters:
-      composition: s                                       # composition (any combination of c,n,p,s,o,a
+      composition: s                                       # composition (any combination of c,n,p,s,o,a)
     initialization:
       s: 20.1                                              # silicate (mmol/m^2)
     coupling:
@@ -775,7 +775,7 @@ instances:
     long_name: benthic oxygen
     model: ersem/benthic_column_dissolved_matter
     parameters:
-      composition: o                                       # composition (any combination of c,n,p,s,o,a
+      composition: o                                       # composition (any combination of c,n,p,s,o,a)
       last_layer: 1                                        # sediment layer where concentration drops to zero, default = 3
       relax: 5.0                                           # rate of relaxation towards equilibrium concentration profile (1/d)
       minD: 0.0001                                         # minimum depth of zero-concentration isocline (m)
@@ -787,7 +787,7 @@ instances:
     long_name: benthic dissolved inorganic carbon
     model: ersem/benthic_column_dissolved_matter
     parameters:
-      composition: c                                       # composition (any combination of c,n,p,s,o,a
+      composition: c                                       # composition (any combination of c,n,p,s,o,a)
     initialization:
       c: 375.0                                             # carbon (mmol/m^2)
     coupling:

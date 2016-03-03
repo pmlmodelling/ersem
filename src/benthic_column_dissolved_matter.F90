@@ -97,7 +97,7 @@ contains
          write (index,'(i0)') ilayer
          call self%get_parameter(self%ads(ilayer),'ads'//trim(index),'-','adsorption in layer '//trim(index)//' (total:dissolved)',default=1.0_rk)
       end do
-      call self%get_parameter(self%correction,'correction','',default=.false.)
+      call self%get_parameter(self%correction,'correction','','move losses in oxygenic layer to deeper layers if pelagic concentration is limiting',default=.false.)
 
       ! Create model that computes concentrations per benthic layer.
       allocate(profile)
