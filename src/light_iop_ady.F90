@@ -45,8 +45,7 @@ contains
       call self%get_parameter(self%pEIR_eowX,'pEIR_eow','-', 'photosynthetically active fraction of shortwave radiation', default=.5_rk) 
 
       ! Register diagnostic variables
-      call self%register_state_variable(self%id_ADY,'ADY','1/m','gelbstoff absorption',0._rk,minimum=0._rk, &
-            standard_variable=standard_variables%alkalinity_expressed_as_mole_equivalent)
+      call self%register_state_variable(self%id_ADY,'ADY','1/m','gelbstoff absorption',minimum=0._rk)
 
       ! Register diagnostic variables
       call self%register_diagnostic_variable(self%id_EIR,'EIR','W/m^2','shortwave radiation', &
