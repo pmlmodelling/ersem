@@ -14,13 +14,14 @@ module ersem_light_iop_ady
       type (type_state_variable_id)        :: id_ady
       type (type_diagnostic_variable_id)   :: id_EIR, id_parEIR, id_xEPS, id_iopABS, id_iopBBS
       type (type_dependency_id)            :: id_dz
-      type (type_horizontal_dependency_id) :: id_I_0, id_zenithA
+      type (type_horizontal_dependency_id) :: id_I_0, id_zenithA,id_ADY_0
 
       ! Parameters
-      real(rk) :: abESSX,a0w,b0w,pEIR_eowX
+      real(rk) :: abESSX,a0w,b0w,pEIR_eowX,relax
    contains
 !     Model procedures
       procedure :: initialize
+      procedure :: do
       procedure :: get_light
    end type type_ersem_light_iop_ady
 
@@ -43,8 +44,9 @@ contains
       call self%get_parameter(self%a0w,    'a0w',   '1/m',   'absorption coefficient of clear water', default=.036_rk) 
       call self%get_parameter(self%b0w,    'b0w',   '1/m',   'backscatter coefficient of clear water', default=.0016_rk) 
       call self%get_parameter(self%pEIR_eowX,'pEIR_eow','-', 'photosynthetically active fraction of shortwave radiation', default=.5_rk) 
+      call self%get_parameter(self%relax,'relax','1/d','rate of relaxation towards satellite gelbstoff absorption', default=0.033_rk)
 
-      ! Register diagnostic variables
+      ! Register state variables
       call self%register_state_variable(self%id_ADY,'ADY','1/m','gelbstoff absorption',minimum=0._rk)
 
       ! Register diagnostic variables
@@ -63,19 +65,36 @@ contains
       call self%register_dependency(self%id_I_0,standard_variables%surface_downwelling_shortwave_flux)
       call self%register_dependency(self%id_dz, standard_variables%cell_thickness)
       call self%register_horizontal_dependency(self%id_zenithA, type_horizontal_standard_variable(name='zenith_angle')) 
-   end subroutine
+      call self%register_horizontal_dependency(self%id_ADY_0,type_horizontal_standard_variable(name='gelbstoff_absorption_from_satellite'))
+   end subroutine initialize
+
+   subroutine do(self,_ARGUMENTS_DO_)
+      class (type_ersem_light_iop_ady),intent(in) :: self
+      _DECLARE_ARGUMENTS_DO_
+
+      real(rk) :: ADY,ADY_0,increment
+
+      _LOOP_BEGIN_
+         _GET_(self%id_ADY,ADY) ! Absorption coefficient of shortwave radiation, due to yellow matter (m-1)
+         _GET_HORIZONTAL_(self%id_ADY_0,ADY_0)
+         increment = self%relax*(ADY_0-ADY)
+         _SET_ODE_(self%id_ADY, increment )
+      _LOOP_END_
+
+  end subroutine do
    
    subroutine get_light(self,_ARGUMENTS_VERTICAL_)
       class (type_ersem_light_iop_ady),intent(in) :: self
       _DECLARE_ARGUMENTS_VERTICAL_
 
-      real(rk) :: buffer,dz,xEPS,iopABS,iopBBS,xtnc,EIR,zenithA,ADY
+      real(rk) :: buffer,dz,xEPS,iopABS,iopBBS,xtnc,EIR,zenithA,ADY,ADY_0
       real(rk),parameter :: bpk=.00022_rk
 
       _GET_HORIZONTAL_(self%id_I_0,buffer)
+      _GET_HORIZONTAL_(self%id_ADY_0,ADY_0)
+      _GET_(self%id_ADY,ADY) ! Absorption coefficient of shortwave radiation, due to yellow matter (m-1)
       _VERTICAL_LOOP_BEGIN_
          _GET_(self%id_dz,dz)          ! Layer height (m)
-         _GET_(self%id_ADY,ADY) ! Absorption coefficient of shortwave radiation, due to yellow matter (m-1)
          _GET_HORIZONTAL_(self%id_zenithA,zenithA)   ! Zenith angle
          iopABS = iopABS+ADY+self%a0w
          iopBBS = iopBBS+bpk+self%b0w

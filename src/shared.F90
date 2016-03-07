@@ -52,6 +52,9 @@ module ersem_shared
    type (type_bulk_standard_variable),parameter :: particulate_organic_absorption_coefficient = type_bulk_standard_variable(name='particulate_organic_absorption_coefficient',units='1/m',aggregate_variable=.true.)
    type (type_bulk_standard_variable),parameter :: particulate_organic_backscatter_coefficient = type_bulk_standard_variable(name='particulate_organic_backscatter_coefficient',units='1/m',aggregate_variable=.true.)
 
+   ! Gelbstoff absorption.
+   type (type_horizontal_standard_variable),parameter :: gelbstoff_absorption_from_satellite = type_horizontal_standard_variable(name='gelbstoff_absorption_from_satellite',units='1/m')
+
    ! Zenith angle.
    type (type_horizontal_standard_variable),parameter :: zenith_angle = type_horizontal_standard_variable(name='zenith_angle',units='degrees')
 
