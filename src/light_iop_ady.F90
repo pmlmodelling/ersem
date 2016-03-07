@@ -41,6 +41,10 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
+      ! Set time unit to d-1
+      ! This implies that all rates (sink/source terms, vertical velocities) are given in d-1.
+      self%dt = 86400._rk
+
       call self%get_parameter(self%a0w,    'a0w',   '1/m',   'absorption coefficient of clear water', default=.036_rk) 
       call self%get_parameter(self%b0w,    'b0w',   '1/m',   'backscatter coefficient of clear water', default=.0016_rk) 
       call self%get_parameter(self%pEIR_eowX,'pEIR_eow','-', 'photosynthetically active fraction of shortwave radiation', default=.5_rk) 
