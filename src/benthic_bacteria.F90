@@ -105,7 +105,7 @@ contains
       call self%request_coupling_to_model(self%id_Q7n,self%id_Q7,'n')
       call self%request_coupling_to_model(self%id_Q7p,self%id_Q7,'p')
 
-      call self%register_diagnostic_variable(self%id_fHG3c,'fHG3c','mg C/m^2/d','respiration',output=output_time_step_averaged,domain=domain_bottom)
+      call self%register_diagnostic_variable(self%id_fHG3c,'fHG3c','mg C/m^2/d','respiration',output=output_time_step_averaged,domain=domain_bottom,source=source_do_bottom)
 
    end subroutine
 

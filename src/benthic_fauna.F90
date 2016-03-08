@@ -203,12 +203,12 @@ contains
       ! Get contribution for bioturbation and bioirrigation
       call self%get_parameter(self%ptur, 'ptur','-','relative contribution to bioturbation',default=0._rk)
       call self%get_parameter(self%pirr, 'pirr','-','relative contribution to bioirrigation',default=0._rk)
-      call self%register_diagnostic_variable(self%id_biotur,'biotur','mg C/m^2/d','bioturbation activity',output=output_none,domain=domain_bottom)
-      call self%register_diagnostic_variable(self%id_bioirr,'bioirr','mg C/m^2/d','bioirrigation activity',output=output_none,domain=domain_bottom)
+      call self%register_diagnostic_variable(self%id_biotur,'biotur','mg C/m^2/d','bioturbation activity',output=output_none,domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_bioirr,'bioirr','mg C/m^2/d','bioirrigation activity',output=output_none,domain=domain_bottom,source=source_do_bottom)
       call self%add_to_aggregate_variable(total_bioturbation_activity, self%id_biotur)
       call self%add_to_aggregate_variable(total_bioirrigation_activity, self%id_bioirr) 
 
-      call self%register_diagnostic_variable(self%id_fYG3c,'fYG3c','mg C/m^2/d','respiration',output=output_time_step_averaged,domain=domain_bottom)
+      call self%register_diagnostic_variable(self%id_fYG3c,'fYG3c','mg C/m^2/d','respiration',output=output_time_step_averaged,domain=domain_bottom,source=source_do_bottom)
 
    end subroutine initialize
 
