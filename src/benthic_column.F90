@@ -60,7 +60,7 @@ contains
       call self%register_diagnostic_variable(self%id_poro,'poro','-','porosity',standard_variable=sediment_porosity,missing_value=self%qPW,output=output_none,source=source_none)
       call self%register_diagnostic_variable(self%id_Dtot,'Dtot','m','depth of sediment column',missing_value=self%d_tot,standard_variable=depth_of_sediment_column,output=output_none,source=source_none)
       call self%register_diagnostic_variable(self%id_EDZ_mix,'cmix','d/m','equilibrium diffusive speed between sediment surface water',standard_variable=pelagic_benthic_transfer_constant,missing_value=self%EDZ_mix,output=output_none,source=source_none)
-      call self%register_diagnostic_variable(self%id_layer2_thickness,'layer2_thickness','m','thickness of second layer',output=output_none)
+      call self%register_diagnostic_variable(self%id_layer2_thickness,'layer2_thickness','m','thickness of second layer',output=output_none,source=source_do_bottom)
 
       ! Create bioturbation submodel and provide it with parameters
       ! Currently the bioturbation logic must be separate from type_ersem_benthic_column to avoid circular dependencies.
@@ -108,10 +108,10 @@ contains
       class (type_ersem_bioturbation),intent(inout),target :: self
       integer,                        intent(in)           :: configunit
 
-      call self%register_diagnostic_variable(self%id_diff(1),'diff1','m^2/d','diffusivity in oxygenated layer',standard_variable=diffusivity_in_sediment_layer_1)
-      call self%register_diagnostic_variable(self%id_diff(2),'diff2','m^2/d','diffusivity in oxidized layer',standard_variable=diffusivity_in_sediment_layer_2)
-      call self%register_diagnostic_variable(self%id_diff(3),'diff3','m^2/d','diffusivity in anoxic layer',standard_variable=diffusivity_in_sediment_layer_3)
-      call self%register_diagnostic_variable(self%id_diff_pom,'diff_pom','m^2/d','particulate diffusivity representing bioturbation',standard_variable=particulate_diffusivity_due_to_bioturbation)
+      call self%register_diagnostic_variable(self%id_diff(1),'diff1','m^2/d','diffusivity in oxygenated layer',standard_variable=diffusivity_in_sediment_layer_1,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_diff(2),'diff2','m^2/d','diffusivity in oxidized layer',standard_variable=diffusivity_in_sediment_layer_2,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_diff(3),'diff3','m^2/d','diffusivity in anoxic layer',standard_variable=diffusivity_in_sediment_layer_3,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_diff_pom,'diff_pom','m^2/d','particulate diffusivity representing bioturbation',standard_variable=particulate_diffusivity_due_to_bioturbation,source=source_do_bottom)
       call self%register_diagnostic_variable(self%id_Dtur,'Dtur','m','bioturbation depth',standard_variable=bioturbation_depth,missing_value=self%dtur,output=output_none,source=source_none)
 
       ! Link to cumulative bioturbation and bioirrigation values, which account for activity of all benthic fauna.

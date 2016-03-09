@@ -165,7 +165,7 @@ contains
       call self%register_state_dependency(info%id_pel,trim(name)//'_pel','mmol/m^3','pelagic '//trim(long_name))
 
       ! Diagnostic for pelagic-benthic flux.
-      call self%register_diagnostic_variable(info%id_pbf,trim(name)//'_pb_flux','mmol/m^2/day','flux of '//trim(long_name)//' from benthos to pelagic')
+      call self%register_diagnostic_variable(info%id_pbf,trim(name)//'_pb_flux','mmol/m^2/day','flux of '//trim(long_name)//' from benthos to pelagic',source=source_do_bottom)
 
       ! Register new constituent with child model that computes mass per benthic layer.
       call profile%register_dependency(profile_info%id_tot,trim(name)//'_int',units,'depth-integrated '//trim(long_name))
@@ -175,8 +175,8 @@ contains
 
          ! Register diagnostics for total [adsorbed + pore water] layer integral, and pore water integral.
          ! These act as state variables, in order to allow other modules to provide source terms for them.
-         call profile%register_diagnostic_variable(profile_info%id_per_layer_total(ilayer),trim(name)//trim(index),units,'total '//trim(long_name)//' in layer '//trim(index)//' (absorbed + dissolved)',act_as_state_variable=.true.,domain=domain_bottom,output=output_none)
-         call profile%register_diagnostic_variable(profile_info%id_per_layer_pw_total(ilayer),trim(name)//trim(index)//'_pw',units,'total '//trim(long_name)//' in pore water of layer '//trim(index),act_as_state_variable=.true.,domain=domain_bottom,output=output_none)
+         call profile%register_diagnostic_variable(profile_info%id_per_layer_total(ilayer),trim(name)//trim(index),units,'total '//trim(long_name)//' in layer '//trim(index)//' (absorbed + dissolved)',act_as_state_variable=.true.,domain=domain_bottom,output=output_none,source=source_do_bottom)
+         call profile%register_diagnostic_variable(profile_info%id_per_layer_pw_total(ilayer),trim(name)//trim(index)//'_pw',units,'total '//trim(long_name)//' in pore water of layer '//trim(index),act_as_state_variable=.true.,domain=domain_bottom,output=output_none,source=source_do_bottom)
 
          ! Make sure that sources-sinks of layer-integrated mass are counted in conservation checks on source/sink basis (e.g., with check_conservation).
          if (present(aggregate_target)) then
@@ -194,13 +194,13 @@ contains
 
          ! Register diagnostics for layer-specific pore water concentrations (equilibrium and actual)
          if (self%last_layer==nlayers) then
-            call self%register_diagnostic_variable(self%id_conc_eq(ilayer),trim(name)//trim(index)//'_eq_conc','mmol/m^3','equilibrium pore water concentration of '//trim(long_name)// ' in layer '//trim(index),domain=domain_bottom)
-            call self%register_diagnostic_variable(self%id_conc_tot(ilayer),trim(name)//trim(index)//'_conc','mmol/m^3','pore water concentration of '//trim(long_name)// ' in layer '//trim(index),domain=domain_bottom)
+            call self%register_diagnostic_variable(self%id_conc_eq(ilayer),trim(name)//trim(index)//'_eq_conc','mmol/m^3','equilibrium pore water concentration of '//trim(long_name)// ' in layer '//trim(index),domain=domain_bottom,source=source_do_bottom)
+            call self%register_diagnostic_variable(self%id_conc_tot(ilayer),trim(name)//trim(index)//'_conc','mmol/m^3','pore water concentration of '//trim(long_name)// ' in layer '//trim(index),domain=domain_bottom,source=source_do_bottom)
          end if
       end do
 
       ! Create diagnostic for depth-averaged pore water concentration (currently only for solutes that span entire column)
-      if (profile%last_layer==nlayers) call profile%register_diagnostic_variable(profile_info%id_conc,trim(name)//'_conc',trim(units)//'/m','depth-averaged pore water concentration of '//trim(long_name),domain=domain_bottom)
+      if (profile%last_layer==nlayers) call profile%register_diagnostic_variable(profile_info%id_conc,trim(name)//'_conc',trim(units)//'/m','depth-averaged pore water concentration of '//trim(long_name),domain=domain_bottom,source=source_do_bottom)
 
    end subroutine initialize_constituent
 
