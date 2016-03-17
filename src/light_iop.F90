@@ -71,13 +71,14 @@ contains
       real(rk) :: buffer,dz,xEPS,iopABS,iopBBS,xtnc,EIR,abESS,zenithA
       real(rk),parameter :: bpk=.00022_rk
 
+         _GET_HORIZONTAL_(self%id_I_0,buffer)
+         _GET_HORIZONTAL_(self%id_zenithA,zenithA)   ! Zenith angle
+
       _VERTICAL_LOOP_BEGIN_
          _GET_(self%id_dz,dz)          ! Layer height (m)
          _GET_(self%id_iopABSp,iopABS) ! Absorption coefficient of shortwave radiation, due to particulate organic material (m-1)
          _GET_(self%id_iopBBSp,iopBBS) ! Backscatter coefficient of shortwave radiation, due to particulate organic material (m-1)
          _GET_(self%id_abESS,abESS)    ! Suspended silt absorption
-         _GET_HORIZONTAL_(self%id_I_0,buffer)
-         _GET_HORIZONTAL_(self%id_zenithA,zenithA)   ! Zenith angle
          iopABS = iopABS+abESS+self%a0w
          iopBBS = iopBBS+bpk+self%b0w
          xEPS = (1._rk+.005_rk*zenithA)*iopABS+4.18_rk*(1._rk-.52_rk*exp(-10.8_rk*iopABS))*iopBBS
