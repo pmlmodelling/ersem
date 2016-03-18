@@ -69,7 +69,7 @@ contains
       call self%register_dependency(self%id_I_0,standard_variables%surface_downwelling_shortwave_flux)
       call self%register_dependency(self%id_dz, standard_variables%cell_thickness)
       call self%register_horizontal_dependency(self%id_zenithA, type_horizontal_standard_variable(name='zenith_angle')) 
-      call self%register_horizontal_dependency(self%id_ADY_0,type_horizontal_standard_variable(name='gelbstoff_absorption_from_satellite'))
+      call self%register_horizontal_dependency(self%id_ADY_0,type_horizontal_standard_variable(name='gelbstoff_absorption_satellite'))
    end subroutine initialize
 
    subroutine do(self,_ARGUMENTS_DO_)
