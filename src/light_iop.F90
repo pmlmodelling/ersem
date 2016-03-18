@@ -71,8 +71,8 @@ contains
       real(rk) :: buffer,dz,xEPS,iopABS,iopBBS,xtnc,EIR,abESS,zenithA
       real(rk),parameter :: bpk=.00022_rk
 
-         _GET_HORIZONTAL_(self%id_I_0,buffer)
-         _GET_HORIZONTAL_(self%id_zenithA,zenithA)   ! Zenith angle
+      _GET_HORIZONTAL_(self%id_I_0,buffer)
+      _GET_HORIZONTAL_(self%id_zenithA,zenithA)   ! Zenith angle
 
       _VERTICAL_LOOP_BEGIN_
          _GET_(self%id_dz,dz)          ! Layer height (m)
