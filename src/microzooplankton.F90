@@ -36,6 +36,7 @@ module ersem_microzooplankton
       real(rk) :: pu
       real(rk) :: pe_R1
       real(rk) :: gutdiss
+      real(rk) :: xR1n,xR1p
 
       ! ERSEM global parameters
       real(rk) :: R1R2,urB1_O2
@@ -81,8 +82,8 @@ contains
       call self%get_parameter(self%stempn, 'stempn', '1/d',        'specific excretion rate of excess nitrogen')
 
       call self%get_parameter(self%R1R2,   'R1R2','-','labile fraction of produced dissolved organic carbon')
-      call self%get_parameter(self%xR1p,   'xR1p','-','transfer of phosphorus to DOM, relative to POM')
-      call self%get_parameter(self%xR1n,   'xR1n','-','transfer of nitrogen to DOM, relative to POM')
+      call self%get_parameter(self%xR1p,   'xR1p','-','transfer of phosphorus to DOM, relative to POM',default=1._rk)
+      call self%get_parameter(self%xR1n,   'xR1n','-','transfer of nitrogen to DOM, relative to POM',default=1._rk)
       call self%get_parameter(self%urB1_O2,'urB1_O2','mmol O_2/mg C','oxygen consumed per carbon respired')
 
       call self%get_parameter(self%gutdiss,'gutdiss','-','fraction of prey calcite that dissolves after ingestion')

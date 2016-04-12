@@ -12,10 +12,9 @@ module ersem_calcification
 
    type,extends(type_ersem_pelagic_base),public :: type_ersem_calcification
 !     Variable identifiers
-      type (type_diagnostic_variable_id)   :: id_RainR
-      type (type_state_variable_id)        :: id_O3c,id_TA
-      type (type_bottom_state_variable_id) :: id_BL2c
-      type (type_dependency_id)            :: id_om_cal
+      type (type_diagnostic_variable_id) :: id_RainR,id_L2O3c
+      type (type_state_variable_id)      :: id_O3c,id_TA
+      type (type_dependency_id)          :: id_om_cal
 
       integer  :: iswcal
       real(rk) :: Rain0,sL2O3X
@@ -23,7 +22,6 @@ module ersem_calcification
    contains
       procedure :: initialize
       procedure :: do
-      procedure :: do_bottom
    end type
       
 contains
@@ -55,21 +53,14 @@ contains
       call self%get_parameter(self%sL2O3X,'sL2O3','1/d','maximum specific dissolution rate', default=1.0_rk)
       call self%get_parameter(c0,'c0','mg C/m^3','background concentration',default=0.0_rk)
 
-      call self%initialize_ersem_base(rm=sedL2,sedimentation=.false.)
-      call self%get_parameter(self%sedimentation,'sedimentation','','enable sedimentation',default=.true.)
+      call self%initialize_ersem_base(rm=sedL2,sedimentation=.true.)
       call self%add_constituent('c',0.0_rk,c0)
 
       call self%register_diagnostic_variable(self%id_RainR,'RainR','1','rain ratio')
-
+      call self%register_diagnostic_variable(self%id_L2O3c,'L2O3c','mg C/m^3/d','calcite dissolution rate')
       call self%register_dependency(self%id_om_cal,'om_cal','-','calcite saturation')
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','total dissolved inorganic carbon')
       call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)    
-
-      if (self%sedimentation) then
-          call self%register_bottom_state_dependency(self%id_bL2c,'bL2c','mg C/m^2','benthic calcite')
-          call self%register_dependency(self%id_bedstress,standard_variables%bottom_stress)
-          call self%register_dependency(self%id_dens,     standard_variables%density)
-      end if
    end subroutine
 
    subroutine do(self,_ARGUMENTS_DO_)
@@ -102,53 +93,12 @@ contains
          fdiss = fdiss * self%sL2O3X
 
          _SET_ODE_(self%id_c,  -fdiss*L2c)
+         _SET_DIAGNOSTIC_(self%id_L2O3c,-fdiss*L2c)
          _SET_ODE_(self%id_O3c, fdiss*L2c/CMass)
          _SET_ODE_(self%id_TA,2*fdiss*L2c/CMass)  ! Dissolution of CaCO3 increases alkalinity by 2 units
          _SET_DIAGNOSTIC_(self%id_RainR,fcalc * self%Rain0)
       _LOOP_END_
 
    end subroutine do
-
-   subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
-      class (type_ersem_calcification), intent(in) :: self
-      _DECLARE_ARGUMENTS_DO_BOTTOM_
-
-      real(rk) :: tbed,density
-      real(rk) :: fac,sdrate,fsd
-      real(rk) :: L2c
-
-      ! Bed characteristics - from Puls and Sundermann 1990
-      ! Critical bed shear velocity = 0.01 m/s
-      real(rk) :: tdep = 0.01_rk**2
-
-      if (.not.self%sedimentation) return
-
-      _HORIZONTAL_LOOP_BEGIN_
-
-         _GET_HORIZONTAL_(self%id_bedstress,tbed)
-         _GET_(self%id_dens,density)
-
-         _GET_(self%id_c,L2c)
-
-         fsd = self%get_sinking_rate(_ARGUMENTS_LOCAL_)
-
-         ! Divide actual stress (Pa) by density (kg/m^3) to obtain square of bed shear velocity.
-         tbed = tbed/density
-
-         if(tbed<tdep) then
-            fac=1._rk-tbed/tdep
-         else
-            fac=0._rk
-         endif
-
-         !sdrate = min(fsd*fac,pdepth(I)/timestep) ! Jorn: CFL criterion disabled because FABM does not provide timestep
-         sdrate = fsd*fac
-
-         _SET_BOTTOM_ODE_(self%id_bL2c, sdrate*L2c)
-         _SET_BOTTOM_EXCHANGE_(self%id_c,-sdrate*L2c)
-
-      _HORIZONTAL_LOOP_END_
-
-   end subroutine do_bottom
 
 end module

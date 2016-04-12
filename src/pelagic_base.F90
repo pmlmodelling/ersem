@@ -19,15 +19,11 @@ module ersem_pelagic_base
       type (type_horizontal_diagnostic_variable_id) :: id_w_bot
 
       ! Target variables for sedimentation
-      type (type_model_id)                      :: id_Q1,id_Q6,id_Q7
-      type (type_bottom_state_variable_id)      :: id_Q6c,id_Q6n,id_Q6p,id_Q6s,id_Q6f
-      type (type_bottom_state_variable_id)      :: id_Q1c,id_Q1n,id_Q1p
-      type (type_bottom_state_variable_id)      :: id_Q7c,id_Q7n,id_Q7p
-      
-      logical  :: sedimentation = .false.
-      real(rk) :: qQ7c,xR7n,xR7p
-      real(rk) :: qQ1c,xR1n,xR1p
+      type (type_bottom_state_variable_id),allocatable,dimension(:) :: id_targetc,id_targetn,id_targetp,id_targets,id_targetf
+ 
       real(rk) :: rm = 0.0_rk
+      integer :: ndeposition
+      real(rk),allocatable :: qxc(:),qxn(:),qxp(:),qxs(:),qxf(:)
    contains
       procedure :: initialize
       procedure :: do_bottom
@@ -82,59 +78,28 @@ contains
       real(rk),optional,               intent(in)            :: rm
       logical, optional,               intent(in)            :: sedimentation
 
+      integer :: idep
+      character(len=16) :: num
+
       ! Set time unit to d-1
       ! This implies that all rates (sink/source terms, vertical velocities) are given in d-1.
       self%dt = 86400._rk
 
       ! Sedimentation
+      self%ndeposition = 0
       if (present(sedimentation)) then
-         ! Use specified sedimentation flag
-         ! If active, allow the user to override this (disable sedmentation) through run-time configuration
-         if (sedimentation) call self%get_parameter(self%sedimentation,'sedimentation','','enable sedimentation',default=.true.)
+         ! Explicitly specified whether this particle can sink (and thus be deposited at bed).
+         ! If so, allow the user to specify number of pools to deposit in (0 means no deposition)
+         ! If not, do not offer option to configure deposition at all.
+         if (sedimentation) call self%get_parameter(self%ndeposition,'ndeposition','', 'number of target pools for sedimentation',default=1)
       else
-         ! No sedimentation flag provided; get from run-time configuration.
-         call self%get_parameter(self%sedimentation,'sedimentation','','enable sedimentation',default=.false.)
+         ! No sinking behaviour specified; get number of pools to deposit in (default: no deposition).
+         call self%get_parameter(self%ndeposition,'ndeposition','', 'number of target pools for sedimentation',default=0)
       end if
-      if (self%sedimentation) then
+
+      if (self%ndeposition>0) then
          call self%register_dependency(self%id_bedstress,standard_variables%bottom_stress)
          call self%register_dependency(self%id_dens,     standard_variables%density)
-         call self%get_parameter(self%qQ1c,'qQ1c','-','fraction of sedimented matter decomposing into DOM')
-         call self%get_parameter(self%qQ7c,'qQ7c','-','fraction of sedimented matter decomposing into refractory matter')
-         call self%get_parameter(self%xR1n,'xR1n','-','transfer of sedimented nitrogen to DOM, relative to POM')
-         call self%get_parameter(self%xR1p,'xR1p','-','transfer of sedimented phosphorus to DOM, relative to POM')
-         call self%get_parameter(self%xR7n,'xR7n','-','transfer of sedimented nitrogen to refractory matter, relative to POM')
-         call self%get_parameter(self%xR7p,'xR7p','-','transfer of sedimented phosphorus to refractory matter, relative to POM')
-
-         ! Links to external benthic state variables
-         call self%register_state_dependency(self%id_Q1c,'Q1c','mg C/m^2',  'Q1c')
-         call self%register_state_dependency(self%id_Q1n,'Q1n','mmol N/m^2','Q1n')
-         call self%register_state_dependency(self%id_Q1p,'Q1p','mmol P/m^2','Q1p')
-         call self%register_state_dependency(self%id_Q6c,'Q6c','mg C/m^2',  'Q6c')
-         call self%register_state_dependency(self%id_Q6n,'Q6n','mmol N/m^2','Q6n')
-         call self%register_state_dependency(self%id_Q6p,'Q6p','mmol P/m^2','Q6p')
-         call self%register_state_dependency(self%id_Q6s,'Q6s','mmol Si/m^2','Q6s')
-         if (use_iron) call self%register_state_dependency(self%id_Q6f,'Q6f','mmol Fe/m^2','Q6f')
-         call self%register_state_dependency(self%id_Q7c,'Q7c','mg C/m^2',  'Q7c')
-         call self%register_state_dependency(self%id_Q7n,'Q7n','mmol N/m^2','Q7n')
-         call self%register_state_dependency(self%id_Q7p,'Q7p','mmol P/m^2','Q7p')
-
-         ! Retrieve external benthic states from individual benthic models
-         call self%register_model_dependency(self%id_Q1,'Q1')
-         call self%request_coupling_to_model(self%id_Q1c,self%id_Q1,'c')
-         call self%request_coupling_to_model(self%id_Q1n,self%id_Q1,'n')
-         call self%request_coupling_to_model(self%id_Q1p,self%id_Q1,'p')
-
-         call self%register_model_dependency(self%id_Q6,'Q6')
-         call self%request_coupling_to_model(self%id_Q6c,self%id_Q6,'c')
-         call self%request_coupling_to_model(self%id_Q6n,self%id_Q6,'n')
-         call self%request_coupling_to_model(self%id_Q6p,self%id_Q6,'p')
-         call self%request_coupling_to_model(self%id_Q6s,self%id_Q6,'s')
-         if (use_iron) call self%request_coupling_to_model(self%id_Q6f,self%id_Q6,'f')
-
-         call self%register_model_dependency(self%id_Q7,'Q7')
-         call self%request_coupling_to_model(self%id_Q7c,self%id_Q7,'c')
-         call self%request_coupling_to_model(self%id_Q7n,self%id_Q7,'n')
-         call self%request_coupling_to_model(self%id_Q7p,self%id_Q7,'p')
       end if
 
       ! Vertical velocity (positive: downwards, negative: upwards)
@@ -146,37 +111,71 @@ contains
 
    subroutine add_constituent(self,name,initial_value,background_value,qn,qp)
       class (type_ersem_pelagic_base), intent(inout), target :: self
-      character(len=*),                      intent(in)            :: name
-      real(rk),                              intent(in)            :: initial_value
-      real(rk),optional,                     intent(in)            :: background_value,qn,qp
+      character(len=*),                intent(in)            :: name
+      real(rk),                        intent(in)            :: initial_value
+      real(rk),optional,               intent(in)            :: background_value,qn,qp
 
       select case (name)
-         case ('c')
-            call self%register_state_variable(self%id_c,'c','mg C/m^3','carbon',initial_value,minimum=0._rk,vertical_movement=-self%rm/self%dt,background_value=background_value)
-            call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_c,scale_factor=1._rk/CMass)
-            if (present(qn)) call self%add_to_aggregate_variable(standard_variables%total_nitrogen,  self%id_c,scale_factor=qn)
-            if (present(qp)) call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_c,scale_factor=qp)
-         case ('n')
-            call self%register_state_variable(self%id_n, 'n', 'mmol N/m^3', 'nitrogen', initial_value, minimum=0._rk,vertical_movement=-self%rm/self%dt,background_value=background_value)
-            call self%add_to_aggregate_variable(standard_variables%total_nitrogen,self%id_n)
-         case ('p')
-            call self%register_state_variable(self%id_p, 'p', 'mmol P/m^3', 'phosphorus', initial_value, minimum=0._rk,vertical_movement=-self%rm/self%dt,background_value=background_value)
-            call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_p)
-         case ('s')
-            call self%register_state_variable(self%id_s,'s','mmol Si/m^3','silicate',initial_value,minimum=0._rk,vertical_movement=-self%rm/self%dt,background_value=background_value)
-            call self%add_to_aggregate_variable(standard_variables%total_silicate,self%id_s)
-         case ('f')
-            if (use_iron) then
-               call self%register_state_variable(self%id_f,'f','umol Fe/m^3','iron',initial_value,minimum=0._rk,vertical_movement=-self%rm/self%dt,background_value=background_value)
-               call self%add_to_aggregate_variable(standard_variables%total_iron,self%id_f)
-            end if
-         case ('chl')
-            call self%register_state_variable(self%id_chl,'Chl','mg/m^3','chlorophyll a',initial_value,minimum=0._rk,vertical_movement=-self%rm/self%dt,background_value=background_value)
-            call self%add_to_aggregate_variable(total_chlorophyll,self%id_chl)
-         case default
-            call self%fatal_error('add_constituent','Unknown constituent "'//trim(name)//'".')
-         end select
-   end subroutine
+      case ('c')
+         call register(self%id_c,'c','mg C','carbon',standard_variables%total_carbon,self%qxc,self%id_targetc,1._rk/CMass)
+         if (present(qn)) call self%add_to_aggregate_variable(standard_variables%total_nitrogen,  self%id_c,scale_factor=qn)
+         if (present(qp)) call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_c,scale_factor=qp)
+      case ('n')
+         call register(self%id_n,'n','mmol N','nitrogen',standard_variables%total_nitrogen,self%qxn,self%id_targetn)
+      case ('p')
+         call register(self%id_p,'p','mmol P','phosphorus',standard_variables%total_phosphorus,self%qxp,self%id_targetp)
+      case ('s')
+         call register(self%id_s,'s','mmol Si','silicate',standard_variables%total_silicate,self%qxs,self%id_targets)
+      case ('f')
+         if (use_iron) call register(self%id_f,'f','umol Fe','iron',standard_variables%total_iron,self%qxf,self%id_targetf)
+      case ('chl')
+         call register(self%id_chl,'Chl','mg','chlorophyll a',total_chlorophyll)
+      case default
+         call self%fatal_error('add_constituent','Unknown constituent "'//trim(name)//'".')
+      end select
+
+   contains
+
+      subroutine register(variable_id,name,base_units,long_name,aggregate_variable,qx,id_dep,scale_factor)
+         type (type_state_variable_id),       intent(inout), target     :: variable_id
+         character(len=*),                    intent(in)                :: name,base_units,long_name
+         type (type_bulk_standard_variable),  intent(in)                :: aggregate_variable
+         real(rk),                            intent(inout),allocatable,optional :: qx(:)
+         type (type_bottom_state_variable_id),intent(inout),allocatable,optional :: id_dep(:)
+         real(rk),                            intent(in), optional      :: scale_factor
+
+         integer :: idep
+         character(len=16) :: num
+
+         ! Register state variable
+         call self%register_state_variable(variable_id,name,trim(base_units)//'/m^3',long_name, &
+            initial_value,minimum=0._rk,vertical_movement=-self%rm/self%dt,background_value=background_value)
+
+         ! Contribute to aggregate variable
+         call self%add_to_aggregate_variable(aggregate_variable,variable_id,scale_factor)
+
+         if (self%ndeposition>0.and.present(qx)) then
+            ! Create array with fractions per depostion target
+            allocate(qx(self%ndeposition))
+            do idep = 2,self%ndeposition
+               write(num,'(i0)') idep
+               call self%get_parameter(qx(idep),'qx'//trim(name)//trim(num),'-','fraction of '//trim(long_name)//' sinking into deposition target '//trim(num))
+            end do
+            qx(1)=1._rk-sum(qx(2:))
+
+            ! Link to pools in which to deposit matter.
+            allocate(id_dep(self%ndeposition))
+
+            do idep=1,self%ndeposition
+               write(num,'(i0)') idep
+               if (qx(idep)/=0) then 
+                  call self%register_state_dependency(id_dep(idep),'deposition_target'//trim(num)//trim(name),trim(base_units)//'/m^2','target pool '//trim(num)//' for '//trim(long_name)//' deposition')
+                  call self%request_coupling_to_model(id_dep(idep),'deposition_target'//trim(num),name)
+               end if
+            end do
+         end if
+      end subroutine register
+   end subroutine add_constituent
 
    function get_sinking_rate(self,_ARGUMENTS_LOCAL_) result(rm)
       ! Returns sinking rate in m/d, positive for downward movement [sinking]
@@ -197,20 +196,21 @@ contains
 
       real(rk) :: tbed,density
       real(rk) :: fac,sdrate
-      real(rk) :: Pc,Pn,Pp,P
-      real(rk) :: fsd,fsdc,fsdn,fsdp
+      real(rk) :: w,conc,flux
+      integer :: idep
 
       _HORIZONTAL_LOOP_BEGIN_
 
          ! Retrieve sinking rate (at centre of cell closest to the bottom)
-         fsd = self%get_sinking_rate(_ARGUMENTS_LOCAL_)
+         ! NB by ERSEM convention, this rate is returned in m/d, positive for sinking, negative for floating!
+         w = self%get_sinking_rate(_ARGUMENTS_LOCAL_)
 
          ! Store near-bed vertical velocity. Use FABM convention (m/s, negative for downward) to
          ! allow this custom fuctionality to be ultimately be replaced by a FABM API.
          ! The near-bed vertical velocity may be used by other modules to compute e.g. near-bed Rouse profiles.
-         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_w_bot,-fsd/86400)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_w_bot,-w/86400)
 
-         if (self%sedimentation) then
+         if (self%ndeposition/=0) then
 
          ! Retrieve bed stress and local density - needed to determine sedimentation rate from sinking rate.
          _GET_HORIZONTAL_(self%id_bedstress,tbed)
@@ -228,53 +228,60 @@ contains
          endif
 
          !sdrate = min(fsd*fac,pdepth(I)/timestep) ! Jorn: CFL criterion disabled because FABM does not provide timestep
-         sdrate = fsd*fac
+         sdrate = w*fac
 
-         Pc = 0.0_rk
-         Pn = 0.0_rk
-         Pp = 0.0_rk
-         if (_AVAILABLE_(self%id_c)) _GET_(self%id_c,Pc)
-         if (_AVAILABLE_(self%id_n)) _GET_(self%id_n,Pn)
-         if (_AVAILABLE_(self%id_p)) _GET_(self%id_p,Pp)
-
-         fsdc = sdrate*Pc
-         fsdn = sdrate*Pn
-         fsdp = sdrate*Pp
-
-         _SET_BOTTOM_ODE_(self%id_Q6c, fsdc * (1._rk - self%qQ1c - self%qQ7c))
-         _SET_BOTTOM_ODE_(self%id_Q6n, fsdn * (1._rk - MIN(1._rk, self%qQ1c * self%xR1n) - MIN(1._rk, self%qQ7c * self%xR7n)))
-         _SET_BOTTOM_ODE_(self%id_Q6p, fsdp * (1._rk - MIN(1._rk, self%qQ1c * self%xR1p) - MIN(1._rk, self%qQ7c * self%xR7p)))
-
-         _SET_BOTTOM_ODE_(self%id_Q1c, fsdc * self%qQ1c)
-         _SET_BOTTOM_ODE_(self%id_Q1n, fsdn * MIN(1._rk, self%qQ1c * self%xR1n))
-         _SET_BOTTOM_ODE_(self%id_Q1p, fsdp * MIN(1._rk, self%qQ1c * self%xR1p))
-
-         _SET_BOTTOM_ODE_(self%id_Q7c, fsdc * self%qQ7c)
-         _SET_BOTTOM_ODE_(self%id_Q7n, fsdn * MIN(1._rk, self%qQ7c * self%xR7n))
-         _SET_BOTTOM_ODE_(self%id_Q7p, fsdp * MIN(1._rk, self%qQ7c * self%xR7p))
-
-         _SET_BOTTOM_EXCHANGE_(self%id_c,-fsdc)
-         _SET_BOTTOM_EXCHANGE_(self%id_n,-fsdn)
-         _SET_BOTTOM_EXCHANGE_(self%id_p,-fsdp)
-
-         if (_AVAILABLE_(self%id_s)) then
-            ! All silicate sinks into Q6f
-            _GET_(self%id_s,P)
-            _SET_BOTTOM_ODE_(self%id_Q6s,sdrate*P)
-            _SET_BOTTOM_EXCHANGE_(self%id_s,-sdrate*P)
+         if (_AVAILABLE_(self%id_c)) then
+            _GET_(self%id_c,conc)
+            flux = sdrate*conc
+            do idep=1,self%ndeposition
+              if (self%qxc(idep)/=0) _SET_BOTTOM_ODE_(self%id_targetc(idep), flux*self%qxc(idep))
+            end do
+            _SET_BOTTOM_EXCHANGE_(self%id_c,-flux)
          end if
 
-         if (_AVAILABLE_(self%id_f)) then
-            ! All iron sinks into Q6f
-            _GET_(self%id_f,P)
-            _SET_BOTTOM_ODE_(self%id_Q6f,sdrate*P)
-            _SET_BOTTOM_EXCHANGE_(self%id_f,-sdrate*P)
+         if (_AVAILABLE_(self%id_n)) then
+            _GET_(self%id_n,conc)
+            flux = sdrate*conc
+            do idep=1,self%ndeposition
+              if (self%qxn(idep)/=0) _SET_BOTTOM_ODE_(self%id_targetn(idep), flux*self%qxn(idep))
+            end do
+            _SET_BOTTOM_EXCHANGE_(self%id_n,-flux)
+         end if
+
+         if (_AVAILABLE_(self%id_p)) then
+            _GET_(self%id_p,conc)
+            flux = sdrate*conc
+            do idep=1,self%ndeposition
+              if (self%qxp(idep)/=0) _SET_BOTTOM_ODE_(self%id_targetp(idep), flux*self%qxp(idep))
+            end do
+            _SET_BOTTOM_EXCHANGE_(self%id_p,-flux)
+         end if
+
+         if (_AVAILABLE_(self%id_s)) then
+            _GET_(self%id_s,conc)
+            flux = sdrate*conc
+            do idep=1,self%ndeposition
+               if (self%qxs(idep)/=0) _SET_BOTTOM_ODE_(self%id_targets(idep), flux*self%qxs(idep))
+            end do
+            _SET_BOTTOM_EXCHANGE_(self%id_s,-flux)
+         end if
+      
+         if (use_iron) then
+            if (_AVAILABLE_(self%id_f)) then
+               _GET_(self%id_f,conc)
+               flux = sdrate*conc
+               do idep=1,self%ndeposition
+                  if (self%qxf(idep)/=0) _SET_BOTTOM_ODE_(self%id_targetf(idep), flux*self%qxf(idep))
+               end do
+               _SET_BOTTOM_EXCHANGE_(self%id_f,-flux)
+            end if
          end if
 
          if (_AVAILABLE_(self%id_chl)) then
             ! Chlorophyll is simply lost by sinking:
-            _GET_(self%id_chl,P)
-            _SET_BOTTOM_EXCHANGE_(self%id_chl,-sdrate*P)
+            _GET_(self%id_chl,conc)
+            flux = sdrate*conc
+            _SET_BOTTOM_EXCHANGE_(self%id_chl,-flux)
          end if
 
          end if
