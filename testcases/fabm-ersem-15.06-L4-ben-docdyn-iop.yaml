@@ -89,15 +89,11 @@ instances:
     parameters:
       composition: cnpsf                                    # elemental composition
       rm: 1.0                                              # sinking velocity (m/d), default = 0.0
-      ndeposition: 3                                           # number of target pools where the sedimentation flux goes (-)
-      qxc2: 0.0
-      qxc3: 0.1
-      qxn2: 0.0
-      qxp2: 0.0
-      qxn3: 0.1
-      qxp3: 0.06
+      ndeposition: 2                                           # number of target pools where the sedimentation flux goes (-)
+      qxc2: 0.1
+      qxn2: 0.1
+      qxp2: 0.06
       qxs2: 0.0
-      qxs3: 0.0
       c0: 0.0033                                           # background carbon concentration (mg C/m^3), default = 0.0
       iopABS: 1e-05                                        # specific shortwave absorption (m^2/mg C), default = 0.0
       iopBBS: 1.6e-05                                      # specific shortwave backscatter (m^2/mg C), default = 0.0
@@ -108,23 +104,18 @@ instances:
       s: 0.0                                               # silicon (mmolSi/m^3)
     coupling:
       deposition_target1: Q6/surface
-      deposition_target2: Q1
-      deposition_target3: Q7/surface
+      deposition_target2: Q7/surface
   R6:
     long_name: medium-size pom
     model: ersem/pelagic_base
     parameters:
       composition: cnpsf                                   # elemental composition
       rm: 5.0                                              # sinking velocity (m/d), default = 0.0
-      ndeposition: 3                                           # number of target pools where the sedimentation flux goes (-)
-      qxc2: 0.0
-      qxc3: 0.1
-      qxn2: 0.0
-      qxp2: 0.0
-      qxn3: 0.1
-      qxp3: 0.06
+      ndeposition: 2                                           # number of target pools where the sedimentation flux goes (-)
+      qxc2: 0.1
+      qxn2: 0.1
+      qxp2: 0.06
       qxs2: 0.0
-      qxs3: 0.0
       c0: 0.0033                                           # background carbon concentration (mg C/m^3), default = 0.0
       iopABS: 1e-05                                        # specific shortwave absorption (m^2/mg C), default = 0.0
       iopBBS: 1.6e-05                                      # specific shortwave backscatter (m^2/mg C), default = 0.0
@@ -135,23 +126,18 @@ instances:
       s: 0.1                                               # silicate (mmol Si/m^3)
     coupling:
       deposition_target1: Q6/surface
-      deposition_target2: Q1
-      deposition_target3: Q7/surface
+      deposition_target2: Q7/surface
   R8:
     long_name: large-size pom
     model: ersem/pelagic_base
     parameters:
       composition: cnps                                    # elemental composition
       rm: 10.0                                             # sinking velocity (m/d), default = 0.0
-      ndeposition: 3                                       # number of target pools where the sedimentation flux goes (-)
-      qxc2: 0.0
-      qxc3: 0.1
-      qxn2: 0.0
-      qxp2: 0.0
-      qxn3: 0.1
-      qxp3: 0.06
+      ndeposition: 2                                       # number of target pools where the sedimentation flux goes (-)
+      qxc2: 0.1
+      qxn2: 0.1
+      qxp2: 0.06
       qxs2: 0.0
-      qxs3: 0.0
       c0: 0.0033                                           # background carbon concentration (mg C/m^3), default = 0.0
       iopABS: 1e-05                                        # specific shortwave absorption (m^2/mg C), default = 0.0
       iopBBS: 1.6e-05                                      # specific shortwave backscatter (m^2/mg C), default = 0.0
@@ -162,8 +148,7 @@ instances:
       s: 0.001                                             # silicate (mmol Si/m^3)
     coupling:
       deposition_target1: Q6/surface
-      deposition_target2: Q1
-      deposition_target3: Q7/surface
+      deposition_target2: Q7/surface
   Q1:
     long_name: benthic dissolved organic matter
     model: ersem/benthic_base
