@@ -53,7 +53,7 @@ contains
       class (type_ersem_zenith_angle), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_SURFACE_
 
-      real(rk) :: lon,lat,h,th0,th02,th03,coszen,sundec,thsun,yday,zenithA
+      real(rk) :: lon,lat,h,th0,th02,th03,sundec,yday,zenithA
       integer :: iday
 
       ! Retrieve time since beginning of the year

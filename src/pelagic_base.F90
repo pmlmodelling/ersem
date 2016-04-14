@@ -78,9 +78,6 @@ contains
       real(rk),optional,               intent(in)            :: rm
       logical, optional,               intent(in)            :: sedimentation
 
-      integer :: idep
-      character(len=16) :: num
-
       ! Set time unit to d-1
       ! This implies that all rates (sink/source terms, vertical velocities) are given in d-1.
       self%dt = 86400._rk

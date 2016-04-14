@@ -53,7 +53,7 @@ contains
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
       real(rk) :: O3c,ETW,X1X,density,pres
-      real(rk) :: TA,bioalk,Ctot
+      real(rk) :: TA,Ctot
       real(rk) :: pH,PCO2,H2CO3,HCO3,CO3,k0co2
       real(rk) :: Om_cal,Om_arg
       logical  :: success
