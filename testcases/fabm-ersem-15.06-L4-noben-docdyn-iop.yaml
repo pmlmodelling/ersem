@@ -89,13 +89,13 @@ instances:
     parameters:
       composition: cnpf                                   # elemental composition
       rm: 1.0                                             # sinking velocity (m/d), default = 0.0
-      sedimentation: true                                 # enable sedimentation, default = false
-      qQ1c: 0.0                                           # fraction of sedimented matter decomposing into DOM (-)
-      qQ7c: 0.1                                           # fraction of sedimented matter decomposing into refractory matter (-)
-      xR1n: 1.0                                           # transfer of sedimented nitrogen to DOM, relative to POM (-)
-      xR1p: 1.2                                           # transfer of sedimented phosphorus to DOM, relative to POM (-)
-      xR7n: 1.0                                           # transfer of sedimented nitrogen to refractory matter, relative to POM (-)
-      xR7p: 0.6                                           # transfer of sedimented phosphorus to refractory matter, relative to POM (-)
+      ndeposition: 3                                           # number of target pools where the sedimentation flux goes (-)
+      qxc2: 0.0
+      qxc3: 0.1
+      qxn2: 0.0
+      qxp2: 0.0
+      qxn3: 0.1
+      qxp3: 0.06
       c0: 0.0033                                          # background carbon concentration (mg C/m^3), default = 0.0
       iopABS: 1e-05                                       # specific shortwave absorption (m^2/mg C), default = 0.0
       iopBBS: 1.6e-05                                     # specific shortwave backscatter (m^2/mg C), default = 0.0
@@ -104,22 +104,24 @@ instances:
       n: 0.1                                              # nitrogen (mmol N/m^3)
       p: 0.007                                            # phosphorus (mmol P/m^3)
     coupling:
-      Q1: Q1
-      Q6: Q6
-      Q7: Q7
+      deposition_target1: Q6
+      deposition_target2: Q1
+      deposition_target3: Q7
   R6:
     long_name: medium-size pom
     model: ersem/pelagic_base
     parameters:
       composition: cnpsf                                  # elemental composition
       rm: 5.0                                             # sinking velocity (m/d), default = 0.0
-      sedimentation: true                                 # enable sedimentation, default = false
-      qQ1c: 0.0                                           # fraction of sedimented matter decomposing into DOM (-)
-      qQ7c: 0.1                                           # fraction of sedimented matter decomposing into refractory matter (-)
-      xR1n: 1.0                                           # transfer of sedimented nitrogen to DOM, relative to POM (-)
-      xR1p: 1.2                                           # transfer of sedimented phosphorus to DOM, relative to POM (-)
-      xR7n: 1.0                                           # transfer of sedimented nitrogen to refractory matter, relative to POM (-)
-      xR7p: 0.6                                           # transfer of sedimented phosphorus to refractory matter, relative to POM (-)
+      ndeposition: 3                                           # number of target pools where the sedimentation flux goes (-)
+      qxc2: 0.0
+      qxc3: 0.1
+      qxn2: 0.0
+      qxp2: 0.0
+      qxn3: 0.1
+      qxp3: 0.06
+      qxs2: 0.0
+      qxs3: 0.0
       c0: 0.0033                                          # background carbon concentration (mg C/m^3), default = 0.0
       iopABS: 1e-05                                       # specific shortwave absorption (m^2/mg C), default = 0.0
       iopBBS: 1.6e-05                                     # specific shortwave backscatter (m^2/mg C), default = 0.0
@@ -129,22 +131,24 @@ instances:
       p: 0.02                                             # phosphorus (mmol P/m^3)
       s: 0.1                                              # silicate (mmol Si/m^3)
     coupling:
-      Q1: Q1
-      Q6: Q6
-      Q7: Q7
+      deposition_target1: Q6
+      deposition_target2: Q1
+      deposition_target3: Q7
   R8:
     long_name: large-size pom
     model: ersem/pelagic_base
     parameters:
       composition: cnps                                   # elemental composition
       rm: 10.0                                            # sinking velocity (m/d), default = 0.0
-      sedimentation: true                                 # enable sedimentation, default = false
-      qQ1c: 0.0                                           # fraction of sedimented matter decomposing into DOM (-)
-      qQ7c: 0.1                                           # fraction of sedimented matter decomposing into refractory matter (-)
-      xR1n: 1.0                                           # transfer of sedimented nitrogen to DOM, relative to POM (-)
-      xR1p: 1.2                                           # transfer of sedimented phosphorus to DOM, relative to POM (-)
-      xR7n: 1.0                                           # transfer of sedimented nitrogen to refractory matter, relative to POM (-)
-      xR7p: 0.6                                           # transfer of sedimented phosphorus to refractory matter, relative to POM (-)
+      ndeposition: 3                                       # number of target pools where the sedimentation flux goes (-)
+      qxc2: 0.0
+      qxc3: 0.1
+      qxn2: 0.0
+      qxp2: 0.0
+      qxn3: 0.1
+      qxp3: 0.06
+      qxs2: 0.0
+      qxs3: 0.0
       c0: 0.0033                                          # background carbon concentration (mg C/m^3), default = 0.0
       iopABS: 1e-05                                       # specific shortwave absorption (m^2/mg C), default = 0.0
       iopBBS: 1.6e-05                                     # specific shortwave backscatter (m^2/mg C), default = 0.0
@@ -154,9 +158,9 @@ instances:
       p: 0.0002                                           # phosphorus (mmol P/m^3)
       s: 0.001                                            # silicate (mmol Si/m^3)
     coupling:
-      Q1: Q1
-      Q6: Q6
-      Q7: Q7
+      deposition_target1: Q6
+      deposition_target2: Q1
+      deposition_target3: Q7
   Q1:
     long_name: benthic dissolved organic matter
     model: ersem/benthic_base
@@ -304,13 +308,15 @@ instances:
       resm: 5.0                                           # maximum nutrient-limitation-induced sinking velocity (m/d), default = 0.0
       esni: 0.7                                           # level of nutrient limitation below which sinking commences (-)
       cenh: false                                         # enable atmospheric CO2 influence on photosynthesis, default = false
-      sedimentation: true                                 # enable sedimentation, default = true
-      qQ1c: 0.2                                           # fraction of sedimented matter decomposing into DOM (-)
-      qQ7c: 0.005                                         # fraction of sedimented matter decomposing into refractory matter (-)
-      xR1n: 1.0                                           # transfer of sedimented nitrogen to DOM, relative to POM (-)
-      xR1p: 1.2                                           # transfer of sedimented phosphorus to DOM, relative to POM (-)
-      xR7n: 1.0                                           # transfer of sedimented nitrogen to refractory matter, relative to POM (-)
-      xR7p: 0.6                                           # transfer of sedimented phosphorus to refractory matter, relative to POM (-)
+      ndeposition: 3                                           # number of target pools where the sedimentation flux goes (-)
+      qxc2: 0.2
+      qxc3: 0.005
+      qxn2: 0.2
+      qxp2: 0.24
+      qxn3: 0.005
+      qxp3: 0.003
+      qxs2: 0.0
+      qxs3: 0.0
     initialization:
       c: 8.0                                              # carbon (mg C/m^3)
       n: 0.1114                                           # nitrogen (mmol N/m^3)
@@ -319,9 +325,9 @@ instances:
       Chl: 0.4                                            # chlorophyll a (mg/m^3)
     coupling:
       RP: R6
-      Q1: Q1
-      Q6: Q6
-      Q7: Q7
+      deposition_target1: Q6
+      deposition_target2: Q1
+      deposition_target3: Q7
       N1p: N1/p                                           # phosphate (mmol P/m^3)
       N3n: N3/n                                           # nitrate (mmol N/m^3)
       N4n: N4/n                                           # ammonium (mmol N/m^3)
@@ -367,13 +373,13 @@ instances:
       resm: 0.0                                           # maximum nutrient-limitation-induced sinking velocity (m/d), default = 0.0
       esni: 0.7                                           # level of nutrient limitation below which sinking commences (-)
       cenh: false                                         # enable atmospheric CO2 influence on photosynthesis, default = false
-      sedimentation: true                                 # enable sedimentation, default = true
-      qQ1c: 0.5                                           # fraction of sedimented matter decomposing into DOM (-)
-      qQ7c: 0.05                                          # fraction of sedimented matter decomposing into refractory matter (-)
-      xR1n: 1.0                                           # transfer of sedimented nitrogen to DOM, relative to POM (-)
-      xR1p: 1.2                                           # transfer of sedimented phosphorus to DOM, relative to POM (-)
-      xR7n: 1.0                                           # transfer of sedimented nitrogen to refractory matter, relative to POM (-)
-      xR7p: 0.6                                           # transfer of sedimented phosphorus to refractory matter, relative to POM (-)
+      ndeposition: 3                                           # number of target pools where the sedimentation flux goes (-)
+      qxc2: 0.5
+      qxc3: 0.05
+      qxn2: 0.5
+      qxp2: 0.6
+      qxn3: 0.05
+      qxp3: 0.03
     initialization:
       c: 5.9                                              # carbon (mg C/m^3)
       n: 0.0926                                           # nitrogen (mmol N/m^3)
@@ -381,9 +387,9 @@ instances:
       Chl: 0.3                                            # chlorophyll a (mg/m^3)
     coupling:
       RP: R4
-      Q1: Q1
-      Q6: Q6
-      Q7: Q7
+      deposition_target1: Q6
+      deposition_target2: Q1
+      deposition_target3: Q7
       N1p: N1/p                                           # phosphate (mmol P/m^3)
       N3n: N3/n                                           # nitrate (mmol N/m^3)
       N4n: N4/n                                           # ammonium (mmol N/m^3)
@@ -429,13 +435,13 @@ instances:
       resm: 0.0                                           # maximum nutrient-limitation-induced sinking velocity (m/d), default = 0.0
       esni: 0.7                                           # level of nutrient limitation below which sinking commences (-)
       cenh: false                                         # enable atmospheric CO2 influence on photosynthesis, default = false
-      sedimentation: true                                 # enable sedimentation, default = true
-      qQ1c: 0.5                                           # fraction of sedimented matter decomposing into DOM (-)
-      qQ7c: 0.05                                          # fraction of sedimented matter decomposing into refractory matter (-)
-      xR1n: 1.0                                           # transfer of sedimented nitrogen to DOM, relative to POM (-)
-      xR1p: 1.2                                           # transfer of sedimented phosphorus to DOM, relative to POM (-)
-      xR7n: 1.0                                           # transfer of sedimented nitrogen to refractory matter, relative to POM (-)
-      xR7p: 0.6                                           # transfer of sedimented phosphorus to refractory matter, relative to POM (-)
+      ndeposition: 3                                           # number of target pools where the sedimentation flux goes (-)
+      qxc2: 0.5
+      qxc3: 0.05
+      qxn2: 0.5
+      qxp2: 0.6
+      qxn3: 0.05
+      qxp3: 0.03
     initialization:
       c: 5.9                                              # carbon (mg C/m^3)
       n: 0.0926                                           # nitrogen (mmol N/m^3)
@@ -443,9 +449,9 @@ instances:
       Chl: 0.3                                            # chlorophyll a (mg/m^3)
     coupling:
       RP: R4
-      Q1: Q1
-      Q6: Q6
-      Q7: Q7
+      deposition_target1: Q6
+      deposition_target2: Q1
+      deposition_target3: Q7
       N1p: N1/p                                           # phosphate (mmol P/m^3)
       N3n: N3/n                                           # nitrate (mmol N/m^3)
       N4n: N4/n                                           # ammonium (mmol N/m^3)
@@ -489,13 +495,13 @@ instances:
       resm: 5.0                                           # maximum nutrient-limitation-induced sinking velocity (m/d), default = 0.0
       esni: 0.7                                           # level of nutrient limitation below which sinking commences (-)
       cenh: false                                         # enable atmospheric CO2 influence on photosynthesis, default = false
-      sedimentation: true                                 # enable sedimentation, default = true
-      qQ1c: 0.5                                           # fraction of sedimented matter decomposing into DOM (-)
-      qQ7c: 0.05                                          # fraction of sedimented matter decomposing into refractory matter (-)
-      xR1n: 1.0                                           # transfer of sedimented nitrogen to DOM, relative to POM (-)
-      xR1p: 1.2                                           # transfer of sedimented phosphorus to DOM, relative to POM (-)
-      xR7n: 1.0                                           # transfer of sedimented nitrogen to refractory matter, relative to POM (-)
-      xR7p: 0.6                                           # transfer of sedimented phosphorus to refractory matter, relative to POM (-)
+      ndeposition: 3                                           # number of target pools where the sedimentation flux goes (-)
+      qxc2: 0.5
+      qxc3: 0.05
+      qxn2: 0.5
+      qxp2: 0.6
+      qxn3: 0.05
+      qxp3: 0.03
     initialization:
       c: 5.9                                              # carbon (mg C/m^3)
       n: 0.0926                                           # nitrogen (mmol N/m^3)
@@ -503,9 +509,9 @@ instances:
       Chl: 0.3                                            # chlorophyll a (mg/m^3)
     coupling:
       RP: R6
-      Q1: Q1
-      Q6: Q6
-      Q7: Q7
+      deposition_target1: Q6
+      deposition_target2: Q1
+      deposition_target3: Q7
       N1p: N1/p                                           # phosphate (mmol P/m^3)
       N3n: N3/n                                           # nitrate (mmol N/m^3)
       N4n: N4/n                                           # ammonium (mmol N/m^3)
@@ -691,19 +697,20 @@ instances:
       sedL2: 10.0                                         # sinking velocity (m/d)
       sL2O3: 0.03                                         # maximum specific dissolution rate (1/d), default = 1.0
       c0: 1e-05                                           # background concentration (mg C/m^3), default = 0.0
+      ndeposition: 1
     initialization:
       c: 0.05                                             # carbon (mg C/m^3)
     coupling:
       om_cal: O3/Om_cal                                   # calcite saturation (-)
       O3c: O3/c                                           # total dissolved inorganic carbon (mmol C/m^3)
-      bL2c: bL2/l                                         # benthic calcite (mg C/m^2)
+      deposition_target1: bL2                              # benthic calcite (mg C/m^2)
   bL2:
     long_name: benthic calcite
     model: ersem/benthic_base
     parameters:
-      composition: l                                      # elemental composition
+      composition: c                                      # elemental composition
       remin: 0.05                                         # remineralisation rate (1/d), default = 0.0
     initialization:
-      l: 0.05                                             # calcite (mg C/m^2)
+      c: 0.05                                             # calcite (mg C/m^2)
     coupling:
       O3c: O3/c                                           # dissolved inorganic carbon (umol/m^3)
