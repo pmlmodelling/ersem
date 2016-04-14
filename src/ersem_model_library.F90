@@ -2,6 +2,8 @@ module ersem_model_library
 
    use fabm_types, only: type_base_model_factory,type_base_model
 
+   use ersem_shared
+   use ersem_version
    use ersem_pelagic_base
    use ersem_benthic_base
    use ersem_oxygen
@@ -24,7 +26,6 @@ module ersem_model_library
    use ersem_benthic_fauna
    use ersem_benthic_carbonate
    use ersem_zenith_angle
-   use ersem_shared
 
    implicit none
 
@@ -32,12 +33,18 @@ module ersem_model_library
 
    type,extends(type_base_model_factory) :: type_factory
       contains
+      procedure :: initialize
       procedure :: create
    end type
 
    type (type_factory),save,target,public :: ersem_model_factory
 
 contains
+
+   subroutine initialize(self)
+      class (type_factory), intent(inout) :: self
+      call self%register_version('ERSEM',git_commit_id//' ('//git_branch_name//' branch)')
+   end subroutine initialize
 
    subroutine create(self,name,model)
       class (type_factory),intent(in) :: self
@@ -56,8 +63,8 @@ contains
          case ('bacteria_docdyn');                         allocate(type_ersem_bacteria_docdyn::model)
          case ('nitrification');                           allocate(type_ersem_nitrification::model)
          case ('light');                                   allocate(type_ersem_light::model)
-         case ('light_iop');                                   allocate(type_ersem_light_iop::model)
-         case ('light_iop_ady');                                   allocate(type_ersem_light_iop_ady::model)
+         case ('light_iop');                               allocate(type_ersem_light_iop::model)
+         case ('light_iop_ady');                           allocate(type_ersem_light_iop_ady::model)
          case ('calcification');                           allocate(type_ersem_calcification::model)
          case ('benthic_column');                          allocate(type_ersem_benthic_column::model)
          case ('benthic_column_dissolved_matter');         allocate(type_ersem_benthic_column_dissolved_matter::model)
