@@ -17,10 +17,10 @@ module ersem_benthic_base
 
    type,extends(type_particle_model),public :: type_ersem_benthic_base
       ! Own state variables
-      type (type_bottom_state_variable_id) :: id_c,id_n,id_p,id_f,id_s,id_l
+      type (type_bottom_state_variable_id) :: id_c,id_n,id_p,id_f,id_s
 
       ! Coupled state variables for resuspension and remineralization
-      type (type_state_variable_id) :: id_resuspension_c,id_resuspension_n,id_resuspension_p,id_resuspension_s,id_resuspension_f,id_resuspension_l
+      type (type_state_variable_id) :: id_resuspension_c,id_resuspension_n,id_resuspension_p,id_resuspension_s,id_resuspension_f
       type (type_state_variable_id) :: id_O3c,id_N1p,id_N3n,id_N4n,id_N5s,id_N7f,id_TA
 
       ! Dependencies for resuspension
@@ -114,14 +114,6 @@ contains
          end if
          if (use_iron.and.self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3','dissolved iron')
       end if
-      if (index(self%composition,'l')/=0) then
-         call self%add_constituent('l',0.0_rk)
-         if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_l,'resuspension_target_l','mg/m^3','pelagic variable taking up resuspended calcite')
-            call self%request_coupling_to_model(self%id_resuspension_l,'RP','l')
-         end if
-         if (index(self%composition,'c')==0) call self%register_state_dependency(self%id_O3c,'O3c','umol/m^3','dissolved inorganic carbon')
-      end if
    end subroutine
 
    subroutine initialize_ersem_benthic_base(self,c_ini,n_ini,p_ini,s_ini,f_ini)
@@ -165,9 +157,6 @@ contains
                call self%register_state_variable(self%id_f,'f','umol Fe/m^2','iron',initial_value,minimum=0._rk)
                call self%add_to_aggregate_variable(standard_variables%total_iron,self%id_f)
             end if
-         case ('l')
-            call self%register_state_variable(self%id_l,'l','mg C/m^2','calcite',initial_value,minimum=0._rk)
-            call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_l,scale_factor=1._rk/CMass)
          case default
             call self%fatal_error('benthic_base_add_constituent','Unknown constituent "'//trim(name)//'".')
       end select
@@ -296,11 +285,6 @@ contains
                _GET_HORIZONTAL_(self%id_f,Q6fP)
                _SET_BOTTOM_ODE_(self%id_f,-self%reminQIX*Q6fP)
                _SET_BOTTOM_EXCHANGE_(self%id_N7f,self%reminQIX*Q6fP)
-            end if
-            if (_VARIABLE_REGISTERED_(self%id_l)) then
-               _GET_HORIZONTAL_(self%id_l,Q6lP)
-               _SET_BOTTOM_ODE_(self%id_l,-self%reminQIX*Q6lP)
-               _SET_BOTTOM_EXCHANGE_(self%id_O3c,self%reminQIX*Q6lP/CMass)
             end if
          end if   ! Remineralization (benthic return)
 
