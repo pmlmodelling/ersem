@@ -8,7 +8,7 @@ module ersem_shared
    public
 
    ! Parameter to reproduce pre-SSB-v1 ERSEM behaviour, including several obvious flaws/inconsistencies.
-   logical, parameter :: legacy_ersem_compatibility = .true.
+   logical, parameter :: legacy_ersem_compatibility = .false.
 
    real(rk),parameter :: CMass   = 12.011_rk
    real(rk),parameter :: qnRPIcX = 1.26E-02_rk

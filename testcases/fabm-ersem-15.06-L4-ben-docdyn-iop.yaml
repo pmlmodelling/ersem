@@ -832,6 +832,8 @@ instances:
       K4n2: K4/per_layer/n2                                # benthic ammonium in 2nd layer (mmol N/m^2)
       G2o2: G2/per_layer/o2                                # oxygen in 2nd layer (mmol O_2/m^2)
       layer2_thickness: ben_col/layer2_thickness           # thickness of 2nd layer (m)
+      benTA: zero_hz
+      benTA2: zero_hz
   H1:
     long_name: benthic aerobic bacteria
     model: ersem/benthic_bacteria
@@ -862,6 +864,7 @@ instances:
       K1p: K1/per_layer/p1_pw                              # phosphate (mmol N/m^2)
       G2o: G2/per_layer/o1                                 # oxygen (mmol O_2/m^2)
       G3c: G3/per_layer/c1                                 # dissolved inorganic carbon (mmol C/m^2)
+      benTA: zero_hz
   H1_Q6:
     long_name: benthic aerobic bacteria POM
     model: ersem/benthic_column_particulate_matter_layer
@@ -912,6 +915,7 @@ instances:
       K1p: K1/per_layer/p2_pw                              # phosphate (mmol N/m^2)
       G2o: ben_nit/K6_calculator/K6                        # oxygen (mmol O_2/m^2)
       G3c: G3/per_layer/c2                                 # dissolved inorganic carbon (mmol C/m^2)
+      benTA: zero_hz
   H2_Q6:
     long_name: benthic anaerobic bacteria POM
     model: ersem/benthic_column_particulate_matter_layer
@@ -984,6 +988,8 @@ instances:
       K4n2: K4/per_layer/n2                                # benthic ammonium in anaerobic layer (mmol N/m^2)
       food2c_an: H2/c                                      # food source 2 carbon in anaerobic layer (mg C/m^2)
       food3c_an: Y2_Q6_source_anaerobic/c                  # food source 3 carbon in anaerobic layer (mg C/m^2)
+      benTA: zero_hz
+      benTA2: zero_hz
   Y2_Q6_source:
     long_name: benthic deposit feeder total POM
     model: ersem/benthic_column_particulate_matter_layer
@@ -1071,6 +1077,8 @@ instances:
       K4n: K4/per_layer/n1                                 # benthic ammonium in aerobic layer (mmol N/m^2)
       K1p2: K1/per_layer/p2                                # benthic phosphate in anaerobic layer (mmol P/m^2)
       K4n2: K4/per_layer/n2                                # benthic ammonium in anaerobic layer (mmol N/m^2)
+      benTA: zero_hz    
+      benTA2: zero_hz    
   Y3_Q6:
     long_name: benthic suspension feeder POM
     model: ersem/benthic_column_particulate_matter_layer
@@ -1127,6 +1135,8 @@ instances:
       K4n: K4/per_layer/n1                                 # benthic ammonium in aerobic layer (mmol N/m^2)
       K1p2: K1/per_layer/p2                                # benthic phosphate in anaerobic layer (mmol P/m^2)
       K4n2: K4/per_layer/n2                                # benthic ammonium in anaerobic layer (mmol N/m^2)
+      benTA: zero_hz    
+      benTA2: zero_hz    
   Y4_Q6:
     long_name: benthic meiofauna POM
     model: ersem/benthic_column_particulate_matter_layer
