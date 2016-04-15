@@ -188,9 +188,6 @@ contains
       real(rk) :: rum,put_u,rug
       real(rk) :: sd,rd
       real(rk) :: ineff
-#ifdef SAVEFLX
-      real(rk) :: fZXRDc
-#endif
       real(rk) :: rrs,rra
       real(rk) :: fZIO3c
       real(rk) :: ret,fZIRDc,fZIRPc
@@ -279,9 +276,6 @@ contains
          ret = ineff * rug * self%pu_ea
          fZIRDc = (ret + rd)*self%pe_R1
          fZIRPc = (ret + rd)*(1._rk - self%pe_R1)
-#ifdef SAVEFLX
-         fZXRDc = fZXRDc+fZIRDc
-#endif
 
          ! Rest respiration (mg C/m3/d), corrected for prevailing temperature
          rrs = self%srs*et*cP

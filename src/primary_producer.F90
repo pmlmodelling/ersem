@@ -520,9 +520,6 @@ contains
 
             ! Net silicate uptake
             fN5PIs = MAX ( 0._rk, self%qsc*run) - fPIN5s
-#ifdef SAVEFLX
-            fN5PXs(I) = fN5PIs
-#endif
 
             ! Source equations
             _SET_ODE_(self%id_s,(fN5PIs - fPIRPs))

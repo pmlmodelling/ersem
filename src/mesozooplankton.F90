@@ -317,9 +317,6 @@ contains
             ret = ineff * sum(fpreyc*self%pu_ea)
             fZIRDc = (ret + rd)*self%pe_R1
             fZIRPc = (ret + rd)*(1._rk - self%pe_R1)
-#ifdef SAVEFLX
-            fZXRDc(I) = fZXRDc(I)+fZIRDc
-#endif
 
             ! Rest respiration (mg C/m3/d), corrected for prevailing temperature
             rrs = self%srs*et*cP
