@@ -251,7 +251,7 @@ contains
            sc=2073.1_rk-125.62_rk*T+3.6276_rk*T**2._rk-0.043219_rk*T**3
          else
            !new formulation for the Schmidt number following Wanninkof, 2014
-           T=max(T,40._rk)
+           T=min(T,40._rk)
            sc=2116.8_rk-136.25_rk*T+4.7353_rk*T**2._rk-0.092307_rk*T**3+0.0007555_rk*T**4._rk
          endif
          if   (self%ISWASFLUX==1) then        !Nightingale and Liss parameterisation
