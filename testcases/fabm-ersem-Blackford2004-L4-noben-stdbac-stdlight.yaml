@@ -78,13 +78,13 @@ instances:
     model: ersem/pelagic_base
     parameters:
       composition: cnpf                               # elemental composition
-      rm: 0.5                                         # sinking velocity (m/d), default = 0.0
-      ndeposition: 2                                           # number of target pools where the sedimentation flux goes (-)
-      qxc2: 0.1
-      qxn2: 0.1
-      qxp2: 0.06
       c0: 0.0033                                      # background carbon concentration (mg C/m^3), default = 0.0
       EPS: 0.0001                                     # specific shortwave attenuation (m^2/mg C), default = 0.0
+      rm: 0.5                                         # sinking velocity (m/d), default = 0.0
+      ndeposition: 2                                  # number of target pools for sedimentation, default = 0
+      qxc2: 0.1                                       # fraction of carbon sinking into deposition target 2 (-)
+      qxn2: 0.1                                       # fraction of nitrogen sinking into deposition target 2 (-)
+      qxp2: 0.06                                      # fraction of phosphorus sinking into deposition target 2 (-)
     initialization:
       c: 7.2                                          # carbon (mg C/m^3)
       n: 0.1                                          # nitrogen (mmol N/m^3)
@@ -97,14 +97,14 @@ instances:
     model: ersem/pelagic_base
     parameters:
       composition: cnpsf                              # elemental composition
-      rm: 2.0                                         # sinking velocity (m/d), default = 0.0
-      ndeposition: 2                                           # number of target pools where the sedimentation flux goes (-)
-      qxc2: 0.1
-      qxn2: 0.1
-      qxp2: 0.06
-      qxs2: 0.0
       c0: 0.0033                                      # background carbon concentration (mg C/m^3), default = 0.0
       EPS: 0.0001                                     # specific shortwave attenuation (m^2/mg C), default = 0.0
+      rm: 2.0                                         # sinking velocity (m/d), default = 0.0
+      ndeposition: 2                                  # number of target pools for sedimentation, default = 0
+      qxc2: 0.1                                       # fraction of carbon sinking into deposition target 2 (-)
+      qxn2: 0.1                                       # fraction of nitrogen sinking into deposition target 2 (-)
+      qxp2: 0.06                                      # fraction of phosphorus sinking into deposition target 2 (-)
+      qxs2: 0.0                                       # fraction of silicate sinking into deposition target 2 (-)
     initialization:
       c: 17.0                                         # carbon (mg C/m^3)
       n: 0.24                                         # nitrogen (mmol N/m^3)
@@ -118,14 +118,14 @@ instances:
     model: ersem/pelagic_base
     parameters:
       composition: cnps                               # elemental composition
-      rm: 10.0                                        # sinking velocity (m/d), default = 0.0
-      ndeposition: 2                                       # number of target pools where the sedimentation flux goes (-)
-      qxc2: 0.1
-      qxn2: 0.1
-      qxp2: 0.06
-      qxs2: 0.0
       c0: 0.0033                                      # background carbon concentration (mg C/m^3), default = 0.0
       EPS: 0.0001                                     # specific shortwave attenuation (m^2/mg C), default = 0.0
+      rm: 10.0                                        # sinking velocity (m/d), default = 0.0
+      ndeposition: 2                                  # number of target pools for sedimentation, default = 0
+      qxc2: 0.1                                       # fraction of carbon sinking into deposition target 2 (-)
+      qxn2: 0.1                                       # fraction of nitrogen sinking into deposition target 2 (-)
+      qxp2: 0.06                                      # fraction of phosphorus sinking into deposition target 2 (-)
+      qxs2: 0.0                                       # fraction of silicate sinking into deposition target 2 (-)
     initialization:
       c: 0.17                                         # carbon (mg C/m^3)
       n: 0.0024                                       # nitrogen (mmol N/m^3)
@@ -279,15 +279,15 @@ instances:
       resm: 5.0                                       # maximum nutrient-limitation-induced sinking velocity (m/d), default = 0.0
       esni: 0.7                                       # level of nutrient limitation below which sinking commences (-)
       cenh: false                                     # enable atmospheric CO2 influence on photosynthesis, default = false
-      ndeposition: 3                                           # number of target pools where the sedimentation flux goes (-)
-      qxc2: 0.2
-      qxc3: 0.005
-      qxn2: 0.2
-      qxp2: 0.24
-      qxn3: 0.005
-      qxp3: 0.003
-      qxs2: 0.0
-      qxs3: 0.0
+      ndeposition: 3                                  # number of target pools for sedimentation, default = 1
+      qxc2: 0.2                                       # fraction of carbon sinking into deposition target 2 (-)
+      qxc3: 0.005                                     # fraction of carbon sinking into deposition target 3 (-)
+      qxn2: 0.2                                       # fraction of nitrogen sinking into deposition target 2 (-)
+      qxn3: 0.005                                     # fraction of nitrogen sinking into deposition target 3 (-)
+      qxp2: 0.24                                      # fraction of phosphorus sinking into deposition target 2 (-)
+      qxp3: 0.003                                     # fraction of phosphorus sinking into deposition target 3 (-)
+      qxs2: 0.0                                       # fraction of silicate sinking into deposition target 2 (-)
+      qxs3: 0.0                                       # fraction of silicate sinking into deposition target 3 (-)
     initialization:
       c: 8.0                                          # carbon (mg C/m^3)
       n: 0.1114                                       # nitrogen (mmol N/m^3)
@@ -343,13 +343,13 @@ instances:
       resm: 0.0                                       # maximum nutrient-limitation-induced sinking velocity (m/d), default = 0.0
       esni: 0.75                                      # level of nutrient limitation below which sinking commences (-)
       cenh: false                                     # enable atmospheric CO2 influence on photosynthesis, default = false
-      ndeposition: 3                                           # number of target pools where the sedimentation flux goes (-)
-      qxc2: 0.5
-      qxc3: 0.05
-      qxn2: 0.5
-      qxp2: 0.6
-      qxn3: 0.05
-      qxp3: 0.03
+      ndeposition: 3                                  # number of target pools for sedimentation, default = 1
+      qxc2: 0.5                                       # fraction of carbon sinking into deposition target 2 (-)
+      qxc3: 0.05                                      # fraction of carbon sinking into deposition target 3 (-)
+      qxn2: 0.5                                       # fraction of nitrogen sinking into deposition target 2 (-)
+      qxn3: 0.05                                      # fraction of nitrogen sinking into deposition target 3 (-)
+      qxp2: 0.6                                       # fraction of phosphorus sinking into deposition target 2 (-)
+      qxp3: 0.03                                      # fraction of phosphorus sinking into deposition target 3 (-)
     initialization:
       c: 5.9                                          # carbon (mg C/m^3)
       n: 0.0926                                       # nitrogen (mmol N/m^3)
@@ -404,13 +404,13 @@ instances:
       resm: 0.0                                       # maximum nutrient-limitation-induced sinking velocity (m/d), default = 0.0
       esni: 0.75                                      # level of nutrient limitation below which sinking commences (-)
       cenh: false                                     # enable atmospheric CO2 influence on photosynthesis, default = false
-      ndeposition: 3                                           # number of target pools where the sedimentation flux goes (-)
-      qxc2: 0.5
-      qxc3: 0.05
-      qxn2: 0.5
-      qxp2: 0.6
-      qxn3: 0.05
-      qxp3: 0.03
+      ndeposition: 3                                  # number of target pools for sedimentation, default = 1
+      qxc2: 0.5                                       # fraction of carbon sinking into deposition target 2 (-)
+      qxc3: 0.05                                      # fraction of carbon sinking into deposition target 3 (-)
+      qxn2: 0.5                                       # fraction of nitrogen sinking into deposition target 2 (-)
+      qxn3: 0.05                                      # fraction of nitrogen sinking into deposition target 3 (-)
+      qxp2: 0.6                                       # fraction of phosphorus sinking into deposition target 2 (-)
+      qxp3: 0.03                                      # fraction of phosphorus sinking into deposition target 3 (-)
     initialization:
       c: 5.9                                          # carbon (mg C/m^3)
       n: 0.0926                                       # nitrogen (mmol N/m^3)
@@ -463,13 +463,13 @@ instances:
       resm: 5.0                                       # maximum nutrient-limitation-induced sinking velocity (m/d), default = 0.0
       esni: 0.75                                      # level of nutrient limitation below which sinking commences (-)
       cenh: false                                     # enable atmospheric CO2 influence on photosynthesis, default = false
-      ndeposition: 3                                           # number of target pools where the sedimentation flux goes (-)
-      qxc2: 0.5
-      qxc3: 0.05
-      qxn2: 0.5
-      qxp2: 0.6
-      qxn3: 0.05
-      qxp3: 0.03
+      ndeposition: 3                                  # number of target pools for sedimentation, default = 1
+      qxc2: 0.5                                       # fraction of carbon sinking into deposition target 2 (-)
+      qxc3: 0.05                                      # fraction of carbon sinking into deposition target 3 (-)
+      qxn2: 0.5                                       # fraction of nitrogen sinking into deposition target 2 (-)
+      qxn3: 0.05                                      # fraction of nitrogen sinking into deposition target 3 (-)
+      qxp2: 0.6                                       # fraction of phosphorus sinking into deposition target 2 (-)
+      qxp3: 0.03                                      # fraction of phosphorus sinking into deposition target 3 (-)
     initialization:
       c: 5.9                                          # carbon (mg C/m^3)
       n: 0.0926                                       # nitrogen (mmol N/m^3)
@@ -511,8 +511,8 @@ instances:
       repw: 0.0025                                    # specific overwintering respiration (1/d)
       mort: 0.0025                                    # specific overwintering mortality (1/d)
       R1R2: 0.25                                      # labile fraction of produced dissolved organic carbon (-)
-      xR1p: 1.2                                       # transfer of phosphorus to DOM, relative to POM (-)
-      xR1n: 1.0                                       # transfer of nitrogen to DOM, relative to POM (-)
+      xR1p: 1.2                                       # transfer of phosphorus to DOM, relative to POM (-), default = 0.0
+      xR1n: 1.0                                       # transfer of nitrogen to DOM, relative to POM (-), default = 0.0
       urB1_O2: 0.1                                    # oxygen consumed per carbon respired (mmol O_2/mg C)
       gutdiss: 0.5                                    # fraction of prey calcite that dissolves after ingestion (-)
       c0: 0.0033                                      # background concentration (mg C/m^3)
@@ -569,8 +569,8 @@ instances:
       stempp: 0.5                                     # specific excretion rate of excess phosphorus (1/d)
       stempn: 0.5                                     # specific excretion rate of excess nitrogen (1/d)
       R1R2: 0.25                                      # labile fraction of produced dissolved organic carbon (-)
-      xR1p: 1.2                                       # transfer of phosphorus to DOM, relative to POM (-)
-      xR1n: 1.0                                       # transfer of nitrogen to DOM, relative to POM (-)
+      xR1p: 1.2                                       # transfer of phosphorus to DOM, relative to POM (-), default = 1.0
+      xR1n: 1.0                                       # transfer of nitrogen to DOM, relative to POM (-), default = 1.0
       urB1_O2: 0.1                                    # oxygen consumed per carbon respired (mmol O_2/mg C)
       gutdiss: 0.5                                    # fraction of prey calcite that dissolves after ingestion (-)
       c0: 0.0033                                      # background concentration (mg C/m^3)
@@ -624,8 +624,8 @@ instances:
       stempp: 0.5                                     # specific excretion rate of excess phosphorus (1/d)
       stempn: 0.5                                     # specific excretion rate of excess nitrogen (1/d)
       R1R2: 0.25                                      # labile fraction of produced dissolved organic carbon (-)
-      xR1p: 1.2                                       # transfer of phosphorus to DOM, relative to POM (-)
-      xR1n: 1.0                                       # transfer of nitrogen to DOM, relative to POM (-)
+      xR1p: 1.2                                       # transfer of phosphorus to DOM, relative to POM (-), default = 1.0
+      xR1n: 1.0                                       # transfer of nitrogen to DOM, relative to POM (-), default = 1.0
       urB1_O2: 0.1                                    # oxygen consumed per carbon respired (mmol O_2/mg C)
       gutdiss: 0.5                                    # fraction of prey calcite that dissolves after ingestion (-)
       c0: 0.0033                                      # background concentration (mg C/m^3)
@@ -665,13 +665,13 @@ instances:
       sedL2: 10.0                                     # sinking velocity (m/d)
       sL2O3: 0.03                                     # maximum specific dissolution rate (1/d), default = 1.0
       c0: 1e-05                                       # background concentration (mg C/m^3), default = 0.0
-      ndeposition: 1
+      ndeposition: 1                                  # number of target pools for sedimentation, default = 1
     initialization:
       c: 0.05                                         # carbon (mg C/m^3)
     coupling:
+      deposition_target1: bL2
       om_cal: O3/Om_cal                               # calcite saturation (-)
       O3c: O3/c                                       # total dissolved inorganic carbon (mmol C/m^3)
-      deposition_target1: bL2                              # benthic calcite (mg C/m^2)
   bL2:
     long_name: benthic calcite
     model: ersem/benthic_base
@@ -679,6 +679,6 @@ instances:
       composition: c                                  # elemental composition
       remin: 0.05                                     # remineralisation rate (1/d), default = 0.0
     initialization:
-      c: 0.05                                         # calcite (mg C/m^2)
+      c: 0.05                                         # carbon (mg C/m^2)
     coupling:
-      O3c: O3/c                                       # dissolved inorganic carbon (umol/m^3)
+      O3c: O3/c                                       # dissolved inorganic carbon (mmol/m^3)
