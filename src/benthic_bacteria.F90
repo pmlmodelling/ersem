@@ -52,20 +52,20 @@ contains
       call self%initialize_ersem_benthic_base()
 
       ! Register parameters
-      call self%get_parameter(self%qnc, 'qnc',  'mmol N/mg C','nitrogen to carbon ratio')
-      call self%get_parameter(self%qpc, 'qpc',  'mmol P/mg C','phosphorus to carbon ratio')
+      call self%get_parameter(self%qnc,  'qnc',  'mmol N/mg C','nitrogen to carbon ratio')
+      call self%get_parameter(self%qpc,  'qpc',  'mmol P/mg C','phosphorus to carbon ratio')
       call self%get_parameter(self%q10,  'q10',  '-',          'Q_10 temperature coefficient')
       call self%get_parameter(self%dd,   'dd',   '1/m',        'Michaelis-Menten constant for oxygen limitation through layer thickness')
-      call self%get_parameter(self%suQ7, 'suQ7', '1/d',        'specific not nutrient limited refractory matter uptake')
-      call self%get_parameter(self%suQ6f,'suQ6f','1/d',        'specific nutrient limited detritus uptake')
-      call self%get_parameter(self%suQ6s,'suQ6s','1/d',        'specific not nutrient limited detritus uptake')
-      call self%get_parameter(self%suQ1, 'suQ1', '1/d',        'specific DOC uptake')
-      call self%get_parameter(self%puinc,'puinc','1/d',        'preference factor of nutrient content')
-      call self%get_parameter(self%pue6,'pue6', '-',          'excreted fraction of uptake of POM')
-      call self%get_parameter(self%pue7,'pue7', '-',          'excreted fraction of uptake of refractory matter')
-      call self%get_parameter(self%pur,  'pur',  '1/d',        'fraction of carbon uptake that is respired')
+      call self%get_parameter(self%suQ7, 'suQ7', 'm^3/mg C/d', 'affinity for refractory matter')
+      call self%get_parameter(self%suQ6s,'suQ6s','m^3/mg C/d', 'base affinity for particulate organic matter')
+      call self%get_parameter(self%suQ6f,'suQ6f','m^3/mg C/d', 'additional affinity for particulate organic matter subject to nutrient limitation')
+      call self%get_parameter(self%suQ1, 'suQ1', 'm^3/mg C/d', 'affinity for dissolved organic matter')
+      call self%get_parameter(self%puinc,'puinc','-',          'preference for nutrients relative to carbon in particulate organic matter')
+      call self%get_parameter(self%pue6, 'pue6', '-',          'fraction of consumed particulate organic matter that is excreted')
+      call self%get_parameter(self%pue7, 'pue7', '-',          'fraction of consumed refractory matter that is excreted')
+      call self%get_parameter(self%pur,  'pur',  '1/d',        'fraction of consumed carbon that is respired')
       call self%get_parameter(self%sr,   'sr',   '1/d',        'specific rest respiration')
-      call self%get_parameter(self%pdQ1, 'pdQ1', '-',          'DOM-fraction of mortality')
+      call self%get_parameter(self%pdQ1, 'pdQ1', '-',          'fraction of dying matter that is dissolved')
       call self%get_parameter(self%sd,   'sd',   '1/d',        'specific maximum mortality related to oxygen limitation')
 
       call self%add_constituent('c',0.0_rk,qn=self%qnc,qp=self%qpc)
@@ -163,9 +163,9 @@ contains
          Limit = eT * eOX * Hc
 
          ! Determine effective uptake rates
-         sfQ7H = ( self%suQ7 * Limit )
-         sfQ6H = ( self%suQ6f * Limit * eN ) + ( self%suQ6s * Limit )
-         sfQ1H = ( self%suQ1 * Limit )
+         sfQ7H = self%suQ7  * Limit
+         sfQ6H = self%suQ6s * Limit + self%suQ6f * Limit * eN
+         sfQ1H = self%suQ1  * Limit
 
          ! Uptake of substrate carbon
          fQ7Hc = sfQ7H * AQ7c
@@ -174,7 +174,7 @@ contains
          fQIHc = fQ7Hc + fQ6Hc + fQ1Hc
 
          ! Uptake of substrate nitrogen and phosphorus
-         ! (note on Q6: affinity for n and p differs from affinity for c if puincHX/=1)
+         ! (note on Q6: affinity for n and p differs from affinity for c if puinc/=1)
          fQ7Hn = sfQ7H * AQ7n
          fQ7Hp = sfQ7H * AQ7p
          fQ6Hn = sfQ6H * AQ6n * self%puinc
@@ -183,7 +183,7 @@ contains
          fQ1Hp = sfQ1H * Q1pP
 
          ! (JB: code below seems to want to infer nutrient requirement/flux,
-         ! but it makes no sense since K?a and fK?Hn are summed while they have different units)
+         ! but it makes no sense since K?a and fK?H? are summed while they have different units)
          fK4Hn = fQIHc * self%qnc
          fK4Hn = fK4Hn * K4a/(K4a+fK4Hn)
          fK1Hp = fQIHc * self%qpc
@@ -192,7 +192,6 @@ contains
          ! Respiration (reduction in bacterial carbon and dissolved oxygen, increase in 
          ! dissolved inorganic carbon, ammonium, phosphate)
          fHG3c = self%pur * fQIHc + self%sr * HcP * eT
-         fHc = -fHG3c
          _SET_BOTTOM_ODE_(self%id_G2o,-fHG3c/CMass)  ! oxygen or reduction equivalent
          _SET_BOTTOM_ODE_(self%id_G3c, fHG3c/CMass)
          _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fHG3c,fHG3c)
@@ -210,10 +209,12 @@ contains
          _SET_BOTTOM_ODE_(self%id_Q1n, sfHQ1 * HcP * self%qnc)
          _SET_BOTTOM_ODE_(self%id_Q1p, sfHQ1 * HcP * self%qpc)
 
-         _SET_BOTTOM_ODE_(self%id_c, -(sfHQ6 + sfHQ1) * HcP)
+         _SET_BOTTOM_ODE_(self%id_c, -sfHQI * HcP)
 
-         ! Uptake and excretion
-         fHc = fHc + fQ7Hc * (1._rk-self%pue7) + fQ6Hc * (1._rk-self%pue6) + fQ1Hc
+         ! Non-balanced fluxes of carbon, nitrogen and phosphorus in biomass.
+         ! That includes all fluxes (uptake of organic matter and nutrients, respiration) except mortality,
+         ! which is stoichiometrically balanced already.
+         fHc = fQ7Hc * (1._rk-self%pue7) + fQ6Hc * (1._rk-self%pue6) + fQ1Hc - fHG3c
          fHn = fQ7Hn * (1._rk-self%pue7) + fQ6Hn * (1._rk-self%pue6) + fQ1Hn + fK4Hn
          fHp = fQ7Hp * (1._rk-self%pue7) + fQ6Hp * (1._rk-self%pue6) + fQ1Hp + fK1Hp
 
