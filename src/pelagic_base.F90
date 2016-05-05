@@ -42,20 +42,22 @@ contains
       character(len=10) :: composition
       real(rk)          :: c0,s0,rRPmX,EPS,iopABS,iopBBS
 
-      call self%get_parameter(composition,'composition','',   'elemental composition')
-      call self%get_parameter(rRPmX,      'rm',         'm/d','sinking velocity', default=0.0_rk)
+      call self%get_parameter(composition, 'composition', '', 'elemental composition')
+      call self%get_parameter(c0, 'c0', 'mg C/m^3', 'background carbon concentration', default=0.0_rk)
+      if (index(composition,'c')/=0) then
+         call self%get_parameter(EPS,   'EPS',   'm^2/mg C','specific shortwave attenuation',default=0.0_rk)
+         call self%get_parameter(iopABS,'iopABS','m^2/mg C','specific shortwave absorption', default=0.0_rk)
+         call self%get_parameter(iopBBS,'iopBBS','m^2/mg C','specific shortwave backscatter',default=0.0_rk)
+      end if
+      call self%get_parameter(rRPmX, 'rm', 'm/d', 'sinking velocity', default=0.0_rk)
 
       call self%initialize_ersem_base(rm=rRPmX)
 
-      call self%get_parameter(c0,'c0','mg C/m^3','background carbon concentration',default=0.0_rk)
       if (index(composition,'c')/=0) then
          call self%add_constituent('c',0.0_rk,c0)
 
          ! Add contributions to light attenuation, absorption, scattering.
          ! Contributions with a scale_factor of 0.0 will automatically be ignored.
-         call self%get_parameter(EPS,   'EPS',   'm^2/mg C','specific shortwave attenuation',default=0.0_rk)
-         call self%get_parameter(iopABS,'iopABS','m^2/mg C','specific shortwave absorption', default=0.0_rk)
-         call self%get_parameter(iopBBS,'iopBBS','m^2/mg C','specific shortwave backscatter',default=0.0_rk)
          call self%add_to_aggregate_variable(particulate_organic_absorption_coefficient, &
             self%id_c,scale_factor=iopABS,include_background=.true.)
          call self%add_to_aggregate_variable(particulate_organic_backscatter_coefficient, &
