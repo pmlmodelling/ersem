@@ -83,7 +83,7 @@ contains
          call self%register_diagnostic_variable(self%id_Om_arg,'Om_arg','-','aragonite saturation')
       end if
       if (self%iswASFLUX>=1) then
-         call self%register_diagnostic_variable(self%id_fairmg,'fairmg','mmol C/m^2/d','air-sea flux of CO2')
+         call self%register_diagnostic_variable(self%id_fairmg,'fairmg','mmol C/m^2/d','air-sea flux of CO2',source=source_do_surface)
       end if
 
       call self%register_dependency(self%id_ETW, standard_variables%temperature)
