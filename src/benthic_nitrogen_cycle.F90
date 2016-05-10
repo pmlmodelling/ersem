@@ -45,9 +45,9 @@ contains
       call self%get_parameter(self%xno3,  'xno3',  'mol O_2/mol N','oxygen consumed per nitrate produced')
 
       call self%register_diagnostic_variable(self%id_nrate,'nrate','mmol N/m^2/day','benthic nitrification rate',domain=domain_bottom,source=source_do_bottom)
-      call self%register_state_dependency(self%id_K3n,'K3n','mmol N/m^2','nitrate')
-      call self%register_state_dependency(self%id_K4n,'K4n','mmol N/m^2','ammonium')
-      call self%register_state_dependency(self%id_G2o,'G2o','mmol O_2/m^2','oxygen')
+      call self%register_state_dependency(self%id_K3n,'K3n','mmol N/m^2','benthic nitrate in 1st layer')
+      call self%register_state_dependency(self%id_K4n,'K4n','mmol N/m^2','benthic ammonium in 1st layer')
+      call self%register_state_dependency(self%id_G2o,'G2o','mmol O_2/m^2','benthic oxygen in 1st layer')
       call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','pelagic ammonium')
       if (.not.legacy_ersem_compatibility) then
          call self%register_state_dependency(self%id_benTA,'benTA','mEq/m^2','benthic alkalinity in aerobic layer')
