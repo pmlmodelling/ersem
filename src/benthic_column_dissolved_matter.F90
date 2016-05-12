@@ -276,7 +276,7 @@ contains
       ! if sms<-c_pel/cmix, c_top would become negative. To counter that problem, we apply the Patankar trick
       ! (Patankar 1980; Burchard et al. 2003 ApNumMat Eq 16), which guarantees a positive c_top while preserving first order
       ! accuracy of the (originally linear) relation. JB 24/06/2015, 10/11/2015
-      if (sms>0._rk .or. .not. info%nonnegative) then
+      if (sms>=0._rk .or. .not. info%nonnegative) then
          ! Sediment column produces tracer or tracer does not need to be positive definite. Use original linear relation.
          c_top = c_pel + cmix*sms
       else
