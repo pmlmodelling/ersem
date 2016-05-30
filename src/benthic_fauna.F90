@@ -245,7 +245,11 @@ contains
       eT = self%q10**((ETW-10._rk)/10._rk) - self%q10**((ETW-32._rk)/3._rk)
 
       ! Oxygen limitation factor
-      eO = (O2o-self%rlO2)**3/((O2o-self%rlO2)**3+(self%hO2-self%rlO2)**3)
+      if (O2o>self%rlO2) then
+         eO = (O2o-self%rlO2)**3/((O2o-self%rlO2)**3+(self%hO2-self%rlO2)**3)
+      else
+         eO = 0.0_rk
+      end if
 
       ! Limitation factor describing a decrease in feeding rate due to overcrowding.
       ! To disable any effect of overcrowding on feeding, set parameter xcl to a very large value.
