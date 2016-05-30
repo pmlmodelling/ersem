@@ -72,6 +72,9 @@ contains
       real(rk),parameter :: bpk=.00022_rk
 
       _GET_HORIZONTAL_(self%id_I_0,buffer)
+
+      if (buffer.lt.0._rk) buffer=0._rk
+
       _GET_HORIZONTAL_(self%id_zenithA,zenithA)   ! Zenith angle
 
       _VERTICAL_LOOP_BEGIN_

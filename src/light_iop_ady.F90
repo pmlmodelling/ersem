@@ -96,6 +96,8 @@ contains
 
       _GET_HORIZONTAL_(self%id_I_0,buffer)
       _GET_HORIZONTAL_(self%id_zenithA,zenithA)   ! Zenith angle
+      
+      if (buffer.lt.0._rk) buffer=0._rk
 
       _VERTICAL_LOOP_BEGIN_
          _GET_(self%id_ADY,ADY) ! Absorption coefficient of shortwave radiation, due to yellow matter (m-1)

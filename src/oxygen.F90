@@ -90,6 +90,9 @@ contains
          _GET_(self%id_X1X,X1X)
          _GET_HORIZONTAL_(self%id_wnd,wnd)
          OSAT = oxygen_saturation_concentration(self,ETW,X1X)
+
+         if (wnd.lt.0._rk) wnd=0._rk
+
          if (wnd.gt.11._rk) then
             ko2o = sqrt((1953.4_rk-128._rk*etw+3.9918_rk*etw**2-  &
                0.050091_rk*etw**3)/660._rk) * (0.02383_rk * wnd**3)

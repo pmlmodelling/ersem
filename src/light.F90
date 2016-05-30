@@ -64,6 +64,9 @@ contains
       real(rk) :: buffer,dz,xEPS,xtnc,EIR,ESS
 
       _GET_HORIZONTAL_(self%id_I_0,buffer)
+
+      if (buffer.lt.0._rk) buffer=0._rk
+
       _VERTICAL_LOOP_BEGIN_
          _GET_(self%id_dz,dz)     ! Layer height (m)
          _GET_(self%id_xEPSp,xEPS) ! Extinction coefficient of shortwave radiation, due to particulate organic material (m-1)

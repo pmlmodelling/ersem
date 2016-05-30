@@ -221,6 +221,8 @@ contains
          _GET_HORIZONTAL_(self%id_wnd,wnd)
          _GET_HORIZONTAL_(self%id_PCO2A,PCO2A)
 
+         if (wnd.lt.0._rk) wnd=0._rk
+
          if (self%iswtalk/=5) then
             ! Alkalinity is parameterized as function of salinity and temperature.
             TA = approximate_alkalinity(self%iswtalk,T,S)
