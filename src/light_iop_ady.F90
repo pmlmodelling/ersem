@@ -13,8 +13,8 @@ module ersem_light_iop_ady
       ! Identifiers for diagnostic variables
       type (type_state_variable_id)        :: id_ady
       type (type_diagnostic_variable_id)   :: id_EIR, id_parEIR, id_xEPS, id_iopABS, id_iopBBS
-      type (type_dependency_id)            :: id_dz
-      type (type_horizontal_dependency_id) :: id_I_0, id_zenithA,id_ADY_0
+      type (type_dependency_id)            :: id_dz, id_iopABSp, id_iopBBSp
+      type (type_horizontal_dependency_id) :: id_I_0, id_zenithA, id_ADY_0
 
       ! Parameters
       real(rk) :: abESSX,a0w,b0w,pEIR_eowX,relax
@@ -68,7 +68,9 @@ contains
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_I_0,standard_variables%surface_downwelling_shortwave_flux)
       call self%register_dependency(self%id_dz, standard_variables%cell_thickness)
-      call self%register_horizontal_dependency(self%id_zenithA, type_horizontal_standard_variable(name='zenith_angle')) 
+      call self%register_dependency(self%id_iopABSp,particulate_organic_absorption_coefficient)
+      call self%register_dependency(self%id_iopBBSp,particulate_organic_backscatter_coefficient)
+       call self%register_horizontal_dependency(self%id_zenithA, type_horizontal_standard_variable(name='zenith_angle')) 
       call self%register_horizontal_dependency(self%id_ADY_0,type_horizontal_standard_variable(name='gelbstoff_absorption_satellite'))
    end subroutine initialize
 
@@ -102,7 +104,8 @@ contains
       _VERTICAL_LOOP_BEGIN_
          _GET_(self%id_ADY,ADY) ! Absorption coefficient of shortwave radiation, due to yellow matter (m-1)
          _GET_(self%id_dz,dz)          ! Layer height (m)
-         _GET_HORIZONTAL_(self%id_ADY_0,ADY_0)
+         _GET_(self%id_iopABSp,iopABS) ! Absorption coefficient of shortwave radiation, due to particulate organic material (m-1)
+         _GET_(self%id_iopBBSp,iopBBS) ! Backscatter coefficient of shortwave radiation, due to particulate organic material (m-1)
          iopABS = iopABS+ADY+self%a0w
          iopBBS = iopBBS+bpk+self%b0w
          xEPS = (1._rk+.005_rk*zenithA)*iopABS+4.18_rk*(1._rk-.52_rk*exp(-10.8_rk*iopABS))*iopBBS
