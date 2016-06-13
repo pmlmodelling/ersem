@@ -31,6 +31,7 @@ module ersem_benthic_base
       character(len=10) :: composition
       real(rk) :: reminQIX,pQIN3X
       logical  :: resuspension
+      real(rk) :: vel_crit
    contains
       procedure :: initialize
       procedure :: do_bottom
@@ -48,6 +49,8 @@ contains
 ! !INPUT PARAMETERS:
    class (type_ersem_benthic_base), intent(inout), target :: self
    integer,                         intent(in)            :: configunit
+
+   real(rk)          :: c0
 !
 
 !EOP
@@ -58,17 +61,19 @@ contains
       if (index(self%composition,'n')/=0 .and. self%reminQIX/=0.0_rk) &
          call self%get_parameter(self%pQIN3X,'pN3','-','nitrate fraction of remineralised nitrogen (remainder is ammonium)',default=0.0_rk)
       call self%get_parameter(self%resuspension,'resuspension','',   'enable resuspension',  default=.false.)
+      call self%get_parameter(c0,'c0','mg C/m^2','background carbon concentration',default=0.0_rk)
 
       call self%initialize_ersem_benthic_base()
 
       if (self%resuspension) then
+         call self%get_parameter(self%vel_crit,'vel_crit','m/s','critical shear velocity for resuspension')
          call self%register_dependency(self%id_bedstress,standard_variables%bottom_stress)
          call self%register_dependency(self%id_wdepth,   standard_variables%bottom_depth_below_geoid)
          call self%register_dependency(self%id_dens,     standard_variables%density)
       end if
 
       if (index(self%composition,'c')/=0) then
-         call self%add_constituent('c',0.0_rk)
+         call self%add_constituent('c',0.0_rk,c0)
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_c,'resuspension_target_c','mg C/m^3','pelagic variable taking up resuspended carbon')
             call self%request_coupling_to_model(self%id_resuspension_c,'RP','c')
@@ -76,7 +81,7 @@ contains
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_O3c,'O3c','mmol/m^3','dissolved inorganic carbon')
       end if
       if (index(self%composition,'p')/=0) then
-         call self%add_constituent('p',0.0_rk)
+         call self%add_constituent('p',0.0_rk,qpRPIcX*c0)
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_p,'resuspension_target_p','mmol P/m^3','pelagic variable taking up resuspended phosphorus')
             call self%request_coupling_to_model(self%id_resuspension_p,'RP','p')
@@ -87,7 +92,7 @@ contains
          end if
       end if
       if (index(self%composition,'n')/=0) then
-         call self%add_constituent('n',0.0_rk)
+         call self%add_constituent('n',0.0_rk,qnRPIcX*c0)
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_n,'resuspension_target_n','mmol N/m^3','pelagic variable taking up resuspended nitrogen')
             call self%request_coupling_to_model(self%id_resuspension_n,'RP','n')
@@ -99,7 +104,7 @@ contains
          end if
       end if
       if (index(self%composition,'s')/=0) then
-         call self%add_constituent('s',0.0_rk)
+         call self%add_constituent('s',0.0_rk,qsRPIcX*c0)
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspension_s,'resuspension_target_s','mmol Si/m^3','pelagic variable taking up resuspended silicate')
             call self%request_coupling_to_model(self%id_resuspension_s,'RP','s')
@@ -116,45 +121,38 @@ contains
       end if
    end subroutine
 
-   subroutine initialize_ersem_benthic_base(self,c_ini,n_ini,p_ini,s_ini,f_ini)
+   subroutine initialize_ersem_benthic_base(self)
       class (type_ersem_benthic_base), intent(inout), target :: self
-      real(rk),optional,               intent(in)            :: c_ini,n_ini,p_ini,s_ini,f_ini
 
       ! Set time unit to d-1
       ! This implies that all rates (sink/source terms, vertical velocities) are given in d-1.
       self%dt = 86400._rk
-
-      if (present(c_ini)) call self%add_constituent('c',c_ini)
-      if (present(n_ini)) call self%add_constituent('n',n_ini)
-      if (present(p_ini)) call self%add_constituent('p',p_ini)
-      if (present(s_ini)) call self%add_constituent('s',s_ini)
-      if (present(f_ini)) call self%add_constituent('f',f_ini)
    end subroutine
 
-   subroutine benthic_base_add_constituent(self,name,initial_value,qn,qp)
+   subroutine benthic_base_add_constituent(self,name,initial_value,background_value,qn,qp)
       class (type_ersem_benthic_base), intent(inout), target :: self
       character(len=*),                intent(in)            :: name
       real(rk),                        intent(in)            :: initial_value
-      real(rk),optional,               intent(in)            :: qn,qp
+      real(rk),optional,               intent(in)            :: background_value,qn,qp
 
       select case (name)
          case ('c')
-            call self%register_state_variable(self%id_c,'c','mg C/m^2','carbon',initial_value,minimum=0._rk)
+            call self%register_state_variable(self%id_c,'c','mg C/m^2','carbon',initial_value,minimum=0._rk,background_value=background_value)
             call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_c,scale_factor=1._rk/CMass)
             if (present(qn)) call self%add_to_aggregate_variable(standard_variables%total_nitrogen,  self%id_c,scale_factor=qn)
             if (present(qp)) call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_c,scale_factor=qp)
          case ('n')
-            call self%register_state_variable(self%id_n, 'n', 'mmol N/m^2', 'nitrogen', initial_value, minimum=0._rk)
+            call self%register_state_variable(self%id_n, 'n', 'mmol N/m^2', 'nitrogen', initial_value, minimum=0._rk,background_value=background_value)
             call self%add_to_aggregate_variable(standard_variables%total_nitrogen,self%id_n)
          case ('p')
-            call self%register_state_variable(self%id_p, 'p', 'mmol P/m^2', 'phosphorus', initial_value, minimum=0._rk)
+            call self%register_state_variable(self%id_p, 'p', 'mmol P/m^2', 'phosphorus', initial_value, minimum=0._rk,background_value=background_value)
             call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_p)
          case ('s')
-            call self%register_state_variable(self%id_s,'s','mmol Si/m^2','silicate',initial_value,minimum=0._rk)
+            call self%register_state_variable(self%id_s,'s','mmol Si/m^2','silicate',initial_value,minimum=0._rk,background_value=background_value)
             call self%add_to_aggregate_variable(standard_variables%total_silicate,self%id_s)
          case ('f')
             if (use_iron) then
-               call self%register_state_variable(self%id_f,'f','umol Fe/m^2','iron',initial_value,minimum=0._rk)
+               call self%register_state_variable(self%id_f,'f','umol Fe/m^2','iron',initial_value,minimum=0._rk,background_value=background_value)
                call self%add_to_aggregate_variable(standard_variables%total_iron,self%id_f)
             end if
          case default
@@ -173,13 +171,14 @@ contains
 
       ! Bed characteristics - from Puls and Sundermann 1990
       ! Critical shear velocity for erosion = 0.02 m/s
-      real(rk),parameter :: ter=0.02_rk**2
 
       ! erosion constant (g/m^2/s)
-      real(rk),parameter :: er=100._rk*Ter * 1000._rk*86400._rk  !convert to mg/day
+      real(rk) :: ter,er
 
       _HORIZONTAL_LOOP_BEGIN_
          if (self%resuspension) then
+            ter=self%vel_crit**2
+            er=100._rk* ter * 1000._rk*86400._rk  !convert to mg/day
             _GET_HORIZONTAL_(self%id_bedstress,bedstress)
             _GET_(self%id_dens,density)
 
@@ -189,7 +188,7 @@ contains
          else
             bedstress = 0.0_rk
          end if
-
+             FerC=0._rk
          if (bedstress.gt.ter) then
             _GET_HORIZONTAL_(self%id_wdepth,wdepth)
             _GET_HORIZONTAL_(self%id_c,Q6cP)

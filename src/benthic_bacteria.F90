@@ -47,6 +47,7 @@ contains
    subroutine initialize(self,configunit)
       class (type_ersem_benthic_bacteria),intent(inout),target :: self
       integer,                            intent(in)           :: configunit
+      real(rk) :: c0
 
       ! Initialize base model type (this will also set the internal time unit to per day)
       call self%initialize_ersem_benthic_base()
@@ -67,8 +68,9 @@ contains
       call self%get_parameter(self%sr,   'sr',   '1/d',        'specific rest respiration')
       call self%get_parameter(self%pdQ1, 'pdQ1', '-',          'fraction of dying matter that is dissolved')
       call self%get_parameter(self%sd,   'sd',   '1/d',        'specific maximum mortality related to oxygen limitation')
+      call self%get_parameter(c0,'c0','mg C/m^2','background concentration',default=0.0_rk)
 
-      call self%add_constituent('c',0.0_rk,qn=self%qnc,qp=self%qpc)
+      call self%add_constituent('c',0.0_rk,c0,qn=self%qnc,qp=self%qpc)
 
       ! Environmental dependencies
       call self%register_dependency(self%id_ETW,standard_variables%temperature)

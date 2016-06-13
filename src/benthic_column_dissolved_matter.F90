@@ -74,12 +74,15 @@ contains
       character(len=10) :: composition
       integer           :: ilayer, iconstituent
       character(len=16) :: index
+      real(rk)          :: c0
+
       class (type_dissolved_matter_per_layer), pointer :: profile
 
       ! Set time unit to d-1. This implies that all rates (sink/source terms) are given in d-1.
       self%dt = 86400._rk
 
       ! Obtain parameter values
+      call self%get_parameter(c0,'c0','mg C/m^3','background carbon concentration',default=0.0_rk)
       call self%get_parameter(composition,'composition','','composition (any combination of c,n,p,s,o,a)')
       call self%get_parameter(self%last_layer,'last_layer','','sediment layer where concentration drops to zero',default=nlayers)
       if (composition=='') call self%fatal_error('benthic_dissolved_matter_initialize','composition must include at least one chemical constituent')
@@ -111,13 +114,13 @@ contains
       do iconstituent=1,len_trim(composition)
          select case (composition(iconstituent:iconstituent))
          case ('c')
-            call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'c','mmol/m^2','carbon',standard_variables%total_carbon)
+            call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'c','mmol/m^2','carbon',standard_variables%total_carbon,c0)
          case ('n')
-            call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'n','mmol/m^2','nitrogen',standard_variables%total_nitrogen)
+            call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'n','mmol/m^2','nitrogen',standard_variables%total_nitrogen,c0)
          case ('p')
-            call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'p','mmol/m^2','phosphorus',standard_variables%total_phosphorus)
+            call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'p','mmol/m^2','phosphorus',standard_variables%total_phosphorus,c0)
          case ('s')
-            call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'s','mmol/m^2','silicate',standard_variables%total_silicate)
+            call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'s','mmol/m^2','silicate',standard_variables%total_silicate,c0)
          case ('o')
             call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'o','mmol/m^2','oxygen')
             call self%register_state_variable(self%constituents(iconstituent)%id_tot_deep,'o_deep','mmol/m^2','oxygen below oxygenated layer')
@@ -144,7 +147,7 @@ contains
 
    end subroutine benthic_dissolved_matter_initialize
 
-   subroutine initialize_constituent(self,info,profile,profile_info,name,units,long_name,aggregate_target)
+   subroutine initialize_constituent(self,info,profile,profile_info,name,units,long_name,aggregate_target,background_value)
       class (type_ersem_benthic_column_dissolved_matter),intent(inout),target :: self
       type (type_single_constituent_rates),              intent(inout),target :: info
       class (type_dissolved_matter_per_layer),           intent(inout),target :: profile
@@ -154,9 +157,10 @@ contains
 
       integer           :: ilayer
       character(len=16) :: index
+      real(rk),optional,                                  intent(in) :: background_value
 
       ! State variable for depth-integrated matter [adsorbed + in pore water]
-      call self%register_state_variable(info%id_tot,name,units,long_name)
+      call self%register_state_variable(info%id_tot,name,units,long_name,background_value=background_value)
 
       ! Contribution of state variable to aggregate quantity (if any).
       if (present(aggregate_target)) call self%add_to_aggregate_variable(aggregate_target,info%id_tot)
