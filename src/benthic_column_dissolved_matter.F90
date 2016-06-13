@@ -82,7 +82,7 @@ contains
       self%dt = 86400._rk
 
       ! Obtain parameter values
-      call self%get_parameter(c0,'c0','mg C/m^3','background carbon concentration',default=0.0_rk)
+      call self%get_parameter(c0,'c0','mg C/m^2','background carbon concentration',default=0.0_rk)
       call self%get_parameter(composition,'composition','','composition (any combination of c,n,p,s,o,a)')
       call self%get_parameter(self%last_layer,'last_layer','','sediment layer where concentration drops to zero',default=nlayers)
       if (composition=='') call self%fatal_error('benthic_dissolved_matter_initialize','composition must include at least one chemical constituent')

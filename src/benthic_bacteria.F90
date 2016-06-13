@@ -68,7 +68,7 @@ contains
       call self%get_parameter(self%sr,   'sr',   '1/d',        'specific rest respiration')
       call self%get_parameter(self%pdQ1, 'pdQ1', '-',          'fraction of dying matter that is dissolved')
       call self%get_parameter(self%sd,   'sd',   '1/d',        'specific maximum mortality related to oxygen limitation')
-      call self%get_parameter(c0,'c0','mg C/m^2','background concentration',default=0.0_rk)
+      call self%get_parameter(c0,        'c0','mg C/m^2',      'background concentration',default=0.0_rk)
 
       call self%add_constituent('c',0.0_rk,c0,qn=self%qnc,qp=self%qpc)
 

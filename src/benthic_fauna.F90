@@ -83,7 +83,7 @@ contains
       call self%get_parameter(self%xdc,  'xdc',  '1/degree_C', 'e-folding temperature factor of cold mortality response')
       call self%get_parameter(self%sr,   'sr',   '1/d',        'specific rest respiration at reference temperature')
       call self%get_parameter(self%pur,  'pur',  '-',          'fraction of assimilated food that is respired')
-      call self%get_parameter(c0,'c0','mg C/m^2','background concentration',default=0.0_rk)
+      call self%get_parameter(c0,        'c0','mg C/m^2',      'background concentration',default=0.0_rk)
 
       ! Add carbon pool as our only state variable.
       call self%add_constituent('c',3000._rk,c0,qn=self%qnc,qp=self%qpc)
