@@ -682,6 +682,7 @@ instances:
     parameters:
       composition: c                                  # elemental composition
       remin: 0.05                                     # remineralisation rate (1/d), default = 0.0
+      c0: 1.e-05                                           # background value for benthic calcite
     initialization:
       c: 0.05                                         # carbon (mg C/m^2)
     coupling:
