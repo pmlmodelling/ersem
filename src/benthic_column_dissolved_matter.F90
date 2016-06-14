@@ -12,9 +12,9 @@ module ersem_benthic_column_dissolved_matter
 
    integer, parameter :: nlayers = 3
 
-   type type_single_constituent_rates
-      type (type_bottom_state_variable_id) :: id_tot             ! depth-integrated mass in the benthic column
-      type (type_bottom_state_variable_id) :: id_tot_deep        ! depth-integrated [negative] mass below the zero-concentration isocline
+   type type_single_constituent
+      type (type_bottom_state_variable_id) :: id_int             ! depth-integrated mass in the benthic column
+      type (type_bottom_state_variable_id) :: id_int_deep        ! depth-integrated [negative] mass below the zero-concentration isocline
       type (type_state_variable_id)        :: id_pel             ! concentration in bottom-most pelagic cell
       type (type_horizontal_dependency_id) :: id_sms(nlayers)    ! sources-sinks specified for layer-integrated variables (pore water and adsorbed)
       type (type_horizontal_dependency_id) :: id_pw_sms(nlayers) ! sources-sinks specified for layer-integrated pore water concentration
@@ -37,7 +37,7 @@ module ersem_benthic_column_dissolved_matter
       real(rk) :: relax, minD
       integer :: last_layer
       logical :: correction
-      type (type_single_constituent_rates),allocatable :: constituents(:)
+      type (type_single_constituent),allocatable :: constituents(:)
    contains
       procedure :: initialize => benthic_dissolved_matter_initialize
       procedure :: do_bottom  => benthic_dissolved_matter_do_bottom
@@ -45,7 +45,7 @@ module ersem_benthic_column_dissolved_matter
 
    type type_single_constituent_estimates
       type (type_horizontal_diagnostic_variable_id) :: id_conc                        ! depth-averaged pore water concentration
-      type (type_horizontal_dependency_id)          :: id_tot                         ! depth-integrated total mass (mass/m2) in entire column [pore water + adsorbed]
+      type (type_horizontal_dependency_id)          :: id_int                         ! depth-integrated total mass (mass/m2) in entire column [pore water + adsorbed]
       type (type_horizontal_diagnostic_variable_id) :: id_per_layer_total(nlayers)    ! depth-integrated total mass (mass/m2) per layer [pore water + adsorbed]
       type (type_horizontal_diagnostic_variable_id) :: id_per_layer_pw_total(nlayers) ! depth-integrated pore water mass (mass/m2) per layer
    end type
@@ -123,7 +123,7 @@ contains
             call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'s','mmol/m^2','silicate',standard_variables%total_silicate,c0)
          case ('o')
             call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'o','mmol/m^2','oxygen')
-            call self%register_state_variable(self%constituents(iconstituent)%id_tot_deep,'o_deep','mmol/m^2','oxygen below oxygenated layer')
+            call self%register_state_variable(self%constituents(iconstituent)%id_int_deep,'o_deep','mmol/m^2','oxygen below oxygenated layer')
             if (.not.legacy_ersem_compatibility) self%constituents(iconstituent)%nonnegative = .false.
          case ('a')
             call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'a','mEq/m^2','alkalinity')
@@ -149,21 +149,21 @@ contains
 
    subroutine initialize_constituent(self,info,profile,profile_info,name,units,long_name,aggregate_target,background_value)
       class (type_ersem_benthic_column_dissolved_matter),intent(inout),target :: self
-      type (type_single_constituent_rates),              intent(inout),target :: info
+      type (type_single_constituent),                    intent(inout),target :: info
       class (type_dissolved_matter_per_layer),           intent(inout),target :: profile
       type (type_single_constituent_estimates),          intent(inout),target :: profile_info
       character(len=*),                                  intent(in)           :: name,units,long_name
       type (type_bulk_standard_variable),optional,       intent(in)           :: aggregate_target
+      real(rk),optional,                                 intent(in)           :: background_value
 
       integer           :: ilayer
       character(len=16) :: index
-      real(rk),optional,                                  intent(in) :: background_value
 
       ! State variable for depth-integrated matter [adsorbed + in pore water]
-      call self%register_state_variable(info%id_tot,name,units,long_name,background_value=background_value)
+      call self%register_state_variable(info%id_int,name,units,long_name,background_value=background_value)
 
       ! Contribution of state variable to aggregate quantity (if any).
-      if (present(aggregate_target)) call self%add_to_aggregate_variable(aggregate_target,info%id_tot)
+      if (present(aggregate_target)) call self%add_to_aggregate_variable(aggregate_target,info%id_int)
 
       ! Dependency on lowermost pelagic concentration.
       call self%register_state_dependency(info%id_pel,trim(name)//'_pel','mmol/m^3','pelagic '//trim(long_name))
@@ -172,8 +172,8 @@ contains
       call self%register_diagnostic_variable(info%id_pbf,trim(name)//'_pb_flux','mmol/m^2/day','flux of '//trim(long_name)//' from benthos to pelagic',source=source_do_bottom)
 
       ! Register new constituent with child model that computes mass per benthic layer.
-      call profile%register_dependency(profile_info%id_tot,trim(name)//'_int',units,'depth-integrated '//trim(long_name))
-      call profile%request_coupling(profile_info%id_tot,name)
+      call profile%register_dependency(profile_info%id_int,trim(name)//'_int',units,'depth-integrated '//trim(long_name))
+      call profile%request_coupling(profile_info%id_int,name)
       do ilayer=1,nlayers
          write (index,'(i0)') ilayer
 
@@ -222,7 +222,7 @@ contains
    subroutine process_constituent(self,_ARGUMENTS_DO_BOTTOM_,info)
       class (type_ersem_benthic_column_dissolved_matter),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
-      type (type_single_constituent_rates),              intent(in) :: info
+      type (type_single_constituent),                    intent(in) :: info
 
       integer  :: ilayer
       real(rk) :: c_pel,c_top,c_int,c_int_deep
@@ -247,7 +247,7 @@ contains
       end do
 
       ! Retrieve column-integrated mass, lowermost pelagic concentration, and layer-specific depth-integrated sources.
-      _GET_HORIZONTAL_(info%id_tot,c_int)
+      _GET_HORIZONTAL_(info%id_int,c_int)
       _GET_(info%id_pel,c_pel)
       do ilayer=1,nlayers
          _GET_HORIZONTAL_(info%id_sms(ilayer),sms_per_layer(ilayer))
@@ -311,7 +311,7 @@ contains
          call compute_final_equilibrium_profile(diff(self%last_layer),c_top,sms_per_layer(self%last_layer),sum(sms_per_layer(self%last_layer+1:)),Dm(nlayers)-d_top,H_eq,c_int_per_layer_eq(self%last_layer))
 
          ! Relax depth-integrated mass c_int towards its equilibrium value (sum of depth-integrated equilibrium values of all layers)
-         _SET_BOTTOM_ODE_(info%id_tot, (poro*sum(self%ads(:self%last_layer)*c_int_per_layer_eq(:self%last_layer))-c_int)/self%relax)
+         _SET_BOTTOM_ODE_(info%id_int, (poro*sum(self%ads(:self%last_layer)*c_int_per_layer_eq(:self%last_layer))-c_int)/self%relax)
 
          ! Relax the depth of the bottom interface of the last layer towards equilibrium value, d_top+max(self%minD,H_eq)
          _SET_BOTTOM_ODE_(self%id_layer,(d_top+max(self%minD,H_eq)-Dm(self%last_layer))/self%relax)
@@ -330,8 +330,8 @@ contains
             end do
 
             ! Relax depth-integrated mass within deeper layers towards equilibrium value.
-            _GET_HORIZONTAL_(info%id_tot_deep,c_int_deep)
-            _SET_BOTTOM_ODE_(info%id_tot_deep,(poro*sum(self%ads(self%last_layer+1:)*c_int_per_layer_eq(self%last_layer+1:))-c_int_deep)/self%relax)
+            _GET_HORIZONTAL_(info%id_int_deep,c_int_deep)
+            _SET_BOTTOM_ODE_(info%id_int_deep,(poro*sum(self%ads(self%last_layer+1:)*c_int_per_layer_eq(self%last_layer+1:))-c_int_deep)/self%relax)
          else
             c_int_deep = 0
          end if
@@ -402,7 +402,7 @@ contains
          P_res_int = (c_int-c_int_eq)/norm_res_int*Dm(nlayers)
          _SET_BOTTOM_EXCHANGE_(info%id_pel,sms+P_res_int) ! Equilibrium flux = depth-integrated production sms + residual flux P_res_int
          _SET_HORIZONTAL_DIAGNOSTIC_(info%id_pbf,sms+P_res_int)
-         _SET_BOTTOM_ODE_(info%id_tot,-P_res_int)         ! Depth-integrated sources-sinks (sms) - surface flux (sms+P_res_int) = -P_res_int
+         _SET_BOTTOM_ODE_(info%id_int,-P_res_int)         ! Depth-integrated sources-sinks (sms) - surface flux (sms+P_res_int) = -P_res_int
 
          ! Save final estimates of mean pore water concentration per layer.
          d_top = 0
@@ -592,7 +592,7 @@ contains
 
          do iconstituent=1,size(self%constituents)
             ! Get depth-integrated concentration.
-            _GET_HORIZONTAL_(self%constituents(iconstituent)%id_tot,c_int)
+            _GET_HORIZONTAL_(self%constituents(iconstituent)%id_int,c_int)
 
             if (self%last_layer/=nlayers) then
                ! Vertically homogeneous in top layers, quadratically decreasing in last layer (zero concentration at bottom interface)
