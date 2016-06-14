@@ -76,7 +76,7 @@ To build the Python driver, you need to create a directory to build the code in,
     cmake <FABMDIR>/src/drivers/python -DFABM_ERSEM_BASE=<ERSEMDIR>
     make install
 
-In the above, replace `<FABMDIR>` with the directory with the FABM source code, e.g., ~/fabm-git and `<ERSEMMDIR>` with the directory with the ERSEM source code, e.g., ~/ersem-git.
+In the above, replace `<FABMDIR>` with the directory with the FABM source code, e.g., ~/fabm-git and `<ERSEMDIR>` with the directory with the ERSEM source code, e.g., ~/ersem-git.
 
 This will install the python-fabm module in a directory that is automatically looked in by Python. Typically, this is ~/.local/lib/python2.X/site-packages (with X being Python's minor version number). This means you can now just open Python and enter `import pyfabm` to load FABM's Python module.
 
