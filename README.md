@@ -82,16 +82,16 @@ This will install the python-fabm module in a directory that is automatically lo
 
 Example scripts that use the Python front-end can be found in `<FABMDIR>/testcases/python`. For instance, use `<FABMDIR>/testcases/python/fabm_complete_yaml.py` to add documentation to a fabm.yaml file.
 
-### NEMO+FABM+ERSEM
+### NEMO + FABM + ERSEM
 
 FABM needs to be compiled separately before the compilation of NEMO.
 Usually, the following suffices for this:
 
-   mkdir -p ~/build/nemo && cd ~/build/nemo
-   cmake <FABMDIR>/src/ -DFABM_HOST=nemo -DFABM_ERSEM_BASE=<ERSEMDIR>
-   make install
+    mkdir -p ~/build/nemo && cd ~/build/nemo
+    cmake <FABMDIR>/src/ -DFABM_HOST=nemo -DFABM_ERSEM_BASE=<ERSEMDIR>
+    make install
 
-In the above, replace `<FABMDIR>` with the directory with the FABM source code, e.g., ~/fabm-git and `<ERSEMMDIR>` with the directory with the ERSEM source code, e.g., ~/ersem-git.
+In the above, replace `<FABMDIR>` with the directory with the FABM source code, e.g., ~/fabm-git and `<ERSEMDIR>` with the directory with the ERSEM source code, e.g., ~/ersem-git.
 
 This will create the library in the standard folder ~/local/fabm/nemo/lib where NEMO-FABM will look for linking to NEMO.
 
