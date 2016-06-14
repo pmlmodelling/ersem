@@ -61,7 +61,6 @@ contains
       if (index(self%composition,'n')/=0 .and. self%reminQIX/=0.0_rk) &
          call self%get_parameter(self%pQIN3X,'pN3','-','nitrate fraction of remineralised nitrogen (remainder is ammonium)',default=0.0_rk)
       call self%get_parameter(self%resuspension,'resuspension','',   'enable resuspension',  default=.false.)
-      call self%get_parameter(c0,'c0','mg C/m^2','background carbon concentration',default=0.0_rk)
 
       call self%initialize_ersem_benthic_base()
 
@@ -71,6 +70,8 @@ contains
          call self%register_dependency(self%id_wdepth,   standard_variables%bottom_depth_below_geoid)
          call self%register_dependency(self%id_dens,     standard_variables%density)
       end if
+
+      call self%get_parameter(c0,'c0','mg C/m^2','background carbon concentration',default=0.0_rk)
 
       if (index(self%composition,'c')/=0) then
          call self%add_constituent('c',0.0_rk,c0)
