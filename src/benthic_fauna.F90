@@ -57,6 +57,7 @@ contains
       character(len=16) :: index
       logical           :: foodispom
       real(rk)          :: pue,pueQ
+      real(rk)          :: c0
 
       ! Initialize base model type (this will also set the internal time unit to per day)
       call self%initialize_ersem_benthic_base()
@@ -82,9 +83,10 @@ contains
       call self%get_parameter(self%xdc,  'xdc',  '1/degree_C', 'e-folding temperature factor of cold mortality response')
       call self%get_parameter(self%sr,   'sr',   '1/d',        'specific rest respiration at reference temperature')
       call self%get_parameter(self%pur,  'pur',  '-',          'fraction of assimilated food that is respired')
+      call self%get_parameter(c0,        'c0','mg C/m^2',      'background concentration',default=0.0_rk)
 
       ! Add carbon pool as our only state variable.
-      call self%add_constituent('c',3000._rk,qn=self%qnc,qp=self%qpc)
+      call self%add_constituent('c',3000._rk,c0,qn=self%qnc,qp=self%qpc)
 
       ! Environmental dependencies
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
@@ -218,7 +220,7 @@ contains
       class (type_ersem_benthic_fauna),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
-      real(rk) :: c,O2o,foodP,Dm
+      real(rk) :: c,cP,O2o,foodP,Dm
       real(rk) :: eT,eO,eC,ETW,crowding_c,x
       real(rk) :: rate
       real(rk) :: SYc,SYn,SYp
@@ -234,7 +236,8 @@ contains
 
       _HORIZONTAL_LOOP_BEGIN_
 
-      _GET_HORIZONTAL_(self%id_c,c)
+      _GET_HORIZONTAL_WITH_BACKGROUND_(self%id_c,c)
+      _GET_HORIZONTAL_(self%id_c,cP)
 
       _GET_HORIZONTAL_(self%id_Dm,Dm)
       _GET_(self%id_O2o,O2o)
@@ -359,7 +362,7 @@ contains
       _SET_HORIZONTAL_DIAGNOSTIC_(self%id_bioirr, self%pirr * fBTYc) 
 
       ! Respiration fluxes = basal respiration (proportional to biomass)+ activity respiration (proportional to carbon assimilation)
-      fYG3c = self%sr * c * eT + self%pur * nfBTYc
+      fYG3c = self%sr * cP * eT + self%pur * nfBTYc
 
       ! Store carbon flux resulting from respiration for later use (note: respiration does not affect nitrogen, phosphorus).
       ! Also account for its production of benthic CO2 and consumption of benthic oxygen.
@@ -377,10 +380,10 @@ contains
       mortflux = mort_act + mort_ox + mort_cold
 
       ! Apply mortality to biomass, and send dead matter to particulate organic carbon pool.
-      _SET_BOTTOM_ODE_(self%id_c, -mortflux*c)
-      _SET_BOTTOM_ODE_(self%id_Q6c,mortflux*c)
-      _SET_BOTTOM_ODE_(self%id_Q6n,mortflux*c*self%qnc)
-      _SET_BOTTOM_ODE_(self%id_Q6p,mortflux*c*self%qpc)
+      _SET_BOTTOM_ODE_(self%id_c, -mortflux*cP)
+      _SET_BOTTOM_ODE_(self%id_Q6c,mortflux*cP)
+      _SET_BOTTOM_ODE_(self%id_Q6n,mortflux*cP*self%qnc)
+      _SET_BOTTOM_ODE_(self%id_Q6p,mortflux*cP*self%qpc)
 
       ! Compute excess carbon flux, given that the maximum realizable carbon flux needs to be balanced
       ! by corresponding nitrogen and phosphorus fluxes to maintain constant stoichiometry.
