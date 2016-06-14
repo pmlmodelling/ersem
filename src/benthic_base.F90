@@ -176,8 +176,8 @@ contains
       real(rk) :: ter,er
 
       _HORIZONTAL_LOOP_BEGIN_
+         ter=self%vel_crit**2
          if (self%resuspension) then
-            ter=self%vel_crit**2
             er=100._rk* ter * 1000._rk*86400._rk  !convert to mg/day
             _GET_HORIZONTAL_(self%id_bedstress,bedstress)
             _GET_(self%id_dens,density)
