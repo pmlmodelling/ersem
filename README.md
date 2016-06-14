@@ -21,12 +21,12 @@ FABM and ERSEM use a platform-independent build system based on [cmake](http://w
 
 First obtain the latest (developers') version of the GOTM code from its git repository:
 
-    git clone git://git.code.sf.net/p/gotm/code gotm-git
+    git clone https://github.com/gotm-model/code.git gotm-git
 
 To build GOTM with FABM support, create a build directory, call cmake to generate makefiles, and make to compile and install. For instance:
 
     mkdir -p ~/build/gotm && cd ~/build/gotm
-    cmake <GOTMDIR>/src -DGOTM_USE_FABM=ON -DFABM_BASE=<FABMDIR> -DFABM_ERSEM_BASE=<ERSEMDIR>
+    cmake <GOTMDIR>/src -DFABM_BASE=<FABMDIR> -DFABM_ERSEM_BASE=<ERSEMDIR>
     make install
 
 In the above, replace `<GOTMDIR>` with the directory with the GOTM source code, e.g., ~/gotm-git if you executed `git clone` in you home directory. Also, replace `<FABMDIR>` with the directory with the FABM code, e.g., ~/fabm-git and `<ERSEMDIR>` with the directory with the ERSEM code, e.g., ~/ersem-git. If you experience issues related to NetCDF, see [tips and tricks/troubleshooting](#tips-and-tricks-troubleshooting).
