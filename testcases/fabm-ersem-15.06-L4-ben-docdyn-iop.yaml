@@ -152,7 +152,7 @@ instances:
     model: ersem/benthic_base
     parameters:
       composition: cnp                                     # elemental composition
-      c0: 0.001                                            # background carbon concentration (mg C/m^2)
+      c0: 0.001                                            # background carbon concentration (mg C/m^2), default = 0.0
     initialization:
       c: 18.9                                              # carbon (mg C/m^2)
       n: 0.6                                               # nitrogen (mmol N/m^2)
@@ -163,8 +163,8 @@ instances:
     parameters:
       composition: cnpsf                                   # elemental composition
       resuspension: true                                   # enable resuspension, default = false
-      vel_crit: 0.02                                       # critical shear velocity for resuspension
-      c0: 0.001                                            # background carbon concentration (mg C/m^2)
+      vel_crit: 0.02                                       # critical shear velocity for resuspension (m/s)
+      c0: 0.001                                            # background carbon concentration (mg C/m^2), default = 0.0
     initialization:
       c: 3052.0                                            # carbon (mg C/m^2)
       n: 3.5                                               # nitrogen (mmol N/m^2)
@@ -181,8 +181,8 @@ instances:
     model: ersem/benthic_column_particulate_matter
     parameters:
       composition: cnp                                     # elemental composition
+      c0: 0.001                                            # background carbon concentration (mg C/m^2), default = 0.0
       burial: true                                         # enable burial, default = false
-      c0: 0.001                                            # background carbon concentration (mg C/m^2)
     initialization:
       c: 30520.0                                           # carbon (mg C/m^2)
       n: 80.0                                              # nitrogen (mmol N/m^2)
@@ -698,7 +698,7 @@ instances:
     parameters:
       composition: c                                       # elemental composition
       remin: 0.05                                          # remineralisation rate (1/d), default = 0.0
-      c0: 1.e-05                                           # background value for benthic calcite
+      c0: 1e-05                                            # background carbon concentration (mg C/m^2), default = 0.0
     initialization:
       c: 0.05                                              # carbon (mg C/m^2)
     coupling:
@@ -728,10 +728,10 @@ instances:
     model: ersem/benthic_column_dissolved_matter
     parameters:
       composition: p                                       # composition (any combination of c,n,p,s,o,a)
+      c0: 0.0003                                           # background carbon concentration (mg C/m^2), default = 0.0
       ads1: 100.0                                          # adsorption in layer 1 (total:dissolved) (-), default = 1.0
       ads2: 100.0                                          # adsorption in layer 2 (total:dissolved) (-), default = 1.0
       ads3: 2.0                                            # adsorption in layer 3 (total:dissolved) (-), default = 1.0
-      c0: 0.0003                                           # background concentration (mg C/m^2)
     initialization:
       p: 6.8                                               # phosphorus (mmol/m^2)
     coupling:
@@ -741,10 +741,10 @@ instances:
     model: ersem/benthic_column_dissolved_matter
     parameters:
       composition: n                                       # composition (any combination of c,n,p,s,o,a)
+      c0: 0.0003                                           # background carbon concentration (mg C/m^2), default = 0.0
       last_layer: 2                                        # sediment layer where concentration drops to zero, default = 3
       relax: 5.0                                           # rate of relaxation towards equilibrium concentration profile (1/d)
       minD: 0.0001                                         # minimum depth of zero-concentration isocline (m)
-      c0: 0.0003                                           # background concentration (mg C/m^2)
     initialization:
       n: 0.584                                             # nitrogen (mmol/m^2)
     coupling:
@@ -754,11 +754,11 @@ instances:
     model: ersem/benthic_column_dissolved_matter
     parameters:
       composition: n                                       # composition (any combination of c,n,p,s,o,a)
+      c0: 0.0003                                           # background carbon concentration (mg C/m^2), default = 0.0
       ads1: 3.0                                            # adsorption in layer 1 (total:dissolved) (-), default = 1.0
       ads2: 3.0                                            # adsorption in layer 2 (total:dissolved) (-), default = 1.0
       ads3: 3.0                                            # adsorption in layer 3 (total:dissolved) (-), default = 1.0
       correction: true                                     # move losses in oxygenic layer to deeper layers if pelagic concentration is limiting, default = false
-      c0: 0.0003                                           # background concentration (mg C/m^2)
     initialization:
       n: 25.0                                              # nitrogen (mmol/m^2)
     coupling:
@@ -768,7 +768,7 @@ instances:
     model: ersem/benthic_column_dissolved_matter
     parameters:
       composition: s                                       # composition (any combination of c,n,p,s,o,a)
-      c0: 9.e-05                                           # background concentration (mg C/m^2)
+      c0: 9e-05                                            # background carbon concentration (mg C/m^2), default = 0.0
     initialization:
       s: 20.1                                              # silicate (mmol/m^2)
     coupling:
@@ -799,26 +799,26 @@ instances:
     model: ersem/benthic_column_particulate_matter_layer
     parameters:
       composition: s                                       # elemental composition
-      remin: 0.007                                         # remineralization rate (1/d), default = 0.0
       minimum_depth: 0.0                                   # minimum depth (m), default = 0.0
       variable_maximum_depth: true                         # maximum depth is variable, default = false
+      remin: 0.007                                         # remineralization rate (1/d), default = 0.0
     coupling:
       Q: Q6
+      s_remin_target: K5/per_layer/s1
       maximum_depth: ben_col/D1m                           # maximum depth (m)
-      s_remin_target: K5/per_layer/s1                      # sink for remineralized silicate (mmol Si/m^2)
   Q6s_anaerobic:
     long_name: anaerobic particulate silicate
     model: ersem/benthic_column_particulate_matter_layer
     parameters:
       composition: s                                       # elemental composition
-      remin: 0.007                                         # remineralization rate (1/d), default = 0.0
       variable_minimum_depth: true                         # minimum depth is variable, default = false
       maximum_depth: 0.3                                   # maximum depth (m), default = 0.0
+      remin: 0.007                                         # remineralization rate (1/d), default = 0.0
       source_depth_distribution: 2                         # vertical distribution of changes (1: constant absolute rate, 2: constant relative rate, 3: constant carbon-based relative rate), default = 1
     coupling:
       Q: Q6
+      s_remin_target: K5/per_layer/s2
       minimum_depth: ben_col/D1m                           # minimum depth (m)
-      s_remin_target: K5/per_layer/s2                      # sink for remineralized silicate (mmol Si/m^2)
   ben_nit:
     long_name: benthic nitrogen cycle
     model: ersem/benthic_nitrogen_cycle
@@ -833,9 +833,9 @@ instances:
       xn2: 1.25                                            # oxygen produced per N2 produced (-)
       hM3G4: 1.0                                           # Michaelis-Menten constant for nitrate limitation of denitrification (mmol N/m^3)
     coupling:
-      K3n: K3/per_layer/n1                                 # nitrate (mmol N/m^2)
-      K4n: K4/per_layer/n1                                 # ammonium (mmol N/m^2)
-      G2o: G2/per_layer/o1                                 # oxygen (mmol O_2/m^2)
+      K3n: K3/per_layer/n1                                 # benthic nitrate in 1st layer (mmol N/m^2)
+      K4n: K4/per_layer/n1                                 # benthic ammonium in 1st layer (mmol N/m^2)
+      G2o: G2/per_layer/o1                                 # benthic oxygen in 1st layer (mmol O_2/m^2)
       N4n: N4/n                                            # pelagic ammonium (mmol N/m^3)
       benTA: zero_hz                                       # benthic alkalinity in aerobic layer (mEq/m^2)
       benTA2: zero_hz                                      # benthic alkalinity in anaerobic layer (mEq/m^2)
@@ -849,13 +849,13 @@ instances:
     parameters:
       qnc: 0.0167                                          # nitrogen to carbon ratio (mmol N/mg C)
       qpc: 0.00125                                         # phosphorus to carbon ratio (mmol P/mg C)
-      c0: 1.e-06                                           # background carbon concentration (mg C/m^2)
+      c0: 1e-06                                            # background concentration (mg C/m^2), default = 0.0
       q10: 2.0                                             # Q_10 temperature coefficient (-)
       dd: 0.001                                            # Michaelis-Menten constant for oxygen limitation through layer thickness (m)
-      suQ7: 2e-06                                          # affinity for refractory matter (m^3/mg C/d)
-      suQ6s: 2e-05                                         # base affinity for particulate organic matter (m^3/mg C/d)
-      suQ6f: 0.0002                                        # additional affinity for particulate organic matter subject to nutrient limitation (m^3/mg C/d)
-      suQ1: 0.0005                                         # affinity for dissolved organic matter (m^3/mg C/d)
+      suQ7: 2e-06                                          # affinity for refractory matter (m^2/mg C/d)
+      suQ6s: 2e-05                                         # base affinity for particulate organic matter (m^2/mg C/d)
+      suQ6f: 0.0002                                        # additional affinity for particulate organic matter subject to nutrient limitation (m^2/mg C/d)
+      suQ1: 0.0005                                         # affinity for dissolved organic matter (m^2/mg C/d)
       puinc: 2.0                                           # preference for nutrients relative to carbon in particulate organic matter (-)
       pue6: 0.1                                            # fraction of consumed particulate organic matter that is excreted (-)
       pue7: 0.1                                            # fraction of consumed refractory matter that is excreted (-)
@@ -901,13 +901,13 @@ instances:
     parameters:
       qnc: 0.0167                                          # nitrogen to carbon ratio (mmol N/mg C)
       qpc: 0.00125                                         # phosphorus to carbon ratio (mmol P/mg C)
-      c0: 1.e-06                                           # background carbon concentration (mg C/m^2)
+      c0: 1e-06                                            # background concentration (mg C/m^2), default = 0.0
       q10: 2.0                                             # Q_10 temperature coefficient (-)
       dd: 0.01                                             # Michaelis-Menten constant for oxygen limitation through layer thickness (m)
-      suQ7: 2e-06                                          # affinity for refractory matter (m^3/mg C/d)
-      suQ6s: 2e-05                                         # base affinity for particulate organic matter (m^3/mg C/d)
-      suQ6f: 0.0002                                        # additional affinity for particulate organic matter subject to nutrient limitation (m^3/mg C/d)
-      suQ1: 0.0                                            # affinity for dissolved organic matter (m^3/mg C/d)
+      suQ7: 2e-06                                          # affinity for refractory matter (m^2/mg C/d)
+      suQ6s: 2e-05                                         # base affinity for particulate organic matter (m^2/mg C/d)
+      suQ6f: 0.0002                                        # additional affinity for particulate organic matter subject to nutrient limitation (m^2/mg C/d)
+      suQ1: 0.0                                            # affinity for dissolved organic matter (m^2/mg C/d)
       puinc: 2.0                                           # preference for nutrients relative to carbon in particulate organic matter (-)
       pue6: 0.0                                            # fraction of consumed particulate organic matter that is excreted (-)
       pue7: 0.0                                            # fraction of consumed refractory matter that is excreted (-)
@@ -955,7 +955,7 @@ instances:
     parameters:
       qnc: 0.0119                                          # nitrogen to carbon ratio (mmol N/mg C)
       qpc: 0.000792                                        # phosphorus to carbon ratio (mmol P/mg C)
-      c0: 0.001                                            # background carbon concentration (mg C/m^2)
+      c0: 0.001                                            # background concentration (mg C/m^2), default = 0.0
       q10: 2.0                                             # Q_10 temperature coefficient (-)
       rlO2: 0.0                                            # minimum pelagic oxygen concentration (mmol O2/m^3)
       hO2: 0.0                                             # Michaelis-Menten constant for oxygen limitation (mmol O2/m^3)
@@ -1037,7 +1037,7 @@ instances:
     parameters:
       qnc: 0.0119                                          # nitrogen to carbon ratio (mmol N/mg C)
       qpc: 0.000792                                        # phosphorus to carbon ratio (mmol P/mg C)
-      c0: 0.001                                            # background carbon concentration (mg C/m^2)
+      c0: 0.001                                            # background concentration (mg C/m^2), default = 0.0
       q10: 2.0                                             # Q_10 temperature coefficient (-)
       rlO2: 0.0                                            # minimum pelagic oxygen concentration (mmol O2/m^3)
       hO2: 0.0                                             # Michaelis-Menten constant for oxygen limitation (mmol O2/m^3)
@@ -1107,7 +1107,7 @@ instances:
     parameters:
       qnc: 0.0119                                          # nitrogen to carbon ratio (mmol N/mg C)
       qpc: 0.000792                                        # phosphorus to carbon ratio (mmol P/mg C)
-      c0: 0.001                                            # background carbon concentration (mg C/m^2)
+      c0: 0.001                                            # background concentration (mg C/m^2), default = 0.0
       q10: 2.0                                             # Q_10 temperature coefficient (-)
       rlO2: 0.0                                            # minimum pelagic oxygen concentration (mmol O2/m^3)
       hO2: 0.0                                             # Michaelis-Menten constant for oxygen limitation (mmol O2/m^3)

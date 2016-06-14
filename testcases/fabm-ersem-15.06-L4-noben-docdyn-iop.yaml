@@ -154,7 +154,7 @@ instances:
       composition: cnp                                    # elemental composition
       remin: 0.1                                          # remineralisation rate (1/d), default = 0.0
       pN3: 0.9                                            # nitrate fraction of remineralised nitrogen (remainder is ammonium) (-), default = 0.0
-      c0: 0.001                                            # background carbon concentration (mg C/m^2)
+      c0: 0.001                                           # background carbon concentration (mg C/m^2), default = 0.0
     initialization:
       c: 18.9                                             # carbon (mg C/m^2)
       n: 0.6                                              # nitrogen (mmol N/m^2)
@@ -172,8 +172,8 @@ instances:
       remin: 0.05                                         # remineralisation rate (1/d), default = 0.0
       pN3: 0.9                                            # nitrate fraction of remineralised nitrogen (remainder is ammonium) (-), default = 0.0
       resuspension: true                                  # enable resuspension, default = false
-      vel_crit: 0.02                                      # critical shear velocity for resuspension
-      c0: 0.001                                            # background carbon concentration (mg C/m^2)
+      vel_crit: 0.02                                      # critical shear velocity for resuspension (m/s)
+      c0: 0.001                                           # background carbon concentration (mg C/m^2), default = 0.0
     initialization:
       c: 3052.0                                           # carbon (mg C/m^2)
       n: 3.5                                              # nitrogen (mmol N/m^2)
@@ -193,7 +193,7 @@ instances:
       composition: cnp                                    # elemental composition
       remin: 0.01                                         # remineralisation rate (1/d), default = 0.0
       pN3: 0.9                                            # nitrate fraction of remineralised nitrogen (remainder is ammonium) (-), default = 0.0
-      c0: 0.001                                            # background carbon concentration (mg C/m^2)
+      c0: 0.001                                           # background carbon concentration (mg C/m^2), default = 0.0
     initialization:
       c: 30520.0                                          # carbon (mg C/m^2)
       n: 80.0                                             # nitrogen (mmol N/m^2)
@@ -700,7 +700,7 @@ instances:
     parameters:
       composition: c                                      # elemental composition
       remin: 0.05                                         # remineralisation rate (1/d), default = 0.0
-      c0: 1.e-05                                           # background value for benthic calcite
+      c0: 1e-05                                           # background carbon concentration (mg C/m^2), default = 0.0
     initialization:
       c: 0.05                                             # carbon (mg C/m^2)
     coupling:
