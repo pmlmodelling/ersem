@@ -121,7 +121,7 @@ To obtain the source code of GOTM, FABM and ERSEM, you need a git client. First 
 
 After these two program are installed, you can obtain the code by right-clicking in Windows Explorer within a directory where you want the source code directories, and choosing "Git Clone...". In the window that appears, set the URL, check the target directory and click OK. Do this for the following URLs:
 
-* GOTM: git://git.code.sf.net/p/gotm/code (suggested target directory: gotm-git)
+* GOTM: https://github.com/gotm-model/code.git (suggested target directory: gotm-git)
 * FABM: git://git.code.sf.net/p/fabm/code (suggested target directory: fabm-git)
 * ERSEM: git@gitlab.ecosystem-modelling.pml.ac.uk:edge/ersem.git (suggested target directory: ersem-git). For this repository, you also need to provide your private SSH key, which must match the public key that you provided on [the PML GitLab site](https://gitlab.ecosystem-modelling.pml.ac.uk/profile/keys). To do so, check "Load Putty key" and set its path to the file with your private key. For creating private/public keys, we suggest using [PuTTYgen](http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html).
 
