@@ -65,7 +65,7 @@ contains
       call self%initialize_ersem_benthic_base()
 
       if (self%resuspension) then
-         call self%get_parameter(self%vel_crit,'vel_crit','m/s','critical shear velocity for resuspension')
+         call self%get_parameter(self%vel_crit,'vel_crit','m/s','critical shear velocity for resuspension',default=0.02_rk)
          call self%register_dependency(self%id_bedstress,standard_variables%bottom_stress)
          call self%register_dependency(self%id_wdepth,   standard_variables%bottom_depth_below_geoid)
          call self%register_dependency(self%id_dens,     standard_variables%density)
