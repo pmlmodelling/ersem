@@ -186,6 +186,8 @@ contains
 
          ! (JB: code below seems to want to infer nutrient requirement/flux,
          ! but it makes no sense since K?a and fK?H? are summed while they have different units)
+         ! The "if" clauses below protect against the pathologic case where the nutrient requirement
+         ! and the nutrient concentation (fK4Hn and K4a, or fK1Hp and K1a) are both 0.
          fK4Hn = fQIHc * self%qnc
          if (fK4Hn>0) fK4Hn = fK4Hn * K4a/(K4a+fK4Hn)
          fK1Hp = fQIHc * self%qpc
