@@ -392,10 +392,10 @@ contains
       call self%type_ersem_benthic_base%initialize(configunit)
 
       ! Add penetration depths for all active constituents.
-      if (_VARIABLE_REGISTERED_(self%id_c)) call self%register_state_variable(self%id_penetration_c,'pen_depth_c','m','penetration depth of carbon')
-      if (_VARIABLE_REGISTERED_(self%id_n)) call self%register_state_variable(self%id_penetration_n,'pen_depth_n','m','penetration depth of nitrogen')
-      if (_VARIABLE_REGISTERED_(self%id_p)) call self%register_state_variable(self%id_penetration_p,'pen_depth_p','m','penetration depth of phosphorus')
-      if (_VARIABLE_REGISTERED_(self%id_s)) call self%register_state_variable(self%id_penetration_s,'pen_depth_s','m','penetration depth of silicate')
+      if (_VARIABLE_REGISTERED_(self%id_c)) call self%register_state_variable(self%id_penetration_c,'pen_depth_c','m','penetration depth of carbon',minimum=0.0_rk)
+      if (_VARIABLE_REGISTERED_(self%id_n)) call self%register_state_variable(self%id_penetration_n,'pen_depth_n','m','penetration depth of nitrogen',minimum=0.0_rk)
+      if (_VARIABLE_REGISTERED_(self%id_p)) call self%register_state_variable(self%id_penetration_p,'pen_depth_p','m','penetration depth of phosphorus',minimum=0.0_rk)
+      if (_VARIABLE_REGISTERED_(self%id_s)) call self%register_state_variable(self%id_penetration_s,'pen_depth_s','m','penetration depth of silicate',minimum=0.0_rk)
 
       ! Bioturbation
       ! Link to related standard variables (defined by ERSEM in shared.F90; not by FABM!)
@@ -445,7 +445,11 @@ contains
 
       real(rk) :: D,z_tur,z_bot
       real(rk) :: z_mean,z_mean_sms,burial_flux,C_int
+      real(rk) :: max_pen_depth_change = 0.05_rk  ! max change in penetration depth due to bioturbation, in m/d
+
+      ! Handle resuspension
       call self%type_ersem_benthic_base%do_bottom(_ARGUMENTS_DO_BOTTOM_)
+
       _HORIZONTAL_LOOP_BEGIN_
          ! Get diffusivity and maximum depth of bioturbation
          _GET_HORIZONTAL_(self%id_D,D)
@@ -458,9 +462,9 @@ contains
          ! flux at the bottom of the sediment column. See its derivation at the top of the file, section "Impact of burial".
          if (_VARIABLE_REGISTERED_(self%id_c)) then
             _GET_HORIZONTAL_(self%id_penetration_c,z_mean)
-            z_mean_sms = D/z_mean*(1.0_rk - exp(-z_tur/z_mean))
+            z_mean_sms = min(D/z_mean,max_pen_depth_change)*(1.0_rk - exp(-z_tur/z_mean))
             _SET_BOTTOM_ODE_(self%id_penetration_c,z_mean_sms)
-            if (self%burial) then
+            if (self%burial.and.z_mean>0.0_rk) then
                _GET_HORIZONTAL_(self%id_c,C_int)
                burial_flux = C_int/(1.0_rk - exp(-z_bot/z_mean))*exp(-z_bot/z_mean)*z_bot/z_mean*z_mean_sms/z_mean
                _SET_BOTTOM_ODE_(self%id_c,-burial_flux)
@@ -469,9 +473,9 @@ contains
          end if
          if (_VARIABLE_REGISTERED_(self%id_p)) then
             _GET_HORIZONTAL_(self%id_penetration_p,z_mean)
-            z_mean_sms = D/z_mean*(1.0_rk - exp(-z_tur/z_mean))
+            z_mean_sms = min(D/z_mean,max_pen_depth_change)*(1.0_rk - exp(-z_tur/z_mean))
             _SET_BOTTOM_ODE_(self%id_penetration_p,z_mean_sms)
-            if (self%burial) then
+            if (self%burial.and.z_mean>0.0_rk) then
                _GET_HORIZONTAL_(self%id_p,C_int)
                burial_flux = C_int/(1.0_rk - exp(-z_bot/z_mean))*exp(-z_bot/z_mean)*z_bot/z_mean*z_mean_sms/z_mean
                _SET_BOTTOM_ODE_(self%id_p,-burial_flux)
@@ -480,9 +484,9 @@ contains
          end if
          if (_VARIABLE_REGISTERED_(self%id_n)) then
             _GET_HORIZONTAL_(self%id_penetration_n,z_mean)
-            z_mean_sms = D/z_mean*(1.0_rk - exp(-z_tur/z_mean))
+            z_mean_sms = min(D/z_mean,max_pen_depth_change)*(1.0_rk - exp(-z_tur/z_mean))
             _SET_BOTTOM_ODE_(self%id_penetration_n,z_mean_sms)
-            if (self%burial) then
+            if (self%burial.and.z_mean>0.0_rk) then
                _GET_HORIZONTAL_(self%id_n,C_int)
                burial_flux = C_int/(1.0_rk - exp(-z_bot/z_mean))*exp(-z_bot/z_mean)*z_bot/z_mean*z_mean_sms/z_mean
                _SET_BOTTOM_ODE_(self%id_n,-burial_flux)
@@ -491,9 +495,9 @@ contains
          end if
          if (_VARIABLE_REGISTERED_(self%id_s)) then
             _GET_HORIZONTAL_(self%id_penetration_s,z_mean)
-            z_mean_sms = D/z_mean*(1.0_rk - exp(-z_tur/z_mean))
+            z_mean_sms = min(D/z_mean,max_pen_depth_change)*(1.0_rk - exp(-z_tur/z_mean))
             _SET_BOTTOM_ODE_(self%id_penetration_s,z_mean_sms)
-            if (self%burial) then
+            if (self%burial.and.z_mean>0.0_rk) then
                _GET_HORIZONTAL_(self%id_s,C_int)
                burial_flux = C_int/(1.0_rk - exp(-z_bot/z_mean))*exp(-z_bot/z_mean)*z_bot/z_mean*z_mean_sms/z_mean
                _SET_BOTTOM_ODE_(self%id_s,-burial_flux)
@@ -689,6 +693,7 @@ contains
       real(rk) :: d_min,d_max
       real(rk) :: c_int,d_pen,d_pen_c,sms,d_sms
       real(rk) :: c_int_local,sms_remin, d_tot
+      real(rk),parameter :: max_relax = 4.0_rk   ! max relaxation rate for penetration depth (1/d)
 
       _HORIZONTAL_LOOP_BEGIN_
          ! Determine top and bottom of desired depth interval.
@@ -789,7 +794,7 @@ contains
             ! This should already prevent a positive feedback, since the last term in the expression below
             ! ensures that the change goes to zero when d_pen>>d_tot. When d_pen<<d_tot, the old result
             ! is recovered. JornB 11/3/2015
-            _SET_BOTTOM_ODE_(self%id_pen_depth, (d_sms-d_pen)*sms/c_int*(1-exp(-d_tot/d_pen)))
+            _SET_BOTTOM_ODE_(self%id_pen_depth, (d_sms-d_pen)*min(sms/c_int,max_relax)*(1-exp(-d_tot/d_pen)))
          end if
 
          ! Apply sinks-sources to depth-integrated mass
