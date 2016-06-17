@@ -187,9 +187,9 @@ contains
          ! (JB: code below seems to want to infer nutrient requirement/flux,
          ! but it makes no sense since K?a and fK?H? are summed while they have different units)
          fK4Hn = fQIHc * self%qnc
-         fK4Hn = fK4Hn * K4a/(K4a+fK4Hn)
+         if (fK4Hn>0) fK4Hn = fK4Hn * K4a/(K4a+fK4Hn)
          fK1Hp = fQIHc * self%qpc
-         fK1Hp = fK1Hp * K1a/(K1a+fK1Hp)
+         if (fK1Hp>0) fK1Hp = fK1Hp * K1a/(K1a+fK1Hp)
 
          ! Respiration (reduction in bacterial carbon and dissolved oxygen, increase in 
          ! dissolved inorganic carbon, ammonium, phosphate)
