@@ -694,6 +694,7 @@ contains
       real(rk) :: c_int,d_pen,d_pen_c,sms,d_sms
       real(rk) :: c_int_local,sms_remin, d_tot
       real(rk),parameter :: max_relax = 4.0_rk   ! max relaxation rate for penetration depth (1/d)
+      real(rk) :: relax
 
       _HORIZONTAL_LOOP_BEGIN_
          ! Determine top and bottom of desired depth interval.
@@ -794,7 +795,18 @@ contains
             ! This should already prevent a positive feedback, since the last term in the expression below
             ! ensures that the change goes to zero when d_pen>>d_tot. When d_pen<<d_tot, the old result
             ! is recovered. JornB 11/3/2015
-            _SET_BOTTOM_ODE_(self%id_pen_depth, (d_sms-d_pen)*min(sms/c_int,max_relax)*(1-exp(-d_tot/d_pen)))
+
+            ! In the expression below, we protect against extreme changes in penetration
+            ! depth at small c_int. Note per the analytical derivation, relax = sms/c_int.
+            if (sms==0.0_rk) then
+               ! Separately handle sms==0, in order to prevent 0/0 when sms and c_int are both 0.
+               relax = 0.0_rk
+            else
+               ! The expression below handles c_int==0 gracefully provided the user does not
+               ! activate runtime floating point exceptions that trap division by 0.
+               relax = sign(min(abs(sms)/c_int,max_relax),sms)
+            end if
+            _SET_BOTTOM_ODE_(self%id_pen_depth, (d_sms-d_pen)*relax*(1-exp(-d_tot/d_pen)))
          end if
 
          ! Apply sinks-sources to depth-integrated mass
