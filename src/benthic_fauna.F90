@@ -245,7 +245,7 @@ contains
       _GET_(self%id_ETW,ETW)
 
       ! Temperature limitation factor
-      eT = self%q10**((ETW-10._rk)/10._rk) - self%q10**((ETW-32._rk)/3._rk)
+      eT = max(0.0_rk,self%q10**((ETW-10._rk)/10._rk) - self%q10**((ETW-32._rk)/3._rk))
 
       ! Oxygen limitation factor
       if (O2o>self%rlO2) then

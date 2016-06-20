@@ -337,7 +337,7 @@ contains
          end if
 
          ! Temperature response
-         et = self%q10**((ETW-10._rk)/10._rk) - self%q10**((ETW-32._rk)/3._rk)
+         et = max(0.0_rk,self%q10**((ETW-10._rk)/10._rk) - self%q10**((ETW-32._rk)/3._rk))
 
          ! Production...........................................................
 

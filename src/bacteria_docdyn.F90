@@ -222,7 +222,7 @@ contains
          qnB1c = B1n/B1c
 !..Temperature effect on pelagic bacteria:
 
-         etB1 = self%q10B1X**((ETW-10._rk)/10._rk) - self%q10B1X**((ETW-32._rk)/3._rk)
+         etB1 = max(0.0_rk,self%q10B1X**((ETW-10._rk)/10._rk) - self%q10B1X**((ETW-32._rk)/3._rk))
 
 !..Prevailing Oxygen limitation for bacteria:
 

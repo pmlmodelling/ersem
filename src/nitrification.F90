@@ -80,7 +80,7 @@ contains
 
          ! Temperature dependence
          _GET_(self%id_ETW,ETW)
-         etB1 = self%q10**((ETW-10._rk)/10._rk) - self%q10**((ETW-32._rk)/3._rk)
+         etB1 = max(0.0_rk,self%q10**((ETW-10._rk)/10._rk) - self%q10**((ETW-32._rk)/3._rk))
 
          ! Oxygen state for nitrogen species transformation
          _GET_(self%id_O2o,O2o)

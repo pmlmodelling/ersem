@@ -271,7 +271,7 @@ contains
             preycP = preycP*CMass
 
             ! Temperature effect:
-            et = self%q10**((ETW-10._rk)/10._rk) - self%q10**((ETW-32._rk)/3._rk)
+            et = max(0.0_rk,self%q10**((ETW-10._rk)/10._rk) - self%q10**((ETW-32._rk)/3._rk))
 
             ! Oxygen limitation (based on oxygen saturation eO2mO2):
             CORROX = 1._rk + self%chro

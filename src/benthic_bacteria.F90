@@ -152,7 +152,7 @@ contains
          _GET_HORIZONTAL_(self%id_K4n,K4a)
 
          ! Limitation by temperature, oxygen, nutrient availability.
-         eT  = self%q10**((ETW-10._rk)/10._rk) - self%q10**((ETW-32._rk)/3._rk)
+         eT  = max(0.0_rk,self%q10**((ETW-10._rk)/10._rk) - self%q10**((ETW-32._rk)/3._rk))
          eOx = Dm/(self%dd+Dm)
          if (AQ6c<=0.0_rk) then
             ! Avoid division by zero: no carbon in substrate means no nutrient limitation

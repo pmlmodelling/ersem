@@ -372,7 +372,7 @@ contains
          ! Apply temperature limitation factor to particulate organic matter conversion rates.
          ! NB limitation factor is also used further down for mineralization of dissolved organic matter.
          _GET_(self%id_ETW,ETW)
-         etRemin = self%q10B1X**((ETW-10._rk)/10._rk) - self%q10B1X**((ETW-32._rk)/3._rk)
+         etRemin = max(0.0_rk,self%q10B1X**((ETW-10._rk)/10._rk) - self%q10B1X**((ETW-32._rk)/3._rk))
          sRPr1 = sRPr1*etRemin
 #endif
 
