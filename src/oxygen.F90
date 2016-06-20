@@ -94,10 +94,10 @@ contains
          if (wnd.lt.0._rk) wnd=0._rk
 
          if (wnd.gt.11._rk) then
-            ko2o = sqrt((1953.4_rk-128._rk*etw+3.9918_rk*etw**2-  &
+            ko2o = sqrt(max(0.0_rk,1953.4_rk-128._rk*etw+3.9918_rk*etw**2-  &
                0.050091_rk*etw**3)/660._rk) * (0.02383_rk * wnd**3)
          else
-            ko2o = sqrt((1953.4_rk-128._rk*etw+3.9918_rk*etw**2- &
+            ko2o = sqrt(max(0.0_rk,1953.4_rk-128._rk*etw+3.9918_rk*etw**2- &
                0.050091_rk*etw**3)/660._rk) * (0.31_rk * wnd**2)
          endif
 
