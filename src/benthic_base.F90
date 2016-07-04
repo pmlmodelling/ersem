@@ -179,7 +179,13 @@ contains
       _HORIZONTAL_LOOP_BEGIN_
          ter=self%vel_crit**2
          if (self%resuspension) then
-            er=100._rk* ter * 1000._rk*86400._rk  !convert to mg/day
+            ! Erosion constant: 10^-4 tons s m-4 = 100 g s m-4 ("M" in Puls & Sundermann 1990) This value is representative for mud beds!
+            ! As criticial shear velocity "ter" has unit m2 s-2, M*ter has unit g s-1 m-2. Below we convert to mg s-1 m-2 by multiplying with 1000*86400.
+            ! Representative erosion value: for ter=0.02^2 (Puls & Sundermann 1990), er=0.04 g m-2 s-1 = 3.5 kg m-2 d-1.
+            ! For a sediment density of 2000 kg m-3, that results in removal of 3.5/2000 = 0.00175 m d-1.
+            ! That implies for each "ter" units of shear stress above "ter", an additional 2 mm of sediment is stripped off per day.
+            er = 100._rk * ter * 1000._rk*86400._rk
+
             _GET_HORIZONTAL_(self%id_bedstress,bedstress)
             _GET_(self%id_dens,density)
 
