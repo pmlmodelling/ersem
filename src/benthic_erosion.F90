@@ -37,8 +37,8 @@ contains
       class (type_ersem_benthic_erosion),intent(inout),target :: self
       integer,                           intent(in)           :: configunit
 
-      call self%get_parameter(self%M,   'M',   'g/s/m4','erosion constant (Puls & Sundermann 1990)',       default=100.0_rk)
-      call self%get_parameter(self%v_cr,'v_cr','m/s',   'critical bed shear velocity for sediment erosion',default=0.02_rk)
+      call self%get_parameter(self%M,   'M',   'g/s/m^4','erosion constant (Puls & Suendermann 1990)',      default=100.0_rk)
+      call self%get_parameter(self%v_cr,'v_cr','m/s',    'critical bed shear velocity for sediment erosion',default=0.02_rk)
 
       call self%register_dependency(self%id_dens,     standard_variables%density)
       call self%register_dependency(self%id_bedstress,standard_variables%bottom_stress)
@@ -51,16 +51,26 @@ contains
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
       real(rk) :: tau_bot, rho_wat, rho_sed, er, v_er, porosity
-      real(rk),parameter :: rho_grain = 2650._rk  ! Sediment density (kg m-3) - single grain only, not the water or air around them! Quartz: 2650 kg/m3
+      real(rk),parameter :: rho_grain = 2650._rk  ! Sediment density (kg/m^3) - single grain only, not the water or air around them! Quartz: 2650 kg/m^3
 
       _HORIZONTAL_LOOP_BEGIN_
          _GET_(self%id_dens,rho_wat)
          _GET_HORIZONTAL_(self%id_bedstress,tau_bot)
          _GET_HORIZONTAL_(self%id_porosity,porosity)
-         rho_sed = (1-porosity)*rho_grain                       ! Sediment density (dry sediment per total volume) - for erosion, it should be defined at the sediment surface.
-         er = self%M*max(0.0_rk,tau_bot/rho_wat - self%v_cr**2) ! Erosion rate (g s-1 m-2) for sediment. Note: square of bed shear velocity = bed stress (Pa)/density (kg m-3)
-         v_er = er/(1000*rho_sed)*86400                         ! Erosion in m d-1 (note: rho is expressed in kg m-3, hence the multiplication by 1000)
+
+         ! Sediment erosion (g/s/m^2) as per Puls & Suendermann (1990).
+         ! Note: square of bed shear velocity = bed stress (Pa)/density (kg/m^3)
+         er = self%M * max(0.0_rk,tau_bot/rho_wat - self%v_cr**2)
+
+         ! Convert from sediment erosion in g/s/m^2 to erosion rate in m/d by dividing by sediment density.
+         ! rho_sed is the sediment density (dry sediment per total volume) at the sediment surface in kg/m^3 (hence the multiplication by 1000).
+         ! Formally rho_sed is the density of all solids, i.e., sediment grains as well as organic matter, calcite, etc.
+         ! Here we assume that the mass of these additional compounds is small [negligible] compared to the mass of the sediment grains themselves.
+         ! That is generally true for organic matter (<5% of solids even in fluff layers).
+         rho_sed = (1-porosity)*rho_grain
+         v_er = er/(1000*rho_sed)*86400
          _SET_HORIZONTAL_DIAGNOSTIC_(self%id_v_er,v_er)
+
       _HORIZONTAL_LOOP_END_
    end subroutine do_bottom
 
