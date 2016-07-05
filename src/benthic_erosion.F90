@@ -1,12 +1,8 @@
 #include "fabm_driver.h"
 
-! type_ersem_benthic_column
+! type_ersem_benthic_erosion
 !
-! This model specifies the structure of the three-layer sediment column.
-!
-! This model also computes the diffusivity of solutes in the different layers,
-! and a "particulate diffusivity" that represents bioturbation. These variables
-! account for variable bioturbation and bioirrigation activity, respectively.
+! This model estimates sediment erosion in m/d from the bottom shear stress.
 
 module ersem_benthic_erosion
 
