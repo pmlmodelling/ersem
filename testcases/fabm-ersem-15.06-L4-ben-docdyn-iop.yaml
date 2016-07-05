@@ -1160,3 +1160,5 @@ instances:
       maximum_depth: 0.03                                  # maximum depth (m), default = 0.0
     coupling:
       Q: Q6
+  erosion:
+    model: ersem/benthic_erosion
