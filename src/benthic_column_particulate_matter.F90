@@ -471,9 +471,6 @@ contains
       real(rk) :: max_pen_depth_change = 0.05_rk  ! max change in penetration depth due to bioturbation, in m/d
       real(rk) :: max_rel_res = 4.0_rk            ! max relative loss of matter due to resuspension, in 1/d
 
-      ! Handle resuspension
-      call self%type_ersem_benthic_base%do_bottom(_ARGUMENTS_DO_BOTTOM_)
-
       _HORIZONTAL_LOOP_BEGIN_
          ! Get diffusivity and maximum depth of bioturbation
          _GET_HORIZONTAL_(self%id_D,D)
