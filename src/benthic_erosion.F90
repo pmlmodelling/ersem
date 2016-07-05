@@ -37,9 +37,6 @@ contains
       class (type_ersem_benthic_erosion),intent(inout),target :: self
       integer,                           intent(in)           :: configunit
 
-      ! Set time unit to d-1. This implies that all rates (sink/source terms) are given in d-1.
-      self%dt = 86400._rk
-
       call self%get_parameter(self%M,   'M',   'g/s/m4','erosion constant (Puls & Sundermann 1990)',       default=100.0_rk)
       call self%get_parameter(self%v_cr,'v_cr','m/s',   'critical bed shear velocity for sediment erosion',default=0.02_rk)
 
@@ -62,7 +59,7 @@ contains
          _GET_HORIZONTAL_(self%id_porosity,porosity)
          rho_sed = (1-porosity)*rho_grain                       ! Sediment density (dry sediment per total volume) - for erosion, it should be defined at the sediment surface.
          er = self%M*max(0.0_rk,tau_bot/rho_wat - self%v_cr**2) ! Erosion rate (g s-1 m-2) for sediment. Note: square of bed shear velocity = bed stress (Pa)/density (kg m-3)
-         v_er = er/(1000*rho_sed)*86400            ! Erosion in m d-1 (note: rho is expressed in kg m-3, hence the multiplication by 1000)
+         v_er = er/(1000*rho_sed)*86400                         ! Erosion in m d-1 (note: rho is expressed in kg m-3, hence the multiplication by 1000)
          _SET_HORIZONTAL_DIAGNOSTIC_(self%id_v_er,v_er)
       _HORIZONTAL_LOOP_END_
    end subroutine do_bottom
