@@ -33,8 +33,8 @@ contains
       class (type_ersem_benthic_erosion),intent(inout),target :: self
       integer,                           intent(in)           :: configunit
 
-      call self%get_parameter(self%M,   'M',   'g*s/m^4','erosion constant (Puls & Suendermann 1990)',      default=100.0_rk)
       call self%get_parameter(self%v_cr,'v_cr','m/s',    'critical bed shear velocity for sediment erosion',default=0.02_rk)
+      call self%get_parameter(self%M,   'M',   'g*s/m^4','erosion constant (Puls & Suendermann 1990)',      default=100.0_rk)
 
       call self%register_dependency(self%id_dens,     standard_variables%density)
       call self%register_dependency(self%id_bedstress,standard_variables%bottom_stress)
