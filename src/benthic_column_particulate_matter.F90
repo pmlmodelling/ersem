@@ -320,7 +320,8 @@ module ersem_benthic_column_particulate_matter
    type,extends(type_ersem_benthic_base),public :: type_ersem_benthic_column_particulate_matter
       type (type_bottom_state_variable_id) :: id_penetration_c,id_penetration_n,id_penetration_p,id_penetration_s
       type (type_bottom_state_variable_id) :: id_buried_c,id_buried_n,id_buried_p,id_buried_s
-      type (type_horizontal_dependency_id) :: id_D, id_z_tur, id_d_tot
+      type (type_bottom_state_variable_id) :: id_res_c,id_res_p,id_res_n,id_res_s
+      type (type_horizontal_dependency_id) :: id_D, id_z_tur, id_d_tot, id_er
 
       logical :: burial
    contains
@@ -427,6 +428,28 @@ contains
          end if
       end if
 
+      if (self%resuspension) then
+         ! Add resuspension state dependencies and couple them to surface layer
+         ! particulates  
+         call self%register_dependency(self%id_er,sediment_erosion)
+         if (_VARIABLE_REGISTERED_(self%id_c)) then
+            call self%register_state_dependency(self%id_res_c,'resuspended_c','mg C/m^2','source of resuspended carbon')
+            call self%request_coupling(self%id_res_c,'surface/c')
+         end if
+         if (_VARIABLE_REGISTERED_(self%id_p)) then
+            call self%register_state_dependency(self%id_res_p,'resuspended_p','mmol P/m^2','source of resuspended phosphorus')
+            call self%request_coupling(self%id_res_p,'surface/p')
+         end if
+         if (_VARIABLE_REGISTERED_(self%id_n)) then
+            call self%register_state_dependency(self%id_res_n,'resuspended_n','mmol N/m^2','source of resuspended nitrogen')
+            call self%request_coupling(self%id_res_n,'surface/n')
+         end if
+         if (_VARIABLE_REGISTERED_(self%id_s)) then
+            call self%register_state_dependency(self%id_res_s,'resuspended_s','mmol Si/m^2','source of resuspended silicate')
+            call self%request_coupling(self%id_res_s,'surface/s')
+         end if
+      end if
+
       ! Create a submodel for particulate organic matter at the sediment surface
       ! This will receive sinks and sources associated with benthic-pelagic exchange - sedimentation, resuspension.
       allocate(single_layer)
@@ -444,7 +467,7 @@ contains
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
       real(rk) :: D,z_tur,z_bot
-      real(rk) :: z_mean,z_mean_sms,burial_flux,C_int
+      real(rk) :: z_mean,z_mean_sms,burial_flux,C_int,v_er,resuspension_flux
       real(rk) :: max_pen_depth_change = 0.05_rk  ! max change in penetration depth due to bioturbation, in m/d
 
       ! Handle resuspension
@@ -455,6 +478,11 @@ contains
          _GET_HORIZONTAL_(self%id_D,D)
          _GET_HORIZONTAL_(self%id_z_tur,z_tur)
          _GET_HORIZONTAL_(self%id_d_tot,z_bot)
+
+         ! Get sediment erosion rate in m/d
+         if (self%resuspension) then
+            _GET_HORIZONTAL_(self%id_er,v_er)
+         end if
 
          ! Apply change in penetration depth due to bioturbation.
          ! See its derivation in the comments at the top of the file, section "Impact of bioturbation".
@@ -470,6 +498,13 @@ contains
                _SET_BOTTOM_ODE_(self%id_c,-burial_flux)
                _SET_BOTTOM_ODE_(self%id_buried_c,burial_flux)
             end if
+            if (self%resuspension) then
+               _GET_HORIZONTAL_(self%id_c,C_int)
+               resuspension_flux = v_er * C_int/z_mean/(1.0_rk - exp (-z_bot/z_mean))
+               _SET_BOTTOM_ODE_(self%id_res_c,-resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_cresf,resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspension_c,resuspension_flux)
+            end if
          end if
          if (_VARIABLE_REGISTERED_(self%id_p)) then
             _GET_HORIZONTAL_(self%id_penetration_p,z_mean)
@@ -480,6 +515,13 @@ contains
                burial_flux = C_int/(1.0_rk - exp(-z_bot/z_mean))*exp(-z_bot/z_mean)*z_bot/z_mean*z_mean_sms/z_mean
                _SET_BOTTOM_ODE_(self%id_p,-burial_flux)
                _SET_BOTTOM_ODE_(self%id_buried_p,burial_flux)
+            end if
+            if (self%resuspension) then
+               _GET_HORIZONTAL_(self%id_p,C_int)
+               resuspension_flux = v_er * C_int/z_mean/(1.0_rk - exp (-z_bot/z_mean))
+               _SET_BOTTOM_ODE_(self%id_res_p,-resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_presf,resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspension_p,resuspension_flux)
             end if
          end if
          if (_VARIABLE_REGISTERED_(self%id_n)) then
@@ -492,6 +534,13 @@ contains
                _SET_BOTTOM_ODE_(self%id_n,-burial_flux)
                _SET_BOTTOM_ODE_(self%id_buried_n,burial_flux)
             end if
+            if (self%resuspension) then
+               _GET_HORIZONTAL_(self%id_n,C_int)
+               resuspension_flux = v_er * C_int/z_mean/(1.0_rk - exp (-z_bot/z_mean))
+               _SET_BOTTOM_ODE_(self%id_res_n,-resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_nresf,resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspension_n,resuspension_flux)
+            end if
          end if
          if (_VARIABLE_REGISTERED_(self%id_s)) then
             _GET_HORIZONTAL_(self%id_penetration_s,z_mean)
@@ -502,6 +551,13 @@ contains
                burial_flux = C_int/(1.0_rk - exp(-z_bot/z_mean))*exp(-z_bot/z_mean)*z_bot/z_mean*z_mean_sms/z_mean
                _SET_BOTTOM_ODE_(self%id_s,-burial_flux)
                _SET_BOTTOM_ODE_(self%id_buried_s,burial_flux)
+            end if
+            if (self%resuspension) then
+               _GET_HORIZONTAL_(self%id_s,C_int)
+               resuspension_flux = v_er * C_int/z_mean/(1.0_rk - exp (-z_bot/z_mean))
+               _SET_BOTTOM_ODE_(self%id_res_s,-resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_sresf,resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspension_s,resuspension_flux)
             end if
          end if
       _HORIZONTAL_LOOP_END_
