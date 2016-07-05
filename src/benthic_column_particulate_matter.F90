@@ -469,6 +469,7 @@ contains
       real(rk) :: D,z_tur,z_bot
       real(rk) :: z_mean,z_mean_sms,burial_flux,C_int,v_er,resuspension_flux
       real(rk) :: max_pen_depth_change = 0.05_rk  ! max change in penetration depth due to bioturbation, in m/d
+      real(rk) :: max_rel_res = 4.0_rk            ! max relative loss of matter due to resuspension, in 1/d
 
       ! Handle resuspension
       call self%type_ersem_benthic_base%do_bottom(_ARGUMENTS_DO_BOTTOM_)
@@ -500,7 +501,7 @@ contains
             end if
             if (self%resuspension) then
                _GET_HORIZONTAL_(self%id_c,C_int)
-               resuspension_flux = v_er * C_int/z_mean/(1.0_rk - exp (-z_bot/z_mean))
+               resuspension_flux = C_int*min(max_rel_res, v_er/z_mean/(1.0_rk - exp (-z_bot/z_mean)))
                _SET_BOTTOM_ODE_(self%id_res_c,-resuspension_flux)
                _SET_HORIZONTAL_DIAGNOSTIC_(self%id_cresf,resuspension_flux)
                _SET_BOTTOM_EXCHANGE_(self%id_resuspension_c,resuspension_flux)
@@ -518,7 +519,7 @@ contains
             end if
             if (self%resuspension) then
                _GET_HORIZONTAL_(self%id_p,C_int)
-               resuspension_flux = v_er * C_int/z_mean/(1.0_rk - exp (-z_bot/z_mean))
+               resuspension_flux = C_int*min(max_rel_res, v_er/z_mean/(1.0_rk - exp (-z_bot/z_mean)))
                _SET_BOTTOM_ODE_(self%id_res_p,-resuspension_flux)
                _SET_HORIZONTAL_DIAGNOSTIC_(self%id_presf,resuspension_flux)
                _SET_BOTTOM_EXCHANGE_(self%id_resuspension_p,resuspension_flux)
@@ -536,7 +537,7 @@ contains
             end if
             if (self%resuspension) then
                _GET_HORIZONTAL_(self%id_n,C_int)
-               resuspension_flux = v_er * C_int/z_mean/(1.0_rk - exp (-z_bot/z_mean))
+               resuspension_flux = C_int*min(max_rel_res, v_er/z_mean/(1.0_rk - exp (-z_bot/z_mean)))
                _SET_BOTTOM_ODE_(self%id_res_n,-resuspension_flux)
                _SET_HORIZONTAL_DIAGNOSTIC_(self%id_nresf,resuspension_flux)
                _SET_BOTTOM_EXCHANGE_(self%id_resuspension_n,resuspension_flux)
@@ -554,7 +555,7 @@ contains
             end if
             if (self%resuspension) then
                _GET_HORIZONTAL_(self%id_s,C_int)
-               resuspension_flux = v_er * C_int/z_mean/(1.0_rk - exp (-z_bot/z_mean))
+               resuspension_flux = C_int*min(max_rel_res, v_er/z_mean/(1.0_rk - exp (-z_bot/z_mean)))
                _SET_BOTTOM_ODE_(self%id_res_s,-resuspension_flux)
                _SET_HORIZONTAL_DIAGNOSTIC_(self%id_sresf,resuspension_flux)
                _SET_BOTTOM_EXCHANGE_(self%id_resuspension_s,resuspension_flux)
