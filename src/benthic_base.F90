@@ -20,8 +20,8 @@ module ersem_benthic_base
       type (type_bottom_state_variable_id) :: id_c,id_n,id_p,id_f,id_s
 
       ! Coupled state variables for resuspension and remineralization
-      type (type_state_variable_id) :: id_resuspension_c,id_resuspension_n,id_resuspension_p,id_resuspension_s,id_resuspension_f
-      type (type_horizontal_diagnostic_variable_id) :: id_cresf,id_nresf,id_presf,id_sresf,id_fresf
+      type (type_state_variable_id) :: id_resuspended_c,id_resuspended_n,id_resuspended_p,id_resuspended_s,id_resuspended_f
+      type (type_horizontal_diagnostic_variable_id) :: id_resuspension_flux_c,id_resuspension_flux_n,id_resuspension_flux_p,id_resuspension_flux_s,id_resuspension_flux_f
       type (type_state_variable_id) :: id_O3c,id_N1p,id_N3n,id_N4n,id_N5s,id_N7f,id_TA
 
       ! Dependencies for resuspension
@@ -77,18 +77,18 @@ contains
       if (index(self%composition,'c')/=0) then
          call self%add_constituent('c',0.0_rk,c0)
          if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_c,'resuspension_target_c','mg C/m^3','pelagic variable taking up resuspended carbon')
-            call self%request_coupling_to_model(self%id_resuspension_c,'RP','c')
-            call self%register_diagnostic_variable(self%id_cresf,'resuspension_flux_c','mg C/m^2','carbon resuspension',source=source_do_bottom)
+            call self%register_state_dependency(self%id_resuspended_c,'resuspended_c','mg C/m^3','pelagic variable taking up resuspended carbon')
+            call self%request_coupling_to_model(self%id_resuspended_c,'RP','c')
+            call self%register_diagnostic_variable(self%id_resuspension_flux_c,'resuspension_flux_c','mg C/m^2','carbon resuspension',source=source_do_bottom)
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_O3c,'O3c','mmol/m^3','dissolved inorganic carbon')
       end if
       if (index(self%composition,'p')/=0) then
          call self%add_constituent('p',0.0_rk,qpRPIcX*c0)
          if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_p,'resuspension_target_p','mmol P/m^3','pelagic variable taking up resuspended phosphorus')
-            call self%request_coupling_to_model(self%id_resuspension_p,'RP','p')
-            call self%register_diagnostic_variable(self%id_presf,'resuspension_flux_p','mmol P/m^2','phosphorus resuspension',source=source_do_bottom)
+            call self%register_state_dependency(self%id_resuspended_p,'resuspended_p','mmol P/m^3','pelagic variable taking up resuspended phosphorus')
+            call self%request_coupling_to_model(self%id_resuspended_p,'RP','p')
+            call self%register_diagnostic_variable(self%id_resuspension_flux_p,'resuspension_flux_p','mmol P/m^2','phosphorus resuspension',source=source_do_bottom)
          end if
          if (self%reminQIX/=0.0_rk) then
             call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
@@ -98,9 +98,9 @@ contains
       if (index(self%composition,'n')/=0) then
          call self%add_constituent('n',0.0_rk,qnRPIcX*c0)
          if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_n,'resuspension_target_n','mmol N/m^3','pelagic variable taking up resuspended nitrogen')
-            call self%request_coupling_to_model(self%id_resuspension_n,'RP','n')
-            call self%register_diagnostic_variable(self%id_nresf,'resuspension_flux_n','mmol N/m^2','nitrogen resuspension',source=source_do_bottom)
+            call self%register_state_dependency(self%id_resuspended_n,'resuspended_n','mmol N/m^3','pelagic variable taking up resuspended nitrogen')
+            call self%request_coupling_to_model(self%id_resuspended_n,'RP','n')
+            call self%register_diagnostic_variable(self%id_resuspension_flux_n,'resuspension_flux_n','mmol N/m^2','nitrogen resuspension',source=source_do_bottom)
          end if
          if (self%reminQIX/=0.0_rk) then
             call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3','nitrate')
@@ -111,18 +111,18 @@ contains
       if (index(self%composition,'s')/=0) then
          call self%add_constituent('s',0.0_rk,qsRPIcX*c0)
          if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_s,'resuspension_target_s','mmol Si/m^3','pelagic variable taking up resuspended silicate')
-            call self%request_coupling_to_model(self%id_resuspension_s,'RP','s')
-            call self%register_diagnostic_variable(self%id_sresf,'resuspension_flux_s','mmol Si/m^2','silicate resuspension',source=source_do_bottom)
+            call self%register_state_dependency(self%id_resuspended_s,'resuspended_s','mmol Si/m^3','pelagic variable taking up resuspended silicate')
+            call self%request_coupling_to_model(self%id_resuspended_s,'RP','s')
+            call self%register_diagnostic_variable(self%id_resuspension_flux_s,'resuspension_flux_s','mmol Si/m^2','silicate resuspension',source=source_do_bottom)
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N5s,'N5s','mmol Si/m^3','silicate')
       end if
       if (index(self%composition,'f')/=0) then
          call self%add_constituent('f',0.0_rk)
          if (use_iron.and.self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_f,'resuspension_target_f','umol Fe/m^3','pelagic variable taking up resuspended iron')
-            call self%request_coupling_to_model(self%id_resuspension_f,'RP','f')
-            call self%register_diagnostic_variable(self%id_fresf,'resuspension_flux_f','umol Fe/m^2','iron resuspension',source=source_do_bottom)
+            call self%register_state_dependency(self%id_resuspended_f,'resuspended_f','umol Fe/m^3','pelagic variable taking up resuspended iron')
+            call self%request_coupling_to_model(self%id_resuspended_f,'RP','f')
+            call self%register_diagnostic_variable(self%id_resuspension_flux_f,'resuspension_flux_f','umol Fe/m^2','iron resuspension',source=source_do_bottom)
          end if
          if (use_iron.and.self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3','dissolved iron')
       end if
@@ -194,8 +194,8 @@ contains
                _GET_HORIZONTAL_(self%id_c,state)
                resuspension_flux = fac*state
                _SET_BOTTOM_ODE_(self%id_c,-resuspension_flux)
-               _SET_BOTTOM_EXCHANGE_(self%id_resuspension_c,resuspension_flux)
-               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_cresf,resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspended_c,resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_c,resuspension_flux)
             end if
 
             ! Nitrogen
@@ -203,8 +203,8 @@ contains
                _GET_HORIZONTAL_(self%id_n,state)
                resuspension_flux = fac*state
                _SET_BOTTOM_ODE_(self%id_n,-resuspension_flux)
-               _SET_BOTTOM_EXCHANGE_(self%id_resuspension_n,resuspension_flux)
-               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_nresf,resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspended_n,resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_n,resuspension_flux)
             end if
 
             ! Phosphorus
@@ -212,8 +212,8 @@ contains
                _GET_HORIZONTAL_(self%id_p,state)
                resuspension_flux = fac*state
                _SET_BOTTOM_ODE_(self%id_p,-resuspension_flux)
-               _SET_BOTTOM_EXCHANGE_(self%id_resuspension_p,resuspension_flux)
-               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_presf,resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspended_p,resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_p,resuspension_flux)
             end if
 
             ! Silicate
@@ -221,8 +221,8 @@ contains
                _GET_HORIZONTAL_(self%id_s,state)
                resuspension_flux = fac*state
                _SET_BOTTOM_ODE_(self%id_s,-resuspension_flux)
-               _SET_BOTTOM_EXCHANGE_(self%id_resuspension_s,resuspension_flux)
-               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_sresf,resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspended_s,resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_s,resuspension_flux)
             end if
 
             ! Iron
@@ -230,8 +230,8 @@ contains
                _GET_HORIZONTAL_(self%id_f,state)
                resuspension_flux = fac*state
                _SET_BOTTOM_ODE_(self%id_f,-resuspension_flux)
-               _SET_BOTTOM_EXCHANGE_(self%id_resuspension_f,resuspension_flux)
-               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fresf,resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspended_f,resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_f,resuspension_flux)
             end if
          end if   ! Resuspension
 

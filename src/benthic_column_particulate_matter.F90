@@ -320,7 +320,7 @@ module ersem_benthic_column_particulate_matter
    type,extends(type_ersem_benthic_base),public :: type_ersem_benthic_column_particulate_matter
       type (type_bottom_state_variable_id) :: id_penetration_c,id_penetration_n,id_penetration_p,id_penetration_s
       type (type_bottom_state_variable_id) :: id_buried_c,id_buried_n,id_buried_p,id_buried_s
-      type (type_bottom_state_variable_id) :: id_res_c,id_res_p,id_res_n,id_res_s
+      type (type_bottom_state_variable_id) :: id_resuspendable_c,id_resuspendable_p,id_resuspendable_n,id_resuspendable_s
       type (type_horizontal_dependency_id) :: id_D, id_z_tur, id_d_tot, id_er
 
       logical :: burial
@@ -429,24 +429,24 @@ contains
       end if
 
       if (self%resuspension) then
-         ! Add resuspension state dependencies and couple them to surface layer
-         ! particulates  
+         ! Add dependencies on state variables that will be resuspended, and couple these to the surface layer of our own state variabes.
+         ! This ensures that resuspension does not only update the biomass, but also the penetration depth.
          call self%register_dependency(self%id_er,sediment_erosion)
          if (_VARIABLE_REGISTERED_(self%id_c)) then
-            call self%register_state_dependency(self%id_res_c,'resuspended_c','mg C/m^2','source of resuspended carbon')
-            call self%request_coupling(self%id_res_c,'surface/c')
+            call self%register_state_dependency(self%id_resuspendable_c,'resuspendable_c','mg C/m^2','source of resuspended carbon')
+            call self%request_coupling(self%id_resuspendable_c,'surface/c')
          end if
          if (_VARIABLE_REGISTERED_(self%id_p)) then
-            call self%register_state_dependency(self%id_res_p,'resuspended_p','mmol P/m^2','source of resuspended phosphorus')
-            call self%request_coupling(self%id_res_p,'surface/p')
+            call self%register_state_dependency(self%id_resuspendable_p,'resuspendable_p','mmol P/m^2','source of resuspended phosphorus')
+            call self%request_coupling(self%id_resuspendable_p,'surface/p')
          end if
          if (_VARIABLE_REGISTERED_(self%id_n)) then
-            call self%register_state_dependency(self%id_res_n,'resuspended_n','mmol N/m^2','source of resuspended nitrogen')
-            call self%request_coupling(self%id_res_n,'surface/n')
+            call self%register_state_dependency(self%id_resuspendable_n,'resuspendable_n','mmol N/m^2','source of resuspended nitrogen')
+            call self%request_coupling(self%id_resuspendable_n,'surface/n')
          end if
          if (_VARIABLE_REGISTERED_(self%id_s)) then
-            call self%register_state_dependency(self%id_res_s,'resuspended_s','mmol Si/m^2','source of resuspended silicate')
-            call self%request_coupling(self%id_res_s,'surface/s')
+            call self%register_state_dependency(self%id_resuspendable_s,'resuspendable_s','mmol Si/m^2','source of resuspended silicate')
+            call self%request_coupling(self%id_resuspendable_s,'surface/s')
          end if
       end if
 
@@ -499,9 +499,9 @@ contains
             if (self%resuspension) then
                _GET_HORIZONTAL_(self%id_c,C_int)
                resuspension_flux = C_int*min(max_rel_res, v_er/z_mean/(1.0_rk - exp (-z_bot/z_mean)))
-               _SET_BOTTOM_ODE_(self%id_res_c,-resuspension_flux)
-               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_cresf,resuspension_flux)
-               _SET_BOTTOM_EXCHANGE_(self%id_resuspension_c,resuspension_flux)
+               _SET_BOTTOM_ODE_(self%id_resuspendable_c,-resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspended_c,resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_c,resuspension_flux)
             end if
          end if
          if (_VARIABLE_REGISTERED_(self%id_p)) then
@@ -517,9 +517,9 @@ contains
             if (self%resuspension) then
                _GET_HORIZONTAL_(self%id_p,C_int)
                resuspension_flux = C_int*min(max_rel_res, v_er/z_mean/(1.0_rk - exp (-z_bot/z_mean)))
-               _SET_BOTTOM_ODE_(self%id_res_p,-resuspension_flux)
-               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_presf,resuspension_flux)
-               _SET_BOTTOM_EXCHANGE_(self%id_resuspension_p,resuspension_flux)
+               _SET_BOTTOM_ODE_(self%id_resuspendable_p,-resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspended_p,resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_p,resuspension_flux)
             end if
          end if
          if (_VARIABLE_REGISTERED_(self%id_n)) then
@@ -535,9 +535,9 @@ contains
             if (self%resuspension) then
                _GET_HORIZONTAL_(self%id_n,C_int)
                resuspension_flux = C_int*min(max_rel_res, v_er/z_mean/(1.0_rk - exp (-z_bot/z_mean)))
-               _SET_BOTTOM_ODE_(self%id_res_n,-resuspension_flux)
-               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_nresf,resuspension_flux)
-               _SET_BOTTOM_EXCHANGE_(self%id_resuspension_n,resuspension_flux)
+               _SET_BOTTOM_ODE_(self%id_resuspendable_n,-resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspended_n,resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_n,resuspension_flux)
             end if
          end if
          if (_VARIABLE_REGISTERED_(self%id_s)) then
@@ -553,9 +553,9 @@ contains
             if (self%resuspension) then
                _GET_HORIZONTAL_(self%id_s,C_int)
                resuspension_flux = C_int*min(max_rel_res, v_er/z_mean/(1.0_rk - exp (-z_bot/z_mean)))
-               _SET_BOTTOM_ODE_(self%id_res_s,-resuspension_flux)
-               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_sresf,resuspension_flux)
-               _SET_BOTTOM_EXCHANGE_(self%id_resuspension_s,resuspension_flux)
+               _SET_BOTTOM_ODE_(self%id_resuspendable_s,-resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspended_s,resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_s,resuspension_flux)
             end if
          end if
       _HORIZONTAL_LOOP_END_
