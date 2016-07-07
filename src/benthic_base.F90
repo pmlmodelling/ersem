@@ -173,6 +173,7 @@ contains
 
       real(rk) :: bedstress,density
       real(rk) :: fac,state,resuspension_flux
+      real(rk) :: max_rel_res = 4.0_rk            ! max relative loss of matter due to resuspension, in 1/d
 
       _HORIZONTAL_LOOP_BEGIN_
          if (self%resuspension) then
@@ -187,7 +188,7 @@ contains
             ! Note that the square of bed shear velocity is calculated as the ratio between shear stress (Pa) and water density (kg/m^3).
             _GET_HORIZONTAL_(self%id_bedstress,bedstress)
             _GET_(self%id_dens,density)
-            fac = self%er*max(0.0_rk,bedstress/density/self%vel_crit**2 - 1._rk)
+            fac = min(max_rel_res,self%er*max(0.0_rk,bedstress/density/self%vel_crit**2 - 1._rk))
 
             ! Carbon
             if (_VARIABLE_REGISTERED_(self%id_c)) then
