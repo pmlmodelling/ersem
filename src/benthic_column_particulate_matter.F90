@@ -498,7 +498,7 @@ contains
             end if
             if (self%resuspension) then
                _GET_HORIZONTAL_(self%id_c,C_int)
-               resuspension_flux = C_int*min(max_rel_res, v_er/z_mean/(1.0_rk - exp (-z_bot/z_mean)))
+               resuspension_flux = C_int*min(max_rel_res, v_er/(z_mean+1.e-8_rk)/(1.0_rk - exp (-z_bot/z_mean)))
                _SET_BOTTOM_ODE_(self%id_resuspendable_c,-resuspension_flux)
                _SET_BOTTOM_EXCHANGE_(self%id_resuspended_c,resuspension_flux)
                _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_c,resuspension_flux)
@@ -516,7 +516,7 @@ contains
             end if
             if (self%resuspension) then
                _GET_HORIZONTAL_(self%id_p,C_int)
-               resuspension_flux = C_int*min(max_rel_res, v_er/z_mean/(1.0_rk - exp (-z_bot/z_mean)))
+               resuspension_flux = C_int*min(max_rel_res, v_er/(z_mean+1.e-8_rk)/(1.0_rk - exp (-z_bot/z_mean)))
                _SET_BOTTOM_ODE_(self%id_resuspendable_p,-resuspension_flux)
                _SET_BOTTOM_EXCHANGE_(self%id_resuspended_p,resuspension_flux)
                _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_p,resuspension_flux)
@@ -534,7 +534,7 @@ contains
             end if
             if (self%resuspension) then
                _GET_HORIZONTAL_(self%id_n,C_int)
-               resuspension_flux = C_int*min(max_rel_res, v_er/z_mean/(1.0_rk - exp (-z_bot/z_mean)))
+               resuspension_flux = C_int*min(max_rel_res, v_er/(z_mean+1.e-8_rk)/(1.0_rk - exp (-z_bot/z_mean)))
                _SET_BOTTOM_ODE_(self%id_resuspendable_n,-resuspension_flux)
                _SET_BOTTOM_EXCHANGE_(self%id_resuspended_n,resuspension_flux)
                _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_n,resuspension_flux)
@@ -552,7 +552,7 @@ contains
             end if
             if (self%resuspension) then
                _GET_HORIZONTAL_(self%id_s,C_int)
-               resuspension_flux = C_int*min(max_rel_res, v_er/z_mean/(1.0_rk - exp (-z_bot/z_mean)))
+               resuspension_flux = C_int*min(max_rel_res, v_er/(z_mean+1.e-8_rk)/(1.0_rk - exp (-z_bot/z_mean)))
                _SET_BOTTOM_ODE_(self%id_resuspendable_s,-resuspension_flux)
                _SET_BOTTOM_EXCHANGE_(self%id_resuspended_s,resuspension_flux)
                _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_s,resuspension_flux)
