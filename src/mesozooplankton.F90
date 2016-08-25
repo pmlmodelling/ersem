@@ -29,6 +29,11 @@ module ersem_mesozooplankton
       type (type_horizontal_dependency_id) :: id_inttotprey
 
       type (type_diagnostic_variable_id) :: id_fZIO3c
+      type (type_diagnostic_variable_id) :: id_fZIRDc,id_fZIRPc
+      type (type_diagnostic_variable_id) :: id_fZIRDn,id_fZIRPn,id_fZINIn
+      type (type_diagnostic_variable_id) :: id_fZIRDp,id_fZIRPp,id_fZINIp
+      type (type_diagnostic_variable_id), allocatable,dimension(:) :: id_fpreyc,id_fpreyn,id_fpreyp,id_fpreys
+
 
       ! Parameters
       integer  :: nprey
@@ -134,6 +139,11 @@ contains
       allocate(self%id_preys(self%nprey))
       allocate(self%id_preyl(self%nprey))
       allocate(self%id_preyf_target(self%nprey))
+      allocate(self%id_fpreyc(self%nprey))
+      allocate(self%id_fpreyn(self%nprey))
+      allocate(self%id_fpreyp(self%nprey))
+      allocate(self%id_fpreys(self%nprey))
+
       do iprey=1,self%nprey
          write (index,'(i0)') iprey
          call self%register_dependency(self%id_preyc(iprey),'prey'//trim(index)//'c','mmol C/m^3', 'prey '//trim(index)//' carbon')
@@ -154,6 +164,10 @@ contains
             call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe/m^3','sink for Fe of prey '//trim(index),required=.false.)
             call self%request_coupling_to_model(self%id_preyf(iprey),self%id_prey(iprey),standard_variables%total_iron)
          end if
+         call self%register_diagnostic_variable(self%id_fpreyn(iprey),'fprey'//trim(index)//'n','mmol N/m^3/d','grazing N',output=output_time_step_averaged)
+         call self%register_diagnostic_variable(self%id_fpreyp(iprey),'fprey'//trim(index)//'p','mmol P/m^3/d','grazing P',output=output_time_step_averaged)
+         call self%register_diagnostic_variable(self%id_fpreys(iprey),'fprey'//trim(index)//'s','mmol Si/m^3/d','grazing Si',output=output_time_step_averaged)
+         call self%register_diagnostic_variable(self%id_fpreyc(iprey),'fprey'//trim(index)//'c','mg C/m^3/d','grazing C',output=output_time_step_averaged)
       end do
 
       ! Create a submodel that will compute total prey for us, and create a variable that will contain its depth integral.
@@ -199,7 +213,7 @@ contains
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen source')
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide sink')
-      call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)    
+      call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)
 
       call self%register_state_dependency(self%id_L2c,'L2c','mg C/m^3','calcite',required=.false.)
 
@@ -209,7 +223,14 @@ contains
 
       ! Register diagnostics
       call self%register_diagnostic_variable(self%id_fZIO3c,'fZIO3c','mg C/m^3/d','respiration',output=output_time_step_averaged)
-
+      call self%register_diagnostic_variable(self%id_fZINIn,'fZINIn','mmol N/m^3/d','DIN release',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fZINIp,'fZINIp','mmol P/m^3/d','DIP release',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fZIRPc,'fZIRPc','mg C/m^3/d','loss to POC',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fZIRPn,'fZIRPn','mmol N/m^3/d','loss to PON',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fZIRPp,'fZIRPp','mmol P/m^3/d','loss to POP',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fZIRDc,'fZIRDc','mg C/m^3/d','loss to POC',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fZIRDn,'fZIRDn','mmol N/m^3/d','loss to PON',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fZIRDp,'fZIRDp','mmol P/m^3/d','loss to POP',output=output_time_step_averaged)
       ! Contribute to aggregate fluxes.
       call self%add_to_aggregate_variable(zooplankton_respiration_rate,self%id_fZIO3c)
 
@@ -346,10 +367,18 @@ contains
             _SET_ODE_(self%id_R2c, + fZIRDc * (1._rk-self%R1R2))
             _SET_ODE_(self%id_RPc, + fZIRPc)
 
+            _SET_DIAGNOSTIC_(self%id_fZIRDc,fZIRDc)
+
             ! Account for CO2 production and oxygen consumption in respiration.
             _SET_ODE_(self%id_O3c, + fZIO3c/CMass)
             _SET_ODE_(self%id_O2o, - fZIO3c*self%urB1_O2)
 
+            do iprey=1,self%nprey
+                _SET_DIAGNOSTIC_(self%id_fpreyc(iprey),sprey(iprey)*PreycP(iprey))
+                _SET_DIAGNOSTIC_(self%id_fpreyn(iprey),sprey(iprey)*PreynP(iprey))
+                _SET_DIAGNOSTIC_(self%id_fpreyp(iprey),sprey(iprey)*PreypP(iprey))
+                _SET_DIAGNOSTIC_(self%id_fpreys(iprey),sprey(iprey)*PreysP(iprey))
+            enddo
             ! -------------------------------
             ! Phosphorus
             ! -------------------------------
@@ -358,6 +387,8 @@ contains
             fZIRIp = (fZIRDc + fZIRPc) * self%qpc
             fZIRDp = min(fZIRIp, fZIRDc * self%qpc * self%xR1p)
             fZIRPp = fZIRIp - fZIRDp
+            _SET_DIAGNOSTIC_(self%id_fZIRDp,fZIRDp)
+            _SET_DIAGNOSTIC_(self%id_fZIRPp,fZIRPp)
 
             ! Source equation for phosphorus in biomass
             SZIp = sum(sprey*preypP) - fZIRPp - fZIRDp
@@ -374,6 +405,8 @@ contains
             fZIRIn = (fZIRDc + fZIRPc) * self%qnc
             fZIRDn = min(fZIRIn, fZIRDc * self%qnc * self%xR1n)
             fZIRPn = fZIRIn - fZIRDn
+            _SET_DIAGNOSTIC_(self%id_fZIRDn,fZIRDn)
+            _SET_DIAGNOSTIC_(self%id_fZIRPn,fZIRPn)
 
             ! Source equation for nitrogen in biomass
             SZIn = sum(sprey*preynP) - fZIRPn - fZIRDn
@@ -422,6 +455,8 @@ contains
             _SET_ODE_(self%id_N4n,excess_n)
             _SET_ODE_(self%id_N1p,excess_p)
             _SET_ODE_(self%id_TA,excess_n-excess_p)  ! Alkalinity contributions: +1 for NH4, -1 for PO4
+            _SET_DIAGNOSTIC_(self%id_fZINIn,excess_n)
+            _SET_DIAGNOSTIC_(self%id_fZINIp,excess_p)
 
          else
 
@@ -442,11 +477,21 @@ contains
             _SET_ODE_(self%id_N4n,fZIO3c*self%qnc)
             _SET_ODE_(self%id_N1p,fZIO3c*self%qpc)
             _SET_ODE_(self%id_TA, fZIO3c*(self%qnc-self%qpc))  ! Alkalinity contributions: +1 for NH4, -1 for PO4
+            _SET_DIAGNOSTIC_(self%id_fZINIn,fZIO3c*self%qnc)
+            _SET_DIAGNOSTIC_(self%id_fZINIp,fZIO3c*self%qpc)
 
             _SET_ODE_(self%id_c,- fZIRPc - fZIO3c)
 
+            do iprey=1,self%nprey
+                _SET_DIAGNOSTIC_(self%id_fpreyc(iprey),0.0_rk)
+                _SET_DIAGNOSTIC_(self%id_fpreyn(iprey),0.0_rk)
+                _SET_DIAGNOSTIC_(self%id_fpreyp(iprey),0.0_rk)
+                _SET_DIAGNOSTIC_(self%id_fpreys(iprey),0.0_rk)
+            enddo
+
          end if
 
+         _SET_DIAGNOSTIC_(self%id_fZIRPc,fZIRPc)
          _SET_DIAGNOSTIC_(self%id_fZIO3c,fZIO3c)
 
       ! Leave spatial loops (if any)
