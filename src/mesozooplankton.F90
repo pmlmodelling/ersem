@@ -28,7 +28,7 @@ module ersem_mesozooplankton
       type (type_dependency_id)          :: id_totprey
       type (type_horizontal_dependency_id) :: id_inttotprey
 
-      type (type_diagnostic_variable_id) :: id_fZIO3c
+      type (type_diagnostic_variable_id) :: id_fZIO3c,id_calc
       type (type_diagnostic_variable_id) :: id_fZIRDc,id_fZIRPc
       type (type_diagnostic_variable_id) :: id_fZIRDn,id_fZIRPn,id_fZINIn
       type (type_diagnostic_variable_id) :: id_fZIRDp,id_fZIRPp,id_fZINIp
@@ -225,6 +225,7 @@ contains
       call self%register_diagnostic_variable(self%id_fZIO3c,'fZIO3c','mg C/m^3/d','respiration',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_fZINIn,'fZINIn','mmol N/m^3/d','DIN release',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_fZINIp,'fZINIp','mmol P/m^3/d','DIP release',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_calc,'calcification','mg C/m^3/d','contribution to total calcification',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_fZIRPc,'fZIRPc','mg C/m^3/d','loss to POC',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_fZIRPn,'fZIRPn','mmol N/m^3/d','loss to PON',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_fZIRPp,'fZIRPp','mmol P/m^3/d','loss to POP',output=output_time_step_averaged)
@@ -488,6 +489,7 @@ contains
                 _SET_DIAGNOSTIC_(self%id_fpreyp(iprey),0.0_rk)
                 _SET_DIAGNOSTIC_(self%id_fpreys(iprey),0.0_rk)
             enddo
+            _SET_DIAGNOSTIC_(self%id_calc,0.0_rk)
 
          end if
 

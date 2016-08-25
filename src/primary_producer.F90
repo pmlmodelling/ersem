@@ -53,6 +53,7 @@ module ersem_primary_producer
       type (type_diagnostic_variable_id) :: id_fN3PIn,id_fN4PIn,id_fN1PIp,id_fN5PIs  ! nutrient uptake
       type (type_diagnostic_variable_id) :: id_netPI   ! Net primary production rate
       type (type_diagnostic_variable_id) :: id_lD      ! Cell-bound calcite - used by calcifiers only
+      type (type_diagnostic_variable_id) :: id_O3L2c   ! Calcification
       type (type_diagnostic_variable_id) :: id_fPIRPc,id_fPIRPn,id_fPIRPp,id_fPIRPs  ! Total loss to Particulate detritus
       type (type_diagnostic_variable_id) :: id_fPIR1c,id_fPIR1n,id_fPIR1p ! Total loss to labile dissovled detritus
       type (type_diagnostic_variable_id) :: id_fPIR2c  ! Total loss to non-labile dissovled detritus
@@ -206,7 +207,7 @@ contains
       call self%register_diagnostic_variable(self%id_fPIRPc,'fPIRPc','mg C/m^3/d','phytoplankton loss to POC',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_fPIRPn,'fPIRPn','mmol N/m^3/d','phytoplankton loss to PON',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_fPIRPp,'fPIRPp','mmon P/m^3/d','phytoplankton loss to POP',output=output_time_step_averaged)
-      call self%register_diagnostic_variable(self%id_fPIRPs,'fPIRPs','mmon P/m^3/d','phytoplankton loss to POS',output=output_time_step_averaged)
+      if (self%use_Si) call self%register_diagnostic_variable(self%id_fPIRPs,'fPIRPs','mmon P/m^3/d','phytoplankton loss to POS',output=output_time_step_averaged)
       ! Contribute to aggregate fluxes.
       call self%add_to_aggregate_variable(phytoplankton_respiration_rate,self%id_fPIO3c)
       call self%add_to_aggregate_variable(photosynthesis_rate,self%id_fO3PIc)
@@ -224,6 +225,7 @@ contains
          ! Create diagnostic variable for cell-bound calcite, and register its contribution to the known quantity "total_calcite_in_biota".
          ! This quantity can be used by other models (e.g., predators) to determine how much calcite is released when phytoplankton is broken down.
          call self%register_diagnostic_variable(self%id_lD,'l','mg C/m^3','bound calcite',missing_value=0._rk,output=output_none)
+         call self%register_diagnostic_variable(self%id_O3L2c,'calcification','mg C/m^3/d','calcification rate',output=output_time_step_averaged)
          call self%add_to_aggregate_variable(total_calcite_in_biota,self%id_lD)
       end if
 
@@ -424,6 +426,7 @@ contains
             ! For dying cells: convert virtual cell-attached calcite to actual calcite in free liths.
             ! Update DIC and lith balances accordingly (only now take away the DIC needed to form the calcite)
             _SET_ODE_(self%id_L2c,   fPIRPc*RainR)
+            _SET_DIAGNOSTIC_(self%id_O3L2c,fPIRPc*RainR)
             _SET_ODE_(self%id_O3c,  -fPIRPc*RainR/Cmass)
             _SET_ODE_(self%id_TA, -2*fPIRPc*RainR/Cmass)   ! CaCO3 formation decreases alkalinity by 2 units
          end if
