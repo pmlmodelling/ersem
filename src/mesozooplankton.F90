@@ -490,6 +490,7 @@ contains
                 _SET_DIAGNOSTIC_(self%id_fpreyp(iprey),0.0_rk)
                 _SET_DIAGNOSTIC_(self%id_fpreys(iprey),0.0_rk)
             enddo
+            _SET_DIAGNOSTIC_(self%id_calc,0.0_rk)
 
          end if
 
