@@ -19,12 +19,14 @@ module ersem_benthic_bacteria
       type (type_bottom_state_variable_id) :: id_Q7c,id_Q7n,id_Q7p
       type (type_bottom_state_variable_id) :: id_G2o,id_G3c,id_benTA
       type (type_horizontal_diagnostic_variable_id) :: id_fHG3c
-
+      type (type_horizontal_diagnostic_variable_id) ::  id_fHKIn,id_fHK1p
+      type (type_horizontal_diagnostic_variable_id) :: id_fQ1Hc,id_fQPHc,id_fQ1Hn,id_fQPHn,id_fQ1Hp,id_fQPHp
+      type (type_horizontal_diagnostic_variable_id) :: id_fHQ1c,id_fHQPc,id_fHQ1n,id_fHQPn,id_fHQ1p,id_fHQPp
       type (type_horizontal_dependency_id) :: id_Dm
       type (type_dependency_id) :: id_ETW
 
       type (type_model_id) :: id_Q1,id_Q6,id_Q7
-      
+
       real(rk) :: qnc,qpc
       real(rk) :: q10
       real(rk) :: dd
@@ -109,13 +111,29 @@ contains
 
       call self%register_diagnostic_variable(self%id_fHG3c,'fHG3c','mg C/m^2/d','respiration',output=output_time_step_averaged,domain=domain_bottom,source=source_do_bottom)
 
+! JNA fluxes
+      call self%register_diagnostic_variable(self%id_fQ1Hc,'fQ1Hc','mg C/m^2/day','ben bacteria uptake of DOC')
+      call self%register_diagnostic_variable(self%id_fQPHc,'fQPHc','mg C/m^2/day','ben bacteria uptake of POC')
+      call self%register_diagnostic_variable(self%id_fQ1Hn,'fQ1Hn','mmol N/m^2/day','ben bacteria uptake of DON')
+      call self%register_diagnostic_variable(self%id_fQPHn,'fQPHn','mmol N/m^2/day','ben bacteria uptake of PON')
+      call self%register_diagnostic_variable(self%id_fQ1Hp,'fQ1Hp','mmol P/m^2/day','ben bacteria uptake of DOP')
+      call self%register_diagnostic_variable(self%id_fQPHp,'fQPHp','mmol P/m^2/day','ben bacteria uptake of POP')
+      call self%register_diagnostic_variable(self%id_fHKIn,'fHKIn','mmol N/m^2/day','ben bacteria DIN release')
+      call self%register_diagnostic_variable(self%id_fHK1p,'fHK1p','mmol P/m^2/day','ben bacteria DIP release')
+      call self%register_diagnostic_variable(self%id_fHQ1c,'fHQ1c','mg C/m^2/day','ben bacteria excretion of DOC')
+      call self%register_diagnostic_variable(self%id_fHQ1n,'fHQ1n','mmol N/m^2/day','ben bacteria excretion of DON')
+      call self%register_diagnostic_variable(self%id_fHQ1p,'fHQ1p','mmol P/m^2/day','ben bacteria excretion of DOP')
+      call self%register_diagnostic_variable(self%id_fHQPc,'fHQPc','mg C/m^2/day','ben bacteria excretion of POC')
+      call self%register_diagnostic_variable(self%id_fHQPn,'fHQPn','mmol N/m^2/day','ben bacteria excretion of PON')
+      call self%register_diagnostic_variable(self%id_fHQPp,'fHQPp','mmol P/m^2/day','ben bacteria excretion of POP')
+
    end subroutine
 
    subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
 
       class (type_ersem_benthic_bacteria),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
-     
+
       real(rk) :: Hc,HcP,fHc,fHn,fHp
       real(rk) :: Dm,excess_c,excess_n,excess_p
       real(rk) :: ETW,eT,eOx,eN,Limit
@@ -193,7 +211,7 @@ contains
          fK1Hp = fQIHc * self%qpc
          if (fK1Hp>0) fK1Hp = fK1Hp * K1a/(K1a+fK1Hp)
 
-         ! Respiration (reduction in bacterial carbon and dissolved oxygen, increase in 
+         ! Respiration (reduction in bacterial carbon and dissolved oxygen, increase in
          ! dissolved inorganic carbon, ammonium, phosphate)
          fHG3c = self%pur * fQIHc + self%sr * HcP * eT
          _SET_BOTTOM_ODE_(self%id_G2o,-fHG3c/CMass)  ! oxygen or reduction equivalent
@@ -231,6 +249,9 @@ contains
          excess_n = max(fHn - fHc*self%qnc,0.0_rk)
          excess_p = max(fHp - fHc*self%qpc,0.0_rk)
 
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fHKIn,-fK4Hn + excess_n) !JNA
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fHK1p,-fK1Hp+ excess_p) !JNA
+
          _SET_BOTTOM_ODE_(self%id_Q6c,-fQ6Hc + excess_c)
          _SET_BOTTOM_ODE_(self%id_Q6n,-fQ6Hn)
          _SET_BOTTOM_ODE_(self%id_Q6p,-fQ6Hp)
@@ -248,6 +269,20 @@ contains
          _SET_BOTTOM_ODE_(self%id_Q1c,-fQ1Hc + fQ7Hc*self%pue7 + fQ6Hc*self%pue6)
          _SET_BOTTOM_ODE_(self%id_Q1n,-fQ1Hn + fQ7Hn*self%pue7 + fQ6Hn*self%pue6)
          _SET_BOTTOM_ODE_(self%id_Q1p,-fQ1Hp + fQ7Hp*self%pue7 + fQ6Hp*self%pue6)
+
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fQ1Hc,fQ1Hc)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fHQ1c,fQ7Hc*self%pue7 + fQ6Hc*self%pue6+sfHQ1 * HcP)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fQ1Hn,fQ1Hn)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fHQ1p,fQ7Hn*self%pue7 + fQ6Hn*self%pue6+sfHQ1 * HcP*self%qnc)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fQ1Hp,fQ1Hp)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fHQ1p,fQ7Hp*self%pue7 + fQ6Hp*self%pue6+sfHQ1 * HcP*self%qpc)
+
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fQPHc,fQ6Hc+fQ7Hc)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fHQPc,excess_c+sfHQ6 * HcP)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fQPHn,fQ6Hn+fQ7Hn)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fHQPn,sfHQ6 * HcP*self%qnc)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fQPHp,fQ6Hp+fQ7Hp)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fHQPp,sfHQ6 * HcP*self%qpc)
 
       _HORIZONTAL_LOOP_END_
 
