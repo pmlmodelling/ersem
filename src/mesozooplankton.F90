@@ -481,7 +481,10 @@ contains
             _SET_ODE_(self%id_TA, fZIO3c*(self%qnc-self%qpc))  ! Alkalinity contributions: +1 for NH4, -1 for PO4
             _SET_DIAGNOSTIC_(self%id_fZINIn,fZIO3c*self%qnc)
             _SET_DIAGNOSTIC_(self%id_fZINIp,fZIO3c*self%qpc)
-
+            _SET_DIAGNOSTIC_(self%id_fZIRDn,0.0_rk)
+            _SET_DIAGNOSTIC_(self%id_fZIRPn,fZIRPc*self%qnc)
+            _SET_DIAGNOSTIC_(self%id_fZIRDp,0.0_rk)
+            _SET_DIAGNOSTIC_(self%id_fZIRPp,fZIRPc*self%qpc)
             _SET_ODE_(self%id_c,- fZIRPc - fZIO3c)
 
             do iprey=1,self%nprey
