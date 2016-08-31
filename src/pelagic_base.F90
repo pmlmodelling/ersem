@@ -237,8 +237,10 @@ contains
             _GET_(self%id_c,conc)
             flux = sdrate*conc
             do idep=1,self%ndeposition
-              if (self%qxc(idep)/=0) _SET_BOTTOM_ODE_(self%id_targetc(idep), flux*self%qxc(idep))
-              _SET_HORIZONTAL_DIAGNOSTIC_(self%id_cdep(idep),flux*self%qxc(idep))
+              if (self%qxc(idep)/=0) then
+                _SET_BOTTOM_ODE_(self%id_targetc(idep), flux*self%qxc(idep))
+                _SET_HORIZONTAL_DIAGNOSTIC_(self%id_cdep(idep),flux*self%qxc(idep))
+              end if
             end do
             _SET_BOTTOM_EXCHANGE_(self%id_c,-flux)
          end if
@@ -247,8 +249,10 @@ contains
             _GET_(self%id_n,conc)
             flux = sdrate*conc
             do idep=1,self%ndeposition
-              if (self%qxn(idep)/=0) _SET_BOTTOM_ODE_(self%id_targetn(idep), flux*self%qxn(idep))
-              _SET_HORIZONTAL_DIAGNOSTIC_(self%id_ndep(idep),flux*self%qxn(idep))
+              if (self%qxn(idep)/=0) then
+                _SET_BOTTOM_ODE_(self%id_targetn(idep), flux*self%qxn(idep))
+                _SET_HORIZONTAL_DIAGNOSTIC_(self%id_ndep(idep),flux*self%qxn(idep))
+              end if
             end do
             _SET_BOTTOM_EXCHANGE_(self%id_n,-flux)
          end if
@@ -257,8 +261,10 @@ contains
             _GET_(self%id_p,conc)
             flux = sdrate*conc
             do idep=1,self%ndeposition
-              if (self%qxp(idep)/=0) _SET_BOTTOM_ODE_(self%id_targetp(idep), flux*self%qxp(idep))
-              _SET_HORIZONTAL_DIAGNOSTIC_(self%id_pdep(idep),flux*self%qxp(idep))
+              if (self%qxp(idep)/=0) then
+                _SET_BOTTOM_ODE_(self%id_targetp(idep), flux*self%qxp(idep))
+                _SET_HORIZONTAL_DIAGNOSTIC_(self%id_pdep(idep),flux*self%qxp(idep))
+              end if
             end do
             _SET_BOTTOM_EXCHANGE_(self%id_p,-flux)
          end if
@@ -267,8 +273,10 @@ contains
             _GET_(self%id_s,conc)
             flux = sdrate*conc
             do idep=1,self%ndeposition
-               if (self%qxs(idep)/=0) _SET_BOTTOM_ODE_(self%id_targets(idep), flux*self%qxs(idep))
-               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_sdep(idep),flux*self%qxs(idep))
+               if (self%qxs(idep)/=0) then
+                 _SET_BOTTOM_ODE_(self%id_targets(idep), flux*self%qxs(idep))
+                 _SET_HORIZONTAL_DIAGNOSTIC_(self%id_sdep(idep),flux*self%qxs(idep))
+               end if
             end do
             _SET_BOTTOM_EXCHANGE_(self%id_s,-flux)
          end if
@@ -278,8 +286,10 @@ contains
                _GET_(self%id_f,conc)
                flux = sdrate*conc
                do idep=1,self%ndeposition
-                  if (self%qxf(idep)/=0) _SET_BOTTOM_ODE_(self%id_targetf(idep), flux*self%qxf(idep))
-                  _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fdep(idep),flux*self%qxf(idep))
+                  if (self%qxf(idep)/=0) then
+                    _SET_BOTTOM_ODE_(self%id_targetf(idep), flux*self%qxf(idep))
+                    _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fdep(idep),flux*self%qxf(idep))
+                  end if
                end do
                _SET_BOTTOM_EXCHANGE_(self%id_f,-flux)
             end if
