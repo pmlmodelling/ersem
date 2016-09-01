@@ -267,7 +267,7 @@ contains
               fwind=0.0283_rk*wnd**3.0_rk*(sc/660._rk)**(-0.5_rk)
          endif
 
-         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_wnd_diag,fwind) ! diagnostic in m/s
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_wnd_diag,wnd) ! diagnostic in m/s
 
          fwind=fwind*24._rk/100._rk   ! convert to m/day
          UPTAKE = fwind * k0co2 * ( PCO2A/1.e6_rk - PCO2 )
