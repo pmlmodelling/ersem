@@ -163,7 +163,7 @@ contains
       total_prey_calculator%result_output = output_none
       do iprey=1,self%nprey
          write (index,'(i0)') iprey
-         call total_prey_calculator%add_component('prey'//trim(index)//'c',self%suprey(iprey))
+         call total_prey_calculator%add_component('prey'//trim(index)//'c',self%suprey(iprey)*CMass)
       end do
       call self%add_child(total_prey_calculator,'totprey_calculator',configunit=-1)
 
@@ -242,8 +242,8 @@ contains
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
 
+         ! Get depth-integrated prey in mg C/m^2 (pre-multiplied with CMass, so mg C rather than mmol C)
          _GET_HORIZONTAL_(self%id_inttotprey,intprey)
-         intprey = intprey*CMass
 
          if (intprey>self%Minprey) then
             ! Enough prey available - not overwintering
@@ -406,7 +406,7 @@ contains
             ! -------------------------------
             ! Maintain constant stoichiometry
             ! -------------------------------
-            
+
             ! Compute excess carbon flux, given that the maximum realizable carbon flux needs to be balanced
             ! by corresponding nitrogen and phosphorus fluxes to maintain constant stoichiometry.
             excess_c = max(max(SZIc - SZIp/self%qpc,SZIc - SZIn/self%qnc),0._rk)
