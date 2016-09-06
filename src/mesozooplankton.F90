@@ -281,7 +281,8 @@ contains
             ! This equals the reference preference value, self%suprey, multiplied by a hyperbolic function
             ! of prey abundance ranging from 0 in the absence of prey, to 1 at abundant prey. As a result,
             ! prey preferences are dynamically adapted so that more abundant prey types are preferred.
-            sprey = self%suprey*preycP/(preycP+self%minfood)
+            sprey = self%suprey
+            if (self%minfood>0.0_rk) sprey = sprey*preycP/(preycP+self%minfood)
 
             ! Compute total available prey (mg C/m3), weighted according to effective prey preferences.
             rupreyc = sprey*preycP
