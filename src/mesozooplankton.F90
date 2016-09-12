@@ -229,9 +229,9 @@ contains
       call self%register_diagnostic_variable(self%id_fZIRPc,'fZIRPc','mg C/m^3/d','loss to POC',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_fZIRPn,'fZIRPn','mmol N/m^3/d','loss to PON',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_fZIRPp,'fZIRPp','mmol P/m^3/d','loss to POP',output=output_time_step_averaged)
-      call self%register_diagnostic_variable(self%id_fZIRDc,'fZIRDc','mg C/m^3/d','loss to POC',output=output_time_step_averaged)
-      call self%register_diagnostic_variable(self%id_fZIRDn,'fZIRDn','mmol N/m^3/d','loss to PON',output=output_time_step_averaged)
-      call self%register_diagnostic_variable(self%id_fZIRDp,'fZIRDp','mmol P/m^3/d','loss to POP',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fZIRDc,'fZIRDc','mg C/m^3/d','loss to DOC',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fZIRDn,'fZIRDn','mmol N/m^3/d','loss to DON',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fZIRDp,'fZIRDp','mmol P/m^3/d','loss to DOP',output=output_time_step_averaged)
       ! Contribute to aggregate fluxes.
       call self%add_to_aggregate_variable(zooplankton_respiration_rate,self%id_fZIO3c)
 

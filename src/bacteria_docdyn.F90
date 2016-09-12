@@ -161,7 +161,7 @@ contains
 
       ! Contribute to aggregate fluxes.
       call self%add_to_aggregate_variable(bacterial_respiration_rate,self%id_fB1O3c)
-      call self%register_diagnostic_variable(self%id_fB1R1c,'fB1R1c','mg C/m^3/d','bacterial uptake of labile DOC ',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fB1R1c,'fB1R1c','mg C/m^3/d','bacterial release of labile DOC ',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_fB1R2c,'fB1R2c','mg C/m^3/d','bacterial release of semi-labile DOC ',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_fB1R3c,'fB1R3c','mg C/m^3/d','bacterial release of semi-refractory DOC ',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_fB1R1n,'fB1R1n','mmol N/m^3/d','bacterial DON release',output=output_time_step_averaged)
