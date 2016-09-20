@@ -24,6 +24,7 @@ module ersem_oxygen
       type (type_horizontal_dependency_id) :: id_wnd
 
       type (type_diagnostic_variable_id) :: id_eO2mO2,id_osat,id_aou
+      type (type_horizontal_diagnostic_variable_id) ::  id_fair
 
       integer :: ISWO2X
    contains
@@ -51,6 +52,7 @@ contains
          standard_variable=standard_variables%fractional_saturation_of_oxygen)
       call self%register_diagnostic_variable(self%id_osat,'osat','mmol O_2/m^3','oxygen saturation concentration')
       call self%register_diagnostic_variable(self%id_aou,'AOU','mmol O_2/m^3','apparent oxygen utilisation')
+      call self%register_diagnostic_variable(self%id_fair,'fair','mmol O_2/m^2/d','Air-sea flux of oxygen')
 
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
       call self%register_dependency(self%id_X1X,standard_variables%practical_salinity)
@@ -105,6 +107,7 @@ contains
          ko2o = ko2o*(24._rk/100._rk)
 
          _SET_SURFACE_EXCHANGE_(self%id_O2o,ko2o*(OSAT-O2o))
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fair,ko2o*(OSAT-O2o))
       _HORIZONTAL_LOOP_END_
    end subroutine
 

@@ -15,6 +15,7 @@ module ersem_benthic_nitrogen_cycle
       type (type_state_variable_id)        :: id_N4n
       type (type_dependency_id)            :: id_ETW,id_ph
       type (type_horizontal_dependency_id) :: id_D1m,id_K6_sms,id_layer2_thickness
+      type (type_horizontal_diagnostic_variable_id) :: id_jM3M4n,id_jM3G4n
       type (type_horizontal_diagnostic_variable_id) :: id_nrate
       real(rk) :: q10nit,hM4M3,sM4M3,xno3
       real(rk) :: pammon,pdenit,xn2,hM3G4
@@ -73,6 +74,10 @@ contains
       call self%register_state_dependency(self%id_K4n2,'K4n2','mmol N/m^2','benthic ammonium in 2nd layer')
       call self%register_state_dependency(self%id_G2o2,'G2o2','mmol O_2/m^2',  'oxygen in 2nd layer')
       call self%register_dependency(self%id_layer2_thickness,'layer2_thickness','m','thickness of 2nd layer')
+
+! diagnostic fluxes
+      call self%register_diagnostic_variable(self%id_jM3M4n,'jM3G4n','mmol/m^2/day','layer 2 ammonification flux')
+      call self%register_diagnostic_variable(self%id_jM3G4n,'jM3M4n','mmol/m^2/day','layer 2 de-nitrification flux')
 
       ! Create a child model that provides a K6 diagnostic. Other models (e.g., anaerobic bacteria) can attach to that to provide it with sink/source terms.
       ! In turn, these are then picked up by this model (type_ersem_benthic_nitrogen_cycle) and translated into chnages in NO3 and O2.
@@ -135,7 +140,7 @@ contains
          if (.not.legacy_ersem_compatibility) _SET_BOTTOM_ODE_(self%id_benTA,-2*jM4M3n)
 
          ! Retrieve oxygen debt to to anaerobic respiration, depth-integrated nitrate in oxidized layer, thickness of oxidized layer.
-         _GET_HORIZONTAL_(self%id_K6_sms,K6_sms) 
+         _GET_HORIZONTAL_(self%id_K6_sms,K6_sms)
          _GET_HORIZONTAL_(self%id_K3n2,K3n2)
          _GET_HORIZONTAL_(self%id_layer2_thickness,layer2_thickness)
 
@@ -153,6 +158,9 @@ contains
         jM3M4n = jMIno3*eN2*self%pammon*(1._rk-self%pdenit)
 
         jM3G4n = jMIno3*eN2*self%pammon*       self%pdenit
+
+        _SET_HORIZONTAL_DIAGNOSTIC_(self%id_jM3M4n,jM3M4n)
+        _SET_HORIZONTAL_DIAGNOSTIC_(self%id_jM3G4n,jM3G4n)
 
         _SET_BOTTOM_ODE_(self%id_K4n2, jM3M4n)
         _SET_BOTTOM_ODE_(self%id_K3n2, -jM3M4n -jM3G4n)

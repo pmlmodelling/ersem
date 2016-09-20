@@ -19,7 +19,7 @@ module ersem_carbonate
       type (type_diagnostic_variable_id) :: id_ph,id_pco2,id_CarbA, id_BiCarb, id_Carb, id_TA_diag
       type (type_diagnostic_variable_id) :: id_Om_cal,id_Om_arg
 
-      type (type_horizontal_diagnostic_variable_id) :: id_fairmg
+      type (type_horizontal_diagnostic_variable_id) :: id_fair,id_wnd_diag
 
       integer :: iswCO2X,iswtalk,iswASFLUX
    contains
@@ -83,7 +83,8 @@ contains
          call self%register_diagnostic_variable(self%id_Om_arg,'Om_arg','-','aragonite saturation')
       end if
       if (self%iswASFLUX>=1) then
-         call self%register_diagnostic_variable(self%id_fairmg,'fairmg','mmol C/m^2/d','air-sea flux of CO2',source=source_do_surface)
+         call self%register_diagnostic_variable(self%id_fair,'fair','mmol C/m^2/d','air-sea flux of CO2',source=source_do_surface)
+         call self%register_diagnostic_variable(self%id_wnd_diag,'wind','m/s','surface wind speed',source=source_do_surface)
       end if
 
       call self%register_dependency(self%id_ETW, standard_variables%temperature)
@@ -262,9 +263,11 @@ contains
                fwind=0.31_rk*wnd**2.0_rk*(sc/660._rk)**(-0.5_rk)
          elseif (self%iswASFLUX==3)THEN       ! Wanninkhof 1992 with chemical enhancement
                fwind=(2.5_rk*(0.5246_rk+0.016256_rk*T+0.00049946_rk*T**2.0_rk)+0.3_rk*wnd**2.0_rk)*(sc/660._rk)**(-0.5_rk)
-         elseif(self%iswASFLUX==4)THEN             ! Wanninkhof 1999 
+         elseif(self%iswASFLUX==4)THEN             ! Wanninkhof 1999
               fwind=0.0283_rk*wnd**3.0_rk*(sc/660._rk)**(-0.5_rk)
          endif
+
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_wnd_diag,wnd) ! diagnostic in m/s
 
          fwind=fwind*24._rk/100._rk   ! convert to m/day
          UPTAKE = fwind * k0co2 * ( PCO2A/1.e6_rk - PCO2 )
@@ -272,7 +275,7 @@ contains
          FAIRCO2 = UPTAKE * 1.e3_rk * density
 
          _SET_SURFACE_EXCHANGE_(self%id_O3c,FAIRCO2)
-         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fairmg,FAIRCO2)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fair,FAIRCO2)
       _HORIZONTAL_LOOP_END_
    end subroutine
 
@@ -367,7 +370,7 @@ contains
 ! !USES:
 !
 ! !LOCAL VARIABLES
-! 
+!
       real(rk)              :: TK, delta, kappa
       real(rk)              :: dlogTK, S2, S15, sqrtS,TK100
       real(rk),parameter    :: Rgas = 83.131_rk
@@ -410,7 +413,7 @@ contains
         k0co2=k0co2*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
 
 ! k1co2 = [H][HCO3]/[H2CO3]
-! Millero p.664 (1995) using Mehrbach et al. data on seawater scale 
+! Millero p.664 (1995) using Mehrbach et al. data on seawater scale
         k1co2=10._rk**(-1._rk*(3670.7_rk/TK - 62.008_rk + 9.7944_rk*dlogTK - &
      &     0.0118_rk * S + 0.000116_rk*S2))
 ! Correction for high pressure (from Millero 1995)
@@ -420,7 +423,7 @@ contains
         k1co2=k1co2*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
 
 ! k2co2 = [H][CO3]/[HCO3]
-! Millero p.664 (1995) using Mehrbach et al. data on seawater scale 
+! Millero p.664 (1995) using Mehrbach et al. data on seawater scale
         k2co2=10._rk**(-1._rk*(1394.7_rk/TK + 4.777_rk - &
      &     0.0184_rk*S + 0.000118_rk*S2))
 ! Correction for high pressure (from Millero 1995)
@@ -492,10 +495,10 @@ contains
 !  DERIVING PH REQUIRES FOLLOWING LOOP TO CONVERGE.
 !  THIS SUBROUTINE RELIES ON CONVERGENCE.  IF THE ENVIRONMENTAL
 !  CONDITIONS DO NOT ALLOW FOR CONVERGENCE (IN 3D MODEL THIS IS
-!  LIKELY TO OCCUR NEAR LOW SALINITY REGIONS) THE MODEL WILL 
+!  LIKELY TO OCCUR NEAR LOW SALINITY REGIONS) THE MODEL WILL
 !  BE STUCK IN THE LOOP.  TO AVOID THIS A CONVERGENCE CONDITION
-!  IS PUT IN PLACE TO SET A FLAGG OF -99 IN THE PH VAR FOR NON CONVEGENCE. 
-!  THE MODEL IS THEN ALLOWED TO CONTINUE. 'COUNTER, C_SW,C_CHECK' ARE 
+!  IS PUT IN PLACE TO SET A FLAGG OF -99 IN THE PH VAR FOR NON CONVEGENCE.
+!  THE MODEL IS THEN ALLOWED TO CONTINUE. 'COUNTER, C_SW,C_CHECK' ARE
 !  THE LOCAL VARS USED.
 ! C_SW = condition of convergence 0=yes, 1= no
 ! COUNTER = number of iterations
@@ -506,11 +509,11 @@ contains
       COUNTER=0
       C_SW=0
 ! FROM EXPERIENCE IF THE ITERATIONS IN THE FOLLOWING DO LOOP
-! EXCEEDS 15 CONVERGENCE WILL NOT OCCUR.  THE OVERHEAD OF 25 ITERATIONS 
+! EXCEEDS 15 CONVERGENCE WILL NOT OCCUR.  THE OVERHEAD OF 25 ITERATIONS
 ! IS OK FOR SMALL DOMAINS WITH 1/10 AND 1/15 DEG RESOLUTION.
 ! I RECOMMEND A LOWER VALUE OF 15 FOR HIGHER RESOLUTION OR LARGER DOMAINS.
       C_CHECK=25
-! IF CONVERGENCE IS NOT ACHIEVED THE LOCAL ARRAY CONCS MUST BE STORED TO 
+! IF CONVERGENCE IS NOT ACHIEVED THE LOCAL ARRAY CONCS MUST BE STORED TO
 ! ALLOW THE MODEL TO CONTINUE. THEREFORE ....
        CO2sys_memory(1) = Ctot
        CO2sys_memory(2) = TA
@@ -554,18 +557,18 @@ contains
             DONE=.TRUE.
 
 !
-! SET COUNTER UPDATE. 
+! SET COUNTER UPDATE.
             COUNTER=COUNTER+1
 
-! CHECK IF CONVERGENCE HAS OCCURED IN THE NUMBER OF 
-! ACCEPTABLE ITTERATIONS.  
+! CHECK IF CONVERGENCE HAS OCCURED IN THE NUMBER OF
+! ACCEPTABLE ITTERATIONS.
             if(counter.ge.c_check)then
 !!        IF(MASTER)THEN
 !!! LOG FILE TO SHOW WHEN AND WHERE NON CONVERGENCE OCCURS.
 !!           PPWRITELOG 'ERRORLOG ',III,' ',(CONCS2(II),II=1,NCONC)
 !!        ENDIF
 ! IF NON CONVERGENCE, THE MODEL REQUIRES CONCS TO CONTAIN USABLE VALUES.
-! BEST OFFER BEING THE OLD CONCS VALUES WHEN CONVERGENCE HAS BEEN 
+! BEST OFFER BEING THE OLD CONCS VALUES WHEN CONVERGENCE HAS BEEN
 ! ACHIEVED
               Ctot = CO2sys_memory(1)
               TA   = CO2sys_memory(2)
@@ -634,7 +637,7 @@ contains
               ENDIF
               AHPLUS=EXP(X)
             ENDIF
-! LOOP BACK UNTIL CONVERGENCE HAS BEEN ACHIEVED 
+! LOOP BACK UNTIL CONVERGENCE HAS BEEN ACHIEVED
 ! OR MAX NUMBER OF ITERATIONS (C_CHECK) HAS BEEN REACHED.
           ENDDO
 
@@ -751,31 +754,31 @@ contains
 ! !DESCRIPTION:
 !  TODO - check this.
 !
-! Routine to calculate the saturation state of calcite and aragonite    
-! Inputs:                                                               
-!               Tc      Temperature (C)                                 
-!               S       Salinity                                        
-!               Pr      Pressure (Pa)                                       
-!               CO3     Carbonate ion concentration (mol.-l ie /1D6)    
-!                                                                       
-! Outputs                                                               
-!               Om\_cal  Calite saturation                               
-!               Om\_arg  Aragonite saturation                            
-!                                                                       
-! Intermediates                                                         
-!               K\_cal   Stoichiometric solubility product for calcite   
-!               K\_arg   Stoichiometric solubility product for aragonite 
-!               Ca      Calcium 2+ concentration (mol.kg-1) 
+! Routine to calculate the saturation state of calcite and aragonite
+! Inputs:
+!               Tc      Temperature (C)
+!               S       Salinity
+!               Pr      Pressure (Pa)
+!               CO3     Carbonate ion concentration (mol.-l ie /1D6)
+!
+! Outputs
+!               Om\_cal  Calite saturation
+!               Om\_arg  Aragonite saturation
+!
+! Intermediates
+!               K\_cal   Stoichiometric solubility product for calcite
+!               K\_arg   Stoichiometric solubility product for aragonite
+!               Ca      Calcium 2+ concentration (mol.kg-1)
 !               P       Pressure (bars)
-!                                                                       
-! Source                                                                
-!       Zeebe and Wolf-Gladrow 2001 following Mucci (1983)                
-!       with pressure corrections from Millero (1995)                   
-!       Code tested against reference values given in Z and W-G   
+!
+! Source
+!       Zeebe and Wolf-Gladrow 2001 following Mucci (1983)
+!       with pressure corrections from Millero (1995)
+!       Code tested against reference values given in Z and W-G
 !\\
 !\\
 ! !INTERFACE:
-      SUBROUTINE CaCO3_Saturation (Tc, S, Pr, CO3, Om_cal, Om_arg)        
+      SUBROUTINE CaCO3_Saturation (Tc, S, Pr, CO3, Om_cal, Om_arg)
          real(rk),intent(in)  :: Tc, S, Pr, CO3
          real(rk),intent(out) :: Om_cal, Om_arg
 !
@@ -799,39 +802,39 @@ contains
 !BOC
 !
 ! setup
-        Tk = Tc + Kelvin 
+        Tk = Tc + Kelvin
         Ca = 0.01028_rk    ! Currently oceanic mean value at S=25, needs refining)
         R = 83.131_rk      !(cm3.bar.mol-1.K-1)
         P = Pr*1.e-5_rk    !pressure in bars
 
 ! calculate K for calcite
-        tmp1 = -171.9065_rk - (0.077993_rk*Tk) + (2839.319_rk/Tk) + 71.595_rk*log10(Tk) 
-        tmp2 = + (-0.77712_rk + (0.0028426_rk*Tk) + (178.34_rk/Tk))*SQRT(S) 
+        tmp1 = -171.9065_rk - (0.077993_rk*Tk) + (2839.319_rk/Tk) + 71.595_rk*log10(Tk)
+        tmp2 = + (-0.77712_rk + (0.0028426_rk*Tk) + (178.34_rk/Tk))*SQRT(S)
         tmp3 = - (0.07711_rk*S) + (0.0041249_rk*(S**1.5_rk))
         logKspc = tmp1 + tmp2 + tmp3
         Kspc = 10._rk**logKspc
-      
+
 ! correction for pressure for calcite
         dV = -48.76_rk + 0.5304_rk*Tc
         dK = -11.76_rk/1.e3_rk + (0.3692_rk/1.e3_rk) * Tc
         tmp1 = -(dV/(R*Tk))*P + (0.5_rk*dK/(R*Tk))*P*P
         Kspc = Kspc*exp(tmp1)
         logKspc = log10(Kspc)
-        
+
 ! calculate K for aragonite
         tmp1 = -171.945_rk - 0.077993_rk*Tk + 2903.293_rk / Tk + 71.595_rk* log10(Tk)
-        tmp2 = + (-0.068393_rk + 0.0017276_rk*Tk + 88.135_rk/Tk)*SQRT(S)    
+        tmp2 = + (-0.068393_rk + 0.0017276_rk*Tk + 88.135_rk/Tk)*SQRT(S)
         tmp3 = - 0.10018_rk*S + 0.0059415_rk*S**1.5_rk
         logKspa = tmp1 + tmp2 + tmp3
         Kspa = 10._rk**logKspa
-     
+
 ! correction for pressure for aragonite
         dV = -46._rk + 0.530_rk*Tc
         dK = -11.76_rk/1.e3_rk + (0.3692_rk/1.e3_rk) * Tc
         tmp1 = -(dV/(R*Tk))*P + (0.5_rk*dK/(R*Tk))*P*P
         Kspa = Kspa*exp(tmp1)
         logKspa = log10(Kspa)
-        
+
 ! calculate saturation states
         Om_cal = (CO3 * Ca) / Kspc
         Om_arg = (CO3 * Ca) / Kspa

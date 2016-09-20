@@ -21,8 +21,10 @@ module ersem_benthic_fauna
       type (type_dependency_id), allocatable,dimension(:) :: id_foodpelc,id_foodpeln,id_foodpelp,id_foodpels
       type (type_dependency_id) :: id_ETW
       type (type_horizontal_dependency_id) :: id_Dm
-      type (type_horizontal_diagnostic_variable_id) :: id_bioirr,id_biotur,id_fYG3c
+      type (type_horizontal_diagnostic_variable_id) :: id_bioirr,id_biotur,id_fYG3c, id_fYKIn,id_fYK1p,id_fYQPc,id_fYQPn,id_fYQPp
       type (type_model_id),allocatable,dimension(:) :: id_food
+      type (type_horizontal_diagnostic_variable_id),allocatable,dimension(:) :: id_fpreyc,id_fpreyn,id_fpreyp,id_fpreys
+
 
       ! To achieve compatibility with legacy ERSEM, we need to be able to decouple the variable
       ! from which food availability is derived from the variable that absorbs the loss due to
@@ -30,7 +32,7 @@ module ersem_benthic_fauna
       ! they are coupled to the same variable from which available food is derived.
       type (type_model_id),allocatable,dimension(:) :: id_food_loss_source
 
-      integer  :: nfood    
+      integer  :: nfood
       real(rk) :: qnc,qpc
       real(rk) :: q10
       real(rk) :: hO2,rlO2
@@ -134,6 +136,11 @@ contains
       allocate(self%foodispel(self%nfood))
       allocate(self%food_ll(self%nfood))
       allocate(self%id_food_loss_source(self%nfood))
+      allocate(self%id_fpreyc(self%nfood))
+      allocate(self%id_fpreyn(self%nfood))
+      allocate(self%id_fpreyp(self%nfood))
+      allocate(self%id_fpreys(self%nfood))
+
 
       ! Allocate components of food sources
       do ifood=1,self%nfood
@@ -142,7 +149,7 @@ contains
          call self%get_parameter(self%food_ll(ifood),'food'//trim(index)//'_ll','','availability of food source '//trim(index)//' is limited by aerobic layer height',default=.false.)
          call self%register_model_dependency(self%id_food(ifood),'food'//trim(index))
          if (self%foodispel(ifood)) then
-            call self%register_dependency(self%id_foodpelc(ifood), 'food'//trim(index)//'c','mmol C/m^3','food source '//trim(index)//' carbon') 
+            call self%register_dependency(self%id_foodpelc(ifood), 'food'//trim(index)//'c','mmol C/m^3','food source '//trim(index)//' carbon')
             call self%register_dependency(self%id_foodpeln(ifood), 'food'//trim(index)//'n','mmol N/m^3','food source '//trim(index)//' nitrogen')
             call self%register_dependency(self%id_foodpelp(ifood), 'food'//trim(index)//'p','mmol P/m^3','food source '//trim(index)//' phosphorus')
             call self%register_dependency(self%id_foodpels(ifood), 'food'//trim(index)//'s','mmol Si/m^3','food source '//trim(index)//' silicate')
@@ -151,7 +158,7 @@ contains
             call self%request_coupling_to_model(self%id_foodpelp(ifood),self%id_food(ifood),standard_variables%total_phosphorus)
             call self%request_coupling_to_model(self%id_foodpels(ifood),self%id_food(ifood),standard_variables%total_silicate)
          else
-            call self%register_dependency(self%id_foodc(ifood),'food'//trim(index)//'c','mmol C/m^2','Food '//trim(index)//' carbon') 
+            call self%register_dependency(self%id_foodc(ifood),'food'//trim(index)//'c','mmol C/m^2','Food '//trim(index)//' carbon')
             call self%register_dependency(self%id_foodn(ifood),'food'//trim(index)//'n','mmol N/m^2','Food '//trim(index)//' nitrogen')
             call self%register_dependency(self%id_foodp(ifood),'food'//trim(index)//'p','mmol P/m^2','Food '//trim(index)//' phosphorus')
             call self%register_dependency(self%id_foods(ifood),'food'//trim(index)//'s','mmol Si/m^2','Food '//trim(index)//' silicate')
@@ -162,7 +169,10 @@ contains
             call self%register_dependency(self%id_foodc_an(ifood),'food'//trim(index)//'c_an','mg C/m^2','food source '//trim(index)//' carbon in anaerobic layer')
             call self%request_coupling(self%id_foodc_an(ifood),'zero_hz')
          end if
-
+         call self%register_diagnostic_variable(self%id_fpreyc(ifood),'fprey'//trim(index)//'c','mg C/m^2', 'pelagic food' //trim(index)//' uptake',output=output_time_step_averaged)
+         call self%register_diagnostic_variable(self%id_fpreyn(ifood),'fprey'//trim(index)//'n','mmol N/m^2', 'pelagic food' //trim(index)//' uptake',output=output_time_step_averaged)
+         call self%register_diagnostic_variable(self%id_fpreyp(ifood),'fprey'//trim(index)//'p','mmol P/m^2', 'pelagic food' //trim(index)//' uptake',output=output_time_step_averaged)
+         call self%register_diagnostic_variable(self%id_fpreys(ifood),'fprey'//trim(index)//'s','mmol Si/m^2', 'pelagic food' //trim(index)//' uptake',output=output_time_step_averaged)
          ! Legacy ERSEM computes available detritus based on the predator's depth range, but applies the detritus loss
          ! to a detritus pool with a different depth distribution. To be able to reproduce this (inconsistent!) behaviour
          ! we allow separate coupling to the pool that should absorb the detritus loss (this comes in addition to the
@@ -209,9 +219,14 @@ contains
       call self%register_diagnostic_variable(self%id_biotur,'biotur','mg C/m^2/d','bioturbation activity',output=output_none,domain=domain_bottom,source=source_do_bottom)
       call self%register_diagnostic_variable(self%id_bioirr,'bioirr','mg C/m^2/d','bioirrigation activity',output=output_none,domain=domain_bottom,source=source_do_bottom)
       call self%add_to_aggregate_variable(total_bioturbation_activity, self%id_biotur)
-      call self%add_to_aggregate_variable(total_bioirrigation_activity, self%id_bioirr) 
+      call self%add_to_aggregate_variable(total_bioirrigation_activity, self%id_bioirr)
 
       call self%register_diagnostic_variable(self%id_fYG3c,'fYG3c','mg C/m^2/d','respiration',output=output_time_step_averaged,domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fYKIn,'fYKIn','mmol N/m^2/d','zoobenthos DIN release',output=output_time_step_averaged,domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fYK1p,'fYK1p','mmol P/m^2/d','zoobenthos DIP release',output=output_time_step_averaged,domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fYQPc,'fYQPc','mg C/m^2/d','zoobenthos excretion of POC',output=output_time_step_averaged,domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fYQPn,'fYQPn','mmol N/m^2/d','zoobenthos excretion of PON',output=output_time_step_averaged,domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fYQPp,'fYQPp','mmol P/m^2/d','zoobenthos excretion of POP',output=output_time_step_averaged,domain=domain_bottom,source=source_do_bottom)
 
    end subroutine initialize
 
@@ -320,6 +335,13 @@ contains
          sflux = 0._rk
       end if
 
+      do ifood=1,self%nfood
+             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fpreyc(ifood),sflux(ifood)*foodcP(ifood))
+             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fpreyn(ifood),sflux(ifood)*foodnP(ifood))
+             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fpreyp(ifood),sflux(ifood)*foodpP(ifood))
+             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fpreys(ifood),sflux(ifood)*foodsP(ifood))
+      end do
+
       ! Ingestion (matter/m2/d) per food source.
       grossfluxc = sflux * foodcP
       grossfluxn = sflux * foodnP
@@ -359,7 +381,7 @@ contains
 
       ! Compute contribution to bioturbation and bioirrigation from total carbon ingestion.
       _SET_HORIZONTAL_DIAGNOSTIC_(self%id_biotur, self%ptur * fBTYc)
-      _SET_HORIZONTAL_DIAGNOSTIC_(self%id_bioirr, self%pirr * fBTYc) 
+      _SET_HORIZONTAL_DIAGNOSTIC_(self%id_bioirr, self%pirr * fBTYc)
 
       ! Respiration fluxes = basal respiration (proportional to biomass)+ activity respiration (proportional to carbon assimilation)
       fYG3c = self%sr * cP * eT + self%pur * nfBTYc
@@ -412,9 +434,15 @@ contains
       _SET_BOTTOM_ODE_(self%id_K1p,(1._rk-p_an)*excess_p)
       _SET_BOTTOM_ODE_(self%id_K1p2,p_an       *excess_p)
 
+      _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fYKIn,excess_n)
+      _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fYK1p,excess_p)
+      _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fYQPc,mortflux*cP+excess_c)
+      _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fYQPn,mortflux*cP*self%qnc)
+      _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fYQPp,mortflux*cP*self%qpc)
+
       if (.not.legacy_ersem_compatibility) then
          ! Alkalinity contributions: +1 for NH4, -1 for PO4
-         _SET_BOTTOM_ODE_(self%id_benTA,(1._rk-p_an)*(excess_n-excess_p)) 
+         _SET_BOTTOM_ODE_(self%id_benTA,(1._rk-p_an)*(excess_n-excess_p))
          _SET_BOTTOM_ODE_(self%id_benTA2,p_an       *(excess_n-excess_p))
       end if
 

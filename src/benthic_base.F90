@@ -21,7 +21,7 @@ module ersem_benthic_base
 
       ! Coupled state variables for resuspension and remineralization
       type (type_state_variable_id) :: id_resuspended_c,id_resuspended_n,id_resuspended_p,id_resuspended_s,id_resuspended_f
-      type (type_horizontal_diagnostic_variable_id) :: id_resuspension_flux_c,id_resuspension_flux_n,id_resuspension_flux_p,id_resuspension_flux_s,id_resuspension_flux_f
+      type (type_horizontal_diagnostic_variable_id) :: id_resuspension_flux_c,id_resuspension_flux_n,id_resuspension_flux_p,id_resuspension_flux_s,id_resuspension_flux_f,id_bremin
       type (type_state_variable_id) :: id_O3c,id_N1p,id_N3n,id_N4n,id_N5s,id_N7f,id_TA
 
       ! Dependencies for resuspension
@@ -82,6 +82,7 @@ contains
             call self%register_diagnostic_variable(self%id_resuspension_flux_c,'resuspension_flux_c','mg C/m^2','carbon resuspension',source=source_do_bottom)
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_O3c,'O3c','mmol/m^3','dissolved inorganic carbon')
+         if (self%reminQIX/=0.0_rk) call self%register_diagnostic_variable(self%id_bremin,'bremin','mg C/m^2','C remineralization',output=output_time_step_averaged)
       end if
       if (index(self%composition,'p')/=0) then
          call self%add_constituent('p',0.0_rk,qpRPIcX*c0)
@@ -241,6 +242,7 @@ contains
             if (_VARIABLE_REGISTERED_(self%id_c)) then
                _GET_HORIZONTAL_(self%id_c,state)
                _SET_BOTTOM_ODE_(self%id_c,-self%reminQIX*state)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_bremin,self%reminQIX*state)
                _SET_BOTTOM_EXCHANGE_(self%id_O3c,self%reminQIX*state/CMass)
             end if
             if (_VARIABLE_REGISTERED_(self%id_p)) then

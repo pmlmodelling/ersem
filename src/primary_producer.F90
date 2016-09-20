@@ -3,7 +3,7 @@
 ! -----------------------------------------------------------------------------
 ! This is a generic model for primary producers - P1, P2, P3, P4 in ERSEM.
 ! -----------------------------------------------------------------------------
-! Silicate use (P1) is optional - it is activated by setting the "use_Si" flag 
+! Silicate use (P1) is optional - it is activated by setting the "use_Si" flag
 ! in the run-time configuration.
 !
 ! Calcification (P2) is optional - it is activated by setting the "calcify"
@@ -50,8 +50,13 @@ module ersem_primary_producer
       ! Identifiers for diagnostic variables
       type (type_diagnostic_variable_id) :: id_fO3PIc  ! Gross primary production rate
       type (type_diagnostic_variable_id) :: id_fPIO3c  ! Respiration rate
+      type (type_diagnostic_variable_id) :: id_fN3PIn,id_fN4PIn,id_fN1PIp,id_fN5PIs  ! nutrient uptake
       type (type_diagnostic_variable_id) :: id_netPI   ! Net primary production rate
       type (type_diagnostic_variable_id) :: id_lD      ! Cell-bound calcite - used by calcifiers only
+      type (type_diagnostic_variable_id) :: id_O3L2c   ! Calcification
+      type (type_diagnostic_variable_id) :: id_fPIRPc,id_fPIRPn,id_fPIRPp,id_fPIRPs  ! Total loss to Particulate detritus
+      type (type_diagnostic_variable_id) :: id_fPIR1c,id_fPIR1n,id_fPIR1p ! Total loss to labile dissovled detritus
+      type (type_diagnostic_variable_id) :: id_fPIR2c  ! Total loss to non-labile dissovled detritus
 
       ! Parameters (described in subroutine initialize, below)
       real(rk) :: sum
@@ -185,13 +190,24 @@ contains
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen')
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide')
-      call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)    
+      call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)
 
       ! Register diagnostic variables (i.e., model outputs)
       call self%register_diagnostic_variable(self%id_netPI, 'netPI', 'mg C/m^3/d','net primary production',  output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_fO3PIc,'fO3PIc','mg C/m^3/d','gross primary production',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_fPIO3c,'fPIO3c','mg C/m^3/d','respiration',             output=output_time_step_averaged)
-
+      call self%register_diagnostic_variable(self%id_fN3PIn,'fN3PIn','mmol N/m^3/d','phytoplankton oxidised N uptake',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fN4PIn,'fN4PIn','mmol N/m^3/d','phytoplankton reduced N uptake',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fN1PIp,'fN1PIp','mmol P/m^3/d','phytoplankton P uptake',output=output_time_step_averaged)
+      if (self%use_Si) call self%register_diagnostic_variable(self%id_fN5PIs,'fN5PIs','mmol Si/m^3/d','phytoplankton Si uptake',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fPIR1c,'fPIR1c','mg C/m^3/d','phytoplankton loss to labile DOC',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fPIR1n,'fPIR1n','mg C/m^3/d','phytoplankton loss to labile DON',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fPIR1p,'fPIR1p','mg C/m^3/d','phytoplankton loss to labile DOP',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fPIR2c,'fPIR2c','mg C/m^3/d','phytoplankton loss to semi-labile DOC',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fPIRPc,'fPIRPc','mg C/m^3/d','phytoplankton loss to POC',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fPIRPn,'fPIRPn','mmol N/m^3/d','phytoplankton loss to PON',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fPIRPp,'fPIRPp','mmon P/m^3/d','phytoplankton loss to POP',output=output_time_step_averaged)
+      if (self%use_Si) call self%register_diagnostic_variable(self%id_fPIRPs,'fPIRPs','mmon P/m^3/d','phytoplankton loss to POS',output=output_time_step_averaged)
       ! Contribute to aggregate fluxes.
       call self%add_to_aggregate_variable(phytoplankton_respiration_rate,self%id_fPIO3c)
       call self%add_to_aggregate_variable(photosynthesis_rate,self%id_fO3PIc)
@@ -209,6 +225,7 @@ contains
          ! Create diagnostic variable for cell-bound calcite, and register its contribution to the known quantity "total_calcite_in_biota".
          ! This quantity can be used by other models (e.g., predators) to determine how much calcite is released when phytoplankton is broken down.
          call self%register_diagnostic_variable(self%id_lD,'l','mg C/m^3','bound calcite',missing_value=0._rk,output=output_none)
+         call self%register_diagnostic_variable(self%id_O3L2c,'calcification','mg C/m^3/d','calcification rate',output=output_time_step_averaged)
          call self%add_to_aggregate_variable(total_calcite_in_biota,self%id_lD)
       end if
 
@@ -409,6 +426,7 @@ contains
             ! For dying cells: convert virtual cell-attached calcite to actual calcite in free liths.
             ! Update DIC and lith balances accordingly (only now take away the DIC needed to form the calcite)
             _SET_ODE_(self%id_L2c,   fPIRPc*RainR)
+            _SET_DIAGNOSTIC_(self%id_O3L2c,fPIRPc*RainR)
             _SET_ODE_(self%id_O3c,  -fPIRPc*RainR/Cmass)
             _SET_ODE_(self%id_TA, -2*fPIRPc*RainR/Cmass)   ! CaCO3 formation decreases alkalinity by 2 units
          end if
@@ -416,7 +434,7 @@ contains
          ! Respiration..........................................................
 
          ! Rest respiration rate :
-         srs = et*self%srs 
+         srs = et*self%srs
 
          ! Activity respiration rate :
          sra = sug*self%pu_ra
@@ -437,11 +455,11 @@ contains
          ! Chl changes (note that Chl is a component of PXc and not involved
          ! in mass balance)
          if (use_iron) then
-           Chl_inc = min(iNf,iNI)*rho*(sum-sra-seo-sea)*c 
+           Chl_inc = min(iNf,iNI)*rho*(sum-sra-seo-sea)*c
          else
-           Chl_inc = iNI*rho*(sum-sra-seo-sea)*c 
+           Chl_inc = iNI*rho*(sum-sra-seo-sea)*c
          endif
-         Chl_loss = (sdo+srs)*ChlP 
+         Chl_loss = (sdo+srs)*ChlP
 
          _SET_ODE_(self%id_c,(fO3PIc-fPIO3c-fPIRPc-fPIRDc))
 
@@ -457,6 +475,9 @@ contains
          _SET_DIAGNOSTIC_(self%id_fPIO3c,fPIO3c)
          _SET_DIAGNOSTIC_(self%id_fO3PIc,fO3PIc)
 
+         _SET_DIAGNOSTIC_(self%id_fPIR1c,fPIR1c)
+         _SET_DIAGNOSTIC_(self%id_fPIR2c,fPIR2c)
+         _SET_DIAGNOSTIC_(self%id_fPIRPc,fPIRPc)
          ! Phosphorus flux...........................................
 
          ! Lysis loss of phosphorus
@@ -475,6 +496,11 @@ contains
          _SET_ODE_(self%id_TA,  fN1PIp) ! Alkalinity contributions: -1 for PO4
          _SET_ODE_(self%id_RPp,fPIRPp)
          _SET_ODE_(self%id_R1p,fPIRDp)
+
+         ! Set Diagnostic
+         _SET_DIAGNOSTIC_(self%id_fN1PIp, fN1PIp)
+         _SET_DIAGNOSTIC_(self%id_fPIR1p,fPIRDp)
+         _SET_DIAGNOSTIC_(self%id_fPIRPp,fPIRPp)
 
          ! Nitrogen flux.............................................
 
@@ -508,6 +534,12 @@ contains
          _SET_ODE_(self%id_RPn,fPIRPn)
          _SET_ODE_(self%id_R1n,fPIRDn)
 
+         ! Set Diagnostic
+         _SET_DIAGNOSTIC_(self%id_fN3PIn, fN3PIn)
+         _SET_DIAGNOSTIC_(self%id_fN4PIn, fN4PIn)
+         _SET_DIAGNOSTIC_(self%id_fPIR1n,fPIRDn)
+         _SET_DIAGNOSTIC_(self%id_fPIRPn,fPIRPn)
+
          if (self%use_Si) then
             ! Silicate flux.............................................
             _GET_(self%id_s,sP)
@@ -520,11 +552,14 @@ contains
 
             ! Net silicate uptake
             fN5PIs = MAX ( 0._rk, self%qsc*run) - fPIN5s
+            _SET_DIAGNOSTIC_(self%id_fN5PIs, fN5PIs)
 
             ! Source equations
             _SET_ODE_(self%id_s,(fN5PIs - fPIRPs))
             _SET_ODE_(self%id_N5s,-fN5PIs)
             _SET_ODE_(self%id_RPs, fPIRPs)
+
+            _SET_DIAGNOSTIC_(self%id_fPIRPs,fPIRPs)
          end if
 
          if (use_iron) then
@@ -535,7 +570,7 @@ contains
             _GET_(self%id_N7f,N7fP)
 
             ! Iron loss by lysis
-            !  Because its high affinity with particles all the iron lost from phytoplankton by lysis is supposed to be 
+            !  Because its high affinity with particles all the iron lost from phytoplankton by lysis is supposed to be
             !  associated to organic particulate detritus. (luca)
 
             fPIRPf = sdo * fP
@@ -569,7 +604,7 @@ contains
       _GET_WITH_BACKGROUND_(self%id_c,c)
       _GET_WITH_BACKGROUND_(self%id_p,p)
       _GET_WITH_BACKGROUND_(self%id_n,n)
-      
+
       qpc = p/c
       qnc = n/c
 
