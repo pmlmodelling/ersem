@@ -20,18 +20,19 @@ module ersem_benthic_base
       type (type_bottom_state_variable_id) :: id_c,id_n,id_p,id_f,id_s
 
       ! Coupled state variables for resuspension and remineralization
-      type (type_state_variable_id) :: id_resuspension_c,id_resuspension_n,id_resuspension_p,id_resuspension_s,id_resuspension_f
+      type (type_state_variable_id) :: id_resuspended_c,id_resuspended_n,id_resuspended_p,id_resuspended_s,id_resuspended_f
+      type (type_horizontal_diagnostic_variable_id) :: id_resuspension_flux_c,id_resuspension_flux_n,id_resuspension_flux_p,id_resuspension_flux_s,id_resuspension_flux_f
       type (type_state_variable_id) :: id_O3c,id_N1p,id_N3n,id_N4n,id_N5s,id_N7f,id_TA
 
       ! Dependencies for resuspension
-      type (type_horizontal_dependency_id) :: id_bedstress,id_wdepth
+      type (type_horizontal_dependency_id) :: id_bedstress
       type (type_dependency_id)            :: id_dens
 
       ! Parameters
       character(len=10) :: composition
       real(rk) :: reminQIX,pQIN3X
       logical  :: resuspension
-      real(rk) :: vel_crit
+      real(rk) :: er, vel_crit
    contains
       procedure :: initialize
       procedure :: do_bottom
@@ -65,9 +66,9 @@ contains
       call self%initialize_ersem_benthic_base()
 
       if (self%resuspension) then
+         call self%get_parameter(self%er,'er','1/d','erosion rate',default=0.225_rk)
          call self%get_parameter(self%vel_crit,'vel_crit','m/s','critical shear velocity for resuspension',default=0.02_rk)
          call self%register_dependency(self%id_bedstress,standard_variables%bottom_stress)
-         call self%register_dependency(self%id_wdepth,   standard_variables%bottom_depth_below_geoid)
          call self%register_dependency(self%id_dens,     standard_variables%density)
       end if
 
@@ -76,16 +77,18 @@ contains
       if (index(self%composition,'c')/=0) then
          call self%add_constituent('c',0.0_rk,c0)
          if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_c,'resuspension_target_c','mg C/m^3','pelagic variable taking up resuspended carbon')
-            call self%request_coupling_to_model(self%id_resuspension_c,'RP','c')
+            call self%register_state_dependency(self%id_resuspended_c,'resuspended_c','mg C/m^3','pelagic variable taking up resuspended carbon')
+            call self%request_coupling_to_model(self%id_resuspended_c,'RP','c')
+            call self%register_diagnostic_variable(self%id_resuspension_flux_c,'resuspension_flux_c','mg C/m^2','carbon resuspension',source=source_do_bottom)
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_O3c,'O3c','mmol/m^3','dissolved inorganic carbon')
       end if
       if (index(self%composition,'p')/=0) then
          call self%add_constituent('p',0.0_rk,qpRPIcX*c0)
          if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_p,'resuspension_target_p','mmol P/m^3','pelagic variable taking up resuspended phosphorus')
-            call self%request_coupling_to_model(self%id_resuspension_p,'RP','p')
+            call self%register_state_dependency(self%id_resuspended_p,'resuspended_p','mmol P/m^3','pelagic variable taking up resuspended phosphorus')
+            call self%request_coupling_to_model(self%id_resuspended_p,'RP','p')
+            call self%register_diagnostic_variable(self%id_resuspension_flux_p,'resuspension_flux_p','mmol P/m^2','phosphorus resuspension',source=source_do_bottom)
          end if
          if (self%reminQIX/=0.0_rk) then
             call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
@@ -95,8 +98,9 @@ contains
       if (index(self%composition,'n')/=0) then
          call self%add_constituent('n',0.0_rk,qnRPIcX*c0)
          if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_n,'resuspension_target_n','mmol N/m^3','pelagic variable taking up resuspended nitrogen')
-            call self%request_coupling_to_model(self%id_resuspension_n,'RP','n')
+            call self%register_state_dependency(self%id_resuspended_n,'resuspended_n','mmol N/m^3','pelagic variable taking up resuspended nitrogen')
+            call self%request_coupling_to_model(self%id_resuspended_n,'RP','n')
+            call self%register_diagnostic_variable(self%id_resuspension_flux_n,'resuspension_flux_n','mmol N/m^2','nitrogen resuspension',source=source_do_bottom)
          end if
          if (self%reminQIX/=0.0_rk) then
             call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3','nitrate')
@@ -107,16 +111,18 @@ contains
       if (index(self%composition,'s')/=0) then
          call self%add_constituent('s',0.0_rk,qsRPIcX*c0)
          if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_s,'resuspension_target_s','mmol Si/m^3','pelagic variable taking up resuspended silicate')
-            call self%request_coupling_to_model(self%id_resuspension_s,'RP','s')
+            call self%register_state_dependency(self%id_resuspended_s,'resuspended_s','mmol Si/m^3','pelagic variable taking up resuspended silicate')
+            call self%request_coupling_to_model(self%id_resuspended_s,'RP','s')
+            call self%register_diagnostic_variable(self%id_resuspension_flux_s,'resuspension_flux_s','mmol Si/m^2','silicate resuspension',source=source_do_bottom)
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N5s,'N5s','mmol Si/m^3','silicate')
       end if
       if (index(self%composition,'f')/=0) then
          call self%add_constituent('f',0.0_rk)
          if (use_iron.and.self%resuspension) then
-            call self%register_state_dependency(self%id_resuspension_f,'resuspension_target_f','umol Fe/m^3','pelagic variable taking up resuspended iron')
-            call self%request_coupling_to_model(self%id_resuspension_f,'RP','f')
+            call self%register_state_dependency(self%id_resuspended_f,'resuspended_f','umol Fe/m^3','pelagic variable taking up resuspended iron')
+            call self%request_coupling_to_model(self%id_resuspended_f,'RP','f')
+            call self%register_diagnostic_variable(self%id_resuspension_flux_f,'resuspension_flux_f','umol Fe/m^2','iron resuspension',source=source_do_bottom)
          end if
          if (use_iron.and.self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3','dissolved iron')
       end if
@@ -165,137 +171,105 @@ contains
       class (type_ersem_benthic_base), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
-      real(rk) :: bedstress,density,wdepth
-      real(rk) :: Q6cP,Q6nP,Q6pP,Q6sP,Q6fP,Q6lP
-      real(rk) :: bedsedXc,bedsedXn,bedsedXp,bedsedXs
-      real(rk) :: fac,FerC,FerN,FerP,FerS,FerF
-
-      ! Bed characteristics - from Puls and Sundermann 1990
-      ! Critical shear velocity for erosion = 0.02 m/s
-
-      ! erosion constant (g/m^2/s)
-      real(rk) :: ter,er
+      real(rk) :: bedstress,density
+      real(rk) :: fac,state,resuspension_flux
+      real(rk) :: max_rel_res = 4.0_rk            ! max relative loss of matter due to resuspension, in 1/d
 
       _HORIZONTAL_LOOP_BEGIN_
-         ter=self%vel_crit**2
          if (self%resuspension) then
-            ! Erosion constant: 10^-4 tons s m-4 = 100 g s m-4 ("M" in Puls & Sundermann 1990) This value is representative for mud beds!
-            ! As criticial shear velocity "ter" has unit m2 s-2, M*ter has unit g s-1 m-2. Below we convert to mg s-1 m-2 by multiplying with 1000*86400.
-            ! Representative erosion value: for ter=0.02^2 (Puls & Sundermann 1990), er=0.04 g m-2 s-1 = 3.5 kg m-2 d-1.
-            ! For a sediment density of 2000 kg m-3, that results in removal of 3.5/2000 = 0.00175 m d-1.
-            ! That implies for each "ter" units of shear stress above "ter", an additional 2 mm of sediment is stripped off per day.
-            er = 100._rk * ter * 1000._rk*86400._rk
-
+            ! The resuspension rate (1/d) is a linear function of shear stress (Pa)
+            ! Prefactor "er" (1/d) can be interpreted as c*M/rho_sed*v_crit^2, with:
+            ! - c (1/m) = ratio between tracer concentration at the sediment surface and sediemnt-column-integrated tracer
+            !   (e.g., c=100 for an exponential profile with penetration depth of 1 cm)
+            ! - M = the erosion rate in g*s/m4 (Puls & Suendermann 1990: M=100)
+            ! - rho_sed = dry mass of sediment per total volume at the sediment surface. This is grain density (2650 kg/m3 for quartz) multiplied by (1-porosity)
+            ! - v_crit being the critical shear velocity (m/s) for resuspension (Puls & Suendermann 1990: v_crit=0.02)
+            ! With porosity=0.4, a representative value for er is 100*100/(2650000*0.6)*0.02^2*86400 = 0.225 1/d
+            ! Note that the square of bed shear velocity is calculated as the ratio between shear stress (Pa) and water density (kg/m^3).
             _GET_HORIZONTAL_(self%id_bedstress,bedstress)
             _GET_(self%id_dens,density)
-
-            ! Divide actual stress (Pa) by density (kg/m^3) to obtain square of bed shear velocity.
-            ! This allows for comparison with ter.
-            bedstress = bedstress/density
-         else
-            bedstress = 0.0_rk
-         end if
-             FerC=0._rk
-         if (bedstress.gt.ter) then
-            _GET_HORIZONTAL_(self%id_wdepth,wdepth)
-            _GET_HORIZONTAL_(self%id_c,Q6cP)
-
-            ! Inorganic sedment (could replace by transport model)
-            ! for now assume 90% is a fixed inorganic component
-            bedsedXc=10._rk*(-1069._rk*LOG(wdepth) + 10900._rk)
-            bedsedXn=10._rk*(-7.6368_rk*LOG(wdepth) + 78.564_rk)
-            bedsedXp=10._rk*(-0.545_rk*LOG(wdepth) + 6.0114_rk)
-            bedsedXs=10._rk*(-64.598_rk*LOG(wdepth) + 391.61_rk)
-
-            ! fac = er*(bedstress(k)/ter - 1.0)
-            fac = er*(bedstress/ter - 1._rk)/(Q6cP+bedsedXc)
+            fac = min(max_rel_res,self%er*max(0.0_rk,bedstress/density/self%vel_crit**2 - 1._rk))
 
             ! Carbon
-            ! FerC=fac*Q6cP(k)/(Q6cP(k)+bedsedXc)
-            FerC=fac*Q6cP
-            !FerC=max(min(FerC,Q6cP(k)/timestep+ &
-            !       min(SQ6c(k)-wsoQ6c(k),0._rk)),0._rk)
-            _SET_BOTTOM_ODE_(self%id_c,-FerC)
-            _SET_BOTTOM_EXCHANGE_(self%id_resuspension_c,FerC)
+            if (_VARIABLE_REGISTERED_(self%id_c)) then
+               _GET_HORIZONTAL_(self%id_c,state)
+               resuspension_flux = fac*state
+               _SET_BOTTOM_ODE_(self%id_c,-resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspended_c,resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_c,resuspension_flux)
+            end if
 
             ! Nitrogen
             if (_VARIABLE_REGISTERED_(self%id_n)) then
-               _GET_HORIZONTAL_(self%id_n,Q6nP)
-               ! FerN=fac*Q6nP(k)/(Q6nP(k)+bedsedXn)
-               FerN=fac*Q6nP
-               !FerN=max(min(FerN,Q6nP(k)/timestep+ &
-               !       min(SQ6n(k)-wsoQ6n(k),0._rk)),0._rk)
-               _SET_BOTTOM_ODE_(self%id_n,-FerN)
-               _SET_BOTTOM_EXCHANGE_(self%id_resuspension_n,FerN)
+               _GET_HORIZONTAL_(self%id_n,state)
+               resuspension_flux = fac*state
+               _SET_BOTTOM_ODE_(self%id_n,-resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspended_n,resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_n,resuspension_flux)
             end if
 
             ! Phosphorus
             if (_VARIABLE_REGISTERED_(self%id_p)) then
-               _GET_HORIZONTAL_(self%id_p,Q6pP)
-               ! FerP=fac*Q6pP(k)/(Q6pP(k)+bedsedXp)
-               FerP=fac*Q6pP
-               !FerP=max(min(FerP,Q6pP(k)/timestep+ &
-               !       min(SQ6p(k)-wsoQ6p(k),0._rk)),0._rk)
-               _SET_BOTTOM_ODE_(self%id_p,-FerP)
-               _SET_BOTTOM_EXCHANGE_(self%id_resuspension_p,FerP)
+               _GET_HORIZONTAL_(self%id_p,state)
+               resuspension_flux = fac*state
+               _SET_BOTTOM_ODE_(self%id_p,-resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspended_p,resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_p,resuspension_flux)
             end if
 
             ! Silicate
             if (_VARIABLE_REGISTERED_(self%id_s)) then
-               _GET_HORIZONTAL_(self%id_s,Q6sP)
-               ! FerS=fac*Q6sP(k)/(Q6sP(k)+bedsedXs)
-               FerS=fac*Q6sP
-               !FerS=max(min(FerS,Q6sP(k)/timestep+ &
-               !       min(SQ6s(k)-wsoQ6s(k),0._rk)),0._rk)
-               _SET_BOTTOM_ODE_(self%id_s,-FerS)
-               _SET_BOTTOM_EXCHANGE_(self%id_resuspension_s,FerS)
+               _GET_HORIZONTAL_(self%id_s,state)
+               resuspension_flux = fac*state
+               _SET_BOTTOM_ODE_(self%id_s,-resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspended_s,resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_s,resuspension_flux)
             end if
 
             ! Iron
             if (_VARIABLE_REGISTERED_(self%id_f)) then
-               _GET_HORIZONTAL_(self%id_f,Q6fP)
-               FerF=fac*Q6fP
-               !FerF=max(min(FerF,Q6fP(k)/timestep+ &
-               !       min(SQ6f(k)-wsoQ6f(k),0._rk)),0._rk)
-               _SET_BOTTOM_ODE_(self%id_f,-FerF)
-               _SET_BOTTOM_EXCHANGE_(self%id_resuspension_f,FerF)
+               _GET_HORIZONTAL_(self%id_f,state)
+               resuspension_flux = fac*state
+               _SET_BOTTOM_ODE_(self%id_f,-resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspended_f,resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_f,resuspension_flux)
             end if
          end if   ! Resuspension
 
          ! Remineralization (benthic return)
          if (self%reminQIX/=0.0_rk) then
             if (_VARIABLE_REGISTERED_(self%id_c)) then
-               _GET_HORIZONTAL_(self%id_c,Q6cP)
-               _SET_BOTTOM_ODE_(self%id_c,-self%reminQIX*Q6cP)
-               _SET_BOTTOM_EXCHANGE_(self%id_O3c,self%reminQIX*Q6cP/CMass)
+               _GET_HORIZONTAL_(self%id_c,state)
+               _SET_BOTTOM_ODE_(self%id_c,-self%reminQIX*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_O3c,self%reminQIX*state/CMass)
             end if
             if (_VARIABLE_REGISTERED_(self%id_p)) then
-               _GET_HORIZONTAL_(self%id_p,Q6pP)
-               _SET_BOTTOM_ODE_(self%id_p,-self%reminQIX*Q6pP)
-               _SET_BOTTOM_EXCHANGE_(self%id_N1p,self%reminQIX*Q6pP)
-               _SET_BOTTOM_EXCHANGE_(self%id_TA, -self%reminQIX*Q6pP)
+               _GET_HORIZONTAL_(self%id_p,state)
+               _SET_BOTTOM_ODE_(self%id_p,-self%reminQIX*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_N1p,self%reminQIX*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_TA, -self%reminQIX*state)
             end if
             if (_VARIABLE_REGISTERED_(self%id_n)) then
-               _GET_HORIZONTAL_(self%id_n,Q6nP)
-               _SET_BOTTOM_ODE_(self%id_n,-self%reminQIX*Q6nP)
-               _SET_BOTTOM_EXCHANGE_(self%id_N3n,self%pQIN3X*self%reminQIX*Q6nP)
-               _SET_BOTTOM_EXCHANGE_(self%id_N4n,(1.0_rk-self%pQIN3X)*self%reminQIX*Q6nP)
-               _SET_BOTTOM_EXCHANGE_(self%id_TA,(1.0_rk-self%pQIN3X)*self%reminQIX*Q6nP -self%pQIN3X*self%reminQIX*Q6nP)
+               _GET_HORIZONTAL_(self%id_n,state)
+               _SET_BOTTOM_ODE_(self%id_n,-self%reminQIX*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_N3n,self%pQIN3X*self%reminQIX*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_N4n,(1.0_rk-self%pQIN3X)*self%reminQIX*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_TA,(1.0_rk-self%pQIN3X)*self%reminQIX*state - self%pQIN3X*self%reminQIX*state)
             end if
             if (_VARIABLE_REGISTERED_(self%id_s)) then
-               _GET_HORIZONTAL_(self%id_s,Q6sP)
-               _SET_BOTTOM_ODE_(self%id_s,-self%reminQIX*Q6sP)
-               _SET_BOTTOM_EXCHANGE_(self%id_N5s,self%reminQIX*Q6sP)
+               _GET_HORIZONTAL_(self%id_s,state)
+               _SET_BOTTOM_ODE_(self%id_s,-self%reminQIX*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_N5s,self%reminQIX*state)
             end if
             if (_VARIABLE_REGISTERED_(self%id_f)) then
-               _GET_HORIZONTAL_(self%id_f,Q6fP)
-               _SET_BOTTOM_ODE_(self%id_f,-self%reminQIX*Q6fP)
-               _SET_BOTTOM_EXCHANGE_(self%id_N7f,self%reminQIX*Q6fP)
+               _GET_HORIZONTAL_(self%id_f,state)
+               _SET_BOTTOM_ODE_(self%id_f,-self%reminQIX*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_N7f,self%reminQIX*state)
             end if
          end if   ! Remineralization (benthic return)
 
       _HORIZONTAL_LOOP_END_
 
-   end subroutine
+   end subroutine do_bottom
 
 end module
