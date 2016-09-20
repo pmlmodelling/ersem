@@ -273,7 +273,7 @@ contains
          _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fQ1Hc,fQ1Hc)
          _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fHQ1c,fQ7Hc*self%pue7 + fQ6Hc*self%pue6+sfHQ1 * HcP)
          _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fQ1Hn,fQ1Hn)
-         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fHQ1p,fQ7Hn*self%pue7 + fQ6Hn*self%pue6+sfHQ1 * HcP*self%qnc)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fHQ1n,fQ7Hn*self%pue7 + fQ6Hn*self%pue6+sfHQ1 * HcP*self%qnc)
          _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fQ1Hp,fQ1Hp)
          _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fHQ1p,fQ7Hp*self%pue7 + fQ6Hp*self%pue6+sfHQ1 * HcP*self%qpc)
 

@@ -206,8 +206,8 @@ contains
       call self%register_diagnostic_variable(self%id_fPIR2c,'fPIR2c','mg C/m^3/d','phytoplankton loss to semi-labile DOC',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_fPIRPc,'fPIRPc','mg C/m^3/d','phytoplankton loss to POC',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_fPIRPn,'fPIRPn','mmol N/m^3/d','phytoplankton loss to PON',output=output_time_step_averaged)
-      call self%register_diagnostic_variable(self%id_fPIRPp,'fPIRPp','mmon P/m^3/d','phytoplankton loss to POP',output=output_time_step_averaged)
-      if (self%use_Si) call self%register_diagnostic_variable(self%id_fPIRPs,'fPIRPs','mmon P/m^3/d','phytoplankton loss to POS',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fPIRPp,'fPIRPp','mmol P/m^3/d','phytoplankton loss to POP',output=output_time_step_averaged)
+      if (self%use_Si) call self%register_diagnostic_variable(self%id_fPIRPs,'fPIRPs','mmol Si/m^3/d','phytoplankton loss to POS',output=output_time_step_averaged)
       ! Contribute to aggregate fluxes.
       call self%add_to_aggregate_variable(phytoplankton_respiration_rate,self%id_fPIO3c)
       call self%add_to_aggregate_variable(photosynthesis_rate,self%id_fO3PIc)
