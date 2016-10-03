@@ -21,7 +21,8 @@ module ersem_bacteria
       type (type_dependency_id)     :: id_ETW,id_eO2mO2
       type (type_state_variable_id),allocatable,dimension(:) :: id_RPc,id_RPp,id_RPn,id_RPf
       type (type_model_id),         allocatable,dimension(:) :: id_RP
-      type (type_diagnostic_variable_id) :: id_fB1O3c
+      type (type_diagnostic_variable_id) :: id_fB1O3c, id_fB1NIn, id_fB1N1p
+      type (type_diagnostic_variable_id) :: id_minn,id_minp
 
       ! Parameters
       integer  :: nRP
@@ -156,6 +157,11 @@ contains
 
       ! Contribute to aggregate fluxes.
       call self%add_to_aggregate_variable(bacterial_respiration_rate,self%id_fB1O3c)
+
+      call self%register_diagnostic_variable(self%id_fB1NIn,'fB1NIn','mmol N/m^3/d','bacterial DIN release',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fB1N1p,'fB1N1p','mmol P/m^3/d','bacterial DIP release',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_minn,'minn','mmol N/m^3/d','N mineralisation',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_minp,'minp','mmol P/m^3/d','P mineralisation',output=output_time_step_averaged)
 
    end subroutine
 
@@ -297,6 +303,9 @@ contains
          _SET_ODE_(self%id_R1p, + fB1RDp - fR1B1p)
          _SET_ODE_(self%id_TA,  - fB1N1p)   ! Contribution to alkalinity: -1 for phosphate
 
+!..Set diagnostics
+         _SET_DIAGNOSTIC_(self%id_fB1N1p,fB1N1p)
+
 !..Nitrogen dynamics in bacteria........................................
 
          IF ((qnB1c - self%qnB1cX).gt.0._rk) THEN
@@ -320,6 +329,9 @@ contains
          _SET_ODE_(self%id_n,   + fR1B1n - fB1NIn - fB1RDn)
          _SET_ODE_(self%id_R1n, + fB1RDn   - fR1B1n)
          _SET_ODE_(self%id_TA,  + fB1NIn)   ! Contribution to alkalinity: +1 for ammonium
+
+!..Set diagnostics
+         _SET_DIAGNOSTIC_(self%id_fB1NIn,fB1NIn)
 
       ! Leave spatial loops (if any)
       _LOOP_END_
@@ -431,6 +443,10 @@ contains
          _SET_ODE_(self%id_N1p, + fR1N1p)
          _SET_ODE_(self%id_N4n, + fR1NIn)
          _SET_ODE_(self%id_TA,  - fR1N1p + fR1NIn)   ! Contributions to alkalinity: -1 for phosphate, +1 for ammonium
+
+         !.. set Diagnostics
+         _SET_DIAGNOSTIC_(self%id_minn,fR1NIn)
+         _SET_DIAGNOSTIC_(self%id_minp,fR1N1p)
 
          ! -----------------------------------------
          ! Iron scavenging

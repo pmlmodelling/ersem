@@ -25,6 +25,7 @@ module ersem_bacteria_docdyn
       type (type_diagnostic_variable_id) :: id_fB1O3c, id_fB1NIn, id_fB1N1p
       type (type_diagnostic_variable_id) :: id_fR1B1c, id_fR2B1c, id_fR3B1c,id_fB1R1c, id_fB1R2c, id_fB1R3c
       type (type_diagnostic_variable_id) :: id_fR1B1n,id_fB1R1n,id_fR1B1p,id_fB1R1p
+      type (type_diagnostic_variable_id) :: id_minn,id_minp
       ! Parameters
       integer  :: nRP
       integer  :: iswBlimX
@@ -173,6 +174,8 @@ contains
       call self%register_diagnostic_variable(self%id_fR1B1n,'fR1B1n','mmol N/m^3/d','bacterial DON uptake',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_fR1B1p,'fR1B1p','mmol P/m^3/d','bacterial DOP uptake',output=output_time_step_averaged)
 
+      call self%register_diagnostic_variable(self%id_minn,'minn','mmol N/m^3/d','N mineralisation',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_minp,'minp','mmol P/m^3/d','P mineralisation',output=output_time_step_averaged)
    end subroutine
 
    subroutine do(self,_ARGUMENTS_DO_)
@@ -426,6 +429,10 @@ contains
          _SET_ODE_(self%id_N1p, + fR1N1p)
          _SET_ODE_(self%id_N4n, + fR1NIn)
          _SET_ODE_(self%id_TA,  - fR1N1p + fR1NIn)   ! Contributions to alkalinity: -1 for phosphate, +1 for ammonium
+         
+         !.. set Diagnostics
+         _SET_DIAGNOSTIC_(self%id_minn,fR1NIn)
+         _SET_DIAGNOSTIC_(self%id_minp,fR1N1p)
 
          if (use_iron) then
             ! remineralization of particulate iron to Fe
