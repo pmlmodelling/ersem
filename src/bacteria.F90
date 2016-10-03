@@ -106,11 +106,11 @@ contains
 
       ! Register links to labile dissolved organic matter pools.
       call self%register_state_dependency(self%id_R1c,'R1c','mg C/m^3',  'labile dissolved organic carbon')
-      call self%register_state_dependency(self%id_R1p,'R1p','mmol P/m^3','labile dissolved organic phosphorus')    
-      call self%register_state_dependency(self%id_R1n,'R1n','mmol N/m^3','labile dissolved organic nitrogen')    
+      call self%register_state_dependency(self%id_R1p,'R1p','mmol P/m^3','labile dissolved organic phosphorus')
+      call self%register_state_dependency(self%id_R1n,'R1n','mmol N/m^3','labile dissolved organic nitrogen')
 
       ! Register links to semi-labile dissolved organic matter pools.
-      call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','semi-labile dissolved organic carbon')    
+      call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','semi-labile dissolved organic carbon')
 
       ! Register links to particulate organic matter pools.
       call self%get_parameter(self%nRP,'nRP','','number of substrates',default=0)
@@ -121,9 +121,9 @@ contains
       allocate(self%id_RPf(self%nRP))
       do iRP=1,self%nRP
          write (index,'(i0)') iRP
-         call self%register_state_dependency(self%id_RPc(iRP),'RP'//trim(index)//'c','mg C/m^3',   'carbon in substrate '//trim(index))    
-         call self%register_state_dependency(self%id_RPn(iRP),'RP'//trim(index)//'n','mmol N/m^3', 'nitrogen in substrate '//trim(index))    
-         call self%register_state_dependency(self%id_RPp(iRP),'RP'//trim(index)//'p','mmol P/m^3', 'phosphorus in substrate '//trim(index))    
+         call self%register_state_dependency(self%id_RPc(iRP),'RP'//trim(index)//'c','mg C/m^3',   'carbon in substrate '//trim(index))
+         call self%register_state_dependency(self%id_RPn(iRP),'RP'//trim(index)//'n','mmol N/m^3', 'nitrogen in substrate '//trim(index))
+         call self%register_state_dependency(self%id_RPp(iRP),'RP'//trim(index)//'p','mmol P/m^3', 'phosphorus in substrate '//trim(index))
          call self%register_model_dependency(self%id_RP(iRP),'RP'//trim(index))
          call self%request_coupling_to_model(self%id_RPc(iRP),self%id_RP(iRP),'c')  ! For now link to hardcoded "c" to get a direct link to state mg C/m3 (and not a diagnostic for mmol C/m3)
          call self%request_coupling_to_model(self%id_RPn(iRP),self%id_RP(iRP),standard_variables%total_nitrogen)
@@ -145,7 +145,7 @@ contains
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen')
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide')
-      call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)    
+      call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)
 
       ! Register environmental dependencies (temperature, suspendend sediment, pH, oxygen saturation)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
@@ -433,11 +433,11 @@ contains
          _SET_ODE_(self%id_TA,  - fR1N1p + fR1NIn)   ! Contributions to alkalinity: -1 for phosphate, +1 for ammonium
 
          ! -----------------------------------------
-         ! Iron scavenging 
+         ! Iron scavenging
          ! -----------------------------------------
 
          if (use_iron) then
-            ! This term takes into account the scavenging due to hydroxide precipitation and it is supposed to be 
+            ! This term takes into account the scavenging due to hydroxide precipitation and it is supposed to be
             ! regulated by a threshold concentration (0.6 nM). See Aumont et al., 2003 (GBC) and Vichi et al., 2007 (JMS) for references.
             ! (Luca, 12/08)
             _GET_(self%id_N7f,N7fP)
@@ -446,7 +446,7 @@ contains
          end if
 
          ! -----------------------------------------
-         ! Conversion from semi-labile to labile DOM 
+         ! Conversion from semi-labile to labile DOM
          ! -----------------------------------------
 
          _GET_(self%id_R2c,R2cP)

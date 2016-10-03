@@ -190,7 +190,7 @@ module ersem_benthic_column_particulate_matter
 !   d/dt z_mean = D/z_mean [1 - exp(-z_tur/z_mean)]
 !
 ! This describes how the penetration depth $z_mean$ changes due to bioturbation up to depth $z_tur$, with
-! the intensity of bioturbation described by diffusivity $D$. It is worth noting that $d/dt z_mean \to \infty$ 
+! the intensity of bioturbation described by diffusivity $D$. It is worth noting that $d/dt z_mean \to \infty$
 ! when $z_mean \to 0$. Thus, in the analytical solution of the model penetration depth cannot become negative
 ! as long as $D>0$.
 !
@@ -237,7 +237,7 @@ module ersem_benthic_column_particulate_matter
 !    d/dt \int_0^z_bot C0 exp(-z/z_mean) = - C_int_\infty z_bot/z_mean^2 exp(-z_bot/z_mean) d/dt z_mean
 !
 ! JB 28/11/2014: this solution was validated in Python with sympy, using the following code
-! 
+!
 !    C_int_infty,z_bot,z,t = sympy.symbols('C_int_infty,z_bot,z,t',positive=True,real=True)
 !    z_mean = sympy.Function('z_mean',positive=True,real=True)(t)
 !    C = C_int_infty/z_mean*sympy.exp(-z/z_mean)
@@ -264,7 +264,7 @@ module ersem_benthic_column_particulate_matter
 !
 ! It's worth noting that the Oldenburg model here has a unit problem: the factor in the exponential
 ! is not dimensionless, but has unit time^-1.
-! 
+!
 ! -------------------------------------------------
 !
 ! This file contains two modules that can be instantiated by the user (from fabm.yaml):
@@ -380,7 +380,7 @@ module ersem_benthic_column_particulate_matter
    end type
 
 contains
-   
+
    subroutine initialize(self,configunit)
       class (type_ersem_benthic_column_particulate_matter), intent(inout), target :: self
       integer,                                              intent(in)            :: configunit
@@ -836,7 +836,7 @@ contains
 
          ! Compute change in penetration depth. See its derivation in the comments at the top of the file,
          ! section "Impact of sources and sinks at different depths".
-         _GET_HORIZONTAL_(self%id_d_tot,d_tot) 
+         _GET_HORIZONTAL_(self%id_d_tot,d_tot)
          if (legacy_ersem_compatibility) then
             ! Legacy ERSEM clips d_sms to avoid positive feedback that leads to $d_pen->\infty$
             ! This feedback very like stems from the assumption that d_pen<<d_tot.

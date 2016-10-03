@@ -15,8 +15,8 @@ module ersem_shared
    real(rk),parameter :: qpRPIcX = 7.86E-04_rk
    real(rk),parameter :: qsRPIcX = 15._rk/106._rk/CMass
    real(rk),parameter :: ZeroX   = 1e-8_rk
-   real(rk), parameter :: pi=acos(-1._rk)
-   real(rk), parameter :: deg2rad=pi/180._rk
+   real(rk),parameter :: pi=acos(-1._rk)
+   real(rk),parameter :: deg2rad=pi/180._rk
 
 #ifdef IRON
    logical,parameter :: use_iron = .true.

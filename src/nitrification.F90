@@ -59,7 +59,7 @@ contains
       call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3',  'nitrate')
       call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3',  'ammonium')
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen')
-      call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)    
+      call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)
 
       ! Register environmental dependencies (temperature, pH)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)

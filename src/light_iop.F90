@@ -39,9 +39,9 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%a0w,    'a0w',   '1/m',   'absorption coefficient of clear water', default=.036_rk) 
-      call self%get_parameter(self%b0w,    'b0w',   '1/m',   'backscatter coefficient of clear water', default=.0016_rk) 
-      call self%get_parameter(self%pEIR_eowX,'pEIR_eow','-', 'photosynthetically active fraction of shortwave radiation', default=.5_rk) 
+      call self%get_parameter(self%a0w,    'a0w',   '1/m',   'absorption coefficient of clear water', default=.036_rk)
+      call self%get_parameter(self%b0w,    'b0w',   '1/m',   'backscatter coefficient of clear water', default=.0016_rk)
+      call self%get_parameter(self%pEIR_eowX,'pEIR_eow','-', 'photosynthetically active fraction of shortwave radiation', default=.5_rk)
 
       ! Register diagnostic variables
       call self%register_diagnostic_variable(self%id_EIR,'EIR','W/m^2','shortwave radiation', &
@@ -61,9 +61,9 @@ contains
       call self%register_dependency(self%id_iopABSp,particulate_organic_absorption_coefficient)
       call self%register_dependency(self%id_iopBBSp,particulate_organic_backscatter_coefficient)
       call self%register_dependency(self%id_abESS, type_bulk_standard_variable(name='absorption_of_silt'))
-      call self%register_horizontal_dependency(self%id_zenithA, type_horizontal_standard_variable(name='zenith_angle')) 
+      call self%register_horizontal_dependency(self%id_zenithA, type_horizontal_standard_variable(name='zenith_angle'))
    end subroutine
-   
+
    subroutine get_light(self,_ARGUMENTS_VERTICAL_)
       class (type_ersem_light_iop),intent(in) :: self
       _DECLARE_ARGUMENTS_VERTICAL_

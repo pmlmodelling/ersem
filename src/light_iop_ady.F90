@@ -45,9 +45,9 @@ contains
       ! This implies that all rates (sink/source terms, vertical velocities) are given in d-1.
       self%dt = 86400._rk
 
-      call self%get_parameter(self%a0w,    'a0w',   '1/m',   'absorption coefficient of clear water', default=.036_rk) 
-      call self%get_parameter(self%b0w,    'b0w',   '1/m',   'backscatter coefficient of clear water', default=.0016_rk) 
-      call self%get_parameter(self%pEIR_eowX,'pEIR_eow','-', 'photosynthetically active fraction of shortwave radiation', default=.5_rk) 
+      call self%get_parameter(self%a0w,    'a0w',   '1/m',   'absorption coefficient of clear water', default=.036_rk)
+      call self%get_parameter(self%b0w,    'b0w',   '1/m',   'backscatter coefficient of clear water', default=.0016_rk)
+      call self%get_parameter(self%pEIR_eowX,'pEIR_eow','-', 'photosynthetically active fraction of shortwave radiation', default=.5_rk)
       call self%get_parameter(self%relax,'relax','1/d','rate of relaxation towards satellite gelbstoff absorption', default=0.033_rk)
 
       ! Register state variables
@@ -70,7 +70,7 @@ contains
       call self%register_dependency(self%id_dz, standard_variables%cell_thickness)
       call self%register_dependency(self%id_iopABSp,particulate_organic_absorption_coefficient)
       call self%register_dependency(self%id_iopBBSp,particulate_organic_backscatter_coefficient)
-       call self%register_horizontal_dependency(self%id_zenithA, type_horizontal_standard_variable(name='zenith_angle')) 
+      call self%register_horizontal_dependency(self%id_zenithA, type_horizontal_standard_variable(name='zenith_angle'))
       call self%register_horizontal_dependency(self%id_ADY_0,type_horizontal_standard_variable(name='gelbstoff_absorption_satellite'))
    end subroutine initialize
 
@@ -88,7 +88,7 @@ contains
       _LOOP_END_
 
   end subroutine do
-   
+
    subroutine get_light(self,_ARGUMENTS_VERTICAL_)
       class (type_ersem_light_iop_ady),intent(in) :: self
       _DECLARE_ARGUMENTS_VERTICAL_
@@ -98,7 +98,7 @@ contains
 
       _GET_HORIZONTAL_(self%id_I_0,buffer)
       _GET_HORIZONTAL_(self%id_zenithA,zenithA)   ! Zenith angle
-      
+
       if (buffer.lt.0._rk) buffer=0._rk
 
       _VERTICAL_LOOP_BEGIN_

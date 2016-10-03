@@ -65,7 +65,7 @@ module ersem_benthic_column_dissolved_matter
       procedure :: do_bottom => dissolved_matter_per_layer_do_bottom
    end type
 
-contains   
+contains
 
    subroutine benthic_dissolved_matter_initialize(self,configunit)
       class (type_ersem_benthic_column_dissolved_matter),intent(inout),target :: self
@@ -218,7 +218,7 @@ contains
          call process_constituent(self,_ARGUMENTS_DO_BOTTOM_,self%constituents(iconstituent))
       end do
    end subroutine benthic_dissolved_matter_do_bottom
-   
+
    subroutine process_constituent(self,_ARGUMENTS_DO_BOTTOM_,info)
       class (type_ersem_benthic_column_dissolved_matter),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
@@ -555,7 +555,7 @@ contains
       ! we define the combined constants $a_D2 = a D^2$ and $b_D = b D$. This avoids division by 0 when
       ! computing $a$ while $D$ tends to zero.
       ! ----------------------------------------------------------------------------------------------------
-      
+
       if (Dmax*(P+2*P_deep)>=-2*sigma*c0) then   ! Dmax<-2 sigma c0/(P+2*P_deep), rearranged for P+2*P_deep<0 close to 0. Result also picks up P+2*P_deep>0.
          ! Destruction within layer is too low (or layer experiences net production, i.e., P>0).
          ! If we would impose zero concentration at the layer bottom, the layer would extend beyond maximum depth.

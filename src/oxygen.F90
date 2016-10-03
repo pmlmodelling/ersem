@@ -67,7 +67,7 @@ contains
       _DECLARE_ARGUMENTS_DO_
 
       real(rk) :: O2o,ETW,X1X,OSAT
-      
+
       _LOOP_BEGIN_
          _GET_(self%id_O2o,O2o)
          _GET_(self%id_ETW,ETW)
@@ -85,7 +85,7 @@ contains
 
       real(rk) :: O2o,ETW,X1X,wnd
       real(rk) :: OSAT,ko2o
-      
+
       _HORIZONTAL_LOOP_BEGIN_
          _GET_(self%id_O2o,O2o)
          _GET_(self%id_ETW,ETW)
