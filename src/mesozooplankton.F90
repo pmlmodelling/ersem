@@ -369,8 +369,6 @@ contains
             _SET_ODE_(self%id_R2c, + fZIRDc * (1._rk-self%R1R2))
             _SET_ODE_(self%id_RPc, + fZIRPc)
 
-            _SET_DIAGNOSTIC_(self%id_fZIRDc,fZIRDc)
-
             ! Account for CO2 production and oxygen consumption in respiration.
             _SET_ODE_(self%id_O3c, + fZIO3c/CMass)
             _SET_ODE_(self%id_O2o, - fZIO3c*self%urB1_O2)
@@ -389,8 +387,6 @@ contains
             fZIRIp = (fZIRDc + fZIRPc) * self%qpc
             fZIRDp = min(fZIRIp, fZIRDc * self%qpc * self%xR1p)
             fZIRPp = fZIRIp - fZIRDp
-            _SET_DIAGNOSTIC_(self%id_fZIRDp,fZIRDp)
-            _SET_DIAGNOSTIC_(self%id_fZIRPp,fZIRPp)
 
             ! Source equation for phosphorus in biomass
             SZIp = sum(sprey*preypP) - fZIRPp - fZIRDp
@@ -407,8 +403,6 @@ contains
             fZIRIn = (fZIRDc + fZIRPc) * self%qnc
             fZIRDn = min(fZIRIn, fZIRDc * self%qnc * self%xR1n)
             fZIRPn = fZIRIn - fZIRDn
-            _SET_DIAGNOSTIC_(self%id_fZIRDn,fZIRDn)
-            _SET_DIAGNOSTIC_(self%id_fZIRPn,fZIRPn)
 
             ! Source equation for nitrogen in biomass
             SZIn = sum(sprey*preynP) - fZIRPn - fZIRDn
@@ -470,10 +464,12 @@ contains
 
             ! Mortality
             fZIRPc = cP * self%mort
+            fZIRPn = fZIRPc*self%qnc
+            fZIRPp = fZIRPc*self%qpc
 
             _SET_ODE_(self%id_RPc,fZIRPc)
-            _SET_ODE_(self%id_RPn,fZIRPc*self%qnc)
-            _SET_ODE_(self%id_RPp,fZIRPc*self%qpc)
+            _SET_ODE_(self%id_RPn,fZIRPn)
+            _SET_ODE_(self%id_RPp,fZIRPp)
 
             _SET_ODE_(self%id_O3c,fZIO3c/CMass)
             _SET_ODE_(self%id_N4n,fZIO3c*self%qnc)
@@ -481,12 +477,12 @@ contains
             _SET_ODE_(self%id_TA, fZIO3c*(self%qnc-self%qpc))  ! Alkalinity contributions: +1 for NH4, -1 for PO4
             _SET_DIAGNOSTIC_(self%id_fZINIn,fZIO3c*self%qnc)
             _SET_DIAGNOSTIC_(self%id_fZINIp,fZIO3c*self%qpc)
-            _SET_DIAGNOSTIC_(self%id_fZIRDc,0.0_rk)
-            _SET_DIAGNOSTIC_(self%id_fZIRDn,0.0_rk)
-            _SET_DIAGNOSTIC_(self%id_fZIRPn,fZIRPc*self%qnc)
-            _SET_DIAGNOSTIC_(self%id_fZIRDp,0.0_rk)
-            _SET_DIAGNOSTIC_(self%id_fZIRPp,fZIRPc*self%qpc)
+
             _SET_ODE_(self%id_c,- fZIRPc - fZIO3c)
+
+            fZIRDc = 0.0_rk
+            fZIRDn = 0.0_rk
+            fZIRDp = 0.0_rk
 
             do iprey=1,self%nprey
                 _SET_DIAGNOSTIC_(self%id_fpreyc(iprey),0.0_rk)
@@ -499,7 +495,14 @@ contains
          end if
 
          _SET_DIAGNOSTIC_(self%id_fZIRPc,fZIRPc)
+         _SET_DIAGNOSTIC_(self%id_fZIRPn,fZIRPn)
+         _SET_DIAGNOSTIC_(self%id_fZIRPp,fZIRPp)
+
          _SET_DIAGNOSTIC_(self%id_fZIO3c,fZIO3c)
+
+         _SET_DIAGNOSTIC_(self%id_fZIRDc,fZIRDc)
+         _SET_DIAGNOSTIC_(self%id_fZIRDn,fZIRDn)
+         _SET_DIAGNOSTIC_(self%id_fZIRDp,fZIRDp)
 
       ! Leave spatial loops (if any)
       _LOOP_END_
