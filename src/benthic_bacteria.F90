@@ -111,7 +111,6 @@ contains
 
       call self%register_diagnostic_variable(self%id_fHG3c,'fHG3c','mg C/m^2/d','respiration',output=output_time_step_averaged,domain=domain_bottom,source=source_do_bottom)
 
-! JNA fluxes
       call self%register_diagnostic_variable(self%id_fQ1Hc,'fQ1Hc','mg C/m^2/day','ben bacteria uptake of DOC')
       call self%register_diagnostic_variable(self%id_fQPHc,'fQPHc','mg C/m^2/day','ben bacteria uptake of POC')
       call self%register_diagnostic_variable(self%id_fQ1Hn,'fQ1Hn','mmol N/m^2/day','ben bacteria uptake of DON')
@@ -249,8 +248,8 @@ contains
          excess_n = max(fHn - fHc*self%qnc,0.0_rk)
          excess_p = max(fHp - fHc*self%qpc,0.0_rk)
 
-         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fHKIn,-fK4Hn + excess_n) !JNA
-         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fHK1p,-fK1Hp+ excess_p) !JNA
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fHKIn,-fK4Hn + excess_n)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fHK1p,-fK1Hp+ excess_p)
 
          _SET_BOTTOM_ODE_(self%id_Q6c,-fQ6Hc + excess_c)
          _SET_BOTTOM_ODE_(self%id_Q6n,-fQ6Hn)

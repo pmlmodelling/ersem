@@ -154,10 +154,6 @@ contains
 
       ! Register diagnostics.
       call self%register_diagnostic_variable(self%id_fB1O3c,'fB1O3c','mg C/m^3/d','respiration',output=output_time_step_averaged)
-
-      ! Contribute to aggregate fluxes.
-      call self%add_to_aggregate_variable(bacterial_respiration_rate,self%id_fB1O3c)
-
       call self%register_diagnostic_variable(self%id_fB1NIn,'fB1NIn','mmol N/m^3/d','bacterial DIN release',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_fB1N1p,'fB1N1p','mmol P/m^3/d','bacterial DIP release',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_minn,'minn','mmol N/m^3/d','N mineralisation',output=output_time_step_averaged)

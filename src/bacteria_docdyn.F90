@@ -160,8 +160,6 @@ contains
       call self%register_diagnostic_variable(self%id_fB1NIn,'fB1NIn','mmol N/m^3/d','bacterial DIN release',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_fB1N1p,'fB1N1p','mmol P/m^3/d','bacterial DIP release',output=output_time_step_averaged)
 
-      ! Contribute to aggregate fluxes.
-      call self%add_to_aggregate_variable(bacterial_respiration_rate,self%id_fB1O3c)
       call self%register_diagnostic_variable(self%id_fB1R1c,'fB1R1c','mg C/m^3/d','bacterial release of labile DOC ',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_fB1R2c,'fB1R2c','mg C/m^3/d','bacterial release of semi-labile DOC ',output=output_time_step_averaged)
       call self%register_diagnostic_variable(self%id_fB1R3c,'fB1R3c','mg C/m^3/d','bacterial release of semi-refractory DOC ',output=output_time_step_averaged)
@@ -429,7 +427,7 @@ contains
          _SET_ODE_(self%id_N1p, + fR1N1p)
          _SET_ODE_(self%id_N4n, + fR1NIn)
          _SET_ODE_(self%id_TA,  - fR1N1p + fR1NIn)   ! Contributions to alkalinity: -1 for phosphate, +1 for ammonium
-         
+
          !.. set Diagnostics
          _SET_DIAGNOSTIC_(self%id_minn,fR1NIn)
          _SET_DIAGNOSTIC_(self%id_minp,fR1N1p)
