@@ -142,7 +142,7 @@ To obtain the source code of GOTM, FABM and ERSEM, you need a git client. First 
 After these two program are installed, you can obtain the code by right-clicking in Windows Explorer within a directory where you want the source code directories, and choosing "Git Clone...". In the window that appears, set the URL, check the target directory and click OK. Do this for the following URLs:
 
 * GOTM: https://github.com/gotm-model/code.git (suggested target directory: gotm-git)
-* FABM: git://git.code.sf.net/p/fabm/code (suggested target directory: fabm-git)
+* FABM: https://github.com/fabm-model/fabm.git (suggested target directory: fabm-git)
 * ERSEM: git@gitlab.ecosystem-modelling.pml.ac.uk:edge/ersem.git (suggested target directory: ersem-git). For this repository, you also need to provide your private SSH key, which must match the public key that you provided on [the PML GitLab site](https://gitlab.ecosystem-modelling.pml.ac.uk/profile/keys). To do so, check "Load Putty key" and set its path to the file with your private key. For creating private/public keys, we suggest using [PuTTYgen](http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html).
 
 To compile the code, you need [CMake](http://www.cmake.org/). If CMake is installed, open "CMake (cmake-gui)", specify GOTM's `src` directory for "Where is the source code", choose a directory of your choice (but outside the source directory!) for "Where to build the binaries", and click Configure. Choose the generator that matches your Visual Studio version (avoid the IA64 and Win64 options) and click Finish. Several configuration options will appear, among which `FABM_BASE`. This option must be set to the directory with the FABM source code (the root directory, not the `src` subdirectory). After doing so, click "Configure". Then a new option `FABM_ERSEM_BASE` will appear, which must be set to the path to the directory with ERSEM source code (the root directory, not the `src` subdirectory). Keep clicking "Configure" until there are no red-coloured options left. Then press "Generate". This will create a `gotm.sln` Visual Studio solution in the specified build directory, which you can now open with Visual Studio.
@@ -154,6 +154,6 @@ Note that it is good practice to keep up to date with the latest code from the G
 If you were using an earlier release of ERSEM, you can update your old ERSEM configuration (`fabm.yaml`)
 to the latest by running the Python script `testcases/update.py` with one argument: the path to your old fabm.yaml file.
 
-This script requires a recent version of Python 2.X and the [pyyaml package](http://pyyaml.org/wiki/PyYAML).
+This script requires a recent version of Python 2.X and the [PyYAML package](http://pyyaml.org/wiki/PyYAML).
 Ideally, you also have the latest version of [the Python front end to FABM-ERSEM](#python-front-end) installed;
 this enables the update script to clean up the yaml file and add documentation to it. 
