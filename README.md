@@ -4,20 +4,22 @@ A copy of the license is provided in COPYING.
 
 Copyright 2016 Plymouth Marine Laboratory.
 
-# Obtaining the code and building 
+# Obtaining the code and building
+
 ## Linux
 
 First obtain the FABM source code:
 
-    git clone git://git.code.sf.net/p/fabm/code <FABMDIR>
+    git clone https://github.com/fabm-model/fabm.git <FABMDIR>
 
-(Replace `<FABMDIR>` with the directory with the FABM code, e.g., ~/fabm-git.)
+(Replace `<FABMDIR>` with the directory where you want the FABM code to go, e.g., ~/fabm-git.)
 
 Obtain the ERSEM code for FABM:
 
     git clone git@gitlab.ecosystem-modelling.pml.ac.uk:edge/ersem.git <ERSEMDIR>
 
-(Replace `<ERSEMDIR>` with the directory with the ERSEM code, e.g., ~/ersem-git.) Note that for this to work, you have to provide [the PML GitLab server](https://gitlab.ecosystem-modelling.pml.ac.uk/profile/keys) with your public SSH key.
+(Replace `<ERSEMDIR>` with the directory where you want the ERSEM code to go, e.g., ~/ersem-git.)
+Note that for this to work, you have to provide [the PML GitLab server](https://gitlab.ecosystem-modelling.pml.ac.uk/profile/keys) with your public SSH key.
 
 FABM and ERSEM use object-oriented Fortran and therefore require a recent Fortran compiler, such as Intel Fortran 12.1 or higher and gfortran 4.7 or higher. Compilation is regularly tested with Intel Fortran 12.1, 13.0 and 14.0. as well as gfortran 4.7, 4.8 and 4.9.
 
@@ -27,15 +29,22 @@ FABM and ERSEM use a platform-independent build system based on [cmake](http://w
 
 First obtain the latest (developers') version of the GOTM code from its git repository:
 
-    git clone https://github.com/gotm-model/code.git gotm-git
+    git clone https://github.com/gotm-model/code.git <GOTMDIR>
+
+(Replace `<GOTMDIR>` with the directory where you want the GOTM code to go, e.g., ~/gotm-git.)
 
 To build GOTM with FABM support, create a build directory, call cmake to generate makefiles, and make to compile and install. For instance:
 
-    mkdir -p ~/build/gotm && cd ~/build/gotm
+    mkdir -p ~/build/gotm
+    cd ~/build/gotm
     cmake <GOTMDIR>/src -DFABM_BASE=<FABMDIR> -DFABM_ERSEM_BASE=<ERSEMDIR>
     make install
 
-In the above, replace `<GOTMDIR>` with the directory with the GOTM source code, e.g., ~/gotm-git if you executed `git clone` in you home directory. Also, replace `<FABMDIR>` with the directory with the FABM code, e.g., ~/fabm-git and `<ERSEMDIR>` with the directory with the ERSEM code, e.g., ~/ersem-git. If you experience issues related to NetCDF, see [tips and tricks/troubleshooting](#tips-and-tricks-troubleshooting).
+In the above:
+* replace `<GOTMDIR>` with the directory with the GOTM code, e.g., ~/gotm-git
+* replace `<FABMDIR>` with the directory with the FABM code, e.g., ~/fabm-git
+* replace `<ERSEMDIR>` with the directory with the ERSEM code, e.g., ~/ersem-git.
+If you experience issues related to NetCDF when running `make install`, see [tips and tricks/troubleshooting](#tips-and-tricks-troubleshooting).
 
 Now you should have a GOTM executable with FABM and ERSEM support at `~/local/gotm/bin/gotm`.
 
@@ -49,7 +58,8 @@ The 0d driver allows you to run FABM models in a "well-mixed box", under arbitra
 
 To build the 0d driver, you need to create a directory to build the code in, call `cmake` to generate makefiles, and call `make` to compile and install the FABM library. Usually, the following suffices for this:
 
-    mkdir -p ~/build/fabm-0d && cd ~/build/fabm-0d
+    mkdir -p ~/build/fabm-0d
+    cd ~/build/fabm-0d
     cmake <FABMDIR>/src/drivers/0d -DGOTM_BASE=<GOTMDIR> -DFABM_ERSEM_BASE=<ERSEMDIR>
     make install
 
@@ -134,3 +144,12 @@ After these two program are installed, you can obtain the code by right-clicking
 To compile the code, you need [CMake](http://www.cmake.org/). If CMake is installed, open "CMake (cmake-gui)", specify GOTM's `src` directory for "Where is the source code", choose a directory of your choice (but outside the source directory!) for "Where to build the binaries", and click Configure. Choose the generator that matches your Visual Studio version (avoid the IA64 and Win64 options) and click Finish. Several configuration options will appear, among which `FABM_BASE`. This option must be set to the directory with the FABM source code (the root directory, not the `src` subdirectory). After doing so, click "Configure". Then a new option `FABM_ERSEM_BASE` will appear, which must be set to the path to the directory with ERSEM source code (the root directory, not the `src` subdirectory). Keep clicking "Configure" until there are no red-coloured options left. Then press "Generate". This will create a `gotm.sln` Visual Studio solution in the specified build directory, which you can now open with Visual Studio.
 
 Note that it is good practice to keep up to date with the latest code from the GOTM, FABM and ERSEM repositories by regularly right-clicking the repository directory, choosing "Git Sync...", and clicking the "Pull" button in the window that then appears.
+
+# Migrating from an earlier ERSEM version
+
+If you were using an earlier release of ERSEM, you can update your old ERSEM configuration (`fabm.yaml`)
+to the latest by running the Python script `testcases/update.py` with one argument: the path to your old fabm.yaml file.
+
+This script requires a recent version of Python 2.X and the [pyyaml package](http://pyyaml.org).
+Ideally, you also have the latest version of the Python front end to FABM-ERSEM installed;
+that enables the update script to clean up the yaml file and add docuemntation to it. 
