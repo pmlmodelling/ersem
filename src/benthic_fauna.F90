@@ -12,25 +12,33 @@ module ersem_benthic_fauna
 
    private
 
-   type,extends(type_ersem_benthic_base),public :: type_ersem_benthic_fauna
-      type (type_state_variable_id)   :: id_O2o
-      type (type_bottom_state_variable_id) :: id_Q6c,id_Q6n,id_Q6p,id_Q6s,id_benTA,id_benTA2
-      type (type_bottom_state_variable_id) :: id_G3c,id_G2o,id_K4n,id_K1p,id_K4n2,id_K1p2
-      type (type_horizontal_dependency_id), allocatable,dimension(:) :: id_foodc,id_foodn,id_foodp,id_foods
-      type (type_horizontal_dependency_id), allocatable,dimension(:) :: id_foodc_an
-      type (type_dependency_id), allocatable,dimension(:) :: id_foodpelc,id_foodpeln,id_foodpelp,id_foodpels
-      type (type_dependency_id) :: id_ETW
-      type (type_horizontal_dependency_id) :: id_Dm
-      type (type_horizontal_diagnostic_variable_id) :: id_bioirr,id_biotur,id_fYG3c, id_fYKIn,id_fYK1p,id_fYQPc,id_fYQPn,id_fYQPp
-      type (type_model_id),allocatable,dimension(:) :: id_food
-      type (type_horizontal_diagnostic_variable_id),allocatable,dimension(:) :: id_fpreyc,id_fpreyn,id_fpreyp,id_fpreys
-
+   type type_food
+      type (type_model_id)                          :: id_source
+      type (type_horizontal_dependency_id)          :: id_c,id_n,id_p,id_s
+      type (type_horizontal_dependency_id)          :: id_c_an
+      type (type_dependency_id)                     :: id_c_pel,id_n_pel,id_p_pel,id_s_pel
+      type (type_horizontal_diagnostic_variable_id) :: id_fc,id_fn,id_fp,id_fs
 
       ! To achieve compatibility with legacy ERSEM, we need to be able to decouple the variable
       ! from which food availability is derived from the variable that absorbs the loss due to
       ! gross food uptake. The following variables absorb the loss due to food uptake - by default
       ! they are coupled to the same variable from which available food is derived.
-      type (type_model_id),allocatable,dimension(:) :: id_food_loss_source
+      type (type_model_id) :: id_loss_source
+
+      real(rk) :: pu
+      real(rk) :: pue
+      logical  :: ispel
+      logical  :: ll
+   end type
+
+   type,extends(type_ersem_benthic_base),public :: type_ersem_benthic_fauna
+      type (type_state_variable_id)   :: id_O2o
+      type (type_bottom_state_variable_id) :: id_Q6c,id_Q6n,id_Q6p,id_Q6s,id_benTA,id_benTA2
+      type (type_bottom_state_variable_id) :: id_G3c,id_G2o,id_K4n,id_K1p,id_K4n2,id_K1p2
+      type (type_dependency_id) :: id_ETW
+      type (type_horizontal_dependency_id) :: id_Dm
+      type (type_horizontal_diagnostic_variable_id) :: id_bioirr,id_biotur,id_fYG3c, id_fYKIn,id_fYK1p,id_fYQPc,id_fYQPn,id_fYQPp
+      type (type_food), allocatable :: food(:)
 
       integer  :: nfood
       real(rk) :: qnc,qpc
@@ -38,8 +46,6 @@ module ersem_benthic_fauna
       real(rk) :: hO2,rlO2
       real(rk) :: xcl,xcs,xch
       real(rk) :: su,lu,hu
-      real(rk),allocatable :: pue(:),pufood(:)
-      logical,allocatable ::foodispel(:),food_ll(:)
       real(rk) :: pudil
       real(rk) :: sd,sdmO2,sdc,xdc
       real(rk) :: sr,pur
@@ -123,93 +129,73 @@ contains
       call self%get_parameter(self%nfood, 'nfood', '', 'number of food sources',default=0)
 
       ! Allocate arrays with food source specific information.
-      allocate(self%id_food(self%nfood))
-      allocate(self%id_foodpelc(self%nfood))
-      allocate(self%id_foodpeln(self%nfood))
-      allocate(self%id_foodpelp(self%nfood))
-      allocate(self%id_foodpels(self%nfood))
-      allocate(self%id_foodc(self%nfood))
-      allocate(self%id_foodn(self%nfood))
-      allocate(self%id_foodp(self%nfood))
-      allocate(self%id_foods(self%nfood))
-      allocate(self%id_foodc_an(self%nfood))
-      allocate(self%foodispel(self%nfood))
-      allocate(self%food_ll(self%nfood))
-      allocate(self%id_food_loss_source(self%nfood))
-      allocate(self%id_fpreyc(self%nfood))
-      allocate(self%id_fpreyn(self%nfood))
-      allocate(self%id_fpreyp(self%nfood))
-      allocate(self%id_fpreys(self%nfood))
-
-
-      ! Allocate components of food sources
+      allocate(self%food(self%nfood))
       do ifood=1,self%nfood
          write (index,'(i0)') ifood
-         call self%get_parameter(self%foodispel(ifood),'food'//trim(index)//'ispel','','food source '//trim(index)//' is pelagic',default=.false.)
-         call self%get_parameter(self%food_ll(ifood),'food'//trim(index)//'_ll','','availability of food source '//trim(index)//' is limited by aerobic layer height',default=.false.)
-         call self%register_model_dependency(self%id_food(ifood),'food'//trim(index))
-         if (self%foodispel(ifood)) then
-            call self%register_dependency(self%id_foodpelc(ifood), 'food'//trim(index)//'c','mmol C/m^3','food source '//trim(index)//' carbon')
-            call self%register_dependency(self%id_foodpeln(ifood), 'food'//trim(index)//'n','mmol N/m^3','food source '//trim(index)//' nitrogen')
-            call self%register_dependency(self%id_foodpelp(ifood), 'food'//trim(index)//'p','mmol P/m^3','food source '//trim(index)//' phosphorus')
-            call self%register_dependency(self%id_foodpels(ifood), 'food'//trim(index)//'s','mmol Si/m^3','food source '//trim(index)//' silicate')
-            call self%request_coupling_to_model(self%id_foodpelc(ifood),self%id_food(ifood),standard_variables%total_carbon)
-            call self%request_coupling_to_model(self%id_foodpeln(ifood),self%id_food(ifood),standard_variables%total_nitrogen)
-            call self%request_coupling_to_model(self%id_foodpelp(ifood),self%id_food(ifood),standard_variables%total_phosphorus)
-            call self%request_coupling_to_model(self%id_foodpels(ifood),self%id_food(ifood),standard_variables%total_silicate)
+         call self%get_parameter(self%food(ifood)%ispel,'food'//trim(index)//'ispel','','food source '//trim(index)//' is pelagic',default=.false.)
+         call self%get_parameter(self%food(ifood)%ll,'food'//trim(index)//'_ll','','availability of food source '//trim(index)//' is limited by aerobic layer height',default=.false.)
+         call self%register_model_dependency(self%food(ifood)%id_source,'food'//trim(index))
+         if (self%food(ifood)%ispel) then
+            call self%register_dependency(self%food(ifood)%id_c_pel, 'food'//trim(index)//'c','mmol C/m^3', 'carbon in food source '//trim(index))
+            call self%register_dependency(self%food(ifood)%id_n_pel, 'food'//trim(index)//'n','mmol N/m^3', 'nitrogen in food source '//trim(index))
+            call self%register_dependency(self%food(ifood)%id_p_pel, 'food'//trim(index)//'p','mmol P/m^3', 'phosphorus in food source '//trim(index))
+            call self%register_dependency(self%food(ifood)%id_s_pel, 'food'//trim(index)//'s','mmol Si/m^3','silicate in food source '//trim(index))
+            call self%request_coupling_to_model(self%food(ifood)%id_c_pel,self%food(ifood)%id_source,standard_variables%total_carbon)
+            call self%request_coupling_to_model(self%food(ifood)%id_n_pel,self%food(ifood)%id_source,standard_variables%total_nitrogen)
+            call self%request_coupling_to_model(self%food(ifood)%id_p_pel,self%food(ifood)%id_source,standard_variables%total_phosphorus)
+            call self%request_coupling_to_model(self%food(ifood)%id_s_pel,self%food(ifood)%id_source,standard_variables%total_silicate)
          else
-            call self%register_dependency(self%id_foodc(ifood),'food'//trim(index)//'c','mmol C/m^2','Food '//trim(index)//' carbon')
-            call self%register_dependency(self%id_foodn(ifood),'food'//trim(index)//'n','mmol N/m^2','Food '//trim(index)//' nitrogen')
-            call self%register_dependency(self%id_foodp(ifood),'food'//trim(index)//'p','mmol P/m^2','Food '//trim(index)//' phosphorus')
-            call self%register_dependency(self%id_foods(ifood),'food'//trim(index)//'s','mmol Si/m^2','Food '//trim(index)//' silicate')
-            call self%request_coupling_to_model(self%id_foodc(ifood),self%id_food(ifood),standard_variables%total_carbon)
-            call self%request_coupling_to_model(self%id_foodn(ifood),self%id_food(ifood),standard_variables%total_nitrogen)
-            call self%request_coupling_to_model(self%id_foodp(ifood),self%id_food(ifood),standard_variables%total_phosphorus)
-            call self%request_coupling_to_model(self%id_foods(ifood),self%id_food(ifood),standard_variables%total_silicate)
-            call self%register_dependency(self%id_foodc_an(ifood),'food'//trim(index)//'c_an','mg C/m^2','food source '//trim(index)//' carbon in anaerobic layer')
-            call self%request_coupling(self%id_foodc_an(ifood),'zero_hz')
+            call self%register_dependency(self%food(ifood)%id_c,'food'//trim(index)//'c','mmol C/m^2', 'carbon in food source '//trim(index))
+            call self%register_dependency(self%food(ifood)%id_n,'food'//trim(index)//'n','mmol N/m^2', 'nitrogen in food source '//trim(index))
+            call self%register_dependency(self%food(ifood)%id_p,'food'//trim(index)//'p','mmol P/m^2', 'phosphorus in food source '//trim(index))
+            call self%register_dependency(self%food(ifood)%id_s,'food'//trim(index)//'s','mmol Si/m^2','silicate in food source '//trim(index))
+            call self%request_coupling_to_model(self%food(ifood)%id_c,self%food(ifood)%id_source,standard_variables%total_carbon)
+            call self%request_coupling_to_model(self%food(ifood)%id_n,self%food(ifood)%id_source,standard_variables%total_nitrogen)
+            call self%request_coupling_to_model(self%food(ifood)%id_p,self%food(ifood)%id_source,standard_variables%total_phosphorus)
+            call self%request_coupling_to_model(self%food(ifood)%id_s,self%food(ifood)%id_source,standard_variables%total_silicate)
+            call self%register_dependency(self%food(ifood)%id_c_an,'food'//trim(index)//'c_an','mg C/m^2','food source '//trim(index)//' carbon in anaerobic layer')
+            call self%request_coupling(self%food(ifood)%id_c_an,'zero_hz')
          end if
-         call self%register_diagnostic_variable(self%id_fpreyc(ifood),'fprey'//trim(index)//'c','mg C/m^2', 'pelagic food' //trim(index)//' uptake',output=output_time_step_averaged)
-         call self%register_diagnostic_variable(self%id_fpreyn(ifood),'fprey'//trim(index)//'n','mmol N/m^2', 'pelagic food' //trim(index)//' uptake',output=output_time_step_averaged)
-         call self%register_diagnostic_variable(self%id_fpreyp(ifood),'fprey'//trim(index)//'p','mmol P/m^2', 'pelagic food' //trim(index)//' uptake',output=output_time_step_averaged)
-         call self%register_diagnostic_variable(self%id_fpreys(ifood),'fprey'//trim(index)//'s','mmol Si/m^2', 'pelagic food' //trim(index)//' uptake',output=output_time_step_averaged)
+         call self%register_diagnostic_variable(self%food(ifood)%id_fc,'fprey'//trim(index)//'c','mg C/m^2',   'uptake of carbon in food source '//trim(index))
+         call self%register_diagnostic_variable(self%food(ifood)%id_fn,'fprey'//trim(index)//'n','mmol N/m^2', 'uptake of nitrogen in food source '//trim(index))
+         call self%register_diagnostic_variable(self%food(ifood)%id_fp,'fprey'//trim(index)//'p','mmol P/m^2', 'uptake of phosphorus in food source '//trim(index))
+         call self%register_diagnostic_variable(self%food(ifood)%id_fs,'fprey'//trim(index)//'s','mmol Si/m^2','uptake of silicate in food source '//trim(index))
+
          ! Legacy ERSEM computes available detritus based on the predator's depth range, but applies the detritus loss
          ! to a detritus pool with a different depth distribution. To be able to reproduce this (inconsistent!) behaviour
          ! we allow separate coupling to the pool that should absorb the detritus loss (this comes in addition to the
          ! pool representing available detritus).
-         call self%register_model_dependency(self%id_food_loss_source(ifood),'food'//trim(index)//'_loss_source')
+         call self%register_model_dependency(self%food(ifood)%id_loss_source,'food'//trim(index)//'_loss_source')
          call self%couplings%set_string('food'//trim(index)//'_loss_source','food'//trim(index))
       end do
 
-      ! Allocate and obtain food source preferences
-      allocate(self%pufood(self%nfood))
+      ! Obtain food source preferences (separate loop to ensure all preference are shown together)
       do ifood=1,self%nfood
          write (index,'(i0)') ifood
-         call self%get_parameter(self%pufood(ifood),'pufood'//trim(index),'-','preference for food source '//trim(index))
+         call self%get_parameter(self%food(ifood)%pu,'pufood'//trim(index),'-','preference for food source '//trim(index))
       end do
 
-      ! Allocate and set food-source-specific assimilation inefficiency.
+      ! Set food-source-specific assimilation inefficiency.
       ! (fraction of ingested frood going to faeces)
-      allocate(self%pue(self%nfood))
       do ifood=1,self%nfood
          write (index,'(i0)') ifood
          call self%get_parameter(foodispom,'food'//trim(index)//'ispom','','food source '//trim(index)//' is detritus',default=.false.)
          if (foodispom) then
             ! Use assimilation efficiency for particulate organic matter.
-            self%pue(ifood) = pueQ
+            self%food(ifood)%pue = pueQ
 
             ! Legacy ERSEM applies the loss of detritus due to feeding to the same pool that absorbs faeces and dead matter,
             ! even though the availability of detritus for consumption is computed over a different depth range.
             ! Implement the legacy behaviour here.
-            if (legacy_ersem_compatibility.and..not.self%foodispel(ifood)) &
+            if (legacy_ersem_compatibility.and..not.self%food(ifood)%ispel) &
                call self%couplings%set_string('food'//trim(index)//'_loss_source','Q')
          else
             ! Use assimilation efficiency for living matter.
-            self%pue(ifood) = pue
+            self%food(ifood)%pue = pue
          end if
       end do
 
-      if (any(self%foodispel)) &
+      if (any(self%food%ispel)) &
          call self%get_parameter(self%dwat, 'dwat', 'm', 'water layer accessible for pelagic food uptake',default=1._rk)
       call self%get_parameter(self%dQ6,  'dQ6',  'm', 'depth of available sediment layer',default=0._rk)
 
@@ -221,12 +207,12 @@ contains
       call self%add_to_aggregate_variable(total_bioturbation_activity, self%id_biotur)
       call self%add_to_aggregate_variable(total_bioirrigation_activity, self%id_bioirr)
 
-      call self%register_diagnostic_variable(self%id_fYG3c,'fYG3c','mg C/m^2/d','respiration',output=output_time_step_averaged,domain=domain_bottom,source=source_do_bottom)
-      call self%register_diagnostic_variable(self%id_fYKIn,'fYKIn','mmol N/m^2/d','zoobenthos DIN release',output=output_time_step_averaged,domain=domain_bottom,source=source_do_bottom)
-      call self%register_diagnostic_variable(self%id_fYK1p,'fYK1p','mmol P/m^2/d','zoobenthos DIP release',output=output_time_step_averaged,domain=domain_bottom,source=source_do_bottom)
-      call self%register_diagnostic_variable(self%id_fYQPc,'fYQPc','mg C/m^2/d','zoobenthos excretion of POC',output=output_time_step_averaged,domain=domain_bottom,source=source_do_bottom)
-      call self%register_diagnostic_variable(self%id_fYQPn,'fYQPn','mmol N/m^2/d','zoobenthos excretion of PON',output=output_time_step_averaged,domain=domain_bottom,source=source_do_bottom)
-      call self%register_diagnostic_variable(self%id_fYQPp,'fYQPp','mmol P/m^2/d','zoobenthos excretion of POP',output=output_time_step_averaged,domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fYG3c,'fYG3c','mg C/m^2/d',  'respiration',                              domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fYKIn,'fYKIn','mmol N/m^2/d','dissolved inorganic nitrogen release',     domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fYK1p,'fYK1p','mmol P/m^2/d','dissolved inorganic phosphorus release',   domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fYQPc,'fYQPc','mg C/m^2/d',  'particulate organic carbon production',    domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fYQPn,'fYQPn','mmol N/m^2/d','particulate organic nitrogen production',  domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fYQPp,'fYQPp','mmol P/m^2/d','particulate organic phosphorus production',domain=domain_bottom,source=source_do_bottom)
 
    end subroutine initialize
 
@@ -286,20 +272,20 @@ contains
 
       ! Get food concentrations: benthic and pelagic!
       do ifood=1,self%nfood
-         if (self%foodispel(ifood)) then
-            _GET_(self%id_foodpelc(ifood),foodcP(ifood))
-            _GET_(self%id_foodpeln(ifood),foodnP(ifood))
-            _GET_(self%id_foodpelp(ifood),foodpP(ifood))
-            _GET_(self%id_foodpels(ifood),foodsP(ifood))
+         if (self%food(ifood)%ispel) then
+            _GET_(self%food(ifood)%id_c_pel,foodcP(ifood))
+            _GET_(self%food(ifood)%id_n_pel,foodnP(ifood))
+            _GET_(self%food(ifood)%id_p_pel,foodpP(ifood))
+            _GET_(self%food(ifood)%id_s_pel,foodsP(ifood))
 
             foodcP_an(ifood) = 0.0_rk
          else
-            _GET_HORIZONTAL_(self%id_foodc(ifood),foodcP(ifood))
-            _GET_HORIZONTAL_(self%id_foodn(ifood),foodnP(ifood))
-            _GET_HORIZONTAL_(self%id_foodp(ifood),foodpP(ifood))
-            _GET_HORIZONTAL_(self%id_foods(ifood),foodsP(ifood))
+            _GET_HORIZONTAL_(self%food(ifood)%id_c,foodcP(ifood))
+            _GET_HORIZONTAL_(self%food(ifood)%id_n,foodnP(ifood))
+            _GET_HORIZONTAL_(self%food(ifood)%id_p,foodpP(ifood))
+            _GET_HORIZONTAL_(self%food(ifood)%id_s,foodsP(ifood))
 
-            _GET_HORIZONTAL_(self%id_foodc_an(ifood),foodcP_an(ifood))
+            _GET_HORIZONTAL_(self%food(ifood)%id_c_an,foodcP_an(ifood))
          end if
       end do
 
@@ -311,13 +297,13 @@ contains
       ! e.g. limiting aerobic bacteria as a food source for suspension-feeders by ratio of habitat depth to aerobic layer depth.
       ! Food sources limited in such a way must be specified using logical food{n}_ll in fabm.yaml file.
       do ifood=1,self%nfood
-         if (self%foodispel(ifood)) then
-            prefcorr(ifood) = self%pufood(ifood) * self%dwat
+         if (self%food(ifood)%ispel) then
+            prefcorr(ifood) = self%food(ifood)%pu * self%dwat
          else
-            if (self%food_ll(ifood)) then
-               prefcorr(ifood) = self%pufood(ifood) * min(1._rk,self%dQ6/Dm)
+            if (self%food(ifood)%ll) then
+               prefcorr(ifood) = self%food(ifood)%pu * min(1._rk,self%dQ6/Dm)
             else
-               prefcorr(ifood) = self%pufood(ifood)
+               prefcorr(ifood) = self%food(ifood)%pu
             end if
          end if
       end do
@@ -336,10 +322,10 @@ contains
       end if
 
       do ifood=1,self%nfood
-             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fpreyc(ifood),sflux(ifood)*foodcP(ifood))
-             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fpreyn(ifood),sflux(ifood)*foodnP(ifood))
-             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fpreyp(ifood),sflux(ifood)*foodpP(ifood))
-             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fpreys(ifood),sflux(ifood)*foodsP(ifood))
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%food(ifood)%id_fc,sflux(ifood)*foodcP(ifood))
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%food(ifood)%id_fn,sflux(ifood)*foodnP(ifood))
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%food(ifood)%id_fp,sflux(ifood)*foodpP(ifood))
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%food(ifood)%id_fs,sflux(ifood)*foodsP(ifood))
       end do
 
       ! Ingestion (matter/m2/d) per food source.
@@ -349,19 +335,19 @@ contains
       grossfluxs = sflux * foodsP
 
       ! Compute assimilation (matter/m2/d) per food source from ingestion and assimilation inefficiency.
-      netfluxc = grossfluxc * (1._rk -            self%pue)
-      netfluxn = grossfluxn * (1._rk - self%pudil*self%pue)
-      netfluxp = grossfluxp * (1._rk - self%pudil*self%pue)
+      netfluxc = grossfluxc * (1._rk -            self%food%pue)
+      netfluxn = grossfluxn * (1._rk - self%pudil*self%food%pue)
+      netfluxp = grossfluxp * (1._rk - self%pudil*self%food%pue)
 
       ! Based on specific ingestion of each food source, decrease all state variables of that food source.
       do ifood=1,self%nfood
-         do istate=1,size(self%id_food(ifood)%state)
-            _GET_(self%id_food(ifood)%state(istate),foodP)
-            _SET_BOTTOM_EXCHANGE_(self%id_food_loss_source(ifood)%state(istate),-sflux(ifood)*foodP)
+         do istate=1,size(self%food(ifood)%id_source%state)
+            _GET_(self%food(ifood)%id_source%state(istate),foodP)
+            _SET_BOTTOM_EXCHANGE_(self%food(ifood)%id_loss_source%state(istate),-sflux(ifood)*foodP)
          end do
-         do istate=1,size(self%id_food(ifood)%bottom_state)
-            _GET_HORIZONTAL_(self%id_food(ifood)%bottom_state(istate),foodP)
-            _SET_BOTTOM_ODE_(self%id_food_loss_source(ifood)%bottom_state(istate),-sflux(ifood)*foodP)
+         do istate=1,size(self%food(ifood)%id_source%bottom_state)
+            _GET_HORIZONTAL_(self%food(ifood)%id_source%bottom_state(istate),foodP)
+            _SET_BOTTOM_ODE_(self%food(ifood)%id_loss_source%bottom_state(istate),-sflux(ifood)*foodP)
          end do
       end do
 
