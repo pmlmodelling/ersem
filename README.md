@@ -41,9 +41,11 @@ To build GOTM with FABM support, create a build directory, call cmake to generat
     make install
 
 In the above:
+
 * replace `<GOTMDIR>` with the directory with the GOTM code, e.g., ~/gotm-git
 * replace `<FABMDIR>` with the directory with the FABM code, e.g., ~/fabm-git
 * replace `<ERSEMDIR>` with the directory with the ERSEM code, e.g., ~/ersem-git.
+
 If you experience issues related to NetCDF when running `make install`, see [tips and tricks/troubleshooting](#tips-and-tricks-troubleshooting).
 
 Now you should have a GOTM executable with FABM and ERSEM support at `~/local/gotm/bin/gotm`.
@@ -88,7 +90,8 @@ The Python front-end can be used for enumerating model metadata (e.g., variable 
 
 To build the Python driver, you need to create a directory to build the code in, call `cmake` to generate makefiles, and call `make` to compile and install the FABM library. Usually, the following suffices for this:
 
-    mkdir -p ~/build/fabm-python && cd ~/build/fabm-python
+    mkdir -p ~/build/fabm-python
+    cd ~/build/fabm-python
     cmake <FABMDIR>/src/drivers/python -DFABM_ERSEM_BASE=<ERSEMDIR>
     make install
 
@@ -103,7 +106,8 @@ Example scripts that use the Python front-end can be found in `<FABMDIR>/testcas
 FABM needs to be compiled separately before the compilation of NEMO.
 Usually, the following suffices for this:
 
-    mkdir -p ~/build/nemo && cd ~/build/nemo
+    mkdir -p ~/build/nemo
+    cd ~/build/nemo
     cmake <FABMDIR>/src/ -DFABM_HOST=nemo -DFABM_ERSEM_BASE=<ERSEMDIR>
     make install
 
@@ -151,5 +155,5 @@ If you were using an earlier release of ERSEM, you can update your old ERSEM con
 to the latest by running the Python script `testcases/update.py` with one argument: the path to your old fabm.yaml file.
 
 This script requires a recent version of Python 2.X and the [pyyaml package](http://pyyaml.org).
-Ideally, you also have the latest version of the Python front end to FABM-ERSEM installed;
-that enables the update script to clean up the yaml file and add docuemntation to it. 
+Ideally, you also have the latest version of [the Python front end to FABM-ERSEM](#python-front-end) installed;
+this enables the update script to clean up the yaml file and add documentation to it. 
