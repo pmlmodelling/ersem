@@ -154,6 +154,6 @@ Note that it is good practice to keep up to date with the latest code from the G
 If you were using an earlier release of ERSEM, you can update your old ERSEM configuration (`fabm.yaml`)
 to the latest by running the Python script `testcases/update.py` with one argument: the path to your old fabm.yaml file.
 
-This script requires a recent version of Python 2.X and the [pyyaml package](http://pyyaml.org).
+This script requires a recent version of Python 2.X and the [pyyaml package](http://pyyaml.org/wiki/PyYAML).
 Ideally, you also have the latest version of [the Python front end to FABM-ERSEM](#python-front-end) installed;
 this enables the update script to clean up the yaml file and add documentation to it. 
