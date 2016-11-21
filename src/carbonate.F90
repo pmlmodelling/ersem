@@ -176,7 +176,7 @@ contains
 
          CALL CO2DYN (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success)   ! NB pressure from dbar to bar
 
-         if (success) then
+!         if (success) then
             ! Carbonate system iterative scheme converged -  save associated diagnostics.
             ! Convert outputs from fraction to ppm (pCO2) and from mol kg-1 to mmol m-3 (concentrations).
             _SET_DIAGNOSTIC_(self%id_ph,pH)
@@ -184,13 +184,13 @@ contains
             _SET_DIAGNOSTIC_(self%id_CarbA, H2CO3*1.e3_rk*density)
             _SET_DIAGNOSTIC_(self%id_Bicarb,HCO3*1.e3_rk*density)
             _SET_DIAGNOSTIC_(self%id_Carb,  CO3*1.e3_rk*density)
-         else
+!         else
             ! Carbonate system iterative scheme did not converge.
             ! All diagnostics retain their previous value.
             ! Use previous carbonate concentration (but current environment) for carbonate saturation states.
-            _GET_(self%id_Carb_in,CO3)
-            CO3 = CO3/1.e3_rk/density  ! from mmol/m3 to mol/kg
-         end if
+!            _GET_(self%id_Carb_in,CO3)
+!            CO3 = CO3/1.e3_rk/density  ! from mmol/m3 to mol/kg
+!         end if
 
          ! Call carbonate saturation state subroutine
          CALL CaCO3_Saturation (ETW, X1X, pres*1.e4_rk, CO3, Om_cal, Om_arg)  ! NB pressure from dbar to Pa
