@@ -79,17 +79,17 @@ contains
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspended_c,'resuspended_c','mg C/m^3','pelagic variable taking up resuspended carbon')
             call self%request_coupling_to_model(self%id_resuspended_c,'RP','c')
-            call self%register_diagnostic_variable(self%id_resuspension_flux_c,'resuspension_flux_c','mg C/m^2','carbon resuspension',source=source_do_bottom)
+            call self%register_diagnostic_variable(self%id_resuspension_flux_c,'resuspension_flux_c','mg C/m^2/d','carbon resuspension',source=source_do_bottom)
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_O3c,'O3c','mmol/m^3','dissolved inorganic carbon')
-         if (self%reminQIX/=0.0_rk) call self%register_diagnostic_variable(self%id_bremin,'bremin','mg C/m^2','C remineralization',output=output_time_step_averaged)
+         if (self%reminQIX/=0.0_rk) call self%register_diagnostic_variable(self%id_bremin,'bremin','mg C/m^2/d','carbon remineralization',source=source_do_bottom)
       end if
       if (index(self%composition,'p')/=0) then
          call self%add_constituent('p',0.0_rk,qpRPIcX*c0)
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspended_p,'resuspended_p','mmol P/m^3','pelagic variable taking up resuspended phosphorus')
             call self%request_coupling_to_model(self%id_resuspended_p,'RP','p')
-            call self%register_diagnostic_variable(self%id_resuspension_flux_p,'resuspension_flux_p','mmol P/m^2','phosphorus resuspension',source=source_do_bottom)
+            call self%register_diagnostic_variable(self%id_resuspension_flux_p,'resuspension_flux_p','mmol P/m^2/d','phosphorus resuspension',source=source_do_bottom)
          end if
          if (self%reminQIX/=0.0_rk) then
             call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
@@ -101,7 +101,7 @@ contains
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspended_n,'resuspended_n','mmol N/m^3','pelagic variable taking up resuspended nitrogen')
             call self%request_coupling_to_model(self%id_resuspended_n,'RP','n')
-            call self%register_diagnostic_variable(self%id_resuspension_flux_n,'resuspension_flux_n','mmol N/m^2','nitrogen resuspension',source=source_do_bottom)
+            call self%register_diagnostic_variable(self%id_resuspension_flux_n,'resuspension_flux_n','mmol N/m^2/d','nitrogen resuspension',source=source_do_bottom)
          end if
          if (self%reminQIX/=0.0_rk) then
             call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3','nitrate')
@@ -114,7 +114,7 @@ contains
          if (self%resuspension) then
             call self%register_state_dependency(self%id_resuspended_s,'resuspended_s','mmol Si/m^3','pelagic variable taking up resuspended silicate')
             call self%request_coupling_to_model(self%id_resuspended_s,'RP','s')
-            call self%register_diagnostic_variable(self%id_resuspension_flux_s,'resuspension_flux_s','mmol Si/m^2','silicate resuspension',source=source_do_bottom)
+            call self%register_diagnostic_variable(self%id_resuspension_flux_s,'resuspension_flux_s','mmol Si/m^2/d','silicate resuspension',source=source_do_bottom)
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N5s,'N5s','mmol Si/m^3','silicate')
       end if
@@ -123,7 +123,7 @@ contains
          if (use_iron.and.self%resuspension) then
             call self%register_state_dependency(self%id_resuspended_f,'resuspended_f','umol Fe/m^3','pelagic variable taking up resuspended iron')
             call self%request_coupling_to_model(self%id_resuspended_f,'RP','f')
-            call self%register_diagnostic_variable(self%id_resuspension_flux_f,'resuspension_flux_f','umol Fe/m^2','iron resuspension',source=source_do_bottom)
+            call self%register_diagnostic_variable(self%id_resuspension_flux_f,'resuspension_flux_f','umol Fe/m^2/d','iron resuspension',source=source_do_bottom)
          end if
          if (use_iron.and.self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3','dissolved iron')
       end if
