@@ -109,10 +109,10 @@ contains
 
          ! Nitrification (oxygenated layer only):
          ! Reaction: (NH4+,OH-) + 2*O2 -> (NO3-,H+) + 2*H2O
-         ! treated as first order reaction for NH4 in the oxygenated layer
-         ! Average nitrate density (mmol/m3): MU_m
+         ! Treated as first order reaction for NH4 in the oxygenated layer, but dampened by presence of nitrate.
 
-         ! Average nitrate density in first/oxygenated layer
+         ! Average nitrate concentration in first (oxygenated) sediment layer
+         ! (mmol/m3 - per sediment volume, not pore water volume, as porosity is not considered!)
          MU_m = max(0.0_rk,K3nP)/D1m
 
          ! Limitation factor for temperature (Q_10)
@@ -145,32 +145,35 @@ contains
          _GET_HORIZONTAL_(self%id_layer2_thickness,layer2_thickness)
 
          ! FABM provides sources-sinks of K6 in per second - convert to our internal time unit (per day).
-          K6_sms = K6_sms * self%dt
+         K6_sms = K6_sms * self%dt
 
-         ! From nitrate per m2 in layer 2 to nitrate concentration per unit sediment
-         ! (not pore water concentration as it does not consider porosity!)
+         ! Average nitrate concentration in second (denitrification) layer
+         ! (mmol/m3 - per sediment volume, not pore water volume, as porosity is not considered!)
          MU_m2 = K3n2/layer2_thickness
+
+         ! Denitrification is a Michaelis-Menten function of nitrate availability
          eN2 = MU_m2/(MU_m2+self%hM3G4)
 
-         ! Oxygen debt in anaerobic layer:
-         ! expression in nitrate reduction (100%):
-        jMIno3 = -K6_sms/(self%xno3 *(1._rk - self%pdenit) + self%xn2*self%pdenit)
-        jM3M4n = jMIno3*eN2*self%pammon*(1._rk-self%pdenit)
+         ! Convert oxygen demand (mmol O2/m2/d) into nitrate reduction (mmol NO3/m2/d),
+         ! accounting for the fractions of nitrate converted to NH4 and to N2.
+         jMIno3 = -K6_sms/(self%xno3 *(1._rk - self%pdenit) + self%xn2*self%pdenit)
 
-        jM3G4n = jMIno3*eN2*self%pammon*       self%pdenit
+         ! Partition nitrate reduction flux into NH4 and N2 production fluxes.
+         jM3M4n = jMIno3*eN2*self%pammon*(1._rk-self%pdenit)
+         jM3G4n = jMIno3*eN2*self%pammon*       self%pdenit
 
-        _SET_HORIZONTAL_DIAGNOSTIC_(self%id_jM3M4n,jM3M4n)
-        _SET_HORIZONTAL_DIAGNOSTIC_(self%id_jM3G4n,jM3G4n)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_jM3M4n,jM3M4n)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_jM3G4n,jM3G4n)
 
-        _SET_BOTTOM_ODE_(self%id_K4n2, jM3M4n)
-        _SET_BOTTOM_ODE_(self%id_K3n2, -jM3M4n -jM3G4n)
-        _SET_BOTTOM_ODE_(self%id_G4n, jM3G4n)
+         _SET_BOTTOM_ODE_(self%id_K4n2, jM3M4n)
+         _SET_BOTTOM_ODE_(self%id_K3n2, -jM3M4n -jM3G4n)
+         _SET_BOTTOM_ODE_(self%id_G4n, jM3G4n)
 
          ! Alkalinity contributions: +1 for NH4, -1 for nitrate
-        if (.not.legacy_ersem_compatibility) _SET_BOTTOM_ODE_(self%id_benTA2, 2*jM3M4n + jM3G4n)
+         if (.not.legacy_ersem_compatibility) _SET_BOTTOM_ODE_(self%id_benTA2, 2*jM3M4n + jM3G4n)
 
-        ! Oxygen dynamics: after denitrification is taken into account, use actual oxygen to pay off remaining oxygen debt.
-        _SET_BOTTOM_ODE_(self%id_G2o2, K6_sms + self%xno3*jM3M4n + self%xn2*jM3G4n)
+         ! Oxygen dynamics: after denitrification is taken into account, use actual oxygen to pay off remaining oxygen debt.
+         _SET_BOTTOM_ODE_(self%id_G2o2, K6_sms + self%xno3*jM3M4n + self%xn2*jM3G4n)
 
       _HORIZONTAL_LOOP_END_
 
