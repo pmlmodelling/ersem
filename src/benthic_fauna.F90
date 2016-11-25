@@ -156,10 +156,10 @@ contains
             call self%register_dependency(self%food(ifood)%id_c_an,'food'//trim(index)//'c_an','mg C/m^2','food source '//trim(index)//' carbon in anaerobic layer')
             call self%request_coupling(self%food(ifood)%id_c_an,'zero_hz')
          end if
-         call self%register_diagnostic_variable(self%food(ifood)%id_fc,'fprey'//trim(index)//'c','mg C/m^2',   'uptake of carbon in food source '//trim(index))
-         call self%register_diagnostic_variable(self%food(ifood)%id_fn,'fprey'//trim(index)//'n','mmol N/m^2', 'uptake of nitrogen in food source '//trim(index))
-         call self%register_diagnostic_variable(self%food(ifood)%id_fp,'fprey'//trim(index)//'p','mmol P/m^2', 'uptake of phosphorus in food source '//trim(index))
-         call self%register_diagnostic_variable(self%food(ifood)%id_fs,'fprey'//trim(index)//'s','mmol Si/m^2','uptake of silicate in food source '//trim(index))
+         call self%register_diagnostic_variable(self%food(ifood)%id_fc,'fprey'//trim(index)//'c','mg C/m^2/d',   'uptake of carbon in food source '//trim(index),    source=source_do_bottom)
+         call self%register_diagnostic_variable(self%food(ifood)%id_fn,'fprey'//trim(index)//'n','mmol N/m^2/d', 'uptake of nitrogen in food source '//trim(index),  source=source_do_bottom)
+         call self%register_diagnostic_variable(self%food(ifood)%id_fp,'fprey'//trim(index)//'p','mmol P/m^2/d', 'uptake of phosphorus in food source '//trim(index),source=source_do_bottom)
+         call self%register_diagnostic_variable(self%food(ifood)%id_fs,'fprey'//trim(index)//'s','mmol Si/m^2/d','uptake of silicate in food source '//trim(index),  source=source_do_bottom)
 
          ! Legacy ERSEM computes available detritus based on the predator's depth range, but applies the detritus loss
          ! to a detritus pool with a different depth distribution. To be able to reproduce this (inconsistent!) behaviour
