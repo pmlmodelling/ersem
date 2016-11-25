@@ -169,7 +169,7 @@ contains
       call self%register_state_dependency(info%id_pel,trim(name)//'_pel','mmol/m^3','pelagic '//trim(long_name))
 
       ! Diagnostic for pelagic-benthic flux.
-      call self%register_diagnostic_variable(info%id_pbf,trim(name)//'_pb_flux','mmol/m^2/day','flux of '//trim(long_name)//' from benthos to pelagic',source=source_do_bottom)
+      call self%register_diagnostic_variable(info%id_pbf,trim(name)//'_pb_flux','mmol/m^2/d','flux of '//trim(long_name)//' from benthos to pelagic',source=source_do_bottom)
 
       ! Register new constituent with child model that computes mass per benthic layer.
       call profile%register_dependency(profile_info%id_int,trim(name)//'_int',units,'depth-integrated '//trim(long_name))

@@ -45,7 +45,7 @@ contains
       call self%get_parameter(self%sM4M3, 'sM4M3', '1/d',          'maximum nitrification rate at 10 degrees Celsius')
       call self%get_parameter(self%xno3,  'xno3',  'mol O_2/mol N','oxygen consumed per nitrate produced')
 
-      call self%register_diagnostic_variable(self%id_nrate,'nrate','mmol N/m^2/day','benthic nitrification rate',domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_nrate,'nrate','mmol N/m^2/d','benthic nitrification rate',domain=domain_bottom,source=source_do_bottom)
       call self%register_state_dependency(self%id_K3n,'K3n','mmol N/m^2','benthic nitrate in 1st layer')
       call self%register_state_dependency(self%id_K4n,'K4n','mmol N/m^2','benthic ammonium in 1st layer')
       call self%register_state_dependency(self%id_G2o,'G2o','mmol O_2/m^2','benthic oxygen in 1st layer')
@@ -76,8 +76,8 @@ contains
       call self%register_dependency(self%id_layer2_thickness,'layer2_thickness','m','thickness of 2nd layer')
 
 ! diagnostic fluxes
-      call self%register_diagnostic_variable(self%id_jM3M4n,'jM3G4n','mmol/m^2/day','layer 2 ammonification flux')
-      call self%register_diagnostic_variable(self%id_jM3G4n,'jM3M4n','mmol/m^2/day','layer 2 de-nitrification flux')
+      call self%register_diagnostic_variable(self%id_jM3M4n,'jM3G4n','mmol N/m^2/d','layer 2 ammonification flux',  source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_jM3G4n,'jM3M4n','mmol N/m^2/d','layer 2 de-nitrification flux',source=source_do_bottom)
 
       ! Create a child model that provides a K6 diagnostic. Other models (e.g., anaerobic bacteria) can attach to that to provide it with sink/source terms.
       ! In turn, these are then picked up by this model (type_ersem_benthic_nitrogen_cycle) and translated into chnages in NO3 and O2.

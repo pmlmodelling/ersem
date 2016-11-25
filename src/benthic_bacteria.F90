@@ -93,9 +93,9 @@ contains
          call self%request_coupling_to_model(self%food(ifood)%id_p, 'food'//trim(strindex), standard_variables%total_phosphorus)
 
          ! Register diagnostics for uptake of the substrate constituents.
-         call self%register_diagnostic_variable(self%food(ifood)%id_fc, 'fc'//trim(strindex), 'mg C/m^2/day',   'uptake of carbon in food source '//trim(strindex))
-         call self%register_diagnostic_variable(self%food(ifood)%id_fn, 'fn'//trim(strindex), 'mmol N/m^2/day', 'uptake of nitrogen in food source '//trim(strindex))
-         call self%register_diagnostic_variable(self%food(ifood)%id_fp, 'fp'//trim(strindex), 'mmol P/m^2/day', 'uptake of phosphorus in food source '//trim(strindex))
+         call self%register_diagnostic_variable(self%food(ifood)%id_fc, 'fc'//trim(strindex), 'mg C/m^2/d',   'uptake of carbon in food source '//trim(strindex),    source=source_do_bottom)
+         call self%register_diagnostic_variable(self%food(ifood)%id_fn, 'fn'//trim(strindex), 'mmol N/m^2/d', 'uptake of nitrogen in food source '//trim(strindex),  source=source_do_bottom)
+         call self%register_diagnostic_variable(self%food(ifood)%id_fp, 'fp'//trim(strindex), 'mmol P/m^2/d', 'uptake of phosphorus in food source '//trim(strindex),source=source_do_bottom)
       end do
 
       ! Get remaining parameters.
