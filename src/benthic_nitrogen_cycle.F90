@@ -62,7 +62,7 @@ contains
       ! Denitrification
       call self%get_parameter(self%pammon,'pammon','-','fraction of oxygen demand fulfilled by denitrification under anaerobic conditions')
       call self%get_parameter(self%pdenit,'pdenit','-','fraction of denitrification producing dinitrogen gas (remainder produces ammonium)')
-      call self%get_parameter(self%xn2,   'xn2','-','oxygen produced per N2 produced')
+      call self%get_parameter(self%xn2,   'xn2','mol O_2/mol N','oxygen demand fulfilled by reduction of nitrate to dinitrogen gas')
       call self%get_parameter(self%hM3G4,'hM3G4','mmol N/m^3','Michaelis-Menten constant for nitrate limitation of denitrification')
 
       ! Create our own state avriable for dinitrogen gas
