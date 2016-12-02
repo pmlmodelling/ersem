@@ -13,7 +13,7 @@ module ersem_carbonate
 !     Variable identifiers
       type (type_state_variable_id)     :: id_O3c,id_TA,id_bioalk
       type (type_dependency_id)         :: id_ETW, id_X1X, id_dens, id_pres
-      type (type_dependency_id)         :: id_Carb_in,id_pco2_in
+      type (type_dependency_id)         :: id_Carb_in,id_BiCarb_in,id_CarbA_in,id_pH_in,id_pco2_in
       type (type_horizontal_dependency_id) :: id_wnd,id_PCO2A
 
       type (type_diagnostic_variable_id) :: id_ph,id_pco2,id_CarbA, id_BiCarb, id_Carb, id_TA_diag
@@ -73,11 +73,11 @@ contains
       end if
 
       if (self%iswCO2X==1) then
-         call self%register_diagnostic_variable(self%id_ph,    'pH',    '-',      'pH',standard_variable=standard_variables%ph_reported_on_total_scale)
-         call self%register_diagnostic_variable(self%id_pco2,  'pCO2',  '1e-6',    'partial pressure of CO2')
-         call self%register_diagnostic_variable(self%id_CarbA, 'CarbA', 'mmol/m^3','carbonic acid concentration')
-         call self%register_diagnostic_variable(self%id_BiCarb,'BiCarb','mmol/m^3','bicarbonate concentration')
-         call self%register_diagnostic_variable(self%id_Carb,  'Carb',  'mmol/m^3','carbonate concentration',standard_variable=standard_variables%mole_concentration_of_carbonate_expressed_as_carbon)
+         call self%register_diagnostic_variable(self%id_ph,    'pH',    '-',      'pH',standard_variable=standard_variables%ph_reported_on_total_scale,missing_value=0._rk)
+         call self%register_diagnostic_variable(self%id_pco2,  'pCO2',  '1e-6',    'partial pressure of CO2',missing_value=0._rk)
+         call self%register_diagnostic_variable(self%id_CarbA, 'CarbA', 'mmol/m^3','carbonic acid concentration',missing_value=0._rk)
+         call self%register_diagnostic_variable(self%id_BiCarb,'BiCarb','mmol/m^3','bicarbonate concentration',missing_value=0._rk)
+         call self%register_diagnostic_variable(self%id_Carb,  'Carb',  'mmol/m^3','carbonate concentration',standard_variable=standard_variables%mole_concentration_of_carbonate_expressed_as_carbon,missing_value=0._rk)
 
          call self%register_diagnostic_variable(self%id_Om_cal,'Om_cal','-','calcite saturation')
          call self%register_diagnostic_variable(self%id_Om_arg,'Om_arg','-','aragonite saturation')
@@ -96,6 +96,9 @@ contains
       end if
       if (self%iswCO2X==1) then
          call self%register_dependency(self%id_Carb_in,'Carb','mmol/m^3','previous carbonate concentration')
+         call self%register_dependency(self%id_CarbA_in,'CarbA','mmol/m^3','previous carbonic acid concentration')
+         call self%register_dependency(self%id_BiCarb_in,'BiCarb','mmol/m^3','previous bicarbonate concentration')
+         call self%register_dependency(self%id_pH_in,'pH','-','previous pH')
       end if
 
       if (self%iswASFLUX>=1) then
@@ -176,21 +179,25 @@ contains
 
          CALL CO2DYN (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success)   ! NB pressure from dbar to bar
 
-!         if (success) then
-            ! Carbonate system iterative scheme converged -  save associated diagnostics.
-            ! Convert outputs from fraction to ppm (pCO2) and from mol kg-1 to mmol m-3 (concentrations).
-            _SET_DIAGNOSTIC_(self%id_ph,pH)
-            _SET_DIAGNOSTIC_(self%id_pco2,PCO2*1.e6_rk)
-            _SET_DIAGNOSTIC_(self%id_CarbA, H2CO3*1.e3_rk*density)
-            _SET_DIAGNOSTIC_(self%id_Bicarb,HCO3*1.e3_rk*density)
-            _SET_DIAGNOSTIC_(self%id_Carb,  CO3*1.e3_rk*density)
-!         else
+         if (.not.success) then
             ! Carbonate system iterative scheme did not converge.
             ! All diagnostics retain their previous value.
             ! Use previous carbonate concentration (but current environment) for carbonate saturation states.
-!            _GET_(self%id_Carb_in,CO3)
-!            CO3 = CO3/1.e3_rk/density  ! from mmol/m3 to mol/kg
-!         end if
+            _GET_(self%id_CarbA_in,H2CO3)
+            _GET_(self%id_BiCarb_in,HCO3)
+            _GET_(self%id_Carb_in,CO3)
+            _GET_(self%id_pCO2_in,pCO2)
+            _GET_(self%id_pH_in,pH)
+            CO3 = CO3/1.e3_rk/density  ! from mmol/m3 to mol/kg
+            HCO3 = HCO3/1.e3_rk/density  ! from mmol/m3 to mol/kg
+            H2CO3 = H2CO3/1.e3_rk/density  ! from mmol/m3 to mol/kg
+            pCO2 = pCO2/1.e6_rk  ! from uatm to atm
+         endif
+         _SET_DIAGNOSTIC_(self%id_ph,pH)
+         _SET_DIAGNOSTIC_(self%id_pco2,PCO2*1.e6_rk)
+         _SET_DIAGNOSTIC_(self%id_CarbA, H2CO3*1.e3_rk*density)
+         _SET_DIAGNOSTIC_(self%id_Bicarb,HCO3*1.e3_rk*density)
+         _SET_DIAGNOSTIC_(self%id_Carb,  CO3*1.e3_rk*density)
 
          ! Call carbonate saturation state subroutine
          CALL CaCO3_Saturation (ETW, X1X, pres*1.e4_rk, CO3, Om_cal, Om_arg)  ! NB pressure from dbar to Pa
@@ -513,15 +520,6 @@ contains
 ! IS OK FOR SMALL DOMAINS WITH 1/10 AND 1/15 DEG RESOLUTION.
 ! I RECOMMEND A LOWER VALUE OF 15 FOR HIGHER RESOLUTION OR LARGER DOMAINS.
       C_CHECK=25
-! IF CONVERGENCE IS NOT ACHIEVED THE LOCAL ARRAY CONCS MUST BE STORED TO
-! ALLOW THE MODEL TO CONTINUE. THEREFORE ....
-       CO2sys_memory(1) = Ctot
-       CO2sys_memory(2) = TA
-       CO2sys_memory(3) = pH
-       CO2sys_memory(4) = PCO2
-       CO2sys_memory(5) = H2CO3
-       CO2sys_memory(6) = HCO3
-       CO2sys_memory(7) = CO3
 
 !      DO II=1,NKVAL
  !       AKVAL2(II)=AKVAL(II)
@@ -570,13 +568,6 @@ contains
 ! IF NON CONVERGENCE, THE MODEL REQUIRES CONCS TO CONTAIN USABLE VALUES.
 ! BEST OFFER BEING THE OLD CONCS VALUES WHEN CONVERGENCE HAS BEEN
 ! ACHIEVED
-              Ctot = CO2sys_memory(1)
-              TA   = CO2sys_memory(2)
-              pH   = CO2sys_memory(3)
-              PCO2 = CO2sys_memory(4)
-              H2CO3= CO2sys_memory(5)
-              HCO3 = CO2sys_memory(6)
-              CO3  = CO2sys_memory(7)
               success = .false.
 
 !RESET SWITCH FOR NEXT CALL TO THIS SUBROUTINE
