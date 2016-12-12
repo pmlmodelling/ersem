@@ -42,20 +42,37 @@ contains
 
       character(len=10) :: composition
       real(rk)          :: c0,s0,rRPmX,EPS,iopABS,iopBBS
+      real(rk)          :: qn, qp
 
       call self%get_parameter(composition, 'composition', '', 'elemental composition')
-      call self%get_parameter(c0, 'c0', 'mg C/m^3', 'background carbon concentration', default=0.0_rk)
+      call self%get_parameter(c0, 'c0', 'mg C/m^3', 'background carbon concentration', default=0.0_rk, minimum=0.0_rk)
+
       if (index(composition,'c')/=0) then
-         call self%get_parameter(EPS,   'EPS',   'm^2/mg C','specific shortwave attenuation',default=0.0_rk)
-         call self%get_parameter(iopABS,'iopABS','m^2/mg C','specific shortwave absorption', default=0.0_rk)
-         call self%get_parameter(iopBBS,'iopBBS','m^2/mg C','specific shortwave backscatter',default=0.0_rk)
+         ! Carbon-based light attenuation [optional, off by default]
+         call self%get_parameter(EPS,   'EPS',    'm^2/mg C', 'specific shortwave attenuation', default=0.0_rk, minimum=0.0_rk)
+         call self%get_parameter(iopABS,'iopABS', 'm^2/mg C', 'specific shortwave absorption',  default=0.0_rk, minimum=0.0_rk)
+         call self%get_parameter(iopBBS,'iopBBS', 'm^2/mg C', 'specific shortwave backscatter', default=0.0_rk, minimum=0.0_rk)
+
+         ! Constant N:C stoichiometry [optional, off by default, and only supported if no explicit nitrogen constituent is present]
+         if (index(composition,'n') == 0) then
+            call self%get_parameter(qn, 'qn', 'mmol N/mg C', 'nitrogen : carbon ratio', default=0.0_rk, minimum=0.0_rk)
+         else
+            qn = 0.0_rk
+         end if
+
+         ! Constant P:C stoichiometry [optional, off by default, and only supported if no explicit phosphorus constituent is present]
+         if (index(composition,'p') == 0) then
+            call self%get_parameter(qp, 'qp', 'mmol P/mg C', 'phosphorus : carbon ratio', default=0.0_rk, minimum=0.0_rk)
+         else
+            qp = 0.0_rk
+         end if
       end if
       call self%get_parameter(rRPmX, 'rm', 'm/d', 'sinking velocity', default=0.0_rk)
 
       call self%initialize_ersem_base(rm=rRPmX)
 
       if (index(composition,'c')/=0) then
-         call self%add_constituent('c',0.0_rk,c0)
+         call self%add_constituent('c', 0.0_rk, c0, qn, qp)
 
          ! Add contributions to light attenuation, absorption, scattering.
          ! Contributions with a scale_factor of 0.0 will automatically be ignored.
