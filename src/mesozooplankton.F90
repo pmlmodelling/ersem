@@ -170,21 +170,23 @@ contains
          call self%register_diagnostic_variable(self%id_fpreyc(iprey),'fprey'//trim(index)//'c','mg C/m^3/d','grazing C',output=output_time_step_averaged)
       end do
 
-      ! Create a submodel that will compute total prey for us, and create a variable that will contain its depth integral.
-      ! This quantity will be depth integrated to determine whether we should be overwintering.
-      allocate(total_prey_calculator)
-      total_prey_calculator%units = 'mg C/m^3'
-      total_prey_calculator%result_output = output_none
-      do iprey=1,self%nprey
-         write (index,'(i0)') iprey
-         call total_prey_calculator%add_component('prey'//trim(index)//'c',self%suprey(iprey)*CMass)
-      end do
-      call self%add_child(total_prey_calculator,'totprey_calculator',configunit=-1)
+      if (self%Minprey > 0) then
+         ! Create a submodel that will compute total prey for us, and create a variable that will contain its depth integral.
+         ! This quantity will be depth integrated to determine whether we should be overwintering.
+         allocate(total_prey_calculator)
+         total_prey_calculator%units = 'mg C/m^3'
+         total_prey_calculator%result_output = output_none
+         do iprey=1,self%nprey
+            write (index,'(i0)') iprey
+            call total_prey_calculator%add_component('prey'//trim(index)//'c',self%suprey(iprey)*CMass)
+         end do
+         call self%add_child(total_prey_calculator,'totprey_calculator',configunit=-1)
 
-      ! Create a link to the total prey, and request its depth-integrated value.
-      call self%register_dependency(self%id_totprey,'totprey','mg C/m^3','total carbon in prey')
-      call self%request_coupling(self%id_totprey,'totprey_calculator/result')
-      call self%register_expression_dependency(self%id_inttotprey,vertical_integral(self%id_totprey))
+         ! Create a link to the total prey, and request its depth-integrated value.
+         call self%register_dependency(self%id_totprey,'totprey','mg C/m^3','total carbon in prey')
+         call self%request_coupling(self%id_totprey,'totprey_calculator/result')
+         call self%register_expression_dependency(self%id_inttotprey,vertical_integral(self%id_totprey))
+      end if
 
       ! Register links to external nutrient pools.
       call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
@@ -260,13 +262,17 @@ contains
       real(rk) :: excess_c, excess_n, excess_p
       real(rk) :: intprey
 
+      intprey = 0.0_rk
+
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
 
          ! Get depth-integrated prey in mg C/m^2 (pre-multiplied with CMass, so mg C rather than mmol C)
-         _GET_HORIZONTAL_(self%id_inttotprey,intprey)
+         if (self%Minprey > 0) then
+            _GET_HORIZONTAL_(self%id_inttotprey,intprey)
+         end if
 
-         if (intprey>self%Minprey) then
+         if (intprey >= self%Minprey) then
             ! Enough prey available - not overwintering
 
             ! Get environment (temperature, oxygen saturation)
