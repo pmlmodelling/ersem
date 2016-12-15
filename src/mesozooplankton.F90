@@ -364,6 +364,8 @@ contains
                _SET_ODE_(self%id_O3c, -(1.0_rk-self%gutdiss)*ineff*sum(self%pu_ea*sprey*preylP)/CMass)
                _SET_ODE_(self%id_TA,-2*(1.0_rk-self%gutdiss)*ineff*sum(self%pu_ea*sprey*preylP)/CMass)   ! CaCO3 formation decreases alkalinity by 2 units
                _SET_DIAGNOSTIC_ (self%id_calc,(1.0_rk-self%gutdiss)*ineff*sum(self%pu_ea*sprey*preylP))
+            else
+               _SET_DIAGNOSTIC_ (self%id_calc,0.0_rk)
             end if
 
             ! Source equation for carbon in biomass (NB cannibalism is handled as part of predation formulation)
