@@ -769,6 +769,9 @@ contains
             d_max = self%maximum_depth
          end if
 
+         ! Ensure that d_max >= d_min:
+         d_max = max(d_max,d_min)
+
          ! Retrieve depth-integrated mass, penetration depth, sinks-sources.
          _GET_HORIZONTAL_(self%id_int,c_int)
          _GET_HORIZONTAL_(self%id_pen_depth,d_pen)
@@ -830,7 +833,13 @@ contains
                   d_sms = d_min + d_pen_c
                end if
             else
-               d_sms = d_min + d_pen - (d_max-d_min)/(exp((d_max-d_min)/d_pen)-1)
+               if (d_max > d_min) then
+                  d_sms = d_min + d_pen - (d_max-d_min)/(exp((d_max-d_min)/d_pen)-1)
+               else
+                  ! Safety valve for pathological cases where d_max == d_min
+                  ! (dmax >= d_min is ensured above)
+                  d_sms = d_min + d_pen
+               end if
             end if
          end if
 
