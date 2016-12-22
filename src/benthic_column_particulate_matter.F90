@@ -833,12 +833,12 @@ contains
                   d_sms = d_min + d_pen_c
                end if
             else
-               if (d_max > d_min) then
+               if ( (d_max-d_min)/d_pen > ZeroX ) then
                   d_sms = d_min + d_pen - (d_max-d_min)/(exp((d_max-d_min)/d_pen)-1)
                else
                   ! Safety valve for pathological cases where d_max == d_min
                   ! (dmax >= d_min is ensured above)
-                  d_sms = d_min + d_pen
+                  d_sms = d_min
                end if
             end if
          end if
