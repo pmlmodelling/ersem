@@ -389,7 +389,7 @@ contains
          sug = sum-seo-sea
 
          ! Apportioning of LOC- and DET- fraction of excretion/lysis fluxes:
-         pe_RP = MIN(self%qplc/(qpc+ZeroX),self%qnlc/(qnc+ZeroX))
+         pe_RP = MIN(self%qplc/(qpc+ZeroX), self%qnlc/(qnc+ZeroX), 1.0_rk)
 
          sPIRP = pe_RP*sdo
          fPIRPc = sPIRP*cP
