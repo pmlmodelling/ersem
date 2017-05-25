@@ -51,7 +51,7 @@ contains
       call self%get_parameter(self%relax,'relax','1/d','rate of relaxation towards satellite gelbstoff absorption', default=0.033_rk)
 
       ! Register state variables
-      call self%register_state_variable(self%id_ADY,'ADY','1/m','gelbstoff absorption',minimum=0._rk)
+      call self%register_state_variable(self%id_ADY,'ADY','1/m','gelbstoff absorption',minimum=0._rk, no_river_dilution=.true.)
 
       ! Register diagnostic variables
       call self%register_diagnostic_variable(self%id_EIR,'EIR','W/m^2','shortwave radiation', &
