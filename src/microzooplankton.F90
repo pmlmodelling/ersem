@@ -136,10 +136,10 @@ contains
             call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe/m^3','sink for Fe of prey '//trim(index),required=.false.)
             call self%request_coupling_to_model(self%id_preyf(iprey),self%id_prey(iprey),standard_variables%total_iron)
          end if
-         call self%register_diagnostic_variable(self%id_fpreyc(iprey),'fprey'//trim(index)//'c','mg C/m^3/d','grazing C',output=output_time_step_averaged)
-         call self%register_diagnostic_variable(self%id_fpreyn(iprey),'fprey'//trim(index)//'n','mmol N/m^3/d','grazing N',output=output_time_step_averaged)
-         call self%register_diagnostic_variable(self%id_fpreyp(iprey),'fprey'//trim(index)//'p','mmol P/m^3/d','grazing P',output=output_time_step_averaged)
-         call self%register_diagnostic_variable(self%id_fpreys(iprey),'fprey'//trim(index)//'s','mmol Si/m^3/d','grazing Si',output=output_time_step_averaged)
+         call self%register_diagnostic_variable(self%id_fpreyc(iprey),'fprey'//trim(index)//'c','mg C/m^3/d',   'ingestion of prey '//trim(index)//' carbon')
+         call self%register_diagnostic_variable(self%id_fpreyn(iprey),'fprey'//trim(index)//'n','mmol N/m^3/d', 'ingestion of prey '//trim(index)//' nitrogen')
+         call self%register_diagnostic_variable(self%id_fpreyp(iprey),'fprey'//trim(index)//'p','mmol P/m^3/d', 'ingestion of prey '//trim(index)//' phosphorus')
+         call self%register_diagnostic_variable(self%id_fpreys(iprey),'fprey'//trim(index)//'s','mmol Si/m^3/d','ingestion of prey '//trim(index)//' silicate')
       end do
 
       ! Register links to external nutrient pools.
