@@ -181,9 +181,9 @@ contains
 
          ! Effective uptake rate (sfQ, 1/d) per substrate
          do ifood=1,self%nfood
-            if (self%food(ifood)%suf==0.0_rk .or. Qc(ifood)<=0.0_rk) then
+            if (self%food(ifood)%suf==0.0_rk .or. Qn(ifood)==0.0_rk .or. Qp(ifood)==0.0_rk) then
                ! Avoid division by zero: no carbon in substrate means no nutrient limitation
-               eN = 1.0_rk
+               eN = 0.0_rk
             else
                eN = min(1._rk,max(0._rk,Qn(ifood)/(self%qnc*Qc(ifood)))) * min(1._rk,max(0._rk,Qp(ifood)/(self%qpc*Qc(ifood))))
             end if
