@@ -96,11 +96,11 @@ contains
          if (wnd.lt.0._rk) wnd=0._rk
 
          if (wnd.gt.11._rk) then
-            ko2o = sqrt(max(0.0_rk,1953.4_rk-128._rk*etw+3.9918_rk*etw**2-  &
-               0.050091_rk*etw**3)/660._rk) * (0.02383_rk * wnd**3)
+            ko2o = (0.02383_rk * wnd**3)*(max(0.0_rk,1953.4_rk-128._rk*etw+3.9918_rk*etw**2-  &
+               0.050091_rk*etw**3)/660._rk)**(-0.5_rk)    ! Wanninkhof & NcGillis 1999 ? (the reference has 0.0283)
          else
-            ko2o = sqrt(max(0.0_rk,1953.4_rk-128._rk*etw+3.9918_rk*etw**2- &
-               0.050091_rk*etw**3)/660._rk) * (0.31_rk * wnd**2)
+            ko2o = (0.31_rk * wnd**2)*(max(0.0_rk,1953.4_rk-128._rk*etw+3.9918_rk*etw**2- &
+               0.050091_rk*etw**3)/660._rk) **(-0.5_rk)   ! Wanninkhof 1992
          endif
 
          ! units of ko2 converted from cm/hr to m/day
