@@ -178,16 +178,16 @@ contains
       call self%register_dependency(self%id_eO2mO2,standard_variables%fractional_saturation_of_oxygen)
 
       ! Register diagnostics
-      call self%register_diagnostic_variable(self%id_fZIO3c,'fZIO3c','mg C/m^3/d','respiration',output=output_time_step_averaged)
-      call self%register_diagnostic_variable(self%id_fZINIn,'fZINIn','mmol N/m^3/d','DIN release',output=output_time_step_averaged)
-      call self%register_diagnostic_variable(self%id_fZINIp,'fZINIp','mmol P/m^3/d','DIP release',output=output_time_step_averaged)
-      call self%register_diagnostic_variable(self%id_calc,'calcification','mg C/m^3/d','contribution to total calcification',output=output_time_step_averaged)
-      call self%register_diagnostic_variable(self%id_fZIRPc,'fZIRPc','mg C/m^3/d','loss to POC',output=output_time_step_averaged)
-      call self%register_diagnostic_variable(self%id_fZIRPn,'fZIRPn','mmol N/m^3/d','loss to PON',output=output_time_step_averaged)
-      call self%register_diagnostic_variable(self%id_fZIRPp,'fZIRPp','mmol P/m^3/d','loss to POP',output=output_time_step_averaged)
-      call self%register_diagnostic_variable(self%id_fZIRDc,'fZIRDc','mg C/m^3/d','loss to POC',output=output_time_step_averaged)
-      call self%register_diagnostic_variable(self%id_fZIRDn,'fZIRDn','mmol N/m^3/d','loss to PON',output=output_time_step_averaged)
-      call self%register_diagnostic_variable(self%id_fZIRDp,'fZIRDp','mmol P/m^3/d','loss to POP',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fZIO3c,'fZIO3c','mg C/m^3/d','respiration')
+      call self%register_diagnostic_variable(self%id_fZINIn,'fZINIn','mmol N/m^3/d','DIN release')
+      call self%register_diagnostic_variable(self%id_fZINIp,'fZINIp','mmol P/m^3/d','DIP release')
+      call self%register_diagnostic_variable(self%id_calc,'calcification','mg C/m^3/d','contribution to total calcification')
+      call self%register_diagnostic_variable(self%id_fZIRPc,'fZIRPc','mg C/m^3/d','loss to POC')
+      call self%register_diagnostic_variable(self%id_fZIRPn,'fZIRPn','mmol N/m^3/d','loss to PON')
+      call self%register_diagnostic_variable(self%id_fZIRPp,'fZIRPp','mmol P/m^3/d','loss to POP')
+      call self%register_diagnostic_variable(self%id_fZIRDc,'fZIRDc','mg C/m^3/d','loss to POC')
+      call self%register_diagnostic_variable(self%id_fZIRDn,'fZIRDn','mmol N/m^3/d','loss to PON')
+      call self%register_diagnostic_variable(self%id_fZIRDp,'fZIRDp','mmol P/m^3/d','loss to POP')
 
    end subroutine
 
