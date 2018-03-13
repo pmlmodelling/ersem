@@ -258,6 +258,7 @@ contains
          ! This equals the reference preference value, self%suprey, multiplied by a hyperbolic function
          ! of prey abundance ranging from 0 in the absence of prey, to 1 at abundant prey. As a result,
          ! prey preferences are dynamically adapted so that more abundant prey types are preferred.
+         ! Note: the sprey calculation has been designed specifically to protect against 0/0 when prey and minfood are 0.
          sprey = self%suprey
          if (self%minfood>0.0_rk) sprey = sprey*preycP/(preycP+self%minfood)
 
@@ -335,7 +336,7 @@ contains
             _SET_DIAGNOSTIC_(self%id_fpreyn(iprey),sprey(iprey)*PreynP(iprey))
             _SET_DIAGNOSTIC_(self%id_fpreyp(iprey),sprey(iprey)*PreypP(iprey))
             _SET_DIAGNOSTIC_(self%id_fpreys(iprey),sprey(iprey)*PreysP(iprey))
-         enddo
+         end do
 
          ! Account for CO2 production and oxygen consumption in respiration.
          _SET_ODE_(self%id_O3c, + fZIO3c/CMass)

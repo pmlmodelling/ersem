@@ -182,7 +182,8 @@ contains
          ! Effective uptake rate (sfQ, 1/d) per substrate
          do ifood=1,self%nfood
             if (self%food(ifood)%suf==0.0_rk .or. Qn(ifood)==0.0_rk .or. Qp(ifood)==0.0_rk) then
-               ! Avoid division by zero: no carbon in substrate means no nutrient limitation
+               ! Avoid division by zero when both carbon and nitrogen/phosphorus in substrate are zero:
+               ! no nutrients (or no separate nutrient-limited uptake) mean complete nutrient limitation.
                eN = 0.0_rk
             else
                eN = min(1._rk,max(0._rk,Qn(ifood)/(self%qnc*Qc(ifood)))) * min(1._rk,max(0._rk,Qp(ifood)/(self%qpc*Qc(ifood))))
@@ -201,7 +202,7 @@ contains
          ! (JB: code below seems to want to infer nutrient requirement/flux,
          ! but it makes no sense since K?a and fK?H? are summed while they have different units)
          ! The "if" clauses below protect against the pathologic case where the nutrient requirement
-         ! and the nutrient concentation (fK4Hn and K4a, or fK1Hp and K1a) are both 0.
+         ! and the nutrient concentration (fK4Hn and K4a, or fK1Hp and K1a) are both 0.
          fK4Hn = fQIHc * self%qnc
          if (fK4Hn>0) fK4Hn = fK4Hn * K4a/(K4a+fK4Hn)
          fK1Hp = fQIHc * self%qpc

@@ -34,7 +34,6 @@ module ersem_mesozooplankton
       type (type_diagnostic_variable_id) :: id_fZIRDp,id_fZIRPp,id_fZINIp
       type (type_diagnostic_variable_id), allocatable,dimension(:) :: id_fpreyc,id_fpreyn,id_fpreyp,id_fpreys
 
-
       ! Parameters
       integer  :: nprey
       real(rk) :: qpc,qnc
@@ -262,12 +261,13 @@ contains
       real(rk) :: excess_c, excess_n, excess_p
       real(rk) :: intprey
 
+      ! Initialize intprey to 0 to handle self%minprey == 0 correctly
       intprey = 0.0_rk
 
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
 
-         ! Get depth-integrated prey in mg C/m^2 (pre-multiplied with CMass, so mg C rather than mmol C)
+         ! Get depth-integrated prey in mg C/m^2 (pre-multiplied with CMass, so it comes in mg C rather than mmol C)
          if (self%Minprey > 0) then
             _GET_HORIZONTAL_(self%id_inttotprey,intprey)
          end if
@@ -308,6 +308,7 @@ contains
             ! This equals the reference preference value, self%suprey, multiplied by a hyperbolic function
             ! of prey abundance ranging from 0 in the absence of prey, to 1 at abundant prey. As a result,
             ! prey preferences are dynamically adapted so that more abundant prey types are preferred.
+            ! Note: the sprey calculation has been designed specifically to protect against 0/0 when prey and minfood are 0.
             sprey = self%suprey
             if (self%minfood>0.0_rk) sprey = sprey*preycP/(preycP+self%minfood)
 
@@ -385,7 +386,7 @@ contains
                 _SET_DIAGNOSTIC_(self%id_fpreyn(iprey),sprey(iprey)*PreynP(iprey))
                 _SET_DIAGNOSTIC_(self%id_fpreyp(iprey),sprey(iprey)*PreypP(iprey))
                 _SET_DIAGNOSTIC_(self%id_fpreys(iprey),sprey(iprey)*PreysP(iprey))
-            enddo
+            end do
             ! -------------------------------
             ! Phosphorus
             ! -------------------------------
@@ -496,7 +497,7 @@ contains
                 _SET_DIAGNOSTIC_(self%id_fpreyn(iprey),0.0_rk)
                 _SET_DIAGNOSTIC_(self%id_fpreyp(iprey),0.0_rk)
                 _SET_DIAGNOSTIC_(self%id_fpreys(iprey),0.0_rk)
-            enddo
+            end do
             _SET_DIAGNOSTIC_(self%id_calc,0.0_rk)
 
          end if
