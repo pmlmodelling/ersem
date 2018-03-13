@@ -76,8 +76,8 @@ contains
       call self%register_dependency(self%id_layer2_thickness,'layer2_thickness','m','thickness of 2nd layer')
 
 ! diagnostic fluxes
-      call self%register_diagnostic_variable(self%id_jM3M4n,'jM3G4n','mmol N/m^2/d','layer 2 ammonification flux',  source=source_do_bottom)
-      call self%register_diagnostic_variable(self%id_jM3G4n,'jM3M4n','mmol N/m^2/d','layer 2 de-nitrification flux',source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_jM3M4n,'jM3M4n','mmol N/m^2/d','layer 2 ammonification flux',  source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_jM3G4n,'jM3G4n','mmol N/m^2/d','layer 2 de-nitrification flux',source=source_do_bottom)
 
       ! Create a child model that provides a K6 diagnostic. Other models (e.g., anaerobic bacteria) can attach to that to provide it with sink/source terms.
       ! In turn, these are then picked up by this model (type_ersem_benthic_nitrogen_cycle) and translated into chnages in NO3 and O2.

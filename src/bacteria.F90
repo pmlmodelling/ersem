@@ -153,11 +153,11 @@ contains
       call self%register_dependency(self%id_eO2mO2,standard_variables%fractional_saturation_of_oxygen)
 
       ! Register diagnostics.
-      call self%register_diagnostic_variable(self%id_fB1O3c,'fB1O3c','mg C/m^3/d','respiration',output=output_time_step_averaged)
-      call self%register_diagnostic_variable(self%id_fB1NIn,'fB1NIn','mmol N/m^3/d','bacterial DIN release',output=output_time_step_averaged)
-      call self%register_diagnostic_variable(self%id_fB1N1p,'fB1N1p','mmol P/m^3/d','bacterial DIP release',output=output_time_step_averaged)
-      call self%register_diagnostic_variable(self%id_minn,'minn','mmol N/m^3/d','N mineralisation',output=output_time_step_averaged)
-      call self%register_diagnostic_variable(self%id_minp,'minp','mmol P/m^3/d','P mineralisation',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fB1O3c,'fB1O3c','mg C/m^3/d','respiration')
+      call self%register_diagnostic_variable(self%id_fB1NIn,'fB1NIn','mmol N/m^3/d','bacterial DIN release')
+      call self%register_diagnostic_variable(self%id_fB1N1p,'fB1N1p','mmol P/m^3/d','bacterial DIP release')
+      call self%register_diagnostic_variable(self%id_minn,'minn','mmol N/m^3/d','N mineralisation')
+      call self%register_diagnostic_variable(self%id_minp,'minp','mmol P/m^3/d','P mineralisation')
 
    end subroutine
 
