@@ -24,6 +24,7 @@ module ersem_pelagic_base
 
       real(rk) :: rm = 0.0_rk
       integer :: ndeposition
+      logical :: river_dilution = .false. ! RJT 2018
       real(rk),allocatable :: qxc(:),qxn(:),qxp(:),qxs(:),qxf(:)
    contains
       procedure :: initialize
@@ -97,7 +98,10 @@ contains
       class (type_ersem_pelagic_base), intent(inout), target :: self
       real(rk),optional,               intent(in)            :: rm
       logical, optional,               intent(in)            :: sedimentation
-
+ 
+      ! We are adding a new yaml entry for each ersem_base type related to river dilution behaviour
+      call self%get_parameter(self%river_dilution,'riv_not_dilute','','Remove river dilution behaviour',default=.false.)
+      
       ! Set time unit to d-1
       ! This implies that all rates (sink/source terms, vertical velocities) are given in d-1.
       self%dt = 86400._rk
@@ -134,26 +138,26 @@ contains
 
       select case (name)
       case ('c')
-         call register(self%id_c,'c','mg C','carbon',standard_variables%total_carbon,self%qxc,self%id_cdep,self%id_targetc,1._rk/CMass)
+         call register(self%id_c,'c','mg C','carbon',standard_variables%total_carbon,self%qxc,self%id_cdep,self%id_targetc,1._rk/CMass,no_river_dilution=.not.self%river_dilution)
          if (present(qn)) call self%add_to_aggregate_variable(standard_variables%total_nitrogen,  self%id_c,scale_factor=qn)
          if (present(qp)) call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_c,scale_factor=qp)
       case ('n')
-         call register(self%id_n,'n','mmol N','nitrogen',standard_variables%total_nitrogen,self%qxn,self%id_ndep,self%id_targetn)
+         call register(self%id_n,'n','mmol N','nitrogen',standard_variables%total_nitrogen,self%qxn,self%id_ndep,self%id_targetn,no_river_dilution=.not.self%river_dilution)
       case ('p')
-         call register(self%id_p,'p','mmol P','phosphorus',standard_variables%total_phosphorus,self%qxp,self%id_pdep,self%id_targetp)
+         call register(self%id_p,'p','mmol P','phosphorus',standard_variables%total_phosphorus,self%qxp,self%id_pdep,self%id_targetp,no_river_dilution=.not.self%river_dilution)
       case ('s')
-         call register(self%id_s,'s','mmol Si','silicate',standard_variables%total_silicate,self%qxs,self%id_sdep,self%id_targets)
+         call register(self%id_s,'s','mmol Si','silicate',standard_variables%total_silicate,self%qxs,self%id_sdep,self%id_targets,no_river_dilution=.not.self%river_dilution)
       case ('f')
-         if (use_iron) call register(self%id_f,'f','umol Fe','iron',standard_variables%total_iron,self%qxf,self%id_fdep,self%id_targetf)
+         if (use_iron) call register(self%id_f,'f','umol Fe','iron',standard_variables%total_iron,self%qxf,self%id_fdep,self%id_targetf,no_river_dilution=.not.self%river_dilution)
       case ('chl')
-         call register(self%id_chl,'Chl','mg','chlorophyll a',total_chlorophyll)
+         call register(self%id_chl,'Chl','mg','chlorophyll a',total_chlorophyll,no_river_dilution=.not.self%river_dilution)
       case default
          call self%fatal_error('add_constituent','Unknown constituent "'//trim(name)//'".')
       end select
 
    contains
 
-      subroutine register(variable_id,name,base_units,long_name,aggregate_variable,qx,id_xdep,id_dep,scale_factor)
+      subroutine register(variable_id,name,base_units,long_name,aggregate_variable,qx,id_xdep,id_dep,scale_factor,no_river_dilution)
          type (type_state_variable_id),       intent(inout), target     :: variable_id
          character(len=*),                    intent(in)                :: name,base_units,long_name
          type (type_bulk_standard_variable),  intent(in)                :: aggregate_variable
@@ -161,13 +165,14 @@ contains
          type (type_bottom_state_variable_id),intent(inout),allocatable,optional :: id_dep(:)
          type (type_horizontal_diagnostic_variable_id),intent(inout),allocatable,optional :: id_xdep(:)
          real(rk),                            intent(in), optional      :: scale_factor
+         logical,                            intent(in), optional      :: no_river_dilution
 
          integer :: idep
          character(len=16) :: num
 
          ! Register state variable
          call self%register_state_variable(variable_id,name,trim(base_units)//'/m^3',long_name, &
-            initial_value,minimum=0._rk,vertical_movement=-self%rm/self%dt,background_value=background_value)
+            initial_value,minimum=0._rk,vertical_movement=-self%rm/self%dt,background_value=background_value,no_river_dilution=no_river_dilution)
 
          ! Contribute to aggregate variable
          call self%add_to_aggregate_variable(aggregate_variable,variable_id,scale_factor)
