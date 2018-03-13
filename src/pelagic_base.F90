@@ -24,6 +24,7 @@ module ersem_pelagic_base
 
       real(rk) :: rm = 0.0_rk
       integer :: ndeposition
+      logical :: no_river_dilution = .false.
       real(rk),allocatable :: qxc(:),qxn(:),qxp(:),qxs(:),qxf(:)
    contains
       procedure :: initialize
@@ -97,6 +98,9 @@ contains
       class (type_ersem_pelagic_base), intent(inout), target :: self
       real(rk),optional,               intent(in)            :: rm
       logical, optional,               intent(in)            :: sedimentation
+ 
+      ! We are adding a new yaml entry for each ersem_base type related to river dilution behaviour
+      call self%get_parameter(self%no_river_dilution,'no_river_dilution','','Disable river dilution by setting riverine concentrations equal to those in the receiving grid cell',default=.false.)
 
       ! Set time unit to d-1
       ! This implies that all rates (sink/source terms, vertical velocities) are given in d-1.
@@ -167,7 +171,7 @@ contains
 
          ! Register state variable
          call self%register_state_variable(variable_id,name,trim(base_units)//'/m^3',long_name, &
-            initial_value,minimum=0._rk,vertical_movement=-self%rm/self%dt,background_value=background_value)
+            initial_value,minimum=0._rk,vertical_movement=-self%rm/self%dt,background_value=background_value,no_river_dilution=self%no_river_dilution)
 
          ! Contribute to aggregate variable
          call self%add_to_aggregate_variable(aggregate_variable,variable_id,scale_factor)
