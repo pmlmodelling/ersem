@@ -18,7 +18,7 @@ module ersem_fluff
       type (type_bottom_state_variable_id),allocatable,dimension(:)      :: id_targetc,id_targetn,id_targetp,id_targets,id_targetf
       type (type_horizontal_diagnostic_variable_id),allocatable,dimension(:) :: id_inc_c(:),id_inc_n(:),id_inc_p(:),id_inc_s(:),id_inc_f(:)
       real(rk) :: sd
-      integer :: ndeposition
+      integer :: ntarget
       real(rk),allocatable :: qxc(:),qxn(:),qxp(:),qxs(:),qxf(:)
    contains
       procedure :: initialize
@@ -30,26 +30,26 @@ contains
    subroutine initialize(self,configunit)
       class (type_ersem_fluff), intent(inout), target :: self
       integer,                               intent(in)            :: configunit
-      integer :: idep
+      integer :: itarget
       character(len=16) :: num
          call self%type_ersem_benthic_base%initialize(configunit)
 
          call self%get_parameter(self%sd,'sd','d-1','rate of fluff incorporation into sediments')
 
-         call self%get_parameter(self%ndeposition,'ndeposition','', 'number of deposition targets',default=0)
-         allocate(self%qxc(self%ndeposition))
-         allocate(self%qxn(self%ndeposition))
-         allocate(self%qxp(self%ndeposition))
-         allocate(self%qxs(self%ndeposition))
-       if (use_iron) allocate(self%qxf(self%ndeposition))
+         call self%get_parameter(self%ntarget,'ntarget','', 'number of incorporation targets',default=0)
+         allocate(self%qxc(self%ntarget))
+         allocate(self%qxn(self%ntarget))
+         allocate(self%qxp(self%ntarget))
+         allocate(self%qxs(self%ntarget))
+       if (use_iron) allocate(self%qxf(self%ntarget))
 
-       do idep = 2,self%ndeposition
-         write(num,'(i0)') idep
-          call self%get_parameter(self%qxc(idep),'qxc'//trim(num),'-','fraction of carbon sedimentation into deposition target '//trim(num))
-          call self%get_parameter(self%qxn(idep),'qxn'//trim(num),'-','fraction of nitrogen sedimentation into deposition target '//trim(num))
-          call self%get_parameter(self%qxp(idep),'qxp'//trim(num),'-','fraction of phosphorus sedimentation into deposition target '//trim(num))
-          call self%get_parameter(self%qxs(idep),'qxs'//trim(num),'-','fraction of silicate sedimentation into deposition target '//trim(num))
-          if (use_iron) call self%get_parameter(self%qxf(idep),'qxf'//trim(num),'-','fraction of iron sedimentation into deposition target '//trim(num))
+       do itarget = 2,self%ntarget
+         write(num,'(i0)') itarget
+          call self%get_parameter(self%qxc(itarget),'qxc'//trim(num),'-','fraction of carbon incorporation into target '//trim(num))
+          call self%get_parameter(self%qxn(itarget),'qxn'//trim(num),'-','fraction of nitrogen incorporation into target '//trim(num))
+          call self%get_parameter(self%qxp(itarget),'qxp'//trim(num),'-','fraction of phosphorus incorporation into target '//trim(num))
+          call self%get_parameter(self%qxs(itarget),'qxs'//trim(num),'-','fraction of silicate incorporation into target '//trim(num))
+          if (use_iron) call self%get_parameter(self%qxf(itarget),'qxf'//trim(num),'-','fraction of iron incorporation into target '//trim(num))
       end do
 
           self%qxc(1)=1._rk-sum(self%qxc(2:))
@@ -58,47 +58,47 @@ contains
           self%qxs(1)=1._rk-sum(self%qxs(2:))
        if (use_iron) self%qxf(1)=1._rk-sum(self%qxf(2:))
 
-         allocate(self%id_target(self%ndeposition))
-         allocate(self%id_targetc(self%ndeposition))
-         allocate(self%id_targetn(self%ndeposition))
-         allocate(self%id_targetp(self%ndeposition))
-         allocate(self%id_targets(self%ndeposition))
-      if (use_iron) allocate(self%id_targetf(self%ndeposition))
+         allocate(self%id_target(self%ntarget))
+         allocate(self%id_targetc(self%ntarget))
+         allocate(self%id_targetn(self%ntarget))
+         allocate(self%id_targetp(self%ntarget))
+         allocate(self%id_targets(self%ntarget))
+      if (use_iron) allocate(self%id_targetf(self%ntarget))
 
-         allocate(self%id_inc_c(self%ndeposition))
-         allocate(self%id_inc_n(self%ndeposition))
-         allocate(self%id_inc_p(self%ndeposition))
-         allocate(self%id_inc_s(self%ndeposition))
-      if (use_iron) allocate(self%id_inc_f(self%ndeposition))
+         allocate(self%id_inc_c(self%ntarget))
+         allocate(self%id_inc_n(self%ntarget))
+         allocate(self%id_inc_p(self%ntarget))
+         allocate(self%id_inc_s(self%ntarget))
+      if (use_iron) allocate(self%id_inc_f(self%ntarget))
 
-      do idep=1,self%ndeposition
-        write(num,'(i0)') idep
-        call self%register_model_dependency(self%id_target(idep),'deposition_target'//trim(num))
-        if (self%qxc(idep)/=0) then
-         call self%register_state_dependency(self%id_targetc(idep),'deposition_target'//trim(num)//'c','mg C/m^2','deposition_target '//trim(num)//' carbon')
-         call self%request_coupling_to_model(self%id_targetc(idep),self%id_target(idep),'c')
-         call self%register_diagnostic_variable(self%id_inc_c(idep),'fluff incorporation into target'//trim(num)//'c','mg C/m^2/d','rate of fluff incorporation into deposition target '//trim(num)//' carbon',domain=domain_bottom,source=source_do_bottom)
+      do itarget=1,self%ntarget
+        write(num,'(i0)') itarget
+        call self%register_model_dependency(self%id_target(itarget),'target'//trim(num))
+        if (self%qxc(itarget)/=0) then
+         call self%register_state_dependency(self%id_targetc(itarget),'target'//trim(num)//'c','mg C/m^2','target '//trim(num)//' carbon')
+         call self%request_coupling_to_model(self%id_targetc(itarget),self%id_target(itarget),'c')
+         call self%register_diagnostic_variable(self%id_inc_c(itarget),'fluff incorporation into target'//trim(num)//'c','mg C/m^2/d','rate of fluff incorporation into target '//trim(num)//' carbon',domain=domain_bottom,source=source_do_bottom)
         end if
-        if (self%qxn(idep)/=0) then
-         call self%register_state_dependency(self%id_targetn(idep),'deposition_target'//trim(num)//'n','mg N/m^2','deposition_target '//trim(num)//' nitrogen')
-         call self%request_coupling_to_model(self%id_targetn(idep),self%id_target(idep),'n')
-         call self%register_diagnostic_variable(self%id_inc_n(idep),'fluff incorporation into target'//trim(num)//'n','mg N/m^2/d','rate of fluff incorporation into deposition target '//trim(num)//' nitrogen',domain=domain_bottom,source=source_do_bottom)
+        if (self%qxn(itarget)/=0) then
+         call self%register_state_dependency(self%id_targetn(itarget),'target'//trim(num)//'n','mg N/m^2','target '//trim(num)//' nitrogen')
+         call self%request_coupling_to_model(self%id_targetn(itarget),self%id_target(itarget),'n')
+         call self%register_diagnostic_variable(self%id_inc_n(itarget),'fluff incorporation into target'//trim(num)//'n','mg N/m^2/d','rate of fluff incorporation into target '//trim(num)//' nitrogen',domain=domain_bottom,source=source_do_bottom)
         end if
-        if (self%qxp(idep)/=0) then
-         call self%register_state_dependency(self%id_targetp(idep),'deposition_target'//trim(num)//'p','mg P/m^2','deposition_target '//trim(num)//' phosphorus')
-         call self%request_coupling_to_model(self%id_targetp(idep),self%id_target(idep),'p')
-         call self%register_diagnostic_variable(self%id_inc_p(idep),'fluff incorporation into target'//trim(num)//'p','mg P/m^2/d','rate of fluff incorporation into deposition target '//trim(num)//' phosphorus',domain=domain_bottom,source=source_do_bottom)
+        if (self%qxp(itarget)/=0) then
+         call self%register_state_dependency(self%id_targetp(itarget),'target'//trim(num)//'p','mg P/m^2','target '//trim(num)//' phosphorus')
+         call self%request_coupling_to_model(self%id_targetp(itarget),self%id_target(itarget),'p')
+         call self%register_diagnostic_variable(self%id_inc_p(itarget),'fluff incorporation into target'//trim(num)//'p','mg P/m^2/d','rate of fluff incorporation into target '//trim(num)//' phosphorus',domain=domain_bottom,source=source_do_bottom)
         end if
-        if (self%qxs(idep)/=0) then
-         call self%register_state_dependency(self%id_targets(idep),'deposition_target'//trim(num)//'s','mg Si/m^2','deposition_target '//trim(num)//' silicate')
-         call self%request_coupling_to_model(self%id_targets(idep),self%id_target(idep),'s')
-         call self%register_diagnostic_variable(self%id_inc_s(idep),'fluff incorporation into target'//trim(num)//'s','mg Si/m^2/d','rate of fluff incorporation into deposition target '//trim(num)//' silicate',domain=domain_bottom,source=source_do_bottom)
+        if (self%qxs(itarget)/=0) then
+         call self%register_state_dependency(self%id_targets(itarget),'target'//trim(num)//'s','mg Si/m^2','target '//trim(num)//' silicate')
+         call self%request_coupling_to_model(self%id_targets(itarget),self%id_target(itarget),'s')
+         call self%register_diagnostic_variable(self%id_inc_s(itarget),'fluff incorporation into target'//trim(num)//'s','mg Si/m^2/d','rate of fluff incorporation into target '//trim(num)//' silicate',domain=domain_bottom,source=source_do_bottom)
         end if
         if (use_iron) then
-        if (self%qxf(idep)/=0) then
-         call self%register_state_dependency(self%id_targetf(idep),'deposition_target'//trim(num)//'f','mg Fe/m^2','deposition_target '//trim(num)//' iron')
-         call self%request_coupling_to_model(self%id_targetf(idep),self%id_target(idep),'f')
-         call self%register_diagnostic_variable(self%id_inc_f(idep),'fluff incorporation into target'//trim(num)//'f','mg Fe/m^2/d','rate of fluff incorporation into deposition target '//trim(num)//' iron',domain=domain_bottom,source=source_do_bottom)
+        if (self%qxf(itarget)/=0) then
+         call self%register_state_dependency(self%id_targetf(itarget),'target'//trim(num)//'f','mg Fe/m^2','target '//trim(num)//' iron')
+         call self%request_coupling_to_model(self%id_targetf(itarget),self%id_target(itarget),'f')
+         call self%register_diagnostic_variable(self%id_inc_f(itarget),'fluff incorporation into target'//trim(num)//'f','mg Fe/m^2/d','rate of fluff incorporation into target '//trim(num)//' iron',domain=domain_bottom,source=source_do_bottom)
         end if
         end if
 
@@ -113,7 +113,7 @@ contains
 
       real(rk) :: fsdc,fsdp,fsdn,fsds,fsdf
       real(rk) :: Pc,Pn,Pp,Ps,Pf
-      integer :: idep
+      integer :: itarget
       call self%type_ersem_benthic_base%do_bottom(_ARGUMENTS_DO_BOTTOM_)
 
       _HORIZONTAL_LOOP_BEGIN_
@@ -127,10 +127,10 @@ contains
          if (_VARIABLE_REGISTERED_(self%id_c)) then
             _GET_HORIZONTAL_(self%id_c,Pc)
             fsdc = self%sd*Pc
-            do idep=1,self%ndeposition
-              if (self%qxc(idep)/=0) then
-              _SET_BOTTOM_ODE_(self%id_targetc(idep), fsdc*self%qxc(idep))
-              _SET_HORIZONTAL_DIAGNOSTIC_(self%id_inc_c(idep),fsdc*self%qxc(idep))
+            do itarget=1,self%ntarget
+              if (self%qxc(itarget)/=0) then
+              _SET_BOTTOM_ODE_(self%id_targetc(itarget), fsdc*self%qxc(itarget))
+              _SET_HORIZONTAL_DIAGNOSTIC_(self%id_inc_c(itarget),fsdc*self%qxc(itarget))
               end if
             end do
             _SET_BOTTOM_ODE_(self%id_c,-fsdc)
@@ -139,10 +139,10 @@ contains
          if (_VARIABLE_REGISTERED_(self%id_n)) then
             _GET_HORIZONTAL_(self%id_n,Pn)
             fsdn = self%sd*Pn
-            do idep=1,self%ndeposition
-              if (self%qxn(idep)/=0) then
-              _SET_BOTTOM_ODE_(self%id_targetn(idep), fsdn*self%qxn(idep))
-              _SET_HORIZONTAL_DIAGNOSTIC_(self%id_inc_n(idep),fsdn*self%qxn(idep))
+            do itarget=1,self%ntarget
+              if (self%qxn(itarget)/=0) then
+              _SET_BOTTOM_ODE_(self%id_targetn(itarget), fsdn*self%qxn(itarget))
+              _SET_HORIZONTAL_DIAGNOSTIC_(self%id_inc_n(itarget),fsdn*self%qxn(itarget))
               end if
             end do
             _SET_BOTTOM_ODE_(self%id_n,-fsdn)
@@ -151,10 +151,10 @@ contains
          if (_VARIABLE_REGISTERED_(self%id_p)) then
             _GET_HORIZONTAL_(self%id_p,Pp)
             fsdp = self%sd*Pp
-            do idep=1,self%ndeposition
-              if (self%qxp(idep)/=0) then
-              _SET_BOTTOM_ODE_(self%id_targetp(idep), fsdp*self%qxp(idep))
-              _SET_HORIZONTAL_DIAGNOSTIC_(self%id_inc_p(idep),fsdp*self%qxp(idep))
+            do itarget=1,self%ntarget
+              if (self%qxp(itarget)/=0) then
+              _SET_BOTTOM_ODE_(self%id_targetp(itarget), fsdp*self%qxp(itarget))
+              _SET_HORIZONTAL_DIAGNOSTIC_(self%id_inc_p(itarget),fsdp*self%qxp(itarget))
               end if
             end do
             _SET_BOTTOM_ODE_(self%id_p,-fsdp)
@@ -163,10 +163,10 @@ contains
          if (_VARIABLE_REGISTERED_(self%id_s)) then
             _GET_HORIZONTAL_(self%id_s,Ps)
             fsds = self%sd*Ps
-            do idep=1,self%ndeposition
-              if (self%qxs(idep)/=0) then
-              _SET_BOTTOM_ODE_(self%id_targets(idep), fsds*self%qxs(idep))
-              _SET_HORIZONTAL_DIAGNOSTIC_(self%id_inc_s(idep),fsds*self%qxs(idep))
+            do itarget=1,self%ntarget
+              if (self%qxs(itarget)/=0) then
+              _SET_BOTTOM_ODE_(self%id_targets(itarget), fsds*self%qxs(itarget))
+              _SET_HORIZONTAL_DIAGNOSTIC_(self%id_inc_s(itarget),fsds*self%qxs(itarget))
               end if
             end do
             _SET_BOTTOM_ODE_(self%id_s,-fsds)
@@ -176,10 +176,10 @@ contains
          if (_VARIABLE_REGISTERED_(self%id_f)) then
             _GET_HORIZONTAL_(self%id_f,Pf)
             fsdf = self%sd*Pf
-            do idep=1,self%ndeposition
-              if (self%qxf(idep)/=0) then
-              _SET_BOTTOM_ODE_(self%id_targetf(idep), fsdf*self%qxf(idep))
-              _SET_HORIZONTAL_DIAGNOSTIC_(self%id_inc_f(idep),fsdf*self%qxf(idep))
+            do itarget=1,self%ntarget
+              if (self%qxf(itarget)/=0) then
+              _SET_BOTTOM_ODE_(self%id_targetf(itarget), fsdf*self%qxf(itarget))
+              _SET_HORIZONTAL_DIAGNOSTIC_(self%id_inc_f(itarget),fsdf*self%qxf(itarget))
               end if
             end do
             _SET_BOTTOM_ODE_(self%id_f,-fsdf)
