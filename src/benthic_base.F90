@@ -26,13 +26,13 @@ module ersem_benthic_base
 
       ! Dependencies for resuspension
       type (type_horizontal_dependency_id) :: id_bedstress
-      type (type_dependency_id)            :: id_dens
+      type (type_dependency_id)            :: id_dens, id_ETW
 
       ! Parameters
       character(len=10) :: composition
       real(rk) :: reminQIX,pQIN3X
       logical  :: resuspension
-      real(rk) :: er, vel_crit
+      real(rk) :: er, vel_crit, q10
    contains
       procedure :: initialize
       procedure :: do_bottom
@@ -82,7 +82,9 @@ contains
             call self%register_diagnostic_variable(self%id_resuspension_flux_c,'resuspension_flux_c','mg C/m^2/d','carbon resuspension',source=source_do_bottom)
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_O3c,'O3c','mmol/m^3','dissolved inorganic carbon')
+         if (self%reminQIX/=0.0_rk) call self%register_dependency(self%id_ETW,standard_variables%temperature)
          if (self%reminQIX/=0.0_rk) call self%register_diagnostic_variable(self%id_bremin,'bremin','mg C/m^2/d','carbon remineralization',source=source_do_bottom)
+         if (self%reminQIX/=0.0_rk) call self%get_parameter(self%q10,'q10','-','Q_10 temperature coefficient',default=1.0_rk)
       end if
       if (index(self%composition,'p')/=0) then
          call self%add_constituent('p',0.0_rk,qpRPIcX*c0)
@@ -175,6 +177,7 @@ contains
       real(rk) :: bedstress,density
       real(rk) :: fac,state,resuspension_flux
       real(rk) :: max_rel_res = 4.0_rk            ! max relative loss of matter due to resuspension, in 1/d
+      real(rk) :: eT,ETW,reminT
 
       _HORIZONTAL_LOOP_BEGIN_
          if (self%resuspension) then
@@ -239,34 +242,38 @@ contains
 
          ! Remineralization (benthic return)
          if (self%reminQIX/=0.0_rk) then
+            _GET_(self%id_ETW,ETW)
+            eT = max(0.0_rk,self%q10**((ETW-10._rk)/10._rk)) 
+            reminT=self%reminQIX*eT
+
             if (_VARIABLE_REGISTERED_(self%id_c)) then
                _GET_HORIZONTAL_(self%id_c,state)
-               _SET_BOTTOM_ODE_(self%id_c,-self%reminQIX*state)
-               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_bremin,self%reminQIX*state)
-               _SET_BOTTOM_EXCHANGE_(self%id_O3c,self%reminQIX*state/CMass)
+               _SET_BOTTOM_ODE_(self%id_c,-reminT*state)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_bremin,reminT*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_O3c,reminT*state/CMass)
             end if
             if (_VARIABLE_REGISTERED_(self%id_p)) then
                _GET_HORIZONTAL_(self%id_p,state)
-               _SET_BOTTOM_ODE_(self%id_p,-self%reminQIX*state)
-               _SET_BOTTOM_EXCHANGE_(self%id_N1p,self%reminQIX*state)
-               _SET_BOTTOM_EXCHANGE_(self%id_TA, -self%reminQIX*state)
+               _SET_BOTTOM_ODE_(self%id_p,-reminT*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_N1p,reminT*state)
+              ! _SET_BOTTOM_EXCHANGE_(self%id_TA, -reminT*state)
             end if
             if (_VARIABLE_REGISTERED_(self%id_n)) then
                _GET_HORIZONTAL_(self%id_n,state)
-               _SET_BOTTOM_ODE_(self%id_n,-self%reminQIX*state)
-               _SET_BOTTOM_EXCHANGE_(self%id_N3n,self%pQIN3X*self%reminQIX*state)
-               _SET_BOTTOM_EXCHANGE_(self%id_N4n,(1.0_rk-self%pQIN3X)*self%reminQIX*state)
-               _SET_BOTTOM_EXCHANGE_(self%id_TA,(1.0_rk-self%pQIN3X)*self%reminQIX*state - self%pQIN3X*self%reminQIX*state)
+               _SET_BOTTOM_ODE_(self%id_n,-reminT*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_N3n,self%pQIN3X*reminT*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_N4n,(1.0_rk-self%pQIN3X)*reminT*state)
+            !   _SET_BOTTOM_EXCHANGE_(self%id_TA,(1.0_rk-self%pQIN3X)*reminT*state - self%pQIN3X*reminT*state)
             end if
             if (_VARIABLE_REGISTERED_(self%id_s)) then
                _GET_HORIZONTAL_(self%id_s,state)
-               _SET_BOTTOM_ODE_(self%id_s,-self%reminQIX*state)
-               _SET_BOTTOM_EXCHANGE_(self%id_N5s,self%reminQIX*state)
+               _SET_BOTTOM_ODE_(self%id_s,-reminT*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_N5s,reminT*state)
             end if
             if (_VARIABLE_REGISTERED_(self%id_f)) then
                _GET_HORIZONTAL_(self%id_f,state)
-               _SET_BOTTOM_ODE_(self%id_f,-self%reminQIX*state)
-               _SET_BOTTOM_EXCHANGE_(self%id_N7f,self%reminQIX*state)
+               _SET_BOTTOM_ODE_(self%id_f,-reminT*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_N7f,reminT*state)
             end if
          end if   ! Remineralization (benthic return)
 
