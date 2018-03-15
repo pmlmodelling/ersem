@@ -342,7 +342,7 @@ module ersem_benthic_column_particulate_matter
    type,extends(type_particle_model),public :: type_ersem_benthic_pom_layer
       type (type_constituent_in_single_layer), allocatable :: constituents(:)
       type (type_horizontal_dependency_id) :: id_d_tot ! only used if variable_maximum_depth is set
-
+      type (type_bottom_state_variable_id) :: id_remin_ox
       ! Layer extents
       logical :: variable_minimum_depth                        ! if not set, use minimum depth; if set, take dynamic minimum depth from variable (e.g., depth of oxygenated layer)
       logical :: variable_maximum_depth                        ! if not set, use maximum depth; if set, take dynamic maximum depth from variable (e.g., depth of oxygenated layer)
@@ -362,6 +362,11 @@ module ersem_benthic_column_particulate_matter
       type (type_bottom_state_variable_id) :: id_int           ! column-integrated mass
       type (type_bottom_state_variable_id) :: id_pen_depth     ! penetration depth
       type (type_bottom_state_variable_id) :: id_remin_target  ! target variable for remineralized matter
+      type (type_bottom_state_variable_id) :: id_remin_ox      ! consumption of a product due to mineralisation
+      type (type_horizontal_diagnostic_variable_id) :: id_remin_flux
+      real(rk) :: remin_scale_factor=1._rk
+      type(type_dependency_id) :: id_ETW
+      real(rk) :: q10
       type (type_horizontal_dependency_id) :: id_d_tot         ! depth of entire sediment column
       type (type_horizontal_dependency_id) :: id_pen_depth_c   ! penetration depth of carbon (only for source_depth_distribution==3!)
 
@@ -684,7 +689,14 @@ contains
          ! Register submodel dependencies: layer-integrated mass (subject to remineralization) and sink for remineralized matter.
          call change_processor%register_dependency(change_processor%id_local,name,units//'/m^2','layer-integrated '//long_name)
          call change_processor%register_state_dependency(change_processor%id_remin_target,name//'_remin_target',units//'/m^2','sink for remineralized '//long_name)
-
+         if (name=='c') then 
+             call self%register_state_dependency(self%id_remin_ox,'G2o','mmol O_2/m^2','oxygen')
+             change_processor%remin_scale_factor=CMass 
+             call change_processor%register_state_dependency(change_processor%id_remin_ox,'G2o','mmol O_2/m^2','oxygen')
+             call change_processor%request_coupling(change_processor%id_remin_ox, '../G2o')
+         end if
+         call change_processor%register_diagnostic_variable(change_processor%id_remin_flux,'remin_flux',units//'m^2/d','mineralisation flux')
+         call self%get_parameter(change_processor%q10,'q10',  '-','Q_10 temperature coefficient',default=1.0_rk)
          ! Couple submodel dependencies to top-level ("self") equivalents.
          ! For the remineralization target, register an alias at the top level so that it can be coupled directly from fabm.yaml.
          call change_processor%request_coupling(change_processor%id_local,'../'//name)
@@ -748,7 +760,7 @@ contains
       real(rk) :: c_int,d_pen,d_pen_c,sms,d_sms
       real(rk) :: c_int_local,sms_remin, d_tot
       real(rk),parameter :: max_relax = 4.0_rk   ! max relaxation rate for penetration depth (1/d)
-      real(rk) :: relax
+      real(rk) :: relax,eT,ETW
 
       _HORIZONTAL_LOOP_BEGIN_
          ! Determine top and bottom of desired depth interval.
@@ -782,9 +794,13 @@ contains
 
          ! Add local remineralization
          if (self%remin/=0.0_rk) then
+            _GET_(self%id_ETW,ETW)
+            eT  = max(0.0_rk,self%q10**((ETW-10._rk)/10._rk))
             _GET_HORIZONTAL_(self%id_local,c_int_local)
-            sms_remin = self%remin*c_int_local
-            _SET_BOTTOM_ODE_(self%id_remin_target,sms_remin)
+            sms_remin = self%remin*c_int_local*eT
+            _SET_BOTTOM_ODE_(self%id_remin_target,sms_remin/self%remin_scale_factor)
+            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_remin_flux,sms_remin)
+            if (_VARIABLE_REGISTERED_(self%id_remin_ox)) _SET_BOTTOM_ODE_(self%id_remin_ox,-sms_remin/self%remin_scale_factor)
             sms = sms - sms_remin
          end if
 
