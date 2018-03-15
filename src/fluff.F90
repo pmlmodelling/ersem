@@ -16,7 +16,7 @@ module ersem_fluff
       ! Target variables for sedimentation
       type (type_model_id),allocatable,dimension(:)        :: id_target
       type (type_bottom_state_variable_id),allocatable,dimension(:)      :: id_targetc,id_targetn,id_targetp,id_targets,id_targetf
-      type (type_horizontal_diagnostic_variable_id) :: id_Q5inc
+      type (type_horizontal_diagnostic_variable_id) :: id_Q5inc(:)
       real(rk) :: sdQ5
       integer :: ndeposition
       real(rk),allocatable :: qxc(:),qxn(:),qxp(:),qxs(:),qxf(:)
@@ -66,14 +66,15 @@ contains
          allocate(self%id_targets(self%ndeposition))
       if (use_iron) allocate(self%id_targetf(self%ndeposition))
 
+      allocate(self%id_Q5inc(self%ndeposition))
+
       do idep=1,self%ndeposition
         write(num,'(i0)') idep
         call self%register_model_dependency(self%id_target(idep),'deposition_target'//trim(num))
         if (self%qxc(idep)/=0) then
          call self%register_state_dependency(self%id_targetc(idep),'deposition_target'//trim(num)//'c','mg C/m^2','deposition_target '//trim(num)//' carbon')
          call self%request_coupling_to_model(self%id_targetc(idep),self%id_target(idep),'c')
-         call self%register_diagnostic_variable(self%id_Q5inc,'Q5inc','mg C/m^2/d','Q5 to Q6',domain=domain_bottom,source=source_do_bottom)
-
+         call self%register_diagnostic_variable(self%id_Q5inc(idep),'Q5inc'//trim(num)//,'mg C/m^2/d','Q5 to Q6',domain=domain_bottom,source=source_do_bottom)
         end if
         if (self%qxn(idep)/=0) then
          call self%register_state_dependency(self%id_targetn(idep),'deposition_target'//trim(num)//'n','mmol N/m^2','deposition_target '//trim(num)//' nitrogen')
@@ -121,10 +122,10 @@ contains
          if (_VARIABLE_REGISTERED_(self%id_c)) then
             _GET_HORIZONTAL_(self%id_c,Pc)
             fsdc = self%sdQ5*Pc
-            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_Q5inc,fsdc)
             do idep=1,self%ndeposition
               if (self%qxc(idep)/=0) then
               _SET_BOTTOM_ODE_(self%id_targetc(idep), fsdc*self%qxc(idep))
+              _SET_HORIZONTAL_DIAGNOSTIC_(self%id_Q5inc(idep),fsdc*self%qxc(idep))
               end if
             end do
             _SET_BOTTOM_ODE_(self%id_c,-fsdc)
