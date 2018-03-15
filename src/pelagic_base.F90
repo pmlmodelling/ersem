@@ -23,6 +23,7 @@ module ersem_pelagic_base
       type (type_bottom_state_variable_id),allocatable,dimension(:) :: id_targetc,id_targetn,id_targetp,id_targets,id_targetf
 
       real(rk) :: rm = 0.0_rk
+      real(rk) :: tdep
       integer :: ndeposition
       logical :: no_river_dilution = .false.
       real(rk),allocatable :: qxc(:),qxn(:),qxp(:),qxs(:),qxf(:)
@@ -47,6 +48,12 @@ contains
 
       call self%get_parameter(composition, 'composition', '', 'elemental composition')
       call self%get_parameter(c0, 'c0', 'mg C/m^3', 'background carbon concentration', default=0.0_rk, minimum=0.0_rk)
+
+      ! Bed characteristics - from Puls and Sundermann 1990
+      ! Critical bed shear velocity = 0.01 m/s
+      call self%get_parameter(self%tdep,'tdep','m/s','critical bed shear velocity',default=0.01_rk)
+
+
 
       if (index(composition,'c')/=0) then
          ! Carbon-based light attenuation [optional, off by default]
@@ -214,10 +221,7 @@ contains
       class (type_ersem_pelagic_base), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
-      ! Bed characteristics - from Puls and Sundermann 1990
-      ! Critical bed shear velocity = 0.01 m/s
-      real(rk) :: tdep = 0.01_rk**2
-
+      real(rk) :: tdep
       real(rk) :: tbed,density
       real(rk) :: fac,sdrate
       real(rk) :: w,conc,flux
@@ -242,6 +246,9 @@ contains
 
          ! Divide actual bed stress (Pa) by density (kg/m^3) to obtain square of bed shear velocity.
          tbed = tbed/density
+         
+         ! Use square of critical bed shear velocity
+         tdep = self%tdep**2
 
          if(tbed<tdep) then
             ! Bed stress is low enough to allow some sedimentation.
