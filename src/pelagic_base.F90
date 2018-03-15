@@ -23,7 +23,7 @@ module ersem_pelagic_base
       type (type_bottom_state_variable_id),allocatable,dimension(:) :: id_targetc,id_targetn,id_targetp,id_targets,id_targetf
 
       real(rk) :: rm = 0.0_rk
-      real(rk) :: tdep
+      real(rk) :: vel_crit
       integer :: ndeposition
       logical :: no_river_dilution = .false.
       real(rk),allocatable :: qxc(:),qxn(:),qxp(:),qxs(:),qxf(:)
@@ -51,7 +51,7 @@ contains
 
       ! Bed characteristics - from Puls and Sundermann 1990
       ! Critical bed shear velocity = 0.01 m/s
-      call self%get_parameter(self%tdep,'tdep','m/s','critical bed shear velocity',default=0.01_rk)
+      call self%get_parameter(self%vel_crit,'vel_crit','m/s','critical bed shear velocity',default=0.01_rk)
 
 
 
@@ -248,7 +248,7 @@ contains
          tbed = tbed/density
          
          ! Use square of critical bed shear velocity
-         tdep = self%tdep**2
+         tdep = self%vel_crit**2
 
          if(tbed<tdep) then
             ! Bed stress is low enough to allow some sedimentation.
