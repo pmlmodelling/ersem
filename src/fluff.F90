@@ -32,7 +32,6 @@ contains
       integer,                               intent(in)            :: configunit
       integer :: idep
       character(len=16) :: num
-         character(len=10) :: composition
          call self%type_ersem_benthic_base%initialize(configunit)
 
          call self%get_parameter(self%sd,'sd','d-1','rate of fluff incorporation into sediments')
@@ -104,8 +103,6 @@ contains
         end if
 
       end do
-
-         call self%get_parameter(composition,'composition','','elemental composition')
 
    end subroutine initialize
 
