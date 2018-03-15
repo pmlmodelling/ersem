@@ -66,6 +66,7 @@ contains
       call self%add_constituent('c',0.0_rk,c0,qn=self%qnc,qp=self%qpc)
 
       ! Environmental dependencies
+      call self%register_dependency(self%id_ETW,standard_variables%temperature)
       call self%register_dependency(self%id_Dm,'Dm','m','depth interval available to bacteria')
 
       call self%get_parameter(self%nfood,'nfood','','number of food sources')

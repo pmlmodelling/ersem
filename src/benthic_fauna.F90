@@ -95,6 +95,7 @@ contains
       call self%add_constituent('c',3000._rk,c0,qn=self%qnc,qp=self%qpc)
 
       ! Environmental dependencies
+      call self%register_dependency(self%id_ETW,standard_variables%temperature)
       call self%register_dependency(self%id_Dm,'Dm','m','depth of limiting layer for uptake')
 
       ! Dependencies on state variables of external modules
