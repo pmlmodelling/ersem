@@ -256,14 +256,14 @@ contains
                _GET_HORIZONTAL_(self%id_p,state)
                _SET_BOTTOM_ODE_(self%id_p,-reminT*state)
                _SET_BOTTOM_EXCHANGE_(self%id_N1p,reminT*state)
-              ! _SET_BOTTOM_EXCHANGE_(self%id_TA, -reminT*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_TA, -reminT*state)
             end if
             if (_VARIABLE_REGISTERED_(self%id_n)) then
                _GET_HORIZONTAL_(self%id_n,state)
                _SET_BOTTOM_ODE_(self%id_n,-reminT*state)
                _SET_BOTTOM_EXCHANGE_(self%id_N3n,self%pQIN3X*reminT*state)
                _SET_BOTTOM_EXCHANGE_(self%id_N4n,(1.0_rk-self%pQIN3X)*reminT*state)
-            !   _SET_BOTTOM_EXCHANGE_(self%id_TA,(1.0_rk-self%pQIN3X)*reminT*state - self%pQIN3X*reminT*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_TA,(1.0_rk-self%pQIN3X)*reminT*state - self%pQIN3X*reminT*state)
             end if
             if (_VARIABLE_REGISTERED_(self%id_s)) then
                _GET_HORIZONTAL_(self%id_s,state)
