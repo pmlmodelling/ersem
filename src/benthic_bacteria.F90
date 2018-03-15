@@ -31,11 +31,9 @@ module ersem_benthic_bacteria
       type (type_horizontal_diagnostic_variable_id) :: id_fHKIn,id_fHK1p
       type (type_horizontal_diagnostic_variable_id) :: id_fHQ1c,id_fHQPc,id_fHQ1n,id_fHQPn,id_fHQ1p,id_fHQPp
       type (type_horizontal_dependency_id) :: id_Dm
-      type (type_dependency_id) :: id_ETW
 
       integer  :: nfood
       real(rk) :: qnc,qpc
-      real(rk) :: q10
       real(rk) :: dd
       real(rk) :: pur,sr
       real(rk) :: pdQ1
@@ -68,7 +66,6 @@ contains
       call self%add_constituent('c',0.0_rk,c0,qn=self%qnc,qp=self%qpc)
 
       ! Environmental dependencies
-      call self%register_dependency(self%id_ETW,standard_variables%temperature)
       call self%register_dependency(self%id_Dm,'Dm','m','depth interval available to bacteria')
 
       call self%get_parameter(self%nfood,'nfood','','number of food sources')

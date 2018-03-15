@@ -35,14 +35,12 @@ module ersem_benthic_fauna
       type (type_state_variable_id)   :: id_O2o
       type (type_bottom_state_variable_id) :: id_Q6c,id_Q6n,id_Q6p,id_Q6s,id_benTA,id_benTA2
       type (type_bottom_state_variable_id) :: id_G3c,id_G2o,id_K4n,id_K1p,id_K4n2,id_K1p2
-      type (type_dependency_id) :: id_ETW
       type (type_horizontal_dependency_id) :: id_Dm
       type (type_horizontal_diagnostic_variable_id) :: id_bioirr,id_biotur,id_fYG3c, id_fYKIn,id_fYK1p,id_fYQPc,id_fYQPn,id_fYQPp
       type (type_food), allocatable :: food(:)
 
       integer  :: nfood
       real(rk) :: qnc,qpc
-      real(rk) :: q10
       real(rk) :: hO2,rlO2
       real(rk) :: xcl,xcs,xch
       real(rk) :: su,lu,hu
@@ -97,7 +95,6 @@ contains
       call self%add_constituent('c',3000._rk,c0,qn=self%qnc,qp=self%qpc)
 
       ! Environmental dependencies
-      call self%register_dependency(self%id_ETW,standard_variables%temperature)
       call self%register_dependency(self%id_Dm,'Dm','m','depth of limiting layer for uptake')
 
       ! Dependencies on state variables of external modules
