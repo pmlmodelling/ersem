@@ -17,10 +17,12 @@ module ersem_benthic_carbonate
 
       type (type_horizontal_diagnostic_variable_id) :: id_ph,id_pco2,id_CarbA, id_BiCarb, id_Carb
       type (type_horizontal_diagnostic_variable_id) :: id_Om_cal,id_Om_arg
+      integer :: phscale
 
    contains
       procedure :: initialize
       procedure :: do_bottom
+
    end type
 
 contains
@@ -30,6 +32,7 @@ contains
       class (type_ersem_benthic_carbonate), intent(inout), target :: self
       integer,                      intent(in)            :: configunit
 
+      call self%get_parameter(self%phscale,'pHscale','','pHscale (0: SWS, 1: total)',default=1)
       call self%register_horizontal_dependency(self%id_G3c,'G3c','mmol C/m^2','carbon dioxide')
       call self%register_horizontal_dependency(self%id_benTA,'benTA','mmol eq/m^2','benthic alkalinity')
       call self%register_diagnostic_variable(self%id_ph,    'pH',    '-','pH',domain=domain_bottom)
@@ -55,7 +58,7 @@ contains
       real(rk) :: O3c,ETW,X1X,density,pres
       real(rk) :: TA,Ctot
       real(rk) :: pH,PCO2,H2CO3,HCO3,CO3,k0co2
-      real(rk) :: Om_cal,Om_arg
+      real(rk) :: Om_cal,Om_arg,sws2total
       logical  :: success
 
       _HORIZONTAL_LOOP_BEGIN_
@@ -69,10 +72,13 @@ contains
 
          TA = TA/1.0e6_rk                ! from umol kg-1 to mol kg-1
          Ctot  = O3C / 1.e3_rk / density ! from mmol m-3 to mol kg-1
-         call co2dyn (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success)   ! NB pressure from dbar to bar
+         call co2dyn (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total,success)   ! NB pressure from dbar to bar
          if (success) then
             ! Carbonate system iterative scheme converged -  save associated diagnostics.
             ! Convert outputs from fraction to ppm (pCO2) and from mol kg-1 to mmol m-3 (concentrations).
+            if (self%phscale==1) then
+                    pH=pH+sws2total
+            endif
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_ph,pH)
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_pco2,PCO2*1.e6_rk)
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_CarbA, H2CO3*1.e3_rk*density)

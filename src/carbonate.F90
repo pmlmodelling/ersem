@@ -21,7 +21,7 @@ module ersem_carbonate
 
       type (type_horizontal_diagnostic_variable_id) :: id_fair,id_wnd_diag
 
-      integer :: iswCO2X,iswtalk,iswASFLUX
+      integer :: iswCO2X,iswtalk,iswASFLUX,phscale
    contains
       procedure :: initialize
       procedure :: do
@@ -46,6 +46,7 @@ contains
       call self%get_parameter(self%iswCO2X,'iswCO2','','carbonate system diagnostics (0: off, 1: on)',default=1)
       call self%get_parameter(self%iswASFLUX,'iswASFLUX','','air-sea CO2 exchange (0: none, 1: Nightingale and Liss, 2: Wanninkhof 1992 without chemical enhancement, 3: Wanninkhof 1992 with chemical enhancement, 4: Wanninkhof 1999)',default=1)
       call self%get_parameter(self%iswtalk,'iswtalk','','alkalinity formulation (1-4: from salinity and temperature, 5: dynamic alkalinity)',default=5)
+      call self%get_parameter(self%phscale,'pHscale','','pHscale (0: SWS, 1: total)',default=1)
       if (self%iswtalk<1.or.self%iswtalk>5) call self%fatal_error('initialize','iswtalk takes values between 1 and 5 only')
 
       call self%register_state_variable(self%id_O3c,'c','mmol C/m^3','total dissolved inorganic carbon', 2200._rk,minimum=0._rk)
@@ -146,7 +147,7 @@ contains
 
       real(rk) :: O3c,ETW,X1X,density,pres
       real(rk) :: TA,bioalk,Ctot
-      real(rk) :: pH,PCO2,H2CO3,HCO3,CO3,k0co2
+      real(rk) :: pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total
       real(rk) :: Om_cal,Om_arg
       logical  :: success
 
@@ -177,7 +178,7 @@ contains
          TA = TA/1.0e6_rk                ! from umol kg-1 to mol kg-1
          Ctot  = O3C / 1.e3_rk / density ! from mmol m-3 to mol kg-1
 
-         CALL CO2DYN (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success)   ! NB pressure from dbar to bar
+         CALL CO2DYN (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total,success)   ! NB pressure from dbar to bar
 
          if (.not.success) then
             ! Carbonate system iterative scheme did not converge.
@@ -193,12 +194,17 @@ contains
             H2CO3 = H2CO3/1.e3_rk/density  ! from mmol/m3 to mol/kg
             pCO2 = pCO2/1.e6_rk  ! from uatm to atm
          endif
-         _SET_DIAGNOSTIC_(self%id_ph,pH)
          _SET_DIAGNOSTIC_(self%id_pco2,PCO2*1.e6_rk)
          _SET_DIAGNOSTIC_(self%id_CarbA, H2CO3*1.e3_rk*density)
          _SET_DIAGNOSTIC_(self%id_Bicarb,HCO3*1.e3_rk*density)
          _SET_DIAGNOSTIC_(self%id_Carb,  CO3*1.e3_rk*density)
-
+         if ((success).and.(self%phscale==1)) then
+            pH=pH+sws2total
+            _SET_DIAGNOSTIC_(self%id_ph,pH)
+         else
+            _SET_DIAGNOSTIC_(self%id_ph,pH)
+         endif
+         
          ! Call carbonate saturation state subroutine
          CALL CaCO3_Saturation (ETW, X1X, pres*1.e4_rk, CO3, Om_cal, Om_arg)  ! NB pressure from dbar to Pa
 
@@ -215,7 +221,7 @@ contains
       real(rk) :: wnd,PCO2A
       real(rk) :: sc,fwind,UPTAKE,FAIRCO2
 
-      real(rk) :: ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2
+      real(rk) :: ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total
       logical  :: success
 
       if (self%iswASFLUX<=0) return
@@ -250,7 +256,7 @@ contains
 !  for surface box only calculate air-sea flux
 !..Only call after 2 days, because the derivation of instability in the
 !..
-         CALL CO2dyn(T, S, PRSS*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success)
+         CALL CO2dyn(T, S, PRSS*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total,success)
          if (.not.success) then
             _GET_(self%id_pco2_in,PCO2)
             PCO2 = PCO2*1.e-6_rk
@@ -300,13 +306,13 @@ contains
 !\\
 !\\
 ! !INTERFACE:
-      SUBROUTINE CO2dyn ( T, S, PRSS,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success)
+      SUBROUTINE CO2dyn ( T, S, PRSS,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total,success)
 !
 ! !LOCAL VARIABLES:
 !     ! TODO - SORT THESE!
       real(rk),intent(in) :: T, S, PRSS   ! NB PRSS is pressure in bar
       real(rk),intent(inout) :: ctot,TA
-      real(rk),intent(out) :: pH,PCO2,H2CO3,HCO3,CO3,k0co2
+      real(rk),intent(out) :: pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total
       logical, intent(out) :: success
 
       real(rk) :: k1co2,k2co2,kb
@@ -331,7 +337,7 @@ contains
         BTOT=0.0004128_rk*S/35._rk
       ENDIF
 
-      CALL CO2SET(PRSS,Tmax,S,k0co2,k1co2,k2co2,kb)
+      CALL CO2SET(PRSS,Tmax,S,k0co2,k1co2,k2co2,kb,sws2total)
       CALL CO2CLC(k0co2,k1co2,k2co2,kb,ICALC,BORON,BTOT,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,success)
 
       END SUBROUTINE CO2DYN
@@ -370,9 +376,9 @@ contains
 !\\
 !\\
 ! !INTERFACE:
-      SUBROUTINE CO2SET(P,T,S,k0co2,k1co2,k2co2,kb)
+      SUBROUTINE CO2SET(P,T,S,k0co2,k1co2,k2co2,kb,sws2total)
          real(rk),intent(in)  :: P,T,S
-         real(rk),intent(out) :: k0co2,k1co2,k2co2,kb
+         real(rk),intent(out) :: k0co2,k1co2,k2co2,kb,sws2total
 !
 ! !USES:
 !
@@ -381,6 +387,8 @@ contains
       real(rk)              :: TK, delta, kappa
       real(rk)              :: dlogTK, S2, S15, sqrtS,TK100
       real(rk),parameter    :: Rgas = 83.131_rk
+      real(rk)              :: ST, FT, kS,kF, Cl
+      real(rk)              :: is,sqrtis,invtk, total2free_surface,total2free_depth
 
 !
 ! !REVISION HISTORY:
@@ -395,6 +403,7 @@ contains
 
 !  Derive simple terms used more than once
        TK=T+273.15_rk
+       invtk=1._rk/TK
        dlogTK = log(TK)
        TK100=TK/100._rk
        S2 = S*S
@@ -453,7 +462,48 @@ contains
         kappa=-2.84_rk/1000._rk
         kb=kb*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
 
-      END SUBROUTINE CO2SET
+! is : ionic strength, needed to calculate ks 
+        is = 19.924_rk*S/(1000._rk-1.005_rk*S)
+        sqrtis=sqrt(is)
+
+! cl : Chloride concentration, used to calculate total sulphate and total fluoride
+       cl = S / 1.80655_rk
+
+! st : total sulfate using Morris & Riley, Deep Sea Research, 1966
+! .14 is the S:Cl ratio obseved, 96.065 is the molecular weight of SO4--
+        st= 0.14_rk * cl / 96.065_rk
+
+! ks = [H][SO4]/[HSO4] in free scale from Dickson, J. chem. Thermodynamics, 1990
+        ks=exp(-4276.1d0*invtk + 141.328d0 - 23.093d0*dlogtk &
+     &      + (-13856.d0*invtk + 324.57d0 - 47.986d0*dlogtk) * sqrtis &
+     &      + (35474.d0*invtk - 771.54 + 114.723d0*dlogtk) * is &
+     &      - 2698.d0*invtk*is**1.5 + 1776.d0*invtk*is**2._rk &
+     &      + log(1.0d0 - 0.001005d0*s))
+! this is the conversion factor from total scale to free scale at surface
+        total2free_surface = 1._rk/(1._rk + st/ks)
+
+! Correction for high pressure (from Mocsy)
+        delta=-9.78_rk-0.009_rk*T-0.000942_rk*T**2._rk
+        kappa=-3.91_rk+0.000054_rk*T
+        ks=ks*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
+! this is the conversion factor from total scale to free scale at depth
+        total2free_depth = 1._rk/(1._rk + st/ks)
+
+! ft : total fluoride using Riley, Analytica chimica Acta, 1966
+! .14 is the S:Cl ratio obseved, 96.065 is the molecular weight of F-
+        ft= 0.000067_rk * cl / 19.9984_rk
+
+! kf = [H][F]/[HF] in total scale from Perez and Fraga (1987)
+!          Formulation as given in Dickson et al. (2007)
+         kf = exp(874.d0*invtk - 9.68d0 + 0.111d0*sqrts)
+! Correction for high pressure (from Mocsy) - this requires kf being in free scale, final value still in total scale
+        delta=-18.03_rk+0.0466_rk*T+0.000316_rk*T**2._rk
+        kappa=-4.53_rk+0.00009_rk*T
+        kf=kf*total2free_surface*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))/total2free_depth
+
+! conversion factor for pH from SWS to total scale
+        SWS2total=log((1._rk+st/ks+ft/(kf*total2free_depth))/(1._rk+st/ks))
+         END SUBROUTINE CO2SET
 !
 !EOC
 !-----------------------------------------------------------------------
