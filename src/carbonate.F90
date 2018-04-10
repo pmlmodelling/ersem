@@ -166,8 +166,6 @@ contains
          _GET_(self%id_dens,density)
          _GET_(self%id_pres,pres)
 
-         write (6,*) 'dens:',density
-
          ! Calculate total alkalinity
          if (self%iswtalk/=5) then
             ! Alkalinity is parameterized as function of salinity and temperature.
@@ -452,20 +450,11 @@ contains
 !  Calculation of constants as used in the OCMIP process for ICONST = 3 or 6
 !  see http://www.ipsl.jussieu.fr/OCMIP/
 ! k0co2 = CO2/fCO2 from Weiss 1974
-        k0co2 = exp(93.4517/tk100 - 60.2409 + 23.3585 * log(tk100) + &
-        &       s * (.023517 - 0.023656 * tk100 + 0.0047036 * tk100 ** 2._rk))
-
-! the commented definition of K0co2 herebelow is the one giving bit-identical output to the old CO2sys module
-!        VAL=-167.8108_rk + 9345.17_rk/TK + 23.3585_rk*LOG(TK)
-!        VAL=VAL + (0.023517_rk-2.3656e-4_rk*TK+4.7036e-7_rk*TK*TK)*S
-!        k0co2=EXP(VAL)
-! end of old definition
-
-! Correction for high pressure of K0 (from Millero 1995)
-! added YA 04/10/2010
-        delta=-25.6_rk+0.2324_rk*T-0.0036246_rk*T**2
-        kappa=(-5.13_rk+0.0794_rk*T)/1000._rk
-        k0co2=k0co2*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
+        k0co2 = exp(93.4517_rk/tk100 - 60.2409_rk + 23.3585_rk * log(tk100) + &
+        &       s * (.023517_rk - 0.023656_rk * tk100 + 0.0047036_rk * tk100 ** 2._rk))
+! correction for high pressure from Weiss 1974
+!        vbarCO2 = 32.3      partial molal volume (cm3 / mol) from Weiss (1974, Appendix, paragraph 3)
+        k0co2 = k0co2 * exp( ((1-P)*32.3_rk)/(Rgas*tk) )
 
 ! kb = [H][BO2]/[HBO2]
 ! Millero p.669 (1995) using data from Dickson (1990)
