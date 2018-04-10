@@ -46,7 +46,7 @@ contains
       call self%get_parameter(self%iswCO2X,'iswCO2','','carbonate system diagnostics (0: off, 1: on)',default=1)
       call self%get_parameter(self%iswASFLUX,'iswASFLUX','','air-sea CO2 exchange (0: none, 1: Nightingale and Liss, 2: Wanninkhof 1992 without chemical enhancement, 3: Wanninkhof 1992 with chemical enhancement, 4: Wanninkhof 1999)',default=1)
       call self%get_parameter(self%iswtalk,'iswtalk','','alkalinity formulation (1-4: from salinity and temperature, 5: dynamic alkalinity)',default=5)
-      call self%get_parameter(self%phscale,'pHscale','','pHscale (0: SWS, 1: total)',default=1)
+      call self%get_parameter(self%phscale,'pHscale','','pHscale (1: total, 0: SWS, -1: SWS backward compatible)',default=1)
       if (self%iswtalk<1.or.self%iswtalk>5) call self%fatal_error('initialize','iswtalk takes values between 1 and 5 only')
 
       call self%register_state_variable(self%id_O3c,'c','mmol C/m^3','total dissolved inorganic carbon', 2200._rk,minimum=0._rk)
@@ -74,7 +74,13 @@ contains
       end if
 
       if (self%iswCO2X==1) then
-         call self%register_diagnostic_variable(self%id_ph,    'pH',    '-',      'pH',standard_variable=standard_variables%ph_reported_on_total_scale,missing_value=0._rk)
+         if (self%phscale==1) then
+             call self%register_diagnostic_variable(self%id_ph,    'pH',    '-',      'pH in total scale',standard_variable=standard_variables%ph_reported_on_total_scale,missing_value=0._rk)
+         elseif (self%phscale==0) then
+             call self%register_diagnostic_variable(self%id_ph,    'pH',    '-',      'pH in seawater scale',standard_variable=standard_variables%ph_reported_on_total_scale,missing_value=0._rk)
+         elseif (self%phscale==-1) then
+             call self%register_diagnostic_variable(self%id_ph,    'pH',    '-',      'pH in seawater scale',standard_variable=standard_variables%ph_reported_on_total_scale,missing_value=0._rk)
+         endif
          call self%register_diagnostic_variable(self%id_pco2,  'pCO2',  '1e-6',    'partial pressure of CO2',missing_value=0._rk)
          call self%register_diagnostic_variable(self%id_CarbA, 'CarbA', 'mmol/m^3','carbonic acid concentration',missing_value=0._rk)
          call self%register_diagnostic_variable(self%id_BiCarb,'BiCarb','mmol/m^3','bicarbonate concentration',missing_value=0._rk)
@@ -160,6 +166,8 @@ contains
          _GET_(self%id_dens,density)
          _GET_(self%id_pres,pres)
 
+         write (6,*) 'dens:',density
+
          ! Calculate total alkalinity
          if (self%iswtalk/=5) then
             ! Alkalinity is parameterized as function of salinity and temperature.
@@ -178,7 +186,7 @@ contains
          TA = TA/1.0e6_rk                ! from umol kg-1 to mol kg-1
          Ctot  = O3C / 1.e3_rk / density ! from mmol m-3 to mol kg-1
 
-         CALL CO2DYN (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total,success)   ! NB pressure from dbar to bar
+         CALL CO2DYN (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total,success,self%phscale)   ! NB pressure from dbar to bar
 
          if (.not.success) then
             ! Carbonate system iterative scheme did not converge.
@@ -198,12 +206,7 @@ contains
          _SET_DIAGNOSTIC_(self%id_CarbA, H2CO3*1.e3_rk*density)
          _SET_DIAGNOSTIC_(self%id_Bicarb,HCO3*1.e3_rk*density)
          _SET_DIAGNOSTIC_(self%id_Carb,  CO3*1.e3_rk*density)
-         if ((success).and.(self%phscale==1)) then
-            pH=pH+sws2total
-            _SET_DIAGNOSTIC_(self%id_ph,pH)
-         else
-            _SET_DIAGNOSTIC_(self%id_ph,pH)
-         endif
+         _SET_DIAGNOSTIC_(self%id_ph,pH)
          
          ! Call carbonate saturation state subroutine
          CALL CaCO3_Saturation (ETW, X1X, pres*1.e4_rk, CO3, Om_cal, Om_arg)  ! NB pressure from dbar to Pa
@@ -256,7 +259,7 @@ contains
 !  for surface box only calculate air-sea flux
 !..Only call after 2 days, because the derivation of instability in the
 !..
-         CALL CO2dyn(T, S, PRSS*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total,success)
+         CALL CO2dyn(T, S, PRSS*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total,success,self%phscale)
          if (.not.success) then
             _GET_(self%id_pco2_in,PCO2)
             PCO2 = PCO2*1.e-6_rk
@@ -306,7 +309,7 @@ contains
 !\\
 !\\
 ! !INTERFACE:
-      SUBROUTINE CO2dyn ( T, S, PRSS,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total,success)
+      SUBROUTINE CO2dyn ( T, S, PRSS,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total,success,hscale)
 !
 ! !LOCAL VARIABLES:
 !     ! TODO - SORT THESE!
@@ -314,6 +317,7 @@ contains
       real(rk),intent(inout) :: ctot,TA
       real(rk),intent(out) :: pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total
       logical, intent(out) :: success
+      integer, intent (in) :: hscale
 
       real(rk) :: k1co2,k2co2,kb
       real(rk) :: Tmax, Btot
@@ -337,7 +341,7 @@ contains
         BTOT=0.0004128_rk*S/35._rk
       ENDIF
 
-      CALL CO2SET(PRSS,Tmax,S,k0co2,k1co2,k2co2,kb,sws2total)
+      CALL CO2SET(PRSS,Tmax,S,k0co2,k1co2,k2co2,kb,hscale)
       CALL CO2CLC(k0co2,k1co2,k2co2,kb,ICALC,BORON,BTOT,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,success)
 
       END SUBROUTINE CO2DYN
@@ -353,32 +357,16 @@ contains
 ! !DESCRIPTION:
 !  TODO - CHECK THIS!
 !
-! Routine to calculate CO2 system constants under the conditions set by
-! P,S,T     (NOTE: PRESSURE <> 1ATM IS NOT YET CODED)
-! I. Calculate constants at P=1 and S=0 using
-!      ln K0  =  A + B/TK + C ln TK
-!                                   (where TK is in Kelvin)
-! II. Calculate constants at P=1 and salinity S using
-!    ln K  =  ln K0 + (a0 + a1/TK + a2 ln TK) S**1/2
-!                 + (b0 + b1TK + b2TK**2) S
-! The sources of the coefficients are as follows:
-!  IC=                  1                    2                  3
-!               (NBS pH scale)        (SWS pH scale       (SWS pH scale
-!                                       with no F)
-!  KP            WEISS (1974)           WEISS(1974)          WEISS(1974
-!  K1C )      MEHRBACH ACC. TO       HANSSON ACC. TO    HANSSON AND MEH
-!  K2C )       MILLERO (1979)         MILLERO (1979)      ACC. TO DICKS
-!   KB )                                                 AND MILLERO (1
-!                                                         (K1C AND K2C
-!                                                           HANSSON ACC
-!                                                            MILLERO (1
-!                                                              (KB ONLY
+! Routine to calculate CO2 system constants under the conditions set by P,S,T
+! This subroutine has been rewritten to calculate constants in total scale 
+! using Millero, Marine and Freshwater Research, 2010 for k1 and k2 to cover low salinity areas
 !\\
 !\\
 ! !INTERFACE:
-      SUBROUTINE CO2SET(P,T,S,k0co2,k1co2,k2co2,kb,sws2total)
+      SUBROUTINE CO2SET(P,T,S,k0co2,k1co2,k2co2,kb,hscale)
          real(rk),intent(in)  :: P,T,S
-         real(rk),intent(out) :: k0co2,k1co2,k2co2,kb,sws2total
+         integer, intent (in) :: hscale
+         real(rk),intent(out) :: k0co2,k1co2,k2co2,kb
 !
 ! !USES:
 !
@@ -388,7 +376,8 @@ contains
       real(rk)              :: dlogTK, S2, S15, sqrtS,TK100
       real(rk),parameter    :: Rgas = 83.131_rk
       real(rk)              :: ST, FT, kS,kF, Cl
-      real(rk)              :: is,sqrtis,invtk, total2free_surface,total2free_depth
+      real(rk)              :: is,sqrtis,invtk,total2free_surface,total2free_depth,free2sws_surface,total2sws_surface
+      real (rk)             :: free2sws_depth,total2sws_depth,pk1co2,pk2co2
 
 !
 ! !REVISION HISTORY:
@@ -410,6 +399,56 @@ contains
        sqrtS = sqrt(S)
        S15 = S**1.5_rk
 
+
+! is : ionic strength, needed to calculate ks 
+        is = 19.924_rk*S/(1000._rk-1.005_rk*S)
+        sqrtis=sqrt(is)
+
+! cl : Chloride concentration, used to calculate total sulphate and total fluoride
+       cl = S / 1.80655_rk
+
+! st : total sulfate using Morris & Riley, Deep Sea Research, 1966
+! .14 is the S:Cl ratio obseved, 96.065 is the molecular weight of SO4--
+        st= 0.14_rk * cl / 96.065_rk
+
+! ks = [H][SO4]/[HSO4] in free scale from Dickson, J. chem. Thermodynamics, 1990 and Perez & Frega, Mar Chem, 1987
+        ks=exp(-4276.1d0*invtk + 141.328d0 - 23.093d0*dlogtk &
+     &      + (-13856.d0*invtk + 324.57d0 - 47.986d0*dlogtk) * sqrtis &
+     &      + (35474.d0*invtk - 771.54 + 114.723d0*dlogtk) * is &
+     &      - 2698.d0*invtk*is**1.5 + 1776.d0*invtk*is**2._rk &
+     &      + log(1.0d0 - 0.001005d0*s))
+
+! ft : total fluoride using Riley, Analytica chimica Acta, 1966
+! .14 is the S:Cl ratio obseved, 96.065 is the molecular weight of F-
+        ft= 0.000067_rk * cl / 19.9984_rk
+
+! kf = [H][F]/[HF] in total scale from Perez and Fraga (1987)
+!          Formulation as given in Dickson et al. (2007)
+         kf = exp(874.d0*invtk - 9.68d0 + 0.111d0*sqrts)
+
+! this is the conversion factor from total scale to free scale at surface
+        total2free_surface = 1._rk/(1._rk + st/ks)
+! this is the conversion factor from free to SWS at surface
+        free2sws_surface= 1._rk + st/ks + ft/kf
+! this is the conversion factor from total to SWS at surface
+        total2sws_surface= total2free_surface*free2sws_surface
+
+! Correction for high pressure (from Mocsy)
+        delta=-18.03_rk+0.0466_rk*T+0.000316_rk*T**2._rk
+        kappa=-4.53_rk+0.00009_rk*T
+        ks=ks*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
+! this is the conversion factor from total scale to free scale at depth
+        total2free_depth = 1._rk/(1._rk + st/ks)
+
+! Correction for high pressure (from Mocsy) - this requires kf being in free scale, final value still in total scale
+        delta=-9.78_rk-0.009_rk*T-0.000942_rk*T**2._rk
+        kappa=-3.91_rk+0.000054_rk*T
+        kf=kf*total2free_surface*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))/total2free_depth
+! this is the conversion factor from free to SWS at depth
+        free2sws_depth= 1._rk + st/ks + ft/(kf*total2free_depth)
+! this is the conversion factor from total to SWS at surface
+        total2sws_depth= total2free_depth*free2sws_depth
+
 !  Calculation of constants as used in the OCMIP process for ICONST = 3 or 6
 !  see http://www.ipsl.jussieu.fr/OCMIP/
 ! k0co2 = CO2/fCO2 from Weiss 1974
@@ -428,27 +467,6 @@ contains
         kappa=(-5.13_rk+0.0794_rk*T)/1000._rk
         k0co2=k0co2*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
 
-! k1co2 = [H][HCO3]/[H2CO3]
-! Millero p.664 (1995) using Mehrbach et al. data on seawater scale
-        k1co2=10._rk**(-1._rk*(3670.7_rk/TK - 62.008_rk + 9.7944_rk*dlogTK - &
-     &     0.0118_rk * S + 0.000116_rk*S2))
-! Correction for high pressure (from Millero 1995)
-! added YA 04/10/2010
-        delta=-25.5_rk+0.1271_rk*T
-        kappa=(-3.08_rk+0.0877_rk*T)/1000._rk
-        k1co2=k1co2*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
-
-! k2co2 = [H][CO3]/[HCO3]
-! Millero p.664 (1995) using Mehrbach et al. data on seawater scale
-        k2co2=10._rk**(-1._rk*(1394.7_rk/TK + 4.777_rk - &
-     &     0.0184_rk*S + 0.000118_rk*S2))
-! Correction for high pressure (from Millero 1995)
-! added YA 04/10/2010
-        delta=-15.82_rk-0.0219_rk*T
-        kappa=(1.13_rk-0.1475_rk*T)/1000._rk
-        k2co2=k2co2*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
-
-
 ! kb = [H][BO2]/[HBO2]
 ! Millero p.669 (1995) using data from Dickson (1990)
         kb=exp((-8966.9_rk - 2890.53_rk*sqrtS - 77.942_rk*S + &
@@ -456,53 +474,62 @@ contains
      &      (148.0248_rk + 137.1942_rk*sqrtS + 1.62142_rk*S) + &
      &      (-24.4344_rk - 25.085_rk*sqrtS - 0.2474_rk*S) * &
      &      dlogTK + 0.053105_rk*sqrtS*TK)
-! Correction for high pressure (from Millero, 1995)
-! added YA 04/10/2010
+
+! k1co2 = [H][HCO3]/[H2CO3]
+! k2co2 = [H][CO3]/[HCO3]
+     if (hscale==-1) then
+           ! if phscale = -1 then we use old formulation for backward compatibility
+           ! Millero p.664 (1995) using Mehrbach et al. data on seawater scale
+           ! kb is left in total scale because this was in the old formulation
+        k1co2=10._rk**(-1._rk*(3670.7_rk/TK - 62.008_rk + 9.7944_rk*dlogTK - &
+     &     0.0118_rk * S + 0.000116_rk*S2))
+        k2co2=10._rk**(-1._rk*(1394.7_rk/TK + 4.777_rk - &
+     &     0.0184_rk*S + 0.000118_rk*S2))
+     else if (hscale==0) then
+           ! if phscale = 0 then we use  Millero 2010 on seawater scale
+           ! kb is converted in seawater scale
+           pk1co2 = -126.34048_rk+6320.813_rk*invtk+19.568224_rk*dlogtk + &
+                &  (13.4038_rk*sqrtS + 0.03206_rk*S - 0.00005242_rk*S**2._rk) + &
+                &  (-530.659_rk *sqrtS - 5.8210_rk *S) * invTK + &
+                &  (-2.0664_rk *sqrts)*dlogTK
+           k1co2 =10._rk**(-pk1co2)
+           pk2co2 = -90.18333_rk+5143.692_rk*invtk+14.613358_rk*dlogtk +&
+                &  (21.3728_rk*sqrtS + 0.1218_rk*S - 0.0003688_rk*S**2._rk) + &
+                &  (-788.289_rk *sqrtS - 19.189_rk *S) * invTK + &
+                &  (-3.374_rk *sqrts)*dlogTK
+           k2co2=10._rk**(-pk2co2)
+           kb=kb*total2sws_depth
+      else if (hscale==1) then
+           ! if phscale = 1 then we use  Millero 2010 on total scale
+           pk1co2 = -126.34048_rk+6320.813_rk*invtk+19.568224_rk*dlogtk + &
+                &  (13.4051_rk*sqrtS + 0.03185_rk*S - 0.00005218_rk*S**2._rk) + &
+                &  (-531.095_rk *sqrtS - 5.7789 *S) * invTK + &
+                &  (-2.0663_rk *sqrts)*dlogTK
+           k1co2 = 10._rk**(-pk1co2)
+           pk2co2 = -90.18333_rk+5143.692_rk*invtk+14.613358_rk*dlogtk +&
+                &  (21.5724_rk*sqrtS + 0.1212_rk*S - 0.0003714_rk*S**2._rk) + &
+                &  (-798.292_rk *sqrtS - 18.951_rk *S) * invTK + &
+                &  (-3.403_rk *sqrts)*dlogTK
+           k2co2=10._rk**(-pk2co2)
+      endif
+
+! here k1, k2, kb are corrected for high pressure using Millero 1995
+! please not that MOCSY assume that this correction is valid for SWSscale, so it first convert everything to SWS then back to total
+! differences are minimal
+! correction of k1co2
+        delta=-25.5_rk+0.1271_rk*T
+        kappa=(-3.08_rk+0.0877_rk*T)/1000._rk
+        k1co2=k1co2*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
+
+! Correction for k2co2
+        delta=-15.82_rk-0.0219_rk*T
+        kappa=(1.13_rk-0.1475_rk*T)/1000._rk
+        k2co2=k2co2*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
+
+! Correction for kb
         delta=-29.48_rk+0.1622_rk*T-0.002608_rk*T**2._rk
         kappa=-2.84_rk/1000._rk
         kb=kb*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
-
-! is : ionic strength, needed to calculate ks 
-        is = 19.924_rk*S/(1000._rk-1.005_rk*S)
-        sqrtis=sqrt(is)
-
-! cl : Chloride concentration, used to calculate total sulphate and total fluoride
-       cl = S / 1.80655_rk
-
-! st : total sulfate using Morris & Riley, Deep Sea Research, 1966
-! .14 is the S:Cl ratio obseved, 96.065 is the molecular weight of SO4--
-        st= 0.14_rk * cl / 96.065_rk
-
-! ks = [H][SO4]/[HSO4] in free scale from Dickson, J. chem. Thermodynamics, 1990
-        ks=exp(-4276.1d0*invtk + 141.328d0 - 23.093d0*dlogtk &
-     &      + (-13856.d0*invtk + 324.57d0 - 47.986d0*dlogtk) * sqrtis &
-     &      + (35474.d0*invtk - 771.54 + 114.723d0*dlogtk) * is &
-     &      - 2698.d0*invtk*is**1.5 + 1776.d0*invtk*is**2._rk &
-     &      + log(1.0d0 - 0.001005d0*s))
-! this is the conversion factor from total scale to free scale at surface
-        total2free_surface = 1._rk/(1._rk + st/ks)
-
-! Correction for high pressure (from Mocsy)
-        delta=-18.03_rk+0.0466_rk*T+0.000316_rk*T**2._rk
-        kappa=-4.53_rk+0.00009_rk*T
-        ks=ks*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
-! this is the conversion factor from total scale to free scale at depth
-        total2free_depth = 1._rk/(1._rk + st/ks)
-
-! ft : total fluoride using Riley, Analytica chimica Acta, 1966
-! .14 is the S:Cl ratio obseved, 96.065 is the molecular weight of F-
-        ft= 0.000067_rk * cl / 19.9984_rk
-
-! kf = [H][F]/[HF] in total scale from Perez and Fraga (1987)
-!          Formulation as given in Dickson et al. (2007)
-         kf = exp(874.d0*invtk - 9.68d0 + 0.111d0*sqrts)
-! Correction for high pressure (from Mocsy) - this requires kf being in free scale, final value still in total scale
-        delta=-9.78_rk-0.009_rk*T-0.000942_rk*T**2._rk
-        kappa=-3.91_rk+0.000054_rk*T
-        kf=kf*total2free_surface*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))/total2free_depth
-
-! conversion factor for pH from SWS to total scale
-        SWS2total=log((1._rk+st/ks+ft/(kf*total2free_depth))/(1._rk+st/ks))
          END SUBROUTINE CO2SET
 !
 !EOC
