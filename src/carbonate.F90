@@ -483,8 +483,8 @@ contains
         total2free_surface = 1._rk/(1._rk + st/ks)
 
 ! Correction for high pressure (from Mocsy)
-        delta=-9.78_rk-0.009_rk*T-0.000942_rk*T**2._rk
-        kappa=-3.91_rk+0.000054_rk*T
+        delta=-18.03_rk+0.0466_rk*T+0.000316_rk*T**2._rk
+        kappa=-4.53_rk+0.00009_rk*T
         ks=ks*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
 ! this is the conversion factor from total scale to free scale at depth
         total2free_depth = 1._rk/(1._rk + st/ks)
@@ -497,8 +497,8 @@ contains
 !          Formulation as given in Dickson et al. (2007)
          kf = exp(874.d0*invtk - 9.68d0 + 0.111d0*sqrts)
 ! Correction for high pressure (from Mocsy) - this requires kf being in free scale, final value still in total scale
-        delta=-18.03_rk+0.0466_rk*T+0.000316_rk*T**2._rk
-        kappa=-4.53_rk+0.00009_rk*T
+        delta=-9.78_rk-0.009_rk*T-0.000942_rk*T**2._rk
+        kappa=-3.91_rk+0.000054_rk*T
         kf=kf*total2free_surface*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))/total2free_depth
 
 ! conversion factor for pH from SWS to total scale
