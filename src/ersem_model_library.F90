@@ -13,6 +13,7 @@ module ersem_model_library
    use ersem_mesozooplankton
    use ersem_bacteria
    use ersem_bacteria_docdyn
+   use ersem_TDOC
    use ersem_nitrification
    use ersem_light
    use ersem_light_iop
@@ -63,6 +64,7 @@ contains
          case ('mesozooplankton');                         allocate(type_ersem_mesozooplankton::model)
          case ('bacteria');                                allocate(type_ersem_bacteria::model)
          case ('bacteria_docdyn');                         allocate(type_ersem_bacteria_docdyn::model)
+         case ('TDOC');                                    allocate(type_ersem_TDOC::model)
          case ('nitrification');                           allocate(type_ersem_nitrification::model)
          case ('light');                                   allocate(type_ersem_light::model)
          case ('light_iop');                               allocate(type_ersem_light_iop::model)

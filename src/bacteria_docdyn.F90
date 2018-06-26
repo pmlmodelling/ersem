@@ -15,16 +15,17 @@ module ersem_bacteria_docdyn
    type,extends(type_ersem_pelagic_base),public :: type_ersem_bacteria_docdyn
       ! Variables
       type (type_state_variable_id) :: id_O3c, id_O2o, id_TA
-      type (type_state_variable_id) :: id_R1c, id_R2c, id_R3c
-      type (type_state_variable_id) :: id_R1p
+      type (type_state_variable_id) :: id_R1c, id_R2c, id_R3c,id_T1c,id_T2c
+      type (type_state_variable_id) :: id_R1p, id_T1p, id_T1n, id_T2n, id_T2p
       type (type_state_variable_id) :: id_R1n
       type (type_state_variable_id) :: id_N1p,id_N4n,id_N7f
       type (type_dependency_id)     :: id_ETW,id_eO2mO2
       type (type_state_variable_id),allocatable,dimension(:) :: id_RPc,id_RPp,id_RPn,id_RPf
       type (type_model_id),         allocatable,dimension(:) :: id_RP
+      type (type_model_id) :: id_T1,id_T2
       type (type_diagnostic_variable_id) :: id_fB1O3c, id_fB1NIn, id_fB1N1p
       type (type_diagnostic_variable_id) :: id_fR1B1c, id_fR2B1c, id_fR3B1c,id_fB1R1c, id_fB1R2c, id_fB1R3c
-      type (type_diagnostic_variable_id) :: id_fR1B1n,id_fB1R1n,id_fR1B1p,id_fB1R1p
+      type (type_diagnostic_variable_id) :: id_fR1B1n,id_fB1R1n,id_fR1B1p,id_fB1R1p,id_fT1B1c,id_fT2B1c
       type (type_diagnostic_variable_id) :: id_minn,id_minp
       ! Parameters
       integer  :: nRP
@@ -36,7 +37,7 @@ module ersem_bacteria_docdyn
       real(rk) :: puB1X,puB1oX,srsB1X,sR1B1X
       real(rk) :: qpB1cX,qnB1cX
       real(rk) :: urB1_O2X
-      real(rk) :: rR2B1X,rR3B1X
+      real(rk) :: rR2B1X,rR3B1X,rT1B1X,rT2B1X
       real(rk),allocatable :: sRPR1(:)
       real(rk) :: frB1R3
 
@@ -135,6 +136,34 @@ contains
 
       ! Register links to semi-refractory dissolved organic matter pool.
       call self%register_state_dependency(self%id_R3c,'R3c','mg C/m^3','semi-refractory DOC')
+      ! Register links to terrigenous dissolved organic matter pool.
+      call self%register_model_dependency(self%id_T2,'T2')
+!      call self%register_dependency(self%id_T2c,'T2c','mg C/m^3','non photolabile terrigenous DOC')
+!      call self%register_dependency(self%id_T2n,'T2n','mmol N/m^3','non photolabile terrigenous DON')
+!      call self%register_dependency(self%id_T2p,'T2p','mmol P/m^3','non photolabile terrigenous DOP')
+      call self%register_state_dependency(self%id_T2c,'T2c','mg C/m^3','non photolabile terrigenous DOC')
+      call self%register_state_dependency(self%id_T2n,'T2n','mg C/m^3','non photolabile terrigenous DON')
+      call self%register_state_dependency(self%id_T2p,'T2p','mg C/m^3','non photolabile terrigenous DOP')
+      call self%request_coupling_to_model(self%id_T2c,self%id_T2,standard_variables%total_carbon)
+      call self%request_coupling_to_model(self%id_T2n,self%id_T2,standard_variables%total_nitrogen)
+      call self%request_coupling_to_model(self%id_T2p,self%id_T2,standard_variables%total_phosphorus)
+
+      call self%register_model_dependency(self%id_T1,'T1')
+!      call self%register_dependency(self%id_T1c,'T1c','mg C/m^3','photolabile terrigenous DOC')
+!      call self%register_dependency(self%id_T1n,'T1n','mmol N/m^3','photolabile terrigenous DON')
+!      call self%register_dependency(self%id_T1p,'T1p','mmol P/m^3','photolabile terrigenous DOP')
+!      call self%request_coupling_to_model(self%id_T1c,self%id_T1,standard_variables%total_carbon)
+!      call self%request_coupling_to_model(self%id_T1n,self%id_T1,standard_variables%total_nitrogen)
+!      call self%request_coupling_to_model(self%id_T1p,self%id_T1,standard_variables%total_phosphorus)
+      call self%register_state_dependency(self%id_T1c,'T1c','mg C/m^3','photolabile terrigenous DOC')
+      call self%register_state_dependency(self%id_T1n,'T1n','mg C/m^3','photolabile terrigenous DON')
+      call self%register_state_dependency(self%id_T1p,'T1p','mg C/m^3','photolabile terrigenous DOP')
+      call self%request_coupling_to_model(self%id_T1c,self%id_T1,standard_variables%total_carbon)
+      call self%request_coupling_to_model(self%id_T1n,self%id_T1,standard_variables%total_nitrogen)
+      call self%request_coupling_to_model(self%id_T1p,self%id_T1,standard_variables%total_phosphorus)
+!      call self%register_state_dependency(self%id_T2c,'T2c','mg C/m^3','non photolabile terrigenous DOC')
+!      call self%register_state_dependency(self%id_T2n,'T2n','mg C/m^3','non photolabile terrigenous DON')
+!      call self%register_state_dependency(self%id_T2p,'T2p','mg C/m^3','non photolabile terrigenous DOP')
 
       allocate(self%sRPR1(self%nRP))
       do iRP=1,self%nRP
@@ -144,6 +173,8 @@ contains
 
       call self%get_parameter(self%rR2B1X,'rR2','-','fraction of semi-labile DOC available to bacteria')
       call self%get_parameter(self%rR3B1X,'rR3','-','fraction of semi-refractory DOC available to bacteria')
+      call self%get_parameter(self%rT1B1X,'rT1','-','fraction of T1 available to bacteria')
+      call self%get_parameter(self%rT2B1X,'rT2','-','fraction of T2 available to bacteria')
       call self%get_parameter(self%frB1R3,'frR3','-','fraction of activity respiration converted to semi-refractory DOC')
 
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
@@ -169,6 +200,9 @@ contains
       call self%register_diagnostic_variable(self%id_fR1B1c,'fR1B1c','mg C/m^3/d','bacterial uptake of labile DOC ')
       call self%register_diagnostic_variable(self%id_fR2B1c,'fR2B1c','mg C/m^3/d','bacterial uptake of semi-labile DOC ')
       call self%register_diagnostic_variable(self%id_fR3B1c,'fR3B1c','mg C/m^3/d','bacterial uptake of semi-refractory DOC ')
+      call self%register_diagnostic_variable(self%id_fT1B1c,'fT1B1c','mg C/m^3/d','bacterial uptake of photolabile terrigenous DOC ')
+      call self%register_diagnostic_variable(self%id_fT2B1c,'fT2B1c','mg C/m^3/d','bacterial uptake of nonphotolabile terrigenous')
+
       call self%register_diagnostic_variable(self%id_fR1B1n,'fR1B1n','mmol N/m^3/d','bacterial DON uptake')
       call self%register_diagnostic_variable(self%id_fR1B1p,'fR1B1p','mmol P/m^3/d','bacterial DOP uptake')
 
@@ -191,9 +225,9 @@ contains
       real(rk) :: sB1RD,sutB1,rumB1,sugB1,rugB1,rraB1,fB1O3c
       real(rk) :: sB1R2,fB1R2c,fB1R3c,fB1RDc
       real(rk) :: netb1,bge
-      real(rk) :: fB1N1p,fR1B1p,fB1RDp
-      real(rk) :: fB1NIn,fR1B1n,fB1RDn
-      real(rk) :: R3c,R2cP,R3cP
+      real(rk) :: fB1N1p,fR1B1p,fB1RDp,fTXB1p
+      real(rk) :: fB1NIn,fR1B1n,fB1RDn,fTXB1n
+      real(rk) :: R3c,R2cP,R3cP,T1cP,T2cP,T1c,T2c,T1n,T1p,T2n,T2p,T2pP,T2nP,T1nP,T1pP
       real(rk) :: fB1R1c
       real(rk) :: totsubst
       real(rk) :: CORROX
@@ -219,13 +253,21 @@ contains
          _GET_(self%id_N4n,N4nP)
          _GET_WITH_BACKGROUND_(self%id_R1c,R1c)
          _GET_WITH_BACKGROUND_(self%id_R2c,R2c)
+         _GET_WITH_BACKGROUND_(self%id_T1c,T1c)
+         _GET_WITH_BACKGROUND_(self%id_T2c,T2c)
          _GET_(self%id_R1c,R1cP)
          _GET_(self%id_R1p,R1pP)
          _GET_(self%id_R1n,R1nP)
+         _GET_(self%id_T1n,T1nP)
+         _GET_(self%id_T1p,T1pP)
+         _GET_(self%id_T2n,T2nP)
+         _GET_(self%id_T2p,T2pP)
 
          _GET_WITH_BACKGROUND_(self%id_R3c,R3c)
          _GET_(self%id_R2c,R2cP)
          _GET_(self%id_R3c,R3cP)
+         _GET_(self%id_T1c,T1cP)
+         _GET_(self%id_T2c,T2cP)
          do iRP=1,self%nRP
             _GET_WITH_BACKGROUND_(self%id_RPc(iRP),RPc(iRP))
             _GET_(self%id_RPc(iRP),RPcP(iRP))
@@ -262,7 +304,7 @@ contains
       ! rugB1 = MIN(rumB1,rutB1)
       ! specific in substrate concentration:
 
-      totsubst = R1cP+R2cP*self%rR2B1X+R3cP*self%rR3B1X+sum(RPcP*self%sRPR1/sutB1)
+      totsubst = R1cP+R2cP*self%rR2B1X+R3cP*self%rR3B1X+T1cP*self%rT1B1X+T2cP*self%rT2B1X+sum(RPcP*self%sRPR1/sutB1)
       ! Jorn: check whether total substrate>0 to prevent NaNs
       if (totsubst>0.0_rk) then
          sugB1 = rumB1/max(rumB1/sutB1,totsubst)
@@ -270,7 +312,7 @@ contains
          sugB1 = 0.0_rk
       end if
             ! = MIN(rumB1,rutB1)=MIN(rumB1/(R1cP+R2cP*rR2B1X,sutB1) avoid pot. div. by 0
-      rugB1 = sugB1*(R1cP+R2cP*self%rR2B1X+R3cP*self%rR3B1X+sum(RPcP*self%sRPR1/sutB1))
+      rugB1 = sugB1*(R1cP+R2cP*self%rR2B1X+R3cP*self%rR3B1X+T1cP*self%rT1B1X+T2cP*self%rT2B1X+sum(RPcP*self%sRPR1/sutB1))
 
 !..Respiration :
 
@@ -305,6 +347,8 @@ contains
          _SET_ODE_(self%id_R1c,+ fB1R1c - sugB1*R1cP)
          _SET_ODE_(self%id_R2c,+ fB1R2c - sugB1*R2cP*self%rR2B1X)
          _SET_ODE_(self%id_R3c,+ fB1R3c - sugB1*R3cP*self%rR3B1X)
+         _SET_ODE_(self%id_T1c, - sugB1*T1cP*self%rT1B1X)
+         _SET_ODE_(self%id_T2c, - sugB1*T2cP*self%rT2B1X)
 
          _SET_DIAGNOSTIC_(self%id_fB1R1c, fB1R1c)
          _SET_DIAGNOSTIC_(self%id_fB1R2c, fB1R2c)
@@ -312,6 +356,8 @@ contains
          _SET_DIAGNOSTIC_(self%id_fR1B1c, sugB1*R1cP)
          _SET_DIAGNOSTIC_(self%id_fR2B1c, sugB1*R2cP*self%rR2B1X)
          _SET_DIAGNOSTIC_(self%id_fR3B1c, sugB1*R3cP*self%rR3B1X)
+         _SET_DIAGNOSTIC_(self%id_fT1B1c, sugB1*T1cP*self%rT1B1X)
+         _SET_DIAGNOSTIC_(self%id_fT2B1c, sugB1*T2cP*self%rT2B1X)
 
          do iRP=1,self%nRP
             _SET_ODE_(self%id_RPc(iRP),- sugB1*RPcP(iRP)*self%sRPR1(iRP))
@@ -332,6 +378,7 @@ contains
 !..uptake of DOP
 
          fR1B1p = sugB1*R1pP
+         fTXB1p=sugB1*T1pP*self%rT1B1X+sugB1*T2pP*self%rT2B1X
 
 !..flux of DOP from B1
 
@@ -346,7 +393,7 @@ contains
             _SET_ODE_(self%id_RPp(iRP), - fRPB1p(iRP))
          end do
 
-         _SET_ODE_(self%id_p, + fR1B1p - fB1N1p - fB1RDp)
+         _SET_ODE_(self%id_p, + fR1B1p +fTXB1p - fB1N1p - fB1RDp)
          _SET_ODE_(self%id_N1p, + fB1N1p)
          _SET_ODE_(self%id_R1p, + fB1RDp - fR1B1p)
          _SET_ODE_(self%id_TA,  - fB1N1p)   ! Contribution to alkalinity: -1 for phosphate
@@ -368,6 +415,7 @@ contains
 !..uptake of DON
 
          fR1B1n = sugB1*R1nP
+         fTXB1n = sugB1*T1nP*self%rT1B1X+sugB1*T2nP*self%rT2B1X
 
 !..flux of DON from B1
 
@@ -382,7 +430,7 @@ contains
          end do
 
          _SET_ODE_(self%id_N4n, + fB1NIn)
-         _SET_ODE_(self%id_n,   + fR1B1n - fB1NIn - fB1RDn)
+         _SET_ODE_(self%id_n,   + fR1B1n + fTXB1n - fB1NIn - fB1RDn)
          _SET_ODE_(self%id_R1n, + fB1RDn   - fR1B1n)
          _SET_ODE_(self%id_TA,  + fB1NIn)   ! Contribution to alkalinity: +1 for ammonium
 
