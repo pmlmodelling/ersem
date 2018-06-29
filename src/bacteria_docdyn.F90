@@ -144,7 +144,7 @@ contains
       call self%register_state_dependency(self%id_T2c,'T2c','mg C/m^3','non photolabile terrigenous DOC')
       call self%register_state_dependency(self%id_T2n,'T2n','mg C/m^3','non photolabile terrigenous DON')
       call self%register_state_dependency(self%id_T2p,'T2p','mg C/m^3','non photolabile terrigenous DOP')
-      call self%request_coupling_to_model(self%id_T2c,self%id_T2,standard_variables%total_carbon)
+      call self%request_coupling_to_model(self%id_T2c,self%id_T2,'c')
       call self%request_coupling_to_model(self%id_T2n,self%id_T2,standard_variables%total_nitrogen)
       call self%request_coupling_to_model(self%id_T2p,self%id_T2,standard_variables%total_phosphorus)
 
@@ -158,7 +158,7 @@ contains
       call self%register_state_dependency(self%id_T1c,'T1c','mg C/m^3','photolabile terrigenous DOC')
       call self%register_state_dependency(self%id_T1n,'T1n','mg C/m^3','photolabile terrigenous DON')
       call self%register_state_dependency(self%id_T1p,'T1p','mg C/m^3','photolabile terrigenous DOP')
-      call self%request_coupling_to_model(self%id_T1c,self%id_T1,standard_variables%total_carbon)
+      call self%request_coupling_to_model(self%id_T1c,self%id_T1,'c')
       call self%request_coupling_to_model(self%id_T1n,self%id_T1,standard_variables%total_nitrogen)
       call self%request_coupling_to_model(self%id_T1p,self%id_T1,standard_variables%total_phosphorus)
 !      call self%register_state_dependency(self%id_T2c,'T2c','mg C/m^3','non photolabile terrigenous DOC')

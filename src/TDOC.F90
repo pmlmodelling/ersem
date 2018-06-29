@@ -20,6 +20,7 @@ module ersem_TDOC
       type (type_dependency_id)                     :: id_ETW,id_EIR
 !      type (type_horizontal_dependency_id)          :: id_R1c,id_R1d
 !      type (type_horizontal_diagnostic_variable_id) :: id_airseaN2O
+      type (type_diagnostic_variable_id) :: id_photolysis,id_flocc
 
    ! Parameters
 
@@ -81,7 +82,7 @@ contains
       call self%register_state_dependency(self%id_T2c,'T2c','mg C/m^3','non photolabile terrigenous DOC')
       call self%register_state_dependency(self%id_T2n,'T2n','mg C/m^3','non photolabile terrigenous DON')
       call self%register_state_dependency(self%id_T2p,'T2p','mg C/m^3','non photolabile terrigenous DOP')
-      call self%request_coupling_to_model(self%id_T2c,self%id_T2,standard_variables%total_carbon)
+      call self%request_coupling_to_model(self%id_T2c,self%id_T2,'c')
       call self%request_coupling_to_model(self%id_T2n,self%id_T2,standard_variables%total_nitrogen)
       call self%request_coupling_to_model(self%id_T2p,self%id_T2,standard_variables%total_phosphorus)
 
@@ -89,6 +90,8 @@ contains
       ! Register links to nutrient pools.
       call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
       call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','ammonium')
+      call self%register_diagnostic_variable(self%id_photolysis,'photolysis','mgC/m^3/d','photolysis')
+      call self%register_diagnostic_variable(self%id_flocc,'flocc','mgC/m^3/d','flocculation')
 
       ! Register contribution to light extinction
       call self%add_to_aggregate_variable(standard_variables%attenuation_coefficient_of_photosynthetic_radiative_flux, &
@@ -102,7 +105,7 @@ contains
       _DECLARE_ARGUMENTS_DO_
 
    ! !LOCAL VARIABLES:
-    real(rk) :: flocc,photolysis,R8cP,R8c,T2c,T2n,T2p,O3c,O3cP,T2cP,EIR,c,Xp,Xn
+    real(rk) :: flocc,photolysis,R8cP,R8c,T2c,T2n,T2p,O3c,O3cP,T2cP,EIR,c,Xp,Xn,XXn,T1T2,px,nx
 
 ! Enter spatial loops (if any)
       _LOOP_BEGIN_
@@ -118,26 +121,35 @@ contains
       _GET_(self%id_EIR,EIR)
 
     IF(T2c.gt.0._rk) then
-    Xn=self%qn-(T2n/T2c)
-    Xp=self%qp-(T2p/T2c)
+    Xn=self%qn/(T2n/T2c)
+    Xp=self%qp/(T2p/T2c)
+    nx=self%qn-(T2n/T2c)
+    px=self%qp-(T2p/T2c)
     else
-    Xn=0.
-    Xp=0.
+    Xn=0._rk
+    Xp=0._rk
+    nx=1._rk
+    px=1._rk
     endif
+
+    XXn=min(Xn,Xp)
 
     photolysis=self%phyref*(EIR/self%iref)*c
     flocc=self%floc*c**2
+    T1T2=self%phyt*min(1._rk,XXn)
 
     _SET_ODE_(self%id_c,-photolysis-flocc)
     _SET_ODE_(self%id_RPc,+flocc)
     _SET_ODE_(self%id_RPn,+flocc*self%qn)
     _SET_ODE_(self%id_RPp,+flocc*self%qp)
-    _SET_ODE_(self%id_T2c,+photolysis*self%phyt)
+    _SET_ODE_(self%id_T2c,+photolysis*T1T2)
 !    _SET_ODE_(self%id_T2n,photolysis*self%phyt*qn)
 !    _SET_ODE_(self%id_T2p,photolysis*self%phyt*qp)
-    _SET_ODE_(self%id_O3c,photolysis*(1._rk-self%phyt))
-    _SET_ODE_(self%id_N1p,photolysis*(1._rk-self%phyt)*self%qp+photolysis*self%phyt*Xp)
-    _SET_ODE_(self%id_N4n,photolysis*(1._rk-self%phyt)*self%qn+photolysis*self%phyt*Xn)
+    _SET_ODE_(self%id_O3c,photolysis*(1._rk-T1T2)/CMass)
+    _SET_ODE_(self%id_N1p,photolysis*(1._rk-T1T2)*self%qp+photolysis*T1T2*px)
+    _SET_ODE_(self%id_N4n,photolysis*(1._rk-T1T2)*self%qn+photolysis*T1T2*nx)
+    _SET_DIAGNOSTIC_(self%id_photolysis, photolysis)
+    _SET_DIAGNOSTIC_(self%id_flocc, flocc)
 
     _LOOP_END_
 
