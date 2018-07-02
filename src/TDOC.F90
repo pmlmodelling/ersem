@@ -18,13 +18,14 @@ module ersem_TDOC
       type (type_state_variable_id) :: id_RPn, id_RPp, id_T2n, id_T2p, id_N1p, id_N4n
       type (type_model_id) :: id_T2
       type (type_dependency_id)                     :: id_ETW,id_EIR
+      type (type_dependency_id)            :: id_X1X             ! Salinity
 !      type (type_horizontal_dependency_id)          :: id_R1c,id_R1d
 !      type (type_horizontal_diagnostic_variable_id) :: id_airseaN2O
       type (type_diagnostic_variable_id) :: id_photolysis,id_flocc
 
    ! Parameters
 
-      real(rk) :: suva, iref,phyref,phyt,floc,qp,qn
+      real(rk) :: suva, iref,phyref,phyt,floc,qp,qn,scx,sbx
    contains
 !     Model procedures
       procedure :: initialize
@@ -58,6 +59,8 @@ contains
       call self%get_parameter(self%qn,    'qn',    'mmol N/mg C','nitrogen to carbon ratio')
       call self%get_parameter(EPS,     'EPS',    'm^2/mg C','specific shortwave attenuation', default=4.E-4_rk)
       call self%get_parameter(c0,'c0','mg C/m^3','background carbon concentration')
+      call self%get_parameter(self%sbx,   'sbx',   'psu',        'optimal salinity')
+      call self%get_parameter(self%scx,   'scx',   '',        'salinity function parameter')
 
 
 ! Allow ERSEM base model to declare our own state variables.
@@ -69,6 +72,7 @@ contains
 !      call self%register_dependency(self%id_EIR,'EIR','W/m^2','downwelling_shortwave_flux', &
 !              standard_variable=standard_variables%downwelling_shortwave_flux,source=source_do_column)
       call self%register_dependency(self%id_EIR,standard_variables%downwelling_shortwave_flux)
+      call self%register_dependency(self%id_X1X,standard_variables%practical_salinity)
       call self%register_state_dependency(self%id_RPc,'RPc','mg C/m^3',   'particulate organic carbon')
       call self%register_state_dependency(self%id_RPp,'RPp','mmol P/m^3', 'particulate organic phosphorus')
       call self%register_state_dependency(self%id_RPn,'RPn','mmol N/m^3', 'particulate organic nitrogen')
@@ -106,6 +110,7 @@ contains
 
    ! !LOCAL VARIABLES:
     real(rk) :: flocc,photolysis,R8cP,R8c,T2c,T2n,T2p,O3c,O3cP,T2cP,EIR,c,Xp,Xn,XXn,T1T2,px,nx
+    real(rk) :: X1X,sal
 
 ! Enter spatial loops (if any)
       _LOOP_BEGIN_
@@ -119,6 +124,7 @@ contains
       _GET_WITH_BACKGROUND_(self%id_T2p,T2p)
 !      _GET_WITH_BACKGROUND_(self%id_R8c,R8c)
       _GET_(self%id_EIR,EIR)
+      _GET_(self%id_X1X,X1X)
 
     IF(T2c.gt.0._rk) then
     Xn=self%qn/(T2n/T2c)
@@ -134,8 +140,17 @@ contains
 
     XXn=min(Xn,Xp)
 
+!Flocculation is assumed to be (log-normal) function of salinity(sal)
+
+     X1X=max(X1X,0.01_rk) !to avoid log(0) in sal!!
+     sal=exp(-((log(X1X)-self%sbx)**2._rk)/(2._rk*self%scx**2._rk))
+     flocc=self%floc*sal*c**2
+
+! Photolysis
     photolysis=self%phyref*(EIR/self%iref)*c
-    flocc=self%floc*c**2
+
+! in order to ensure mass conservation, the fraction of carbon going from T1 to T2 after photolysis is down regulated 
+! if T1 has less  N and/or P than T2. Any excess of nutrients is redirected into the dissolved pool (N1p and N4n). (Luca, July 2018)    
     T1T2=self%phyt*min(1._rk,XXn)
 
     _SET_ODE_(self%id_c,-photolysis-flocc)
@@ -143,8 +158,6 @@ contains
     _SET_ODE_(self%id_RPn,+flocc*self%qn)
     _SET_ODE_(self%id_RPp,+flocc*self%qp)
     _SET_ODE_(self%id_T2c,+photolysis*T1T2)
-!    _SET_ODE_(self%id_T2n,photolysis*self%phyt*qn)
-!    _SET_ODE_(self%id_T2p,photolysis*self%phyt*qp)
     _SET_ODE_(self%id_O3c,photolysis*(1._rk-T1T2)/CMass)
     _SET_ODE_(self%id_N1p,photolysis*(1._rk-T1T2)*self%qp+photolysis*T1T2*px)
     _SET_ODE_(self%id_N4n,photolysis*(1._rk-T1T2)*self%qn+photolysis*T1T2*nx)
