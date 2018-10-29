@@ -417,7 +417,7 @@ contains
      &      + log(1.0d0 - 0.001005d0*s))
 
 ! ft : total fluoride using Riley, Analytica chimica Acta, 1966
-! .14 is the S:Cl ratio obseved, 96.065 is the molecular weight of F-
+! .14 is the S:Cl ratio obseved, 19.9984 is the molecular weight of F-
         ft= 0.000067_rk * cl / 19.9984_rk
 
 ! kf = [H][F]/[HF] in total scale from Perez and Fraga (1987)
@@ -454,8 +454,8 @@ contains
         &       s * (.023517_rk - 0.023656_rk * tk100 + 0.0047036_rk * tk100 ** 2._rk))
 ! correction for high pressure from Weiss 1974
 !        vbarCO2 = 32.3      partial molal volume (cm3 / mol) from Weiss (1974, Appendix, paragraph 3)
-        k0co2 = k0co2 * exp( ((1-P)*32.3_rk)/(Rgas*tk) )
-
+!        P is in bar, hence the reference is 1.01325 instead of 1 as in Weiss 1974
+        k0co2 = k0co2 * exp( ((1.01325_rk-P)*32.3_rk)/(Rgas*tk) )
 ! kb = [H][BO2]/[HBO2]
 ! Millero p.669 (1995) using data from Dickson (1990)
         kb=exp((-8966.9_rk - 2890.53_rk*sqrtS - 77.942_rk*S + &
