@@ -75,12 +75,12 @@ contains
 
       if (self%iswCO2X==1) then
          if (self%phscale==1) then
-             call self%register_diagnostic_variable(self%id_ph,    'pH',    '-',      'pH in total scale',standard_variable=standard_variables%ph_reported_on_total_scale,missing_value=0._rk)
+             call self%register_diagnostic_variable(self%id_ph,'pH',    '-',       'pH in total scale',standard_variable=standard_variables%ph_reported_on_total_scale,missing_value=0._rk)
          elseif (self%phscale==0) then
-             call self%register_diagnostic_variable(self%id_ph,    'pH',    '-',      'pH in seawater scale',standard_variable=standard_variables%ph_reported_on_total_scale,missing_value=0._rk)
+             call self%register_diagnostic_variable(self%id_ph,'pH',    '-',       'pH in seawater scale',standard_variable=standard_variables%ph_reported_on_total_scale,missing_value=0._rk)
          elseif (self%phscale==-1) then
-             call self%register_diagnostic_variable(self%id_ph,    'pH',    '-',      'pH in seawater scale',standard_variable=standard_variables%ph_reported_on_total_scale,missing_value=0._rk)
-         endif
+             call self%register_diagnostic_variable(self%id_ph,'pH',    '-',       'pH in seawater scale',standard_variable=standard_variables%ph_reported_on_total_scale,missing_value=0._rk)
+         end if
          call self%register_diagnostic_variable(self%id_pco2,  'pCO2',  '1e-6',    'partial pressure of CO2',missing_value=0._rk)
          call self%register_diagnostic_variable(self%id_CarbA, 'CarbA', 'mmol/m^3','carbonic acid concentration',missing_value=0._rk)
          call self%register_diagnostic_variable(self%id_BiCarb,'BiCarb','mmol/m^3','bicarbonate concentration',missing_value=0._rk)
@@ -200,12 +200,12 @@ contains
             H2CO3 = H2CO3/1.e3_rk/density  ! from mmol/m3 to mol/kg
             pCO2 = pCO2/1.e6_rk  ! from uatm to atm
          endif
+         _SET_DIAGNOSTIC_(self%id_ph,pH)
          _SET_DIAGNOSTIC_(self%id_pco2,PCO2*1.e6_rk)
          _SET_DIAGNOSTIC_(self%id_CarbA, H2CO3*1.e3_rk*density)
          _SET_DIAGNOSTIC_(self%id_Bicarb,HCO3*1.e3_rk*density)
          _SET_DIAGNOSTIC_(self%id_Carb,  CO3*1.e3_rk*density)
-         _SET_DIAGNOSTIC_(self%id_ph,pH)
-         
+
          ! Call carbonate saturation state subroutine
          CALL CaCO3_Saturation (ETW, X1X, pres*1.e4_rk, CO3, Om_cal, Om_arg)  ! NB pressure from dbar to Pa
 
@@ -315,7 +315,7 @@ contains
       real(rk),intent(inout) :: ctot,TA
       real(rk),intent(out) :: pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total
       logical, intent(out) :: success
-      integer, intent (in) :: hscale
+      integer, intent(in)  :: hscale
 
       real(rk) :: k1co2,k2co2,kb
       real(rk) :: Tmax, Btot
@@ -406,7 +406,7 @@ contains
        cl = S / 1.80655_rk
 
 ! st : total sulfate using Morris & Riley, Deep Sea Research, 1966
-! .14 is the S:Cl ratio obseved, 96.065 is the molecular weight of SO4--
+! 0.14 is the S:Cl ratio observed, 96.065 is the molecular weight of SO4--
         st= 0.14_rk * cl / 96.065_rk
 
 ! ks = [H][SO4]/[HSO4] in free scale from Dickson, J. chem. Thermodynamics, 1990 and Perez & Frega, Mar Chem, 1987
@@ -417,7 +417,7 @@ contains
      &      + log(1.0d0 - 0.001005d0*s))
 
 ! ft : total fluoride using Riley, Analytica chimica Acta, 1966
-! .14 is the S:Cl ratio obseved, 19.9984 is the molecular weight of F-
+! 0.000067 is the F:Cl ratio observed, 19.9984 is the molecular weight of F-
         ft= 0.000067_rk * cl / 19.9984_rk
 
 ! kf = [H][F]/[HF] in total scale from Perez and Fraga (1987)
@@ -519,7 +519,8 @@ contains
         delta=-29.48_rk+0.1622_rk*T-0.002608_rk*T**2._rk
         kappa=-2.84_rk/1000._rk
         kb=kb*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
-         END SUBROUTINE CO2SET
+
+      END SUBROUTINE CO2SET
 !
 !EOC
 !-----------------------------------------------------------------------

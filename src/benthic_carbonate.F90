@@ -22,7 +22,6 @@ module ersem_benthic_carbonate
    contains
       procedure :: initialize
       procedure :: do_bottom
-
    end type
 
 contains
@@ -36,12 +35,12 @@ contains
       call self%register_horizontal_dependency(self%id_G3c,'G3c','mmol C/m^2','carbon dioxide')
       call self%register_horizontal_dependency(self%id_benTA,'benTA','mmol eq/m^2','benthic alkalinity')
       if (self%phscale==1) then
-             call self%register_diagnostic_variable(self%id_ph,    'pH',    '-',      'pH in total scale',missing_value=0._rk,domain=domain_bottom)
+             call self%register_diagnostic_variable(self%id_ph, 'pH', '-', 'pH in total scale',missing_value=0._rk,domain=domain_bottom,source=source_do_bottom)
       elseif (self%phscale==0) then
-             call self%register_diagnostic_variable(self%id_ph,    'pH',    '-',      'pH in seawater scale',missing_value=0._rk,domain=domain_bottom)
+             call self%register_diagnostic_variable(self%id_ph, 'pH', '-', 'pH in seawater scale',missing_value=0._rk,domain=domain_bottom,source=source_do_bottom)
       elseif (self%phscale==-1) then
-             call self%register_diagnostic_variable(self%id_ph,    'pH',    '-',      'pH in seawater scale',missing_value=0._rk,domain=domain_bottom)
-      endif
+             call self%register_diagnostic_variable(self%id_ph, 'pH', '-', 'pH in seawater scale',missing_value=0._rk,domain=domain_bottom,source=source_do_bottom)
+      end if
       call self%register_diagnostic_variable(self%id_pco2,  'pCO2',  '1e-6',    'partial pressure of CO2',source=source_do_bottom)
       call self%register_diagnostic_variable(self%id_CarbA, 'CarbA', 'mmol/m^3','carbonic acid concentration',source=source_do_bottom)
       call self%register_diagnostic_variable(self%id_BiCarb,'BiCarb','mmol/m^3','bicarbonate concentration',source=source_do_bottom)
@@ -83,8 +82,8 @@ contains
             ! Carbonate system iterative scheme converged -  save associated diagnostics.
             ! Convert outputs from fraction to ppm (pCO2) and from mol kg-1 to mmol m-3 (concentrations).
             if (self%phscale==1) then
-                    pH=pH+sws2total
-            endif
+               pH = pH + sws2total
+            end if
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_ph,pH)
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_pco2,PCO2*1.e6_rk)
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_CarbA, H2CO3*1.e3_rk*density)
