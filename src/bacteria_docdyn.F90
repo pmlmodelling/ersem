@@ -199,7 +199,7 @@ contains
       real(rk) :: CORROX
       integer  :: iRP
       real(rk),dimension(self%nRP) :: RPc,RPcP,RPnP,RPpP
-      real(rk),dimension(self%nRP) :: fRPB1p,fRPB1n
+      real(rk),dimension(self%nRP) :: fRPB1c,fRPB1p,fRPB1n
 
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
@@ -270,7 +270,8 @@ contains
          sugB1 = 0.0_rk
       end if
             ! = MIN(rumB1,rutB1)=MIN(rumB1/(R1cP+R2cP*rR2B1X,sutB1) avoid pot. div. by 0
-      rugB1 = sugB1*(R1cP+R2cP*self%rR2B1X+R3cP*self%rR3B1X+sum(RPcP*self%sRPR1/sutB1))
+      fRPB1c = sugB1*RPcP*self%sRPR1/sutB1
+      rugB1 = sugB1*(R1cP+R2cP*self%rR2B1X+R3cP*self%rR3B1X)+sum(fRPB1c)
 
 !..Respiration :
 
@@ -314,7 +315,7 @@ contains
          _SET_DIAGNOSTIC_(self%id_fR3B1c, sugB1*R3cP*self%rR3B1X)
 
          do iRP=1,self%nRP
-            _SET_ODE_(self%id_RPc(iRP),- sugB1*RPcP(iRP)*self%sRPR1(iRP))
+            _SET_ODE_(self%id_RPc(iRP), -fRPB1c(iRP))
          end do
 
          _SET_ODE_(self%id_O3c,+ fB1O3c/CMass)
@@ -340,7 +341,7 @@ contains
 
 !..Source equations
 
-         fRPB1p = sugB1*RPpP*self%sRPR1
+         fRPB1p = sugB1*RPpP*self%sRPR1/sutB1
          _SET_ODE_(self%id_p, sum(fRPB1p))
          do iRP=1,self%nRP
             _SET_ODE_(self%id_RPp(iRP), - fRPB1p(iRP))
@@ -375,7 +376,7 @@ contains
 
 !..Source equations
 
-         fRPB1n = sugB1*RPnP*self%sRPR1
+         fRPB1n = sugB1*RPnP*self%sRPR1/sutB1
          _SET_ODE_(self%id_n, sum(fRPB1n))
          do iRP=1,self%nRP
             _SET_ODE_(self%id_RPn(iRP), - fRPB1n(iRP))
