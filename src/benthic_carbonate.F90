@@ -31,7 +31,7 @@ contains
       class (type_ersem_benthic_carbonate), intent(inout), target :: self
       integer,                      intent(in)            :: configunit
 
-      call self%get_parameter(self%phscale,'pHscale','','pHscale (0: SWS, 1: total)',default=1)
+      call self%get_parameter(self%phscale,'pHscale','','pHscale (0: SWS, 1: total)',default=1,minimum=-1,maximum=1)
       call self%register_horizontal_dependency(self%id_G3c,'G3c','mmol C/m^2','carbon dioxide')
       call self%register_horizontal_dependency(self%id_benTA,'benTA','mmol eq/m^2','benthic alkalinity')
       if (self%phscale==1) then

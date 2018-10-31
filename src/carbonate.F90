@@ -46,7 +46,7 @@ contains
       call self%get_parameter(self%iswCO2X,'iswCO2','','carbonate system diagnostics (0: off, 1: on)',default=1)
       call self%get_parameter(self%iswASFLUX,'iswASFLUX','','air-sea CO2 exchange (0: none, 1: Nightingale and Liss, 2: Wanninkhof 1992 without chemical enhancement, 3: Wanninkhof 1992 with chemical enhancement, 4: Wanninkhof 1999)',default=1)
       call self%get_parameter(self%iswtalk,'iswtalk','','alkalinity formulation (1-4: from salinity and temperature, 5: dynamic alkalinity)',default=5)
-      call self%get_parameter(self%phscale,'pHscale','','pHscale (1: total, 0: SWS, -1: SWS backward compatible)',default=1)
+      call self%get_parameter(self%phscale,'pHscale','','pHscale (1: total, 0: SWS, -1: SWS backward compatible)',default=1,minimum=-1,maximum=1)
       if (self%iswtalk<1.or.self%iswtalk>5) call self%fatal_error('initialize','iswtalk takes values between 1 and 5 only')
 
       call self%register_state_variable(self%id_O3c,'c','mmol C/m^3','total dissolved inorganic carbon', 2200._rk,minimum=0._rk)
