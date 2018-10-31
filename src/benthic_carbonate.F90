@@ -35,11 +35,11 @@ contains
       call self%register_horizontal_dependency(self%id_G3c,'G3c','mmol C/m^2','carbon dioxide')
       call self%register_horizontal_dependency(self%id_benTA,'benTA','mmol eq/m^2','benthic alkalinity')
       if (self%phscale==1) then
-             call self%register_diagnostic_variable(self%id_ph, 'pH', '-', 'pH in total scale',missing_value=0._rk,domain=domain_bottom,source=source_do_bottom)
+             call self%register_diagnostic_variable(self%id_ph, 'pH', '-', 'pH on total scale',missing_value=0._rk,domain=domain_bottom,source=source_do_bottom)
       elseif (self%phscale==0) then
-             call self%register_diagnostic_variable(self%id_ph, 'pH', '-', 'pH in seawater scale',missing_value=0._rk,domain=domain_bottom,source=source_do_bottom)
+             call self%register_diagnostic_variable(self%id_ph, 'pH', '-', 'pH on seawater scale',missing_value=0._rk,domain=domain_bottom,source=source_do_bottom)
       elseif (self%phscale==-1) then
-             call self%register_diagnostic_variable(self%id_ph, 'pH', '-', 'pH in seawater scale',missing_value=0._rk,domain=domain_bottom,source=source_do_bottom)
+             call self%register_diagnostic_variable(self%id_ph, 'pH', '-', 'pH on seawater scale',missing_value=0._rk,domain=domain_bottom,source=source_do_bottom)
       end if
       call self%register_diagnostic_variable(self%id_pco2,  'pCO2',  '1e-6',    'partial pressure of CO2',source=source_do_bottom)
       call self%register_diagnostic_variable(self%id_CarbA, 'CarbA', 'mmol/m^3','carbonic acid concentration',source=source_do_bottom)

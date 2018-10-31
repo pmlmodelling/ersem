@@ -75,11 +75,11 @@ contains
 
       if (self%iswCO2X==1) then
          if (self%phscale==1) then
-             call self%register_diagnostic_variable(self%id_ph,'pH',    '-',       'pH in total scale',standard_variable=standard_variables%ph_reported_on_total_scale,missing_value=0._rk)
+             call self%register_diagnostic_variable(self%id_ph,'pH',    '-',       'pH on total scale',standard_variable=standard_variables%ph_reported_on_total_scale,missing_value=0._rk)
          elseif (self%phscale==0) then
-             call self%register_diagnostic_variable(self%id_ph,'pH',    '-',       'pH in seawater scale',standard_variable=standard_variables%ph_reported_on_total_scale,missing_value=0._rk)
+             call self%register_diagnostic_variable(self%id_ph,'pH',    '-',       'pH on seawater scale',standard_variable=standard_variables%ph_reported_on_total_scale,missing_value=0._rk)
          elseif (self%phscale==-1) then
-             call self%register_diagnostic_variable(self%id_ph,'pH',    '-',       'pH in seawater scale',standard_variable=standard_variables%ph_reported_on_total_scale,missing_value=0._rk)
+             call self%register_diagnostic_variable(self%id_ph,'pH',    '-',       'pH on seawater scale',standard_variable=standard_variables%ph_reported_on_total_scale,missing_value=0._rk)
          end if
          call self%register_diagnostic_variable(self%id_pco2,  'pCO2',  '1e-6',    'partial pressure of CO2',missing_value=0._rk)
          call self%register_diagnostic_variable(self%id_CarbA, 'CarbA', 'mmol/m^3','carbonic acid concentration',missing_value=0._rk)
