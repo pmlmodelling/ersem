@@ -153,7 +153,7 @@ contains
 
       real(rk) :: O3c,ETW,X1X,density,pres
       real(rk) :: TA,bioalk,Ctot
-      real(rk) :: pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total
+      real(rk) :: pH,PCO2,H2CO3,HCO3,CO3,k0co2
       real(rk) :: Om_cal,Om_arg
       logical  :: success
 
@@ -184,7 +184,7 @@ contains
          TA = TA/1.0e6_rk                ! from umol kg-1 to mol kg-1
          Ctot  = O3C / 1.e3_rk / density ! from mmol m-3 to mol kg-1
 
-         CALL CO2DYN (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total,success,self%phscale)   ! NB pressure from dbar to bar
+         CALL CO2DYN (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success,self%phscale)   ! NB pressure from dbar to bar
 
          if (.not.success) then
             ! Carbonate system iterative scheme did not converge.
@@ -222,7 +222,7 @@ contains
       real(rk) :: wnd,PCO2A
       real(rk) :: sc,fwind,UPTAKE,FAIRCO2
 
-      real(rk) :: ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total
+      real(rk) :: ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2
       logical  :: success
 
       if (self%iswASFLUX<=0) return
@@ -257,7 +257,7 @@ contains
 !  for surface box only calculate air-sea flux
 !..Only call after 2 days, because the derivation of instability in the
 !..
-         CALL CO2dyn(T, S, PRSS*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total,success,self%phscale)
+         CALL CO2dyn(T, S, PRSS*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success,self%phscale)
          if (.not.success) then
             _GET_(self%id_pco2_in,PCO2)
             PCO2 = PCO2*1.e-6_rk
@@ -307,13 +307,13 @@ contains
 !\\
 !\\
 ! !INTERFACE:
-      SUBROUTINE CO2dyn ( T, S, PRSS,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total,success,hscale)
+      SUBROUTINE CO2dyn ( T, S, PRSS,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success,hscale)
 !
 ! !LOCAL VARIABLES:
 !     ! TODO - SORT THESE!
       real(rk),intent(in) :: T, S, PRSS   ! NB PRSS is pressure in bar
       real(rk),intent(inout) :: ctot,TA
-      real(rk),intent(out) :: pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total
+      real(rk),intent(out) :: pH,PCO2,H2CO3,HCO3,CO3,k0co2
       logical, intent(out) :: success
       integer, intent(in)  :: hscale
 

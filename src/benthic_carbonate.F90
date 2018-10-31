@@ -63,7 +63,7 @@ contains
       real(rk) :: O3c,ETW,X1X,density,pres
       real(rk) :: TA,Ctot
       real(rk) :: pH,PCO2,H2CO3,HCO3,CO3,k0co2
-      real(rk) :: Om_cal,Om_arg,sws2total
+      real(rk) :: Om_cal,Om_arg
       logical  :: success
 
       _HORIZONTAL_LOOP_BEGIN_
@@ -77,13 +77,10 @@ contains
 
          TA = TA/1.0e6_rk                ! from umol kg-1 to mol kg-1
          Ctot  = O3C / 1.e3_rk / density ! from mmol m-3 to mol kg-1
-         call co2dyn (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,sws2total,success,self%phscale)   ! NB pressure from dbar to bar
+         call co2dyn (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success,self%phscale)   ! NB pressure from dbar to bar
          if (success) then
             ! Carbonate system iterative scheme converged -  save associated diagnostics.
             ! Convert outputs from fraction to ppm (pCO2) and from mol kg-1 to mmol m-3 (concentrations).
-            if (self%phscale==1) then
-               pH = pH + sws2total
-            end if
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_ph,pH)
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_pco2,PCO2*1.e6_rk)
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_CarbA, H2CO3*1.e3_rk*density)
