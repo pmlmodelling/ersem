@@ -3,6 +3,7 @@
 module ersem_benthic_column_dissolved_matter
 
    use fabm_types
+   use fabm_builtin_models
 
    use ersem_shared
 
@@ -122,9 +123,7 @@ contains
          case ('s')
             call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'s','mmol/m^2','silicate',standard_variables%total_silicate,c0)
          case ('o')
-            call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'o','mmol/m^2','oxygen')
-            call self%register_state_variable(self%constituents(iconstituent)%id_int_deep,'o_deep','mmol/m^2','oxygen below oxygenated layer')
-            if (.not.legacy_ersem_compatibility) self%constituents(iconstituent)%nonnegative = .false.
+            call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'o','mmol/m^2','oxygen', nonnegative=legacy_ersem_compatibility)
          case ('a')
             call initialize_constituent(self,self%constituents(iconstituent),profile,profile%constituents(iconstituent),'a','mEq/m^2','alkalinity')
          case default
@@ -147,7 +146,7 @@ contains
 
    end subroutine benthic_dissolved_matter_initialize
 
-   subroutine initialize_constituent(self,info,profile,profile_info,name,units,long_name,aggregate_target,background_value)
+   subroutine initialize_constituent(self,info,profile,profile_info,name,units,long_name,aggregate_target,background_value,nonnegative)
       class (type_ersem_benthic_column_dissolved_matter),intent(inout),target :: self
       type (type_single_constituent),                    intent(inout),target :: info
       class (type_dissolved_matter_per_layer),           intent(inout),target :: profile
@@ -155,12 +154,16 @@ contains
       character(len=*),                                  intent(in)           :: name,units,long_name
       type (type_bulk_standard_variable),optional,       intent(in)           :: aggregate_target
       real(rk),optional,                                 intent(in)           :: background_value
+      logical,optional,                                  intent(in)           :: nonnegative
 
       integer           :: ilayer
       character(len=16) :: index
 
+      if (present(nonnegative)) info%nonnegative = nonnegative
+
       ! State variable for depth-integrated matter [adsorbed + in pore water]
       call self%register_state_variable(info%id_int,name,units,long_name,background_value=background_value)
+      if (.not.info%nonnegative) call self%register_state_variable(info%id_int_deep,name//'_deep',units,long_name//' below zero isocline')
 
       ! Contribution of state variable to aggregate quantity (if any).
       if (present(aggregate_target)) call self%add_to_aggregate_variable(aggregate_target,info%id_int)
@@ -181,6 +184,15 @@ contains
          ! These act as state variables, in order to allow other modules to provide source terms for them.
          call profile%register_diagnostic_variable(profile_info%id_per_layer_total(ilayer),trim(name)//trim(index),units,'total '//trim(long_name)//' in layer '//trim(index)//' (absorbed + dissolved)',act_as_state_variable=.true.,domain=domain_bottom,output=output_none,source=source_do_bottom)
          call profile%register_diagnostic_variable(profile_info%id_per_layer_pw_total(ilayer),trim(name)//trim(index)//'_pw',units,'total '//trim(long_name)//' in pore water of layer '//trim(index),act_as_state_variable=.true.,domain=domain_bottom,output=output_none,source=source_do_bottom)
+         if (ilayer <= self%last_layer .or. info%nonnegative) then
+            ! Redirect sources-sinks for this layer to the depth-integrated value (or to the integral up to the zero isocline, if present)
+            call copy_horizontal_fluxes(profile, profile_info%id_per_layer_total(ilayer), name)
+            call copy_horizontal_fluxes(profile, profile_info%id_per_layer_pw_total(ilayer), name)
+         else
+            ! Redirect sources-sinks for this layer to the depth-integrated value below the zero isocline
+            call copy_horizontal_fluxes(profile, profile_info%id_per_layer_total(ilayer), name//'_deep')
+            call copy_horizontal_fluxes(profile, profile_info%id_per_layer_pw_total(ilayer), name//'_deep')
+         end if
 
          ! Make sure that sources-sinks of layer-integrated mass are counted in conservation checks on source/sink basis (e.g., with check_conservation).
          if (present(aggregate_target)) then
@@ -311,7 +323,7 @@ contains
          call compute_final_equilibrium_profile(diff(self%last_layer),c_top,sms_per_layer(self%last_layer),sum(sms_per_layer(self%last_layer+1:)),Dm(nlayers)-d_top,H_eq,c_int_per_layer_eq(self%last_layer))
 
          ! Relax depth-integrated mass c_int towards its equilibrium value (sum of depth-integrated equilibrium values of all layers)
-         _SET_BOTTOM_ODE_(info%id_int, (poro*sum(self%ads(:self%last_layer)*c_int_per_layer_eq(:self%last_layer))-c_int)/self%relax)
+         _SET_BOTTOM_ODE_(info%id_int, (poro*sum(self%ads(:self%last_layer)*c_int_per_layer_eq(:self%last_layer))-c_int)/self%relax - sum(sms_per_layer(:self%last_layer)))
 
          ! Relax the depth of the bottom interface of the last layer towards equilibrium value, d_top+max(self%minD,H_eq)
          _SET_BOTTOM_ODE_(self%id_layer,(d_top+max(self%minD,H_eq)-Dm(self%last_layer))/self%relax)
@@ -331,7 +343,7 @@ contains
 
             ! Relax depth-integrated mass within deeper layers towards equilibrium value.
             _GET_HORIZONTAL_(info%id_int_deep,c_int_deep)
-            _SET_BOTTOM_ODE_(info%id_int_deep,(poro*sum(self%ads(self%last_layer+1:)*c_int_per_layer_eq(self%last_layer+1:))-c_int_deep)/self%relax)
+            _SET_BOTTOM_ODE_(info%id_int_deep,(poro*sum(self%ads(self%last_layer+1:)*c_int_per_layer_eq(self%last_layer+1:))-c_int_deep)/self%relax - sum(sms_per_layer(self%last_layer+1:)))
          else
             c_int_deep = 0
          end if
@@ -402,7 +414,7 @@ contains
          P_res_int = (c_int-c_int_eq)/norm_res_int*Dm(nlayers)
          _SET_BOTTOM_EXCHANGE_(info%id_pel,sms+P_res_int) ! Equilibrium flux = depth-integrated production sms + residual flux P_res_int
          _SET_HORIZONTAL_DIAGNOSTIC_(info%id_pbf,sms+P_res_int)
-         _SET_BOTTOM_ODE_(info%id_int,-P_res_int)         ! Depth-integrated sources-sinks (sms) - surface flux (sms+P_res_int) = -P_res_int
+         _SET_BOTTOM_ODE_(info%id_int,-P_res_int-sms)
 
          ! Save final estimates of mean pore water concentration per layer.
          d_top = 0
