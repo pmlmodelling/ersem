@@ -93,7 +93,7 @@ contains
       class (type_ersem_light_iop_ady),intent(in) :: self
       _DECLARE_ARGUMENTS_VERTICAL_
 
-      real(rk) :: buffer,dz,xEPS,iopABS,iopBBS,xtnc,EIR,zenithA,ADY,ADY_0
+      real(rk) :: buffer,dz,xEPS,iopABS,iopBBS,xtnc,EIR,zenithA,ADY
       real(rk),parameter :: bpk=.00022_rk
 
       _GET_HORIZONTAL_(self%id_I_0,buffer)
