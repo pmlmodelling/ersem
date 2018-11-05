@@ -554,7 +554,6 @@ contains
       real(rk)              :: AKR,AHPLUS
       real(rk)              :: PROD,tol1,tol2,tol3,tol4,steg,fak
       real(rk)              :: STEGBY,Y,X,W,X1,Y1,X2,Y2,FACTOR,TERM,Z
-      real(rk)              :: CO2sys_memory(7)
       LOGICAL               :: BORON,DONE
 !
 ! !REVISION HISTORY:
