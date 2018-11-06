@@ -58,9 +58,13 @@ contains
 !-----------------------------------------------------------------------
 !BOC
       call self%get_parameter(self%composition, 'composition', '',   'elemental composition')
-      call self%get_parameter(self%reminQIX,    'remin',       '1/d','remineralisation rate',default=0.0_rk)
-      if (index(self%composition,'n')/=0 .and. self%reminQIX/=0.0_rk) &
-         call self%get_parameter(self%pQIN3X,'pN3','-','nitrate fraction of remineralised nitrogen (remainder is ammonium)',default=0.0_rk)
+      call self%get_parameter(self%reminQIX,    'remin',       '1/d','remineralisation rate at 10 degrees Celsius',default=0.0_rk)
+      if (self%reminQIX /= 0.0_rk) then
+         call self%get_parameter(self%q10, 'q10', '-', 'Q_10 temperature coefficient for remineralisation', default=1.0_rk, minimum=1.0_rk)
+         if (index(self%composition,'n') /= 0) &
+            call self%get_parameter(self%pQIN3X, 'pN3', '-', 'nitrate fraction of remineralised nitrogen (remainder is ammonium)', default=0.0_rk)
+         call self%register_dependency(self%id_ETW, standard_variables%temperature)
+      end if
       call self%get_parameter(self%resuspension,'resuspension','',   'enable resuspension',  default=.false.)
 
       call self%initialize_ersem_benthic_base()
@@ -82,9 +86,7 @@ contains
             call self%register_diagnostic_variable(self%id_resuspension_flux_c,'resuspension_flux_c','mg C/m^2/d','carbon resuspension',source=source_do_bottom)
          end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_O3c,'O3c','mmol/m^3','dissolved inorganic carbon')
-         if (self%reminQIX/=0.0_rk) call self%register_dependency(self%id_ETW,standard_variables%temperature)
          if (self%reminQIX/=0.0_rk) call self%register_diagnostic_variable(self%id_bremin,'bremin','mg C/m^2/d','carbon remineralization',source=source_do_bottom)
-         if (self%reminQIX/=0.0_rk) call self%get_parameter(self%q10,'q10','-','Q_10 temperature coefficient',default=1.0_rk)
       end if
       if (index(self%composition,'p')/=0) then
          call self%add_constituent('p',0.0_rk,qpRPIcX*c0)
@@ -243,8 +245,8 @@ contains
          ! Remineralization (benthic return)
          if (self%reminQIX/=0.0_rk) then
             _GET_(self%id_ETW,ETW)
-            eT = max(0.0_rk,self%q10**((ETW-10._rk)/10._rk)) 
-            reminT=self%reminQIX*eT
+            eT = self%q10**((ETW-10._rk)/10._rk)
+            reminT=self%reminQIX * eT
 
             if (_VARIABLE_REGISTERED_(self%id_c)) then
                _GET_HORIZONTAL_(self%id_c,state)

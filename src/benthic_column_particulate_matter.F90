@@ -343,6 +343,7 @@ module ersem_benthic_column_particulate_matter
       type (type_constituent_in_single_layer), allocatable :: constituents(:)
       type (type_horizontal_dependency_id) :: id_d_tot ! only used if variable_maximum_depth is set
       type (type_bottom_state_variable_id) :: id_remin_ox
+
       ! Layer extents
       logical :: variable_minimum_depth                        ! if not set, use minimum depth; if set, take dynamic minimum depth from variable (e.g., depth of oxygenated layer)
       logical :: variable_maximum_depth                        ! if not set, use maximum depth; if set, take dynamic maximum depth from variable (e.g., depth of oxygenated layer)
@@ -355,18 +356,16 @@ module ersem_benthic_column_particulate_matter
       procedure :: do_bottom  => layer_do_bottom
    end type
 
-   ! Submodel that converts layer-integrated sources of a single consituent into changes in depth-integrated mass and penetration depth.
+   ! Submodel that converts layer-integrated sources of a single constituent into changes in depth-integrated mass and penetration depth.
    type,extends(type_base_model) ::  type_constituent_for_single_layer_change
       type (type_horizontal_dependency_id) :: id_sms           ! layer-integrated rate of change
       type (type_horizontal_dependency_id) :: id_local         ! layer-integrated mass
       type (type_bottom_state_variable_id) :: id_int           ! column-integrated mass
       type (type_bottom_state_variable_id) :: id_pen_depth     ! penetration depth
       type (type_bottom_state_variable_id) :: id_remin_target  ! target variable for remineralized matter
-      type (type_bottom_state_variable_id) :: id_remin_ox      ! consumption of a product due to mineralisation
+      type (type_bottom_state_variable_id) :: id_remin_ox      ! oxygen source for mineralisation
       type (type_horizontal_diagnostic_variable_id) :: id_remin_flux
-      real(rk) :: remin_scale_factor=1._rk
-      type(type_dependency_id) :: id_ETW
-      real(rk) :: q10
+      type(type_dependency_id)             :: id_ETW           ! temperature (controls remineralisation rate)
       type (type_horizontal_dependency_id) :: id_d_tot         ! depth of entire sediment column
       type (type_horizontal_dependency_id) :: id_pen_depth_c   ! penetration depth of carbon (only for source_depth_distribution==3!)
 
@@ -379,11 +378,12 @@ module ersem_benthic_column_particulate_matter
       type (type_horizontal_dependency_id) :: id_maximum_depth ! only used if variable_maximum_depth is set
 
       real(rk) :: remin
+      real(rk) :: q10
       integer :: source_depth_distribution
    contains
       procedure :: do_bottom  => constituent_for_single_layer_change_do_bottom
    end type
-
+   
 contains
 
    subroutine initialize(self,configunit)
@@ -392,7 +392,7 @@ contains
 
       class (type_ersem_benthic_pom_layer),pointer :: single_layer
 
-      ! Perform normal benthic initialization (i.e., for POM without profile or penentration depth)
+      ! Perform normal benthic initialization (i.e., for POM without profile or penetration depth)
       ! This will register state variables for all contituents of the particulate organic matter class,
       ! e.g., carbon, nitrogen, phosphorus, silicon.
       call self%type_ersem_benthic_base%initialize(configunit)
@@ -414,7 +414,7 @@ contains
       ! Burial
       call self%get_parameter(self%burial,'burial','','enable burial',default=.false.)
       if (self%burial) then
-         ! Add burial modules for all constituents
+         ! Add burial targets for all constituents
          if (_VARIABLE_REGISTERED_(self%id_c)) then
             call self%register_state_dependency(self%id_buried_c,'buried_c','mg C/m^2','buried carbon')
             call self%request_coupling_to_model(self%id_buried_c,'burial_target','c')
@@ -571,7 +571,7 @@ contains
       integer,                              intent(in)            :: configunit
 
       character(len=10) :: composition
-      real(rk)          :: remin
+      real(rk)          :: remin, q10
       integer           :: source_depth_distribution
       integer           :: iconstituent
 !EOP
@@ -590,7 +590,8 @@ contains
       else
          call self%get_parameter(self%maximum_depth,'maximum_depth','m','maximum depth',default=0.0_rk)
       end if
-      call self%get_parameter(remin,'remin','1/d','remineralization rate',default=0.0_rk)
+      call self%get_parameter(remin,'remin','1/d','remineralization rate at 10 degrees Celsius',default=0.0_rk)
+      if  (remin /= 0._rk) call self%get_parameter(q10, 'q10', '-', 'Q_10 temperature coefficient', default=1.0_rk, minimum=1.0_rk)
       call self%get_parameter(source_depth_distribution,'source_depth_distribution', '','vertical distribution of changes (1: constant absolute rate, 2: constant relative rate, 3: constant carbon-based relative rate)',default=1)
 
       call self%register_dependency(self%id_d_tot,depth_of_sediment_column)
@@ -599,13 +600,13 @@ contains
       do iconstituent=1,len_trim(composition)
          select case (composition(iconstituent:iconstituent))
          case ('c')
-            call layer_initialize_constituent(self,self%constituents(iconstituent),'c','mg C',   'carbon',    remin,source_depth_distribution,standard_variables%total_carbon,1.0_rk/CMass)
+            call layer_initialize_constituent(self,self%constituents(iconstituent),'c','mg C',   'carbon',    remin,q10,source_depth_distribution,standard_variables%total_carbon,1.0_rk/CMass)
          case ('n')
-            call layer_initialize_constituent(self,self%constituents(iconstituent),'n','mmol N', 'nitrogen',  remin,source_depth_distribution,standard_variables%total_nitrogen)
+            call layer_initialize_constituent(self,self%constituents(iconstituent),'n','mmol N', 'nitrogen',  remin,q10,source_depth_distribution,standard_variables%total_nitrogen)
          case ('p')
-            call layer_initialize_constituent(self,self%constituents(iconstituent),'p','mmol P', 'phosphorus',remin,source_depth_distribution,standard_variables%total_phosphorus)
+            call layer_initialize_constituent(self,self%constituents(iconstituent),'p','mmol P', 'phosphorus',remin,q10,source_depth_distribution,standard_variables%total_phosphorus)
          case ('s')
-            call layer_initialize_constituent(self,self%constituents(iconstituent),'s','mmol Si','silicate',  remin,source_depth_distribution,standard_variables%total_silicate)
+            call layer_initialize_constituent(self,self%constituents(iconstituent),'s','mmol Si','silicate',  remin,q10,source_depth_distribution,standard_variables%total_silicate)
          case ('f')
          case default
             call self%fatal_error('layer_initialize','unknown constituent '//composition(iconstituent:iconstituent)//' specified.')
@@ -614,11 +615,11 @@ contains
 
    end subroutine layer_initialize
 
-   subroutine layer_initialize_constituent(self,info,name,units,long_name,remin,source_depth_distribution,aggregate_target,aggregate_scale_factor)
+   subroutine layer_initialize_constituent(self,info,name,units,long_name,remin,q10,source_depth_distribution,aggregate_target,aggregate_scale_factor)
       class (type_ersem_benthic_pom_layer),     intent(inout), target :: self
       class (type_constituent_in_single_layer), intent(inout)         :: info
       character(len=*),                         intent(in)            :: name,units,long_name
-      real(rk),                                 intent(in)            :: remin
+      real(rk),                                 intent(in)            :: remin,q10
       integer,                                  intent(in)            :: source_depth_distribution
       type (type_bulk_standard_variable),       intent(in)            :: aggregate_target
       real(rk),optional,                        intent(in)            :: aggregate_scale_factor
@@ -649,6 +650,7 @@ contains
       allocate(change_processor)
       change_processor%dt = 86400._rk
       change_processor%remin = remin
+      change_processor%q10 = q10
       change_processor%source_depth_distribution = source_depth_distribution
       call self%add_child(change_processor,'change_in_'//name//'_processor',configunit=-1)
       call change_processor%register_state_dependency(change_processor%id_int,name//'_int',units//'/m^2', 'column-integrated '//long_name)
@@ -690,13 +692,11 @@ contains
          call change_processor%register_dependency(change_processor%id_local,name,units//'/m^2','layer-integrated '//long_name)
          call change_processor%register_state_dependency(change_processor%id_remin_target,name//'_remin_target',units//'/m^2','sink for remineralized '//long_name)
          if (name=='c') then 
-             call self%register_state_dependency(self%id_remin_ox,'G2o','mmol O_2/m^2','oxygen')
-             change_processor%remin_scale_factor=CMass 
-             call change_processor%register_state_dependency(change_processor%id_remin_ox,'G2o','mmol O_2/m^2','oxygen')
-             call change_processor%request_coupling(change_processor%id_remin_ox, '../G2o')
+             call self%register_state_dependency(self%id_remin_ox,'o_remin_source','mmol O_2/m^2','oxygen')
+             call change_processor%register_state_dependency(change_processor%id_remin_ox,'o_remin_source','mmol O_2/m^2','oxygen')
+             call change_processor%request_coupling(change_processor%id_remin_ox, '../o_remin_source')
          end if
-         call change_processor%register_diagnostic_variable(change_processor%id_remin_flux,'remin_flux',units//'m^2/d','mineralisation flux')
-         call self%get_parameter(change_processor%q10,'q10',  '-','Q_10 temperature coefficient',default=1.0_rk)
+         call change_processor%register_diagnostic_variable(change_processor%id_remin_flux,'remin_flux',units//'/m^2/d','mineralisation flux')
          ! Couple submodel dependencies to top-level ("self") equivalents.
          ! For the remineralization target, register an alias at the top level so that it can be coupled directly from fabm.yaml.
          call change_processor%request_coupling(change_processor%id_local,'../'//name)
@@ -794,13 +794,13 @@ contains
 
          ! Add local remineralization
          if (self%remin/=0.0_rk) then
-            _GET_(self%id_ETW,ETW)
-            eT  = max(0.0_rk,self%q10**((ETW-10._rk)/10._rk))
+            _GET_(self%id_ETW, ETW)
+            eT  = self%q10**((ETW-10._rk)/10._rk)
             _GET_HORIZONTAL_(self%id_local,c_int_local)
             sms_remin = self%remin*c_int_local*eT
-            _SET_BOTTOM_ODE_(self%id_remin_target,sms_remin/self%remin_scale_factor)
+            _SET_BOTTOM_ODE_(self%id_remin_target,sms_remin)
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_remin_flux,sms_remin)
-            if (_VARIABLE_REGISTERED_(self%id_remin_ox)) _SET_BOTTOM_ODE_(self%id_remin_ox,-sms_remin/self%remin_scale_factor)
+            if (_VARIABLE_REGISTERED_(self%id_remin_ox)) _SET_BOTTOM_ODE_(self%id_remin_ox,-sms_remin/CMass)
             sms = sms - sms_remin
          end if
 
@@ -822,7 +822,7 @@ contains
             !
             ! Now we need to find the mean depth of matter. With C(z) = C0*exp(-z/z_mean), this can be written as
             !    \int_d_min^d_max exp(-z/z_mean) z dz / \int_d_min^d_max exp(-z/z_mean) dz
-            ! Anti-derivatives of these expressions are derived near the top to this file.
+            ! Anti-derivatives of these expressions are derived near the top of this file.
             ! For the denominator we found
             !    \int_d_min^d_max exp(-z/z_mean) dz = [-z_mean exp(-z/z_mean)]_d_min^\d_max
             !                                       = z_mean [exp(-d_min/z_mean)-exp(-d_max/z_mean)]
