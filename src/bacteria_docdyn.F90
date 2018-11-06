@@ -157,23 +157,23 @@ contains
 
       ! Register diagnostics.
       call self%register_diagnostic_variable(self%id_fB1O3c,'fB1O3c','mg C/m^3/d','respiration')
-      call self%register_diagnostic_variable(self%id_fB1NIn,'fB1NIn','mmol N/m^3/d','bacterial DIN release')
-      call self%register_diagnostic_variable(self%id_fB1N1p,'fB1N1p','mmol P/m^3/d','bacterial DIP release')
+      call self%register_diagnostic_variable(self%id_fB1NIn,'fB1NIn','mmol N/m^3/d','release of DIN')
+      call self%register_diagnostic_variable(self%id_fB1N1p,'fB1N1p','mmol P/m^3/d','release of DIP')
 
-      call self%register_diagnostic_variable(self%id_fB1R1c,'fB1R1c','mg C/m^3/d','bacterial release of labile DOC ')
-      call self%register_diagnostic_variable(self%id_fB1R2c,'fB1R2c','mg C/m^3/d','bacterial release of semi-labile DOC ')
-      call self%register_diagnostic_variable(self%id_fB1R3c,'fB1R3c','mg C/m^3/d','bacterial release of semi-refractory DOC ')
-      call self%register_diagnostic_variable(self%id_fB1R1n,'fB1R1n','mmol N/m^3/d','bacterial DON release')
-      call self%register_diagnostic_variable(self%id_fB1R1p,'fB1R1p','mmol P/m^3/d','bacterial DOP release')
+      call self%register_diagnostic_variable(self%id_fB1R1c,'fB1R1c','mg C/m^3/d','release of labile DOC ')
+      call self%register_diagnostic_variable(self%id_fB1R2c,'fB1R2c','mg C/m^3/d','release of semi-labile DOC ')
+      call self%register_diagnostic_variable(self%id_fB1R3c,'fB1R3c','mg C/m^3/d','release of semi-refractory DOC ')
+      call self%register_diagnostic_variable(self%id_fB1R1n,'fB1R1n','mmol N/m^3/d','release of DON')
+      call self%register_diagnostic_variable(self%id_fB1R1p,'fB1R1p','mmol P/m^3/d','release of DOP')
 
-      call self%register_diagnostic_variable(self%id_fR1B1c,'fR1B1c','mg C/m^3/d','bacterial uptake of labile DOC ')
-      call self%register_diagnostic_variable(self%id_fR2B1c,'fR2B1c','mg C/m^3/d','bacterial uptake of semi-labile DOC ')
-      call self%register_diagnostic_variable(self%id_fR3B1c,'fR3B1c','mg C/m^3/d','bacterial uptake of semi-refractory DOC ')
-      call self%register_diagnostic_variable(self%id_fR1B1n,'fR1B1n','mmol N/m^3/d','bacterial DON uptake')
-      call self%register_diagnostic_variable(self%id_fR1B1p,'fR1B1p','mmol P/m^3/d','bacterial DOP uptake')
+      call self%register_diagnostic_variable(self%id_fR1B1c,'fR1B1c','mg C/m^3/d','uptake of labile DOC ')
+      call self%register_diagnostic_variable(self%id_fR2B1c,'fR2B1c','mg C/m^3/d','uptake of semi-labile DOC ')
+      call self%register_diagnostic_variable(self%id_fR3B1c,'fR3B1c','mg C/m^3/d','uptake of semi-refractory DOC ')
+      call self%register_diagnostic_variable(self%id_fR1B1n,'fR1B1n','mmol N/m^3/d','uptake of DON')
+      call self%register_diagnostic_variable(self%id_fR1B1p,'fR1B1p','mmol P/m^3/d','uptake of DOP')
 
-      call self%register_diagnostic_variable(self%id_minn,'minn','mmol N/m^3/d','N mineralisation')
-      call self%register_diagnostic_variable(self%id_minp,'minp','mmol P/m^3/d','P mineralisation')
+      call self%register_diagnostic_variable(self%id_minn,'minn','mmol N/m^3/d','mineralisation of N')
+      call self%register_diagnostic_variable(self%id_minp,'minp','mmol P/m^3/d','mineralisation of P')
    end subroutine
 
    subroutine do(self,_ARGUMENTS_DO_)

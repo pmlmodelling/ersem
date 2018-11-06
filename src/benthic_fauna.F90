@@ -205,12 +205,12 @@ contains
       call self%add_to_aggregate_variable(total_bioturbation_activity, self%id_biotur)
       call self%add_to_aggregate_variable(total_bioirrigation_activity, self%id_bioirr)
 
-      call self%register_diagnostic_variable(self%id_fYG3c,'fYG3c','mg C/m^2/d',  'respiration',                              domain=domain_bottom,source=source_do_bottom)
-      call self%register_diagnostic_variable(self%id_fYKIn,'fYKIn','mmol N/m^2/d','dissolved inorganic nitrogen release',     domain=domain_bottom,source=source_do_bottom)
-      call self%register_diagnostic_variable(self%id_fYK1p,'fYK1p','mmol P/m^2/d','dissolved inorganic phosphorus release',   domain=domain_bottom,source=source_do_bottom)
-      call self%register_diagnostic_variable(self%id_fYQPc,'fYQPc','mg C/m^2/d',  'particulate organic carbon production',    domain=domain_bottom,source=source_do_bottom)
-      call self%register_diagnostic_variable(self%id_fYQPn,'fYQPn','mmol N/m^2/d','particulate organic nitrogen production',  domain=domain_bottom,source=source_do_bottom)
-      call self%register_diagnostic_variable(self%id_fYQPp,'fYQPp','mmol P/m^2/d','particulate organic phosphorus production',domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fYG3c,'fYG3c','mg C/m^2/d',  'respiration',                                 domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fYKIn,'fYKIn','mmol N/m^2/d','release of dissolved inorganic nitrogen',     domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fYK1p,'fYK1p','mmol P/m^2/d','release of dissolved inorganic phosphorus',   domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fYQPc,'fYQPc','mg C/m^2/d',  'production of particulate organic carbon',    domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fYQPn,'fYQPn','mmol N/m^2/d','production of particulate organic nitrogen',  domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fYQPp,'fYQPp','mmol P/m^2/d','production of particulate organic phosphorus',domain=domain_bottom,source=source_do_bottom)
 
    end subroutine initialize
 

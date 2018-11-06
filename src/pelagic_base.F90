@@ -200,7 +200,7 @@ contains
                if (qx(idep)/=0) then
                   call self%register_state_dependency(id_dep(idep),'deposition_target'//trim(num)//trim(name),trim(base_units)//'/m^2','target pool '//trim(num)//' for '//trim(long_name)//' deposition')
                   call self%request_coupling_to_model(id_dep(idep),'deposition_target'//trim(num),name)
-                  call self%register_diagnostic_variable(id_xdep(idep),'dep'//trim(num)//trim(name),trim(base_units)//'/m^2/d','flux'//trim(num)//' for '//trim(long_name)//' deposition',source=source_do_bottom)
+                  call self%register_diagnostic_variable(id_xdep(idep),'dep'//trim(num)//trim(name),trim(base_units)//'/m^2/d','deposition of '//trim(long_name)//' in target pool '//trim(num),source=source_do_bottom)
                end if
             end do
          end if
