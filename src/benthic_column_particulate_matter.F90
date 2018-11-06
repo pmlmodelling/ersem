@@ -76,7 +76,7 @@ module ersem_benthic_column_particulate_matter
 ! $b \approx 1/z_mean'$. However, this approximation becomes invalid when
 ! z_mean becomes large, and that can happen in the model. To avoid this problem,
 ! we define penetration depth as the mean depth of mass between 0 and \infty.
-! Since our exponential fucntion remains the same, expressions based on that
+! Since our exponential function remains the same, expressions based on that
 ! (e.g., impact of bioturbation) are the same as in the Oldenburg model.
 ! Expressions based on the interpretation of penetration depth (the mean depth of mass
 ! between 0 and \infty in our case, and between 0 and z_bot for the Oldenburg model)
@@ -283,22 +283,20 @@ module ersem_benthic_column_particulate_matter
 !
 ! The "within a single depth interval" functionality is partitioned over two modules:
 !
-! type_ersem_benthic_pom_layer is the master module that describes everything there is to know about
-! the POM contents in a single depth interval. This is the module that can be instantiated from fabm.yaml.
-! Its function is to collect interval-specific sink-source terms and translate those into the change in
-! column-integrated POM and penetration depth.
+! type_ersem_benthic_pom_layer computes the density of all constituents within the specified depth interval.
+! This is the module that can be instantiated from fabm.yaml.
 !
-! type_layer_content_calculator simply computes the mass with the specified depth interval.
-! It is created automatically as a submodel of type_ersem_benthic_pom_layer, and does not
-! interact with the user.
+! type_constituent_for_single_layer_change collects interval-specific sink-source terms for a single constituent
+! and translates those into the change in column-integrated matter and penetration depth. It is created
+! automatically as a submodel of type_ersem_benthic_pom_layer and does not interact with the user.
 !
 ! The split of functionality across two modules is needed because the mass within the interval must be known
 ! early, so all other modules can use it, while the change in column-integrated mass and penetration depth
 ! must be computed late, after all other individual modules have computed interval-specific rates of change.
 ! Thus we have the dependency chain:
-!      1 mass within the desired depth interval (type_layer_content_calculator)
+!      1 mass within the desired depth interval (type_ersem_benthic_pom_layer)
 !   -> 2 interval-specific sink-source terms (all other modules)
-!   -> 3 change in column-integrated mass and penetration depth (type_ersem_benthic_pom_layer)
+!   -> 3 change in column-integrated mass and penetration depth (type_constituent_for_single_layer_change)
 ! Putting 1 and 3 in the same module creates a circular dependency [that's BAD].
 
    use fabm_types
