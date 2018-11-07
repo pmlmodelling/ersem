@@ -60,7 +60,7 @@ contains
       call self%get_parameter(self%composition, 'composition', '',   'elemental composition')
       call self%get_parameter(self%reminQIX,    'remin',       '1/d','remineralisation rate at 10 degrees Celsius',default=0.0_rk)
       if (self%reminQIX /= 0.0_rk) then
-         call self%get_parameter(self%q10, 'q10', '-', 'Q_10 temperature coefficient for remineralisation', default=1.0_rk, minimum=1.0_rk)
+         call self%get_parameter(self%q10, 'q10', '-', 'Q_10 temperature coefficient', default=1.0_rk, minimum=1.0_rk)
          if (index(self%composition,'n') /= 0) &
             call self%get_parameter(self%pQIN3X, 'pN3', '-', 'nitrate fraction of remineralised nitrogen (remainder is ammonium)', default=0.0_rk)
          call self%register_dependency(self%id_ETW, standard_variables%temperature)

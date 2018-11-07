@@ -71,7 +71,7 @@ contains
       end if
       call self%get_parameter(rRPmX, 'rm', 'm/d', 'sinking velocity', default=0.0_rk)
 
-      call self%initialize_ersem_base(rm=rRPmX)
+      call self%initialize_ersem_base(rm=rRPmX, sedimentation=rRPmX>0._rk)
 
       if (index(composition,'c')/=0) then
          call self%add_constituent('c', 0.0_rk, c0, qn, qp)
