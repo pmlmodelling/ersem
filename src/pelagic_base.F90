@@ -103,7 +103,7 @@ contains
       real(rk) :: vel_crit
 
       ! We are adding a new yaml entry for each ersem_base type related to river dilution behaviour
-      call self%get_parameter(self%no_river_dilution,'no_river_dilution','','Disable river dilution by setting riverine concentrations equal to those in the receiving grid cell',default=.false.)
+      call self%get_parameter(self%no_river_dilution,'no_river_dilution','','disable river dilution by setting riverine concentrations equal to those in the receiving grid cell',default=.false.)
 
       ! Set time unit to d-1
       ! This implies that all rates (sink/source terms, vertical velocities) are given in d-1.
