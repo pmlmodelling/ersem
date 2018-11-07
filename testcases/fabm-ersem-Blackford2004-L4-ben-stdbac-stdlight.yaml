@@ -679,7 +679,7 @@ instances:
     model: ersem/benthic_base
     parameters:
       composition: c                                       # elemental composition
-      remin: 0.05                                          # remineralisation rate (1/d), default = 0.0
+      remin: 0.05                                          # remineralisation rate at 10 degrees Celsius (1/d), default = 0.0
       c0: 1e-05                                            # background carbon concentration (mg C/m^2), default = 0.0
     initialization:
       c: 0.05                                              # carbon (mg C/m^2)
@@ -782,7 +782,7 @@ instances:
       composition: s                                       # elemental composition
       minimum_depth: 0.0                                   # minimum depth (m), default = 0.0
       variable_maximum_depth: true                         # maximum depth is variable, default = false
-      remin: 0.007                                         # remineralization rate (1/d), default = 0.0
+      remin: 0.007                                         # remineralization rate at 10 degrees Celsius (1/d), default = 0.0
     coupling:
       Q: Q6
       s_remin_target: K5/per_layer/s1
@@ -794,7 +794,7 @@ instances:
       composition: s                                       # elemental composition
       variable_minimum_depth: true                         # minimum depth is variable, default = false
       maximum_depth: 0.3                                   # maximum depth (m), default = 0.0
-      remin: 0.007                                         # remineralization rate (1/d), default = 0.0
+      remin: 0.007                                         # remineralization rate at 10 degrees Celsius (1/d), default = 0.0
       source_depth_distribution: 2                         # vertical distribution of changes (1: constant absolute rate, 2: constant relative rate, 3: constant carbon-based relative rate), default = 1
     coupling:
       Q: Q6
@@ -811,7 +811,7 @@ instances:
       xno3: 2.0                                            # oxygen consumed per nitrate produced (mol O_2/mol N)
       pammon: 0.5                                          # fraction of oxygen demand fulfilled by denitrification under anaerobic conditions (-)
       pdenit: 0.05                                         # fraction of denitrification producing dinitrogen gas (remainder produces ammonium) (-)
-      xn2: 1.25                                            # oxygen produced per N2 produced (-)
+      xn2: 1.25                                            # oxygen demand fulfilled by reduction of nitrate to dinitrogen gas (mol O_2/mol N)
       hM3G4: 1.0                                           # Michaelis-Menten constant for nitrate limitation of denitrification (mmol N/m^3)
     coupling:
       K3n: K3/per_layer/n1                                 # benthic nitrate in 1st layer (mmol N/m^2)

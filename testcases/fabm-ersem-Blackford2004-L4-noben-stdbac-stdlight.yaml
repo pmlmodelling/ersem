@@ -139,7 +139,7 @@ instances:
     model: ersem/benthic_base
     parameters:
       composition: cnp                                # elemental composition
-      remin: 0.1                                      # remineralisation rate (1/d), default = 0.0
+      remin: 0.1                                      # remineralisation rate at 10 degrees Celsius (1/d), default = 0.0
       pN3: 0.9                                        # nitrate fraction of remineralised nitrogen (remainder is ammonium) (-), default = 0.0
       c0: 0.001                                       # background carbon concentration (mg C/m^2), default = 0.0
     initialization:
@@ -156,7 +156,7 @@ instances:
     model: ersem/benthic_base
     parameters:
       composition: cnpsf                              # elemental composition
-      remin: 0.05                                     # remineralisation rate (1/d), default = 0.0
+      remin: 0.05                                     # remineralisation rate at 10 degrees Celsius (1/d), default = 0.0
       pN3: 0.9                                        # nitrate fraction of remineralised nitrogen (remainder is ammonium) (-), default = 0.0
       resuspension: true                              # enable resuspension, default = false
       vel_crit: 0.02                                  # critical shear velocity for resuspension (m/s), default = 0.02
@@ -178,7 +178,7 @@ instances:
     model: ersem/benthic_base
     parameters:
       composition: cnp                                # elemental composition
-      remin: 0.01                                     # remineralisation rate (1/d), default = 0.0
+      remin: 0.01                                     # remineralisation rate at 10 degrees Celsius (1/d), default = 0.0
       pN3: 0.9                                        # nitrate fraction of remineralised nitrogen (remainder is ammonium) (-), default = 0.0
       c0: 0.001                                       # background carbon concentration (mg C/m^2), default = 0.0
     initialization:
@@ -681,7 +681,7 @@ instances:
     model: ersem/benthic_base
     parameters:
       composition: c                                  # elemental composition
-      remin: 0.05                                     # remineralisation rate (1/d), default = 0.0
+      remin: 0.05                                     # remineralisation rate at 10 degrees Celsius (1/d), default = 0.0
       c0: 1e-05                                       # background carbon concentration (mg C/m^2), default = 0.0
     initialization:
       c: 0.05                                         # carbon (mg C/m^2)
