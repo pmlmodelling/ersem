@@ -163,7 +163,6 @@ instances:
     parameters:
       composition: cnpsf                                   # elemental composition
       resuspension: true                                   # enable resuspension, default = false
-      vel_crit: 0.02                                       # critical shear velocity for resuspension (m/s), default = 0.02
       c0: 0.001                                            # background carbon concentration (mg C/m^2), default = 0.0
     initialization:
       c: 3052.0                                            # carbon (mg C/m^2)

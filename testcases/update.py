@@ -43,7 +43,9 @@ def update(path):
     has_erosion = False
     for name,model,parameters,coupling in enumerateModels(fabm_yaml):
         if model=='ersem/benthic_column_particulate_matter':
-            needs_erosion = True
+            needs_erosion = needs_erosion or parameters.get('resuspension', False)
+            parameters.pop('er', None)
+            parameters.pop('vel_crit', None)
         elif model=='ersem/benthic_erosion':
             has_erosion = True
     if needs_erosion and not has_erosion:
