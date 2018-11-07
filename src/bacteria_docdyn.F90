@@ -172,8 +172,8 @@ contains
       call self%register_diagnostic_variable(self%id_fR1B1n,'fR1B1n','mmol N/m^3/d','uptake of DON')
       call self%register_diagnostic_variable(self%id_fR1B1p,'fR1B1p','mmol P/m^3/d','uptake of DOP')
 
-      call self%register_diagnostic_variable(self%id_minn,'minn','mmol N/m^3/d','mineralisation of N')
-      call self%register_diagnostic_variable(self%id_minp,'minp','mmol P/m^3/d','mineralisation of P')
+      call self%register_diagnostic_variable(self%id_minn,'minn','mmol N/m^3/d','mineralisation of DON to DIN')
+      call self%register_diagnostic_variable(self%id_minp,'minp','mmol P/m^3/d','mineralisation of DOP to DIP')
    end subroutine
 
    subroutine do(self,_ARGUMENTS_DO_)
