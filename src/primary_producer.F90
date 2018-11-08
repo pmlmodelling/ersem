@@ -273,6 +273,8 @@ contains
       real(rk) :: pco2a3,cenh
       real(rk) :: RainR, t
 
+      real(rk),parameter :: onedayX = 1.0_rk
+
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
 
@@ -548,7 +550,7 @@ contains
             fPIRPs = sdo * sP
 
             ! Loss of excess silicate (qsP1c > qsc)
-            fPIN5s = MAX ( 0._rk, sP-self%qsc * cP)
+            fPIN5s = MAX ( 0._rk, sP-self%qsc * cP) / onedayX
 
             ! Net silicate uptake
             fN5PIs = MAX ( 0._rk, self%qsc*run) - fPIN5s
