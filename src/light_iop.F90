@@ -11,7 +11,7 @@ module ersem_light_iop
 
    type,extends(type_base_model),public :: type_ersem_light_iop
       ! Identifiers for diagnostic variables
-      type (type_diagnostic_variable_id)   :: id_EIR, id_parEIR, id_xEPS, id_iopABS, id_iopBBS
+      type (type_diagnostic_variable_id)   :: id_EIR, id_parEIR, id_xEPS, id_secchi, id_iopABS, id_iopBBS
       type (type_dependency_id)            :: id_dz, id_abESS ,id_iopABSp, id_iopBBSp
       type (type_horizontal_dependency_id) :: id_I_0, id_zenithA
 
@@ -50,6 +50,8 @@ contains
               standard_variable=standard_variables%downwelling_photosynthetic_radiative_flux,source=source_do_column)
       call self%register_diagnostic_variable(self%id_xEPS,'xEPS','1/m','attenuation coefficient of shortwave flux', &
               source=source_do_column)
+      call self%register_diagnostic_variable(self%id_secchi,'secchi','m','Secchi depth (1.7/Kd)', &
+              standard_variable=secchi_depth, source=source_do_column)
       call self%register_diagnostic_variable(self%id_iopABS,'iopABS','1/m','absorption coefficient of shortwave flux', &
               source=source_do_column)
       call self%register_diagnostic_variable(self%id_iopBBS,'iopBBS','1/m','backscatter coefficient of shortwave flux', &
@@ -91,6 +93,7 @@ contains
          _SET_DIAGNOSTIC_(self%id_EIR,EIR)                     ! Local shortwave radiation
          _SET_DIAGNOSTIC_(self%id_parEIR,EIR*self%pEIR_eowX)   ! Local photosynthetically active radiation
          _SET_DIAGNOSTIC_(self%id_xEPS,xEPS)                   ! Vertical attenuation of shortwave radiation
+         _SET_DIAGNOSTIC_(self%id_secchi,1.7_rk/xEPS)          ! Secchi depth estimate as in Poole and Atkins (1929)
          _SET_DIAGNOSTIC_(self%id_iopABS,iopABS)               ! Vertical absorption of shortwave radiation
          _SET_DIAGNOSTIC_(self%id_iopBBS,iopBBS)               ! Vertical backscattering of shortwave radiation
       _VERTICAL_LOOP_END_
