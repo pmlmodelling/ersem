@@ -74,10 +74,9 @@ contains
       real(rk),parameter :: bpk=.00022_rk
 
       _GET_HORIZONTAL_(self%id_I_0,buffer)
-
-      if (buffer.lt.0._rk) buffer=0._rk
-
       _GET_HORIZONTAL_(self%id_zenithA,zenithA)   ! Zenith angle
+
+      buffer = max(buffer, 0.0_rk)
 
       _VERTICAL_LOOP_BEGIN_
          _GET_(self%id_dz,dz)          ! Layer height (m)
