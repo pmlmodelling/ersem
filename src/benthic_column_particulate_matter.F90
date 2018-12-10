@@ -700,6 +700,7 @@ contains
          call change_processor%request_coupling(change_processor%id_local,'../'//name)
          call self%add_horizontal_variable(name//'_remin_target',units//'/m^2','sink for remineralized '//long_name,act_as_state_variable=.true.,link=link)
          call change_processor%request_coupling(change_processor%id_remin_target,'../'//name//'_remin_target')
+         call change_processor%register_dependency(change_processor%id_ETW, standard_variables%temperature)
       end if
 
    end subroutine layer_initialize_constituent
