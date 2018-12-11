@@ -388,12 +388,22 @@ contains
       class (type_ersem_benthic_column_particulate_matter), intent(inout), target :: self
       integer,                                              intent(in)            :: configunit
 
-      class (type_ersem_benthic_pom_layer),pointer :: single_layer
+      character(len=10)                             :: composition
+      real(rk)                                      :: c0
+      class (type_ersem_benthic_pom_layer), pointer :: single_layer
 
-      ! Perform normal benthic initialization (i.e., for POM without profile or penetration depth)
-      ! This will register state variables for all contituents of the particulate organic matter class,
-      ! e.g., carbon, nitrogen, phosphorus, silicon.
-      call self%type_ersem_benthic_base%initialize(configunit)
+      call self%initialize_ersem_benthic_base()
+
+      call self%get_parameter(composition, 'composition', '', 'elemental composition')
+      call self%get_parameter(c0,'c0','mg C/m^2','background carbon concentration',default=0.0_rk)
+
+      call self%get_parameter(self%resuspension, 'resuspension', '', 'enable resuspension', default=.false.)
+
+      if (index(composition,'c')/=0) call self%add_constituent('c',0.0_rk,c0)
+      if (index(composition,'p')/=0) call self%add_constituent('p',0.0_rk,qpRPIcX*c0)
+      if (index(composition,'n')/=0) call self%add_constituent('n',0.0_rk,qnRPIcX*c0)
+      if (index(composition,'s')/=0) call self%add_constituent('s',0.0_rk,qsRPIcX*c0)
+      if (index(composition,'f')/=0) call self%add_constituent('f',0.0_rk)
 
       ! Add penetration depths for all active constituents.
       if (_VARIABLE_REGISTERED_(self%id_c)) call self%register_state_variable(self%id_penetration_c,'pen_depth_c','m','penetration depth of carbon',minimum=0.0_rk)
@@ -460,7 +470,7 @@ contains
       call single_layer%parameters%set('variable_maximum_depth',.false.)
       call single_layer%parameters%set('minimum_depth',0.0_rk)
       call single_layer%parameters%set('maximum_depth',0.0_rk)
-      call single_layer%parameters%set('composition',self%composition)
+      call single_layer%parameters%set('composition',composition)
       call single_layer%couplings%set_string('Q',self%name)
       call self%add_child(single_layer,'surface',configunit=configunit)
    end subroutine initialize
