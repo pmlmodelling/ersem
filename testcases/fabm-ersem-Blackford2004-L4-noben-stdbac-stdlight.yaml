@@ -81,7 +81,7 @@ instances:
       c0: 0.0033                                      # background carbon concentration (mg C/m^3), default = 0.0
       EPS: 0.0001                                     # specific shortwave attenuation (m^2/mg C), default = 0.0
       rm: 0.5                                         # sinking velocity (m/d), default = 0.0
-      ndeposition: 2                                  # number of target pools for sedimentation, default = 0
+      ndeposition: 2                                  # number of target pools for sedimentation, default = 1
       qxc2: 0.1                                       # fraction of carbon sinking into deposition target 2 (-)
       qxn2: 0.1                                       # fraction of nitrogen sinking into deposition target 2 (-)
       qxp2: 0.06                                      # fraction of phosphorus sinking into deposition target 2 (-)
@@ -100,7 +100,7 @@ instances:
       c0: 0.0033                                      # background carbon concentration (mg C/m^3), default = 0.0
       EPS: 0.0001                                     # specific shortwave attenuation (m^2/mg C), default = 0.0
       rm: 2.0                                         # sinking velocity (m/d), default = 0.0
-      ndeposition: 2                                  # number of target pools for sedimentation, default = 0
+      ndeposition: 2                                  # number of target pools for sedimentation, default = 1
       qxc2: 0.1                                       # fraction of carbon sinking into deposition target 2 (-)
       qxn2: 0.1                                       # fraction of nitrogen sinking into deposition target 2 (-)
       qxp2: 0.06                                      # fraction of phosphorus sinking into deposition target 2 (-)
@@ -121,7 +121,7 @@ instances:
       c0: 0.0033                                      # background carbon concentration (mg C/m^3), default = 0.0
       EPS: 0.0001                                     # specific shortwave attenuation (m^2/mg C), default = 0.0
       rm: 10.0                                        # sinking velocity (m/d), default = 0.0
-      ndeposition: 2                                  # number of target pools for sedimentation, default = 0
+      ndeposition: 2                                  # number of target pools for sedimentation, default = 1
       qxc2: 0.1                                       # fraction of carbon sinking into deposition target 2 (-)
       qxn2: 0.1                                       # fraction of nitrogen sinking into deposition target 2 (-)
       qxp2: 0.06                                      # fraction of phosphorus sinking into deposition target 2 (-)
