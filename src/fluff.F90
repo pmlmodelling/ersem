@@ -77,28 +77,28 @@ contains
         if (self%qxc(itarget)/=0) then
          call self%register_state_dependency(self%id_targetc(itarget),'target'//trim(num)//'c','mg C/m^2','target '//trim(num)//' carbon')
          call self%request_coupling_to_model(self%id_targetc(itarget),self%id_target(itarget),'c')
-         call self%register_diagnostic_variable(self%id_inc_c(itarget),'fluff incorporation into target'//trim(num)//'c','mg C/m^2/d','rate of fluff incorporation into target '//trim(num)//' carbon',domain=domain_bottom,source=source_do_bottom)
+         call self%register_diagnostic_variable(self%id_inc_c(itarget),'into_target'//trim(num)//'c','mg C/m^2/d','rate of fluff incorporation into target '//trim(num)//' carbon',domain=domain_bottom,source=source_do_bottom)
         end if
         if (self%qxn(itarget)/=0) then
          call self%register_state_dependency(self%id_targetn(itarget),'target'//trim(num)//'n','mg N/m^2','target '//trim(num)//' nitrogen')
          call self%request_coupling_to_model(self%id_targetn(itarget),self%id_target(itarget),'n')
-         call self%register_diagnostic_variable(self%id_inc_n(itarget),'fluff incorporation into target'//trim(num)//'n','mg N/m^2/d','rate of fluff incorporation into target '//trim(num)//' nitrogen',domain=domain_bottom,source=source_do_bottom)
+         call self%register_diagnostic_variable(self%id_inc_n(itarget),'into_target'//trim(num)//'n','mg N/m^2/d','rate of fluff incorporation into target '//trim(num)//' nitrogen',domain=domain_bottom,source=source_do_bottom)
         end if
         if (self%qxp(itarget)/=0) then
          call self%register_state_dependency(self%id_targetp(itarget),'target'//trim(num)//'p','mg P/m^2','target '//trim(num)//' phosphorus')
          call self%request_coupling_to_model(self%id_targetp(itarget),self%id_target(itarget),'p')
-         call self%register_diagnostic_variable(self%id_inc_p(itarget),'fluff incorporation into target'//trim(num)//'p','mg P/m^2/d','rate of fluff incorporation into target '//trim(num)//' phosphorus',domain=domain_bottom,source=source_do_bottom)
+         call self%register_diagnostic_variable(self%id_inc_p(itarget),'into_target'//trim(num)//'p','mg P/m^2/d','rate of fluff incorporation into target '//trim(num)//' phosphorus',domain=domain_bottom,source=source_do_bottom)
         end if
         if (self%qxs(itarget)/=0) then
          call self%register_state_dependency(self%id_targets(itarget),'target'//trim(num)//'s','mg Si/m^2','target '//trim(num)//' silicate')
          call self%request_coupling_to_model(self%id_targets(itarget),self%id_target(itarget),'s')
-         call self%register_diagnostic_variable(self%id_inc_s(itarget),'fluff incorporation into target'//trim(num)//'s','mg Si/m^2/d','rate of fluff incorporation into target '//trim(num)//' silicate',domain=domain_bottom,source=source_do_bottom)
+         call self%register_diagnostic_variable(self%id_inc_s(itarget),'into_target'//trim(num)//'s','mg Si/m^2/d','rate of fluff incorporation into target '//trim(num)//' silicate',domain=domain_bottom,source=source_do_bottom)
         end if
         if (use_iron) then
         if (self%qxf(itarget)/=0) then
          call self%register_state_dependency(self%id_targetf(itarget),'target'//trim(num)//'f','mg Fe/m^2','target '//trim(num)//' iron')
          call self%request_coupling_to_model(self%id_targetf(itarget),self%id_target(itarget),'f')
-         call self%register_diagnostic_variable(self%id_inc_f(itarget),'fluff incorporation into target'//trim(num)//'f','mg Fe/m^2/d','rate of fluff incorporation into target '//trim(num)//' iron',domain=domain_bottom,source=source_do_bottom)
+         call self%register_diagnostic_variable(self%id_inc_f(itarget),'into_target'//trim(num)//'f','mg Fe/m^2/d','rate of fluff incorporation into target '//trim(num)//' iron',domain=domain_bottom,source=source_do_bottom)
         end if
         end if
 
