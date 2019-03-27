@@ -56,6 +56,8 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
+      call self%initialize_ersem_benthic_base()
+
       call self%get_parameter(composition, 'composition', '', 'elemental composition')
       call self%get_parameter(self%reminQIX, 'remin', '1/d','remineralisation rate at 10 degrees Celsius',default=0.0_rk)
       if (self%reminQIX /= 0.0_rk) then
@@ -65,8 +67,6 @@ contains
          call self%register_dependency(self%id_ETW, standard_variables%temperature)
       end if
       call self%get_parameter(self%resuspension, 'resuspension', '', 'enable resuspension', default=.false.)
-
-      call self%initialize_ersem_benthic_base()
 
       if (self%resuspension) then
          call self%get_parameter(self%er,'er','1/d','erosion rate',default=0.225_rk)
@@ -109,6 +109,8 @@ contains
 
    subroutine initialize_ersem_benthic_base(self)
       class (type_ersem_benthic_base), intent(inout), target :: self
+
+      self%resuspension = .false.
 
       ! Set time unit to d-1
       ! This implies that all rates (sink/source terms, vertical velocities) are given in d-1.
