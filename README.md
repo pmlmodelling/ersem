@@ -95,7 +95,7 @@ To use the driver, you need a configuration file can run.nml, which you could ta
     bottom_stress:
       constant_value: 0.0
 
-This specifies that wind speed must be read from file wind.dat (first column, no scaling), the light absorption by silt must be set to a constant value of 0.07 m-1, atmospheric pCO2 to 406 ppm, and bottom stress to 0 Pa. The "column" and "scale_factor" attributes in the case of wind_speed are optional. They default to 1 and 1.0, respectively.
+This specifies that wind speed must be read from file wind.dat (first column, no scaling), the light absorption by silt must be set to a constant value of 0.07 m-1, atmospheric pCO2 to 408.52 ppm, and bottom stress to 0 Pa. The "column" and "scale_factor" attributes in the case of wind_speed are optional. They default to 1 and 1.0, respectively.
 
 ### Python front-end
 
