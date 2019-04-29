@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+
 import os
 import tempfile
 import glob
@@ -7,22 +9,22 @@ import argparse
 import yaml
 
 # Try to load pyfabm.
-# If available, we'll use it to automatically add comments to fabm.yaml. 
+# If available, we'll use it to automatically add comments to fabm.yaml.
 try:
     import pyfabm.complete_yaml
 except ImportError:
-    print 'Unable to load pyfabm. Automatic addition of comments to fabm.yaml will be disabled. To fix this, build and install pyfabm by running cmake+make for source directory <FABMDIR>/src/drivers/python.'
+    print('Unable to load pyfabm. Automatic addition of comments to fabm.yaml will be disabled. To fix this, build and install pyfabm by running cmake+make for source directory <FABMDIR>/src/drivers/python.')
     pyfabm = None
 
 # ------------------------------------------
 # Hook into PyYAML to make it preserve the order of dictionary elements (i.e., modules in fabm.yaml).
 try:
     import collections
-    def dict_representer(dumper, data):                                                            
-        return dumper.represent_mapping(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, data.iteritems())                                                                                         
-    def dict_constructor(loader, node):                                                            
-        return collections.OrderedDict(loader.construct_pairs(node))                               
-    yaml.add_representer(collections.OrderedDict, dict_representer)                                
+    def dict_representer(dumper, data):
+        return dumper.represent_mapping(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, data.iteritems())
+    def dict_constructor(loader, node):
+        return collections.OrderedDict(loader.construct_pairs(node))
+    yaml.add_representer(collections.OrderedDict, dict_representer)
     yaml.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, dict_constructor)
 except ImportError:
     pass
