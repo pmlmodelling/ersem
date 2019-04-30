@@ -25,6 +25,8 @@ module ersem_model_library
    use ersem_benthic_bacteria
    use ersem_benthic_fauna
    use ersem_benthic_carbonate
+   use ersem_benthic_erosion
+   use ersem_fluff
    use ersem_zenith_angle
 
    implicit none
@@ -74,6 +76,8 @@ contains
          case ('benthic_column_particulate_matter_layer'); allocate(type_ersem_benthic_pom_layer::model)
          case ('benthic_fauna');                           allocate(type_ersem_benthic_fauna::model)
          case ('benthic_carbonate');                       allocate(type_ersem_benthic_carbonate::model)
+         case ('benthic_erosion');                         allocate(type_ersem_benthic_erosion::model)
+         case ('fluff');                                   allocate(type_ersem_fluff::model)
          case ('zenith_angle');                            allocate(type_ersem_zenith_angle::model)
          ! Add new models here
          case default

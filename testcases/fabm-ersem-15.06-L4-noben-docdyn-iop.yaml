@@ -55,6 +55,8 @@ instances:
       iswCO2: 1                                           # carbonate system diagnostics (0: off, 1: on), default = 1
       iswASFLUX: 1                                        # air-sea CO2 exchange (0: none, 1: Nightingale and Liss, 2: Wanninkhof 1992 without chemical enhancement, 3: Wanninkhof 1992 with chemical enhancement, 4: Wanninkhof 1999), default = 1
       iswtalk: 2                                          # alkalinity formulation (1-4: from salinity and temperature, 5: dynamic alkalinity), default = 5
+      pHscale: 1                                          # pH scale (1: total, 0: SWS, -1: SWS backward compatible), default = 1
+      iswbioalk: 1                                        # use bioalkalinity (0: off, 1: on), default = 1
     initialization:
       c: 2130.0                                           # total dissolved inorganic carbon (mmol C/m^3)
   R1:
@@ -92,7 +94,7 @@ instances:
       iopABS: 1e-05                                       # specific shortwave absorption (m^2/mg C), default = 0.0
       iopBBS: 1.6e-05                                     # specific shortwave backscatter (m^2/mg C), default = 0.0
       rm: 1.0                                             # sinking velocity (m/d), default = 0.0
-      ndeposition: 2                                      # number of target pools for sedimentation, default = 0
+      ndeposition: 2                                      # number of target pools for sedimentation, default = 1
       qxc2: 0.1                                           # fraction of carbon sinking into deposition target 2 (-)
       qxn2: 0.1                                           # fraction of nitrogen sinking into deposition target 2 (-)
       qxp2: 0.06                                          # fraction of phosphorus sinking into deposition target 2 (-)
@@ -112,7 +114,7 @@ instances:
       iopABS: 1e-05                                       # specific shortwave absorption (m^2/mg C), default = 0.0
       iopBBS: 1.6e-05                                     # specific shortwave backscatter (m^2/mg C), default = 0.0
       rm: 5.0                                             # sinking velocity (m/d), default = 0.0
-      ndeposition: 2                                      # number of target pools for sedimentation, default = 0
+      ndeposition: 2                                      # number of target pools for sedimentation, default = 1
       qxc2: 0.1                                           # fraction of carbon sinking into deposition target 2 (-)
       qxn2: 0.1                                           # fraction of nitrogen sinking into deposition target 2 (-)
       qxp2: 0.06                                          # fraction of phosphorus sinking into deposition target 2 (-)
@@ -134,7 +136,7 @@ instances:
       iopABS: 1e-05                                       # specific shortwave absorption (m^2/mg C), default = 0.0
       iopBBS: 1.6e-05                                     # specific shortwave backscatter (m^2/mg C), default = 0.0
       rm: 10.0                                            # sinking velocity (m/d), default = 0.0
-      ndeposition: 2                                      # number of target pools for sedimentation, default = 0
+      ndeposition: 2                                      # number of target pools for sedimentation, default = 1
       qxc2: 0.1                                           # fraction of carbon sinking into deposition target 2 (-)
       qxn2: 0.1                                           # fraction of nitrogen sinking into deposition target 2 (-)
       qxp2: 0.06                                          # fraction of phosphorus sinking into deposition target 2 (-)
@@ -152,7 +154,7 @@ instances:
     model: ersem/benthic_base
     parameters:
       composition: cnp                                    # elemental composition
-      remin: 0.1                                          # remineralisation rate (1/d), default = 0.0
+      remin: 0.1                                          # remineralisation rate at 10 degrees Celsius (1/d), default = 0.0
       pN3: 0.9                                            # nitrate fraction of remineralised nitrogen (remainder is ammonium) (-), default = 0.0
       c0: 0.001                                           # background carbon concentration (mg C/m^2), default = 0.0
     initialization:
@@ -169,10 +171,10 @@ instances:
     model: ersem/benthic_base
     parameters:
       composition: cnpsf                                  # elemental composition
-      remin: 0.05                                         # remineralisation rate (1/d), default = 0.0
+      remin: 0.05                                         # remineralisation rate at 10 degrees Celsius (1/d), default = 0.0
       pN3: 0.9                                            # nitrate fraction of remineralised nitrogen (remainder is ammonium) (-), default = 0.0
       resuspension: true                                  # enable resuspension, default = false
-      vel_crit: 0.02                                      # critical shear velocity for resuspension (m/s)
+      vel_crit: 0.02                                      # critical shear velocity for resuspension (m/s), default = 0.02
       c0: 0.001                                           # background carbon concentration (mg C/m^2), default = 0.0
     initialization:
       c: 3052.0                                           # carbon (mg C/m^2)
@@ -191,7 +193,7 @@ instances:
     model: ersem/benthic_base
     parameters:
       composition: cnp                                    # elemental composition
-      remin: 0.01                                         # remineralisation rate (1/d), default = 0.0
+      remin: 0.01                                         # remineralisation rate at 10 degrees Celsius (1/d), default = 0.0
       pN3: 0.9                                            # nitrate fraction of remineralised nitrogen (remainder is ammonium) (-), default = 0.0
       c0: 0.001                                           # background carbon concentration (mg C/m^2), default = 0.0
     initialization:
@@ -699,7 +701,7 @@ instances:
     model: ersem/benthic_base
     parameters:
       composition: c                                      # elemental composition
-      remin: 0.05                                         # remineralisation rate (1/d), default = 0.0
+      remin: 0.05                                         # remineralisation rate at 10 degrees Celsius (1/d), default = 0.0
       c0: 1e-05                                           # background carbon concentration (mg C/m^2), default = 0.0
     initialization:
       c: 0.05                                             # carbon (mg C/m^2)

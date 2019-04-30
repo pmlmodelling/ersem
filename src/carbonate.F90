@@ -13,15 +13,15 @@ module ersem_carbonate
 !     Variable identifiers
       type (type_state_variable_id)     :: id_O3c,id_TA,id_bioalk
       type (type_dependency_id)         :: id_ETW, id_X1X, id_dens, id_pres
-      type (type_dependency_id)         :: id_Carb_in,id_pco2_in
+      type (type_dependency_id)         :: id_Carb_in,id_BiCarb_in,id_CarbA_in,id_pH_in,id_pco2_in
       type (type_horizontal_dependency_id) :: id_wnd,id_PCO2A
 
       type (type_diagnostic_variable_id) :: id_ph,id_pco2,id_CarbA, id_BiCarb, id_Carb, id_TA_diag
       type (type_diagnostic_variable_id) :: id_Om_cal,id_Om_arg
 
-      type (type_horizontal_diagnostic_variable_id) :: id_fairmg
+      type (type_horizontal_diagnostic_variable_id) :: id_fair,id_wnd_diag
 
-      integer :: iswCO2X,iswtalk,iswASFLUX
+      integer :: iswCO2X,iswtalk,iswASFLUX,phscale
    contains
       procedure :: initialize
       procedure :: do
@@ -46,6 +46,7 @@ contains
       call self%get_parameter(self%iswCO2X,'iswCO2','','carbonate system diagnostics (0: off, 1: on)',default=1)
       call self%get_parameter(self%iswASFLUX,'iswASFLUX','','air-sea CO2 exchange (0: none, 1: Nightingale and Liss, 2: Wanninkhof 1992 without chemical enhancement, 3: Wanninkhof 1992 with chemical enhancement, 4: Wanninkhof 1999)',default=1)
       call self%get_parameter(self%iswtalk,'iswtalk','','alkalinity formulation (1-4: from salinity and temperature, 5: dynamic alkalinity)',default=5)
+      call self%get_parameter(self%phscale,'pHscale','','pH scale (1: total, 0: SWS, -1: SWS backward compatible)',default=1,minimum=-1,maximum=1)
       if (self%iswtalk<1.or.self%iswtalk>5) call self%fatal_error('initialize','iswtalk takes values between 1 and 5 only')
 
       call self%register_state_variable(self%id_O3c,'c','mmol C/m^3','total dissolved inorganic carbon', 2200._rk,minimum=0._rk)
@@ -73,17 +74,24 @@ contains
       end if
 
       if (self%iswCO2X==1) then
-         call self%register_diagnostic_variable(self%id_ph,    'pH',    '-',      'pH',standard_variable=standard_variables%ph_reported_on_total_scale)
-         call self%register_diagnostic_variable(self%id_pco2,  'pCO2',  '1e-6',    'partial pressure of CO2')
-         call self%register_diagnostic_variable(self%id_CarbA, 'CarbA', 'mmol/m^3','carbonic acid concentration')
-         call self%register_diagnostic_variable(self%id_BiCarb,'BiCarb','mmol/m^3','bicarbonate concentration')
-         call self%register_diagnostic_variable(self%id_Carb,  'Carb',  'mmol/m^3','carbonate concentration',standard_variable=standard_variables%mole_concentration_of_carbonate_expressed_as_carbon)
+         if (self%phscale==1) then
+             call self%register_diagnostic_variable(self%id_ph,'pH',    '-',       'pH on total scale',standard_variable=standard_variables%ph_reported_on_total_scale,missing_value=0._rk)
+         elseif (self%phscale==0) then
+             call self%register_diagnostic_variable(self%id_ph,'pH',    '-',       'pH on seawater scale',standard_variable=standard_variables%ph_reported_on_total_scale,missing_value=0._rk)
+         elseif (self%phscale==-1) then
+             call self%register_diagnostic_variable(self%id_ph,'pH',    '-',       'pH on seawater scale',standard_variable=standard_variables%ph_reported_on_total_scale,missing_value=0._rk)
+         end if
+         call self%register_diagnostic_variable(self%id_pco2,  'pCO2',  '1e-6',    'partial pressure of CO2',missing_value=0._rk)
+         call self%register_diagnostic_variable(self%id_CarbA, 'CarbA', 'mmol/m^3','carbonic acid concentration',missing_value=0._rk)
+         call self%register_diagnostic_variable(self%id_BiCarb,'BiCarb','mmol/m^3','bicarbonate concentration',missing_value=0._rk)
+         call self%register_diagnostic_variable(self%id_Carb,  'Carb',  'mmol/m^3','carbonate concentration',standard_variable=standard_variables%mole_concentration_of_carbonate_expressed_as_carbon,missing_value=0._rk)
 
          call self%register_diagnostic_variable(self%id_Om_cal,'Om_cal','-','calcite saturation')
          call self%register_diagnostic_variable(self%id_Om_arg,'Om_arg','-','aragonite saturation')
       end if
       if (self%iswASFLUX>=1) then
-         call self%register_diagnostic_variable(self%id_fairmg,'fairmg','mmol C/m^2/d','air-sea flux of CO2',source=source_do_surface)
+         call self%register_diagnostic_variable(self%id_fair,'fair','mmol C/m^2/d','air-sea flux of CO2',source=source_do_surface)
+         call self%register_diagnostic_variable(self%id_wnd_diag,'wind','m/s','surface wind speed',source=source_do_surface)
       end if
 
       call self%register_dependency(self%id_ETW, standard_variables%temperature)
@@ -95,6 +103,9 @@ contains
       end if
       if (self%iswCO2X==1) then
          call self%register_dependency(self%id_Carb_in,'Carb','mmol/m^3','previous carbonate concentration')
+         call self%register_dependency(self%id_CarbA_in,'CarbA','mmol/m^3','previous carbonic acid concentration')
+         call self%register_dependency(self%id_BiCarb_in,'BiCarb','mmol/m^3','previous bicarbonate concentration')
+         call self%register_dependency(self%id_pH_in,'pH','-','previous pH')
       end if
 
       if (self%iswASFLUX>=1) then
@@ -173,23 +184,27 @@ contains
          TA = TA/1.0e6_rk                ! from umol kg-1 to mol kg-1
          Ctot  = O3C / 1.e3_rk / density ! from mmol m-3 to mol kg-1
 
-         CALL CO2DYN (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success)   ! NB pressure from dbar to bar
+         CALL CO2DYN (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success,self%phscale)   ! NB pressure from dbar to bar
 
-         if (success) then
-            ! Carbonate system iterative scheme converged -  save associated diagnostics.
-            ! Convert outputs from fraction to ppm (pCO2) and from mol kg-1 to mmol m-3 (concentrations).
-            _SET_DIAGNOSTIC_(self%id_ph,pH)
-            _SET_DIAGNOSTIC_(self%id_pco2,PCO2*1.e6_rk)
-            _SET_DIAGNOSTIC_(self%id_CarbA, H2CO3*1.e3_rk*density)
-            _SET_DIAGNOSTIC_(self%id_Bicarb,HCO3*1.e3_rk*density)
-            _SET_DIAGNOSTIC_(self%id_Carb,  CO3*1.e3_rk*density)
-         else
+         if (.not.success) then
             ! Carbonate system iterative scheme did not converge.
             ! All diagnostics retain their previous value.
             ! Use previous carbonate concentration (but current environment) for carbonate saturation states.
+            _GET_(self%id_CarbA_in,H2CO3)
+            _GET_(self%id_BiCarb_in,HCO3)
             _GET_(self%id_Carb_in,CO3)
+            _GET_(self%id_pCO2_in,pCO2)
+            _GET_(self%id_pH_in,pH)
             CO3 = CO3/1.e3_rk/density  ! from mmol/m3 to mol/kg
-         end if
+            HCO3 = HCO3/1.e3_rk/density  ! from mmol/m3 to mol/kg
+            H2CO3 = H2CO3/1.e3_rk/density  ! from mmol/m3 to mol/kg
+            pCO2 = pCO2/1.e6_rk  ! from uatm to atm
+         endif
+         _SET_DIAGNOSTIC_(self%id_ph,pH)
+         _SET_DIAGNOSTIC_(self%id_pco2,PCO2*1.e6_rk)
+         _SET_DIAGNOSTIC_(self%id_CarbA, H2CO3*1.e3_rk*density)
+         _SET_DIAGNOSTIC_(self%id_Bicarb,HCO3*1.e3_rk*density)
+         _SET_DIAGNOSTIC_(self%id_Carb,  CO3*1.e3_rk*density)
 
          ! Call carbonate saturation state subroutine
          CALL CaCO3_Saturation (ETW, X1X, pres*1.e4_rk, CO3, Om_cal, Om_arg)  ! NB pressure from dbar to Pa
@@ -242,7 +257,7 @@ contains
 !  for surface box only calculate air-sea flux
 !..Only call after 2 days, because the derivation of instability in the
 !..
-         CALL CO2dyn(T, S, PRSS*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success)
+         CALL CO2dyn(T, S, PRSS*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success,self%phscale)
          if (.not.success) then
             _GET_(self%id_pco2_in,PCO2)
             PCO2 = PCO2*1.e-6_rk
@@ -262,9 +277,11 @@ contains
                fwind=0.31_rk*wnd**2.0_rk*(sc/660._rk)**(-0.5_rk)
          elseif (self%iswASFLUX==3)THEN       ! Wanninkhof 1992 with chemical enhancement
                fwind=(2.5_rk*(0.5246_rk+0.016256_rk*T+0.00049946_rk*T**2.0_rk)+0.3_rk*wnd**2.0_rk)*(sc/660._rk)**(-0.5_rk)
-         elseif(self%iswASFLUX==4)THEN             ! Wanninkhof 1999 
+         elseif(self%iswASFLUX==4)THEN             ! Wanninkhof 1999
               fwind=0.0283_rk*wnd**3.0_rk*(sc/660._rk)**(-0.5_rk)
          endif
+
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_wnd_diag,wnd) ! diagnostic in m/s
 
          fwind=fwind*24._rk/100._rk   ! convert to m/day
          UPTAKE = fwind * k0co2 * ( PCO2A/1.e6_rk - PCO2 )
@@ -272,7 +289,7 @@ contains
          FAIRCO2 = UPTAKE * 1.e3_rk * density
 
          _SET_SURFACE_EXCHANGE_(self%id_O3c,FAIRCO2)
-         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fairmg,FAIRCO2)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fair,FAIRCO2)
       _HORIZONTAL_LOOP_END_
    end subroutine
 
@@ -290,7 +307,7 @@ contains
 !\\
 !\\
 ! !INTERFACE:
-      SUBROUTINE CO2dyn ( T, S, PRSS,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success)
+      SUBROUTINE CO2dyn ( T, S, PRSS,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success,hscale)
 !
 ! !LOCAL VARIABLES:
 !     ! TODO - SORT THESE!
@@ -298,6 +315,7 @@ contains
       real(rk),intent(inout) :: ctot,TA
       real(rk),intent(out) :: pH,PCO2,H2CO3,HCO3,CO3,k0co2
       logical, intent(out) :: success
+      integer, intent(in)  :: hscale
 
       real(rk) :: k1co2,k2co2,kb
       real(rk) :: Tmax, Btot
@@ -321,7 +339,7 @@ contains
         BTOT=0.0004128_rk*S/35._rk
       ENDIF
 
-      CALL CO2SET(PRSS,Tmax,S,k0co2,k1co2,k2co2,kb)
+      CALL CO2SET(PRSS,Tmax,S,k0co2,k1co2,k2co2,kb,hscale)
       CALL CO2CLC(k0co2,k1co2,k2co2,kb,ICALC,BORON,BTOT,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,success)
 
       END SUBROUTINE CO2DYN
@@ -337,40 +355,27 @@ contains
 ! !DESCRIPTION:
 !  TODO - CHECK THIS!
 !
-! Routine to calculate CO2 system constants under the conditions set by
-! P,S,T     (NOTE: PRESSURE <> 1ATM IS NOT YET CODED)
-! I. Calculate constants at P=1 and S=0 using
-!      ln K0  =  A + B/TK + C ln TK
-!                                   (where TK is in Kelvin)
-! II. Calculate constants at P=1 and salinity S using
-!    ln K  =  ln K0 + (a0 + a1/TK + a2 ln TK) S**1/2
-!                 + (b0 + b1TK + b2TK**2) S
-! The sources of the coefficients are as follows:
-!  IC=                  1                    2                  3
-!               (NBS pH scale)        (SWS pH scale       (SWS pH scale
-!                                       with no F)
-!  KP            WEISS (1974)           WEISS(1974)          WEISS(1974
-!  K1C )      MEHRBACH ACC. TO       HANSSON ACC. TO    HANSSON AND MEH
-!  K2C )       MILLERO (1979)         MILLERO (1979)      ACC. TO DICKS
-!   KB )                                                 AND MILLERO (1
-!                                                         (K1C AND K2C
-!                                                           HANSSON ACC
-!                                                            MILLERO (1
-!                                                              (KB ONLY
+! Routine to calculate CO2 system constants under the conditions set by P,S,T
+! This subroutine has been rewritten to calculate constants in total scale 
+! using Millero, Marine and Freshwater Research, 2010 for k1 and k2 to cover low salinity areas
 !\\
 !\\
 ! !INTERFACE:
-      SUBROUTINE CO2SET(P,T,S,k0co2,k1co2,k2co2,kb)
+      SUBROUTINE CO2SET(P,T,S,k0co2,k1co2,k2co2,kb,hscale)
          real(rk),intent(in)  :: P,T,S
+         integer, intent (in) :: hscale
          real(rk),intent(out) :: k0co2,k1co2,k2co2,kb
 !
 ! !USES:
 !
 ! !LOCAL VARIABLES
-! 
+!
       real(rk)              :: TK, delta, kappa
       real(rk)              :: dlogTK, S2, S15, sqrtS,TK100
       real(rk),parameter    :: Rgas = 83.131_rk
+      real(rk)              :: ST, FT, kS,kF, Cl
+      real(rk)              :: is,sqrtis,invtk,total2free_surface,total2free_depth,free2sws_surface,total2sws_surface
+      real (rk)             :: free2sws_depth,total2sws_depth,pk1co2,pk2co2
 
 !
 ! !REVISION HISTORY:
@@ -385,51 +390,72 @@ contains
 
 !  Derive simple terms used more than once
        TK=T+273.15_rk
+       invtk=1._rk/TK
        dlogTK = log(TK)
        TK100=TK/100._rk
        S2 = S*S
        sqrtS = sqrt(S)
        S15 = S**1.5_rk
 
+
+! is : ionic strength, needed to calculate ks 
+        is = 19.924_rk*S/(1000._rk-1.005_rk*S)
+        sqrtis=sqrt(is)
+
+! cl : Chloride concentration, used to calculate total sulphate and total fluoride
+       cl = S / 1.80655_rk
+
+! st : total sulfate using Morris & Riley, Deep Sea Research, 1966
+! 0.14 is the S:Cl ratio observed, 96.065 is the molecular weight of SO4--
+        st= 0.14_rk * cl / 96.065_rk
+
+! ks = [H][SO4]/[HSO4] in free scale from Dickson, J. chem. Thermodynamics, 1990 and Perez & Frega, Mar Chem, 1987
+        ks=exp(-4276.1d0*invtk + 141.328d0 - 23.093d0*dlogtk &
+     &      + (-13856.d0*invtk + 324.57d0 - 47.986d0*dlogtk) * sqrtis &
+     &      + (35474.d0*invtk - 771.54 + 114.723d0*dlogtk) * is &
+     &      - 2698.d0*invtk*is**1.5 + 1776.d0*invtk*is**2._rk &
+     &      + log(1.0d0 - 0.001005d0*s))
+
+! ft : total fluoride using Riley, Analytica chimica Acta, 1966
+! 0.000067 is the F:Cl ratio observed, 19.9984 is the molecular weight of F-
+        ft= 0.000067_rk * cl / 19.9984_rk
+
+! kf = [H][F]/[HF] in total scale from Perez and Fraga (1987)
+!          Formulation as given in Dickson et al. (2007)
+         kf = exp(874.d0*invtk - 9.68d0 + 0.111d0*sqrts)
+
+! this is the conversion factor from total scale to free scale at surface
+        total2free_surface = 1._rk/(1._rk + st/ks)
+! this is the conversion factor from free to SWS at surface
+        free2sws_surface= 1._rk + st/ks + ft/kf
+! this is the conversion factor from total to SWS at surface
+        total2sws_surface= total2free_surface*free2sws_surface
+
+! Correction for high pressure (from Mocsy)
+        delta=-18.03_rk+0.0466_rk*T+0.000316_rk*T**2._rk
+        kappa=-4.53_rk+0.00009_rk*T
+        ks=ks*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
+! this is the conversion factor from total scale to free scale at depth
+        total2free_depth = 1._rk/(1._rk + st/ks)
+
+! Correction for high pressure (from Mocsy) - this requires kf being in free scale, final value still in total scale
+        delta=-9.78_rk-0.009_rk*T-0.000942_rk*T**2._rk
+        kappa=-3.91_rk+0.000054_rk*T
+        kf=kf*total2free_surface*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))/total2free_depth
+! this is the conversion factor from free to SWS at depth
+        free2sws_depth= 1._rk + st/ks + ft/(kf*total2free_depth)
+! this is the conversion factor from total to SWS at surface
+        total2sws_depth= total2free_depth*free2sws_depth
+
 !  Calculation of constants as used in the OCMIP process for ICONST = 3 or 6
 !  see http://www.ipsl.jussieu.fr/OCMIP/
 ! k0co2 = CO2/fCO2 from Weiss 1974
-        k0co2 = exp(93.4517/tk100 - 60.2409 + 23.3585 * log(tk100) + &
-        &       s * (.023517 - 0.023656 * tk100 + 0.0047036 * tk100 ** 2._rk))
-
-! the commented definition of K0co2 herebelow is the one giving bit-identical output to the old CO2sys module
-!        VAL=-167.8108_rk + 9345.17_rk/TK + 23.3585_rk*LOG(TK)
-!        VAL=VAL + (0.023517_rk-2.3656e-4_rk*TK+4.7036e-7_rk*TK*TK)*S
-!        k0co2=EXP(VAL)
-! end of old definition
-
-! Correction for high pressure of K0 (from Millero 1995)
-! added YA 04/10/2010
-        delta=-25.6_rk+0.2324_rk*T-0.0036246_rk*T**2
-        kappa=(-5.13_rk+0.0794_rk*T)/1000._rk
-        k0co2=k0co2*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
-
-! k1co2 = [H][HCO3]/[H2CO3]
-! Millero p.664 (1995) using Mehrbach et al. data on seawater scale 
-        k1co2=10._rk**(-1._rk*(3670.7_rk/TK - 62.008_rk + 9.7944_rk*dlogTK - &
-     &     0.0118_rk * S + 0.000116_rk*S2))
-! Correction for high pressure (from Millero 1995)
-! added YA 04/10/2010
-        delta=-25.5_rk+0.1271_rk*T
-        kappa=(-3.08_rk+0.0877_rk*T)/1000._rk
-        k1co2=k1co2*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
-
-! k2co2 = [H][CO3]/[HCO3]
-! Millero p.664 (1995) using Mehrbach et al. data on seawater scale 
-        k2co2=10._rk**(-1._rk*(1394.7_rk/TK + 4.777_rk - &
-     &     0.0184_rk*S + 0.000118_rk*S2))
-! Correction for high pressure (from Millero 1995)
-! added YA 04/10/2010
-        delta=-15.82_rk-0.0219_rk*T
-        kappa=(1.13_rk-0.1475_rk*T)/1000._rk
-        k2co2=k2co2*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
-
-
+        k0co2 = exp(93.4517_rk/tk100 - 60.2409_rk + 23.3585_rk * log(tk100) + &
+        &       s * (.023517_rk - 0.023656_rk * tk100 + 0.0047036_rk * tk100 ** 2._rk))
+! correction for high pressure from Weiss 1974
+!        vbarCO2 = 32.3      partial molal volume (cm3 / mol) from Weiss (1974, Appendix, paragraph 3)
+!        P is in bar, hence the reference is 1.01325 instead of 1 as in Weiss 1974
+        k0co2 = k0co2 * exp( ((1.01325_rk-P)*32.3_rk)/(Rgas*tk) )
 ! kb = [H][BO2]/[HBO2]
 ! Millero p.669 (1995) using data from Dickson (1990)
         kb=exp((-8966.9_rk - 2890.53_rk*sqrtS - 77.942_rk*S + &
@@ -437,8 +463,59 @@ contains
      &      (148.0248_rk + 137.1942_rk*sqrtS + 1.62142_rk*S) + &
      &      (-24.4344_rk - 25.085_rk*sqrtS - 0.2474_rk*S) * &
      &      dlogTK + 0.053105_rk*sqrtS*TK)
-! Correction for high pressure (from Millero, 1995)
-! added YA 04/10/2010
+
+! k1co2 = [H][HCO3]/[H2CO3]
+! k2co2 = [H][CO3]/[HCO3]
+     if (hscale==-1) then
+           ! if phscale = -1 then we use old formulation for backward compatibility
+           ! Millero p.664 (1995) using Mehrbach et al. data on seawater scale
+           ! kb is left in total scale because this was in the old formulation
+        k1co2=10._rk**(-1._rk*(3670.7_rk/TK - 62.008_rk + 9.7944_rk*dlogTK - &
+     &     0.0118_rk * S + 0.000116_rk*S2))
+        k2co2=10._rk**(-1._rk*(1394.7_rk/TK + 4.777_rk - &
+     &     0.0184_rk*S + 0.000118_rk*S2))
+     else if (hscale==0) then
+           ! if phscale = 0 then we use  Millero 2010 on seawater scale
+           ! kb is converted in seawater scale
+           pk1co2 = -126.34048_rk+6320.813_rk*invtk+19.568224_rk*dlogtk + &
+                &  (13.4038_rk*sqrtS + 0.03206_rk*S - 0.00005242_rk*S**2._rk) + &
+                &  (-530.659_rk *sqrtS - 5.8210_rk *S) * invTK + &
+                &  (-2.0664_rk *sqrts)*dlogTK
+           k1co2 =10._rk**(-pk1co2)
+           pk2co2 = -90.18333_rk+5143.692_rk*invtk+14.613358_rk*dlogtk +&
+                &  (21.3728_rk*sqrtS + 0.1218_rk*S - 0.0003688_rk*S**2._rk) + &
+                &  (-788.289_rk *sqrtS - 19.189_rk *S) * invTK + &
+                &  (-3.374_rk *sqrts)*dlogTK
+           k2co2=10._rk**(-pk2co2)
+           kb=kb*total2sws_depth
+      else if (hscale==1) then
+           ! if phscale = 1 then we use  Millero 2010 on total scale
+           pk1co2 = -126.34048_rk+6320.813_rk*invtk+19.568224_rk*dlogtk + &
+                &  (13.4051_rk*sqrtS + 0.03185_rk*S - 0.00005218_rk*S**2._rk) + &
+                &  (-531.095_rk *sqrtS - 5.7789 *S) * invTK + &
+                &  (-2.0663_rk *sqrts)*dlogTK
+           k1co2 = 10._rk**(-pk1co2)
+           pk2co2 = -90.18333_rk+5143.692_rk*invtk+14.613358_rk*dlogtk +&
+                &  (21.5724_rk*sqrtS + 0.1212_rk*S - 0.0003714_rk*S**2._rk) + &
+                &  (-798.292_rk *sqrtS - 18.951_rk *S) * invTK + &
+                &  (-3.403_rk *sqrts)*dlogTK
+           k2co2=10._rk**(-pk2co2)
+      endif
+
+! here k1, k2, kb are corrected for high pressure using Millero 1995
+! please not that MOCSY assume that this correction is valid for SWSscale, so it first convert everything to SWS then back to total
+! differences are minimal
+! correction of k1co2
+        delta=-25.5_rk+0.1271_rk*T
+        kappa=(-3.08_rk+0.0877_rk*T)/1000._rk
+        k1co2=k1co2*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
+
+! Correction for k2co2
+        delta=-15.82_rk-0.0219_rk*T
+        kappa=(1.13_rk-0.1475_rk*T)/1000._rk
+        k2co2=k2co2*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
+
+! Correction for kb
         delta=-29.48_rk+0.1622_rk*T-0.002608_rk*T**2._rk
         kappa=-2.84_rk/1000._rk
         kb=kb*exp((-delta+0.5_rk*kappa*P)*P/(Rgas*TK))
@@ -477,7 +554,6 @@ contains
       real(rk)              :: AKR,AHPLUS
       real(rk)              :: PROD,tol1,tol2,tol3,tol4,steg,fak
       real(rk)              :: STEGBY,Y,X,W,X1,Y1,X2,Y2,FACTOR,TERM,Z
-      real(rk)              :: CO2sys_memory(7)
       LOGICAL               :: BORON,DONE
 !
 ! !REVISION HISTORY:
@@ -492,10 +568,10 @@ contains
 !  DERIVING PH REQUIRES FOLLOWING LOOP TO CONVERGE.
 !  THIS SUBROUTINE RELIES ON CONVERGENCE.  IF THE ENVIRONMENTAL
 !  CONDITIONS DO NOT ALLOW FOR CONVERGENCE (IN 3D MODEL THIS IS
-!  LIKELY TO OCCUR NEAR LOW SALINITY REGIONS) THE MODEL WILL 
+!  LIKELY TO OCCUR NEAR LOW SALINITY REGIONS) THE MODEL WILL
 !  BE STUCK IN THE LOOP.  TO AVOID THIS A CONVERGENCE CONDITION
-!  IS PUT IN PLACE TO SET A FLAGG OF -99 IN THE PH VAR FOR NON CONVEGENCE. 
-!  THE MODEL IS THEN ALLOWED TO CONTINUE. 'COUNTER, C_SW,C_CHECK' ARE 
+!  IS PUT IN PLACE TO SET A FLAGG OF -99 IN THE PH VAR FOR NON CONVEGENCE.
+!  THE MODEL IS THEN ALLOWED TO CONTINUE. 'COUNTER, C_SW,C_CHECK' ARE
 !  THE LOCAL VARS USED.
 ! C_SW = condition of convergence 0=yes, 1= no
 ! COUNTER = number of iterations
@@ -506,19 +582,10 @@ contains
       COUNTER=0
       C_SW=0
 ! FROM EXPERIENCE IF THE ITERATIONS IN THE FOLLOWING DO LOOP
-! EXCEEDS 15 CONVERGENCE WILL NOT OCCUR.  THE OVERHEAD OF 25 ITERATIONS 
+! EXCEEDS 15 CONVERGENCE WILL NOT OCCUR.  THE OVERHEAD OF 25 ITERATIONS
 ! IS OK FOR SMALL DOMAINS WITH 1/10 AND 1/15 DEG RESOLUTION.
 ! I RECOMMEND A LOWER VALUE OF 15 FOR HIGHER RESOLUTION OR LARGER DOMAINS.
       C_CHECK=25
-! IF CONVERGENCE IS NOT ACHIEVED THE LOCAL ARRAY CONCS MUST BE STORED TO 
-! ALLOW THE MODEL TO CONTINUE. THEREFORE ....
-       CO2sys_memory(1) = Ctot
-       CO2sys_memory(2) = TA
-       CO2sys_memory(3) = pH
-       CO2sys_memory(4) = PCO2
-       CO2sys_memory(5) = H2CO3
-       CO2sys_memory(6) = HCO3
-       CO2sys_memory(7) = CO3
 
 !      DO II=1,NKVAL
  !       AKVAL2(II)=AKVAL(II)
@@ -554,26 +621,19 @@ contains
             DONE=.TRUE.
 
 !
-! SET COUNTER UPDATE. 
+! SET COUNTER UPDATE.
             COUNTER=COUNTER+1
 
-! CHECK IF CONVERGENCE HAS OCCURED IN THE NUMBER OF 
-! ACCEPTABLE ITTERATIONS.  
+! CHECK IF CONVERGENCE HAS OCCURED IN THE NUMBER OF
+! ACCEPTABLE ITTERATIONS.
             if(counter.ge.c_check)then
 !!        IF(MASTER)THEN
 !!! LOG FILE TO SHOW WHEN AND WHERE NON CONVERGENCE OCCURS.
 !!           PPWRITELOG 'ERRORLOG ',III,' ',(CONCS2(II),II=1,NCONC)
 !!        ENDIF
 ! IF NON CONVERGENCE, THE MODEL REQUIRES CONCS TO CONTAIN USABLE VALUES.
-! BEST OFFER BEING THE OLD CONCS VALUES WHEN CONVERGENCE HAS BEEN 
+! BEST OFFER BEING THE OLD CONCS VALUES WHEN CONVERGENCE HAS BEEN
 ! ACHIEVED
-              Ctot = CO2sys_memory(1)
-              TA   = CO2sys_memory(2)
-              pH   = CO2sys_memory(3)
-              PCO2 = CO2sys_memory(4)
-              H2CO3= CO2sys_memory(5)
-              HCO3 = CO2sys_memory(6)
-              CO3  = CO2sys_memory(7)
               success = .false.
 
 !RESET SWITCH FOR NEXT CALL TO THIS SUBROUTINE
@@ -634,7 +694,7 @@ contains
               ENDIF
               AHPLUS=EXP(X)
             ENDIF
-! LOOP BACK UNTIL CONVERGENCE HAS BEEN ACHIEVED 
+! LOOP BACK UNTIL CONVERGENCE HAS BEEN ACHIEVED
 ! OR MAX NUMBER OF ITERATIONS (C_CHECK) HAS BEEN REACHED.
           ENDDO
 
@@ -751,31 +811,31 @@ contains
 ! !DESCRIPTION:
 !  TODO - check this.
 !
-! Routine to calculate the saturation state of calcite and aragonite    
-! Inputs:                                                               
-!               Tc      Temperature (C)                                 
-!               S       Salinity                                        
-!               Pr      Pressure (Pa)                                       
-!               CO3     Carbonate ion concentration (mol.-l ie /1D6)    
-!                                                                       
-! Outputs                                                               
-!               Om\_cal  Calite saturation                               
-!               Om\_arg  Aragonite saturation                            
-!                                                                       
-! Intermediates                                                         
-!               K\_cal   Stoichiometric solubility product for calcite   
-!               K\_arg   Stoichiometric solubility product for aragonite 
-!               Ca      Calcium 2+ concentration (mol.kg-1) 
+! Routine to calculate the saturation state of calcite and aragonite
+! Inputs:
+!               Tc      Temperature (C)
+!               S       Salinity
+!               Pr      Pressure (Pa)
+!               CO3     Carbonate ion concentration (mol.-l ie /1D6)
+!
+! Outputs
+!               Om\_cal  Calite saturation
+!               Om\_arg  Aragonite saturation
+!
+! Intermediates
+!               K\_cal   Stoichiometric solubility product for calcite
+!               K\_arg   Stoichiometric solubility product for aragonite
+!               Ca      Calcium 2+ concentration (mol.kg-1)
 !               P       Pressure (bars)
-!                                                                       
-! Source                                                                
-!       Zeebe and Wolf-Gladrow 2001 following Mucci (1983)                
-!       with pressure corrections from Millero (1995)                   
-!       Code tested against reference values given in Z and W-G   
+!
+! Source
+!       Zeebe and Wolf-Gladrow 2001 following Mucci (1983)
+!       with pressure corrections from Millero (1995)
+!       Code tested against reference values given in Z and W-G
 !\\
 !\\
 ! !INTERFACE:
-      SUBROUTINE CaCO3_Saturation (Tc, S, Pr, CO3, Om_cal, Om_arg)        
+      SUBROUTINE CaCO3_Saturation (Tc, S, Pr, CO3, Om_cal, Om_arg)
          real(rk),intent(in)  :: Tc, S, Pr, CO3
          real(rk),intent(out) :: Om_cal, Om_arg
 !
@@ -799,39 +859,39 @@ contains
 !BOC
 !
 ! setup
-        Tk = Tc + Kelvin 
+        Tk = Tc + Kelvin
         Ca = 0.01028_rk    ! Currently oceanic mean value at S=25, needs refining)
         R = 83.131_rk      !(cm3.bar.mol-1.K-1)
         P = Pr*1.e-5_rk    !pressure in bars
 
 ! calculate K for calcite
-        tmp1 = -171.9065_rk - (0.077993_rk*Tk) + (2839.319_rk/Tk) + 71.595_rk*log10(Tk) 
-        tmp2 = + (-0.77712_rk + (0.0028426_rk*Tk) + (178.34_rk/Tk))*SQRT(S) 
+        tmp1 = -171.9065_rk - (0.077993_rk*Tk) + (2839.319_rk/Tk) + 71.595_rk*log10(Tk)
+        tmp2 = + (-0.77712_rk + (0.0028426_rk*Tk) + (178.34_rk/Tk))*SQRT(S)
         tmp3 = - (0.07711_rk*S) + (0.0041249_rk*(S**1.5_rk))
         logKspc = tmp1 + tmp2 + tmp3
         Kspc = 10._rk**logKspc
-      
+
 ! correction for pressure for calcite
         dV = -48.76_rk + 0.5304_rk*Tc
         dK = -11.76_rk/1.e3_rk + (0.3692_rk/1.e3_rk) * Tc
         tmp1 = -(dV/(R*Tk))*P + (0.5_rk*dK/(R*Tk))*P*P
         Kspc = Kspc*exp(tmp1)
         logKspc = log10(Kspc)
-        
+
 ! calculate K for aragonite
         tmp1 = -171.945_rk - 0.077993_rk*Tk + 2903.293_rk / Tk + 71.595_rk* log10(Tk)
-        tmp2 = + (-0.068393_rk + 0.0017276_rk*Tk + 88.135_rk/Tk)*SQRT(S)    
+        tmp2 = + (-0.068393_rk + 0.0017276_rk*Tk + 88.135_rk/Tk)*SQRT(S)
         tmp3 = - 0.10018_rk*S + 0.0059415_rk*S**1.5_rk
         logKspa = tmp1 + tmp2 + tmp3
         Kspa = 10._rk**logKspa
-     
+
 ! correction for pressure for aragonite
         dV = -46._rk + 0.530_rk*Tc
         dK = -11.76_rk/1.e3_rk + (0.3692_rk/1.e3_rk) * Tc
         tmp1 = -(dV/(R*Tk))*P + (0.5_rk*dK/(R*Tk))*P*P
         Kspa = Kspa*exp(tmp1)
         logKspa = log10(Kspa)
-        
+
 ! calculate saturation states
         Om_cal = (CO3 * Ca) / Kspc
         Om_arg = (CO3 * Ca) / Kspa

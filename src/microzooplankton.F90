@@ -24,8 +24,11 @@ module ersem_microzooplankton
       type (type_state_variable_id)      :: id_N1p,id_N4n
       type (type_dependency_id)          :: id_ETW,id_eO2mO2
 
-      type (type_diagnostic_variable_id) :: id_fZIO3c
-
+      type (type_diagnostic_variable_id) :: id_fZIO3c,id_calc
+      type (type_diagnostic_variable_id) :: id_fZIRDc,id_fZIRPc
+      type (type_diagnostic_variable_id) :: id_fZIRDn,id_fZIRPn,id_fZINIn
+      type (type_diagnostic_variable_id) :: id_fZIRDp,id_fZIRPp,id_fZINIp
+      type (type_diagnostic_variable_id), allocatable,dimension(:) :: id_fpreyc,id_fpreyn,id_fpreyp,id_fpreys
       ! Parameters
       integer  :: nprey
       real(rk) :: qpc,qnc,stempn,stempp
@@ -107,6 +110,11 @@ contains
       allocate(self%id_preyl(self%nprey))
       allocate(self%id_preyf_target(self%nprey))
       allocate(self%suprey(self%nprey))
+      allocate(self%id_fpreyc(self%nprey))
+      allocate(self%id_fpreyn(self%nprey))
+      allocate(self%id_fpreyp(self%nprey))
+      allocate(self%id_fpreys(self%nprey))
+
       do iprey=1,self%nprey
          write (index,'(i0)') iprey
          call self%get_parameter(self%suprey(iprey),'suprey'//trim(index),'-','relative affinity for prey type '//trim(index))
@@ -128,6 +136,10 @@ contains
             call self%register_state_dependency(self%id_preyf_target(iprey),'prey'//trim(index)//'f_sink','umol Fe/m^3','sink for Fe of prey '//trim(index),required=.false.)
             call self%request_coupling_to_model(self%id_preyf(iprey),self%id_prey(iprey),standard_variables%total_iron)
          end if
+         call self%register_diagnostic_variable(self%id_fpreyc(iprey),'fprey'//trim(index)//'c','mg C/m^3/d',   'ingestion of prey '//trim(index)//' carbon')
+         call self%register_diagnostic_variable(self%id_fpreyn(iprey),'fprey'//trim(index)//'n','mmol N/m^3/d', 'ingestion of prey '//trim(index)//' nitrogen')
+         call self%register_diagnostic_variable(self%id_fpreyp(iprey),'fprey'//trim(index)//'p','mmol P/m^3/d', 'ingestion of prey '//trim(index)//' phosphorus')
+         call self%register_diagnostic_variable(self%id_fpreys(iprey),'fprey'//trim(index)//'s','mmol Si/m^3/d','ingestion of prey '//trim(index)//' silicate')
       end do
 
       ! Register links to external nutrient pools.
@@ -157,7 +169,7 @@ contains
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen source')
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide sink')
-      call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)    
+      call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)
 
       call self%register_state_dependency(self%id_L2c,'L2c','mg C/m^3','calcite',required=.false.)
 
@@ -166,10 +178,16 @@ contains
       call self%register_dependency(self%id_eO2mO2,standard_variables%fractional_saturation_of_oxygen)
 
       ! Register diagnostics
-      call self%register_diagnostic_variable(self%id_fZIO3c,'fZIO3c','mg C/m^3/d','respiration',output=output_time_step_averaged)
-
-      ! Contribute to aggregate fluxes.
-      call self%add_to_aggregate_variable(zooplankton_respiration_rate,self%id_fZIO3c)
+      call self%register_diagnostic_variable(self%id_fZIO3c,'fZIO3c','mg C/m^3/d','respiration')
+      call self%register_diagnostic_variable(self%id_fZINIn,'fZINIn','mmol N/m^3/d','release of DIN')
+      call self%register_diagnostic_variable(self%id_fZINIp,'fZINIp','mmol P/m^3/d','release of DIP')
+      call self%register_diagnostic_variable(self%id_calc,'calcification','mg C/m^3/d','contribution to total calcification')
+      call self%register_diagnostic_variable(self%id_fZIRPc,'fZIRPc','mg C/m^3/d','loss to POC')
+      call self%register_diagnostic_variable(self%id_fZIRPn,'fZIRPn','mmol N/m^3/d','loss to PON')
+      call self%register_diagnostic_variable(self%id_fZIRPp,'fZIRPp','mmol P/m^3/d','loss to POP')
+      call self%register_diagnostic_variable(self%id_fZIRDc,'fZIRDc','mg C/m^3/d','loss to DOC')
+      call self%register_diagnostic_variable(self%id_fZIRDn,'fZIRDn','mmol N/m^3/d','loss to DON')
+      call self%register_diagnostic_variable(self%id_fZIRDp,'fZIRDp','mmol P/m^3/d','loss to DOP')
 
    end subroutine
 
@@ -230,7 +248,7 @@ contains
          qnc = n/c
 
          ! Temperature effect:
-         et = self%q10**((ETW-10._rk)/10._rk) - self%q10**((ETW-32._rk)/3._rk)
+         et = max(0.0_rk,self%q10**((ETW-10._rk)/10._rk) - self%q10**((ETW-32._rk)/3._rk))
 
          ! Oxygen limitation (based on oxygen saturation eO2mO2):
          CORROX = 1._rk + self%chro
@@ -240,7 +258,9 @@ contains
          ! This equals the reference preference value, self%suprey, multiplied by a hyperbolic function
          ! of prey abundance ranging from 0 in the absence of prey, to 1 at abundant prey. As a result,
          ! prey preferences are dynamically adapted so that more abundant prey types are preferred.
-         sprey = self%suprey*preycP/(preycP+self%minfood)
+         ! Note: the sprey calculation has been designed specifically to protect against 0/0 when prey and minfood are 0.
+         sprey = self%suprey
+         if (self%minfood>0.0_rk) sprey = sprey*preycP/(preycP+self%minfood)
 
          ! Compute total available prey (mg C/m3), weighted according to effective prey preferences.
          rupreyc = sprey*preycP
@@ -295,6 +315,9 @@ contains
             _SET_ODE_(self%id_L2c,  (1.0_rk-self%gutdiss)*ineff*self%pu_ea*sum(sprey*preylP))
             _SET_ODE_(self%id_O3c, -(1.0_rk-self%gutdiss)*ineff*self%pu_ea*sum(sprey*preylP)/CMass)
             _SET_ODE_(self%id_TA,-2*(1.0_rk-self%gutdiss)*ineff*sum(self%pu_ea*sprey*preylP)/CMass)   ! CaCO3 formation decreases alkalinity by 2 units
+            _SET_DIAGNOSTIC_ (self%id_calc,(1.0_rk-self%gutdiss)*ineff*self%pu_ea*sum(sprey*preylP))
+         else
+            _SET_DIAGNOSTIC_ (self%id_calc,0.0_rk)
          end if
 
          ! Source equation for carbon in biomass.
@@ -304,6 +327,16 @@ contains
          _SET_ODE_(self%id_R1c, + fZIRDc * self%R1R2)
          _SET_ODE_(self%id_R2c, + fZIRDc * (1._rk-self%R1R2))
          _SET_ODE_(self%id_RPc, + fZIRPc)
+
+         _SET_DIAGNOSTIC_(self%id_fZIRDc,fZIRDc)
+         _SET_DIAGNOSTIC_(self%id_fZIRPc,fZIRPc)
+
+         do iprey=1,self%nprey
+            _SET_DIAGNOSTIC_(self%id_fpreyc(iprey),sprey(iprey)*PreycP(iprey))
+            _SET_DIAGNOSTIC_(self%id_fpreyn(iprey),sprey(iprey)*PreynP(iprey))
+            _SET_DIAGNOSTIC_(self%id_fpreyp(iprey),sprey(iprey)*PreypP(iprey))
+            _SET_DIAGNOSTIC_(self%id_fpreys(iprey),sprey(iprey)*PreysP(iprey))
+         end do
 
          ! Account for CO2 production and oxygen consumption in respiration.
          _SET_ODE_(self%id_O3c, + fZIO3c/CMass)
@@ -331,6 +364,9 @@ contains
          ! Phosphate exudation
          _SET_ODE_(self%id_N1p,+ fZIN1p)
          _SET_ODE_(self%id_TA, - fZIN1p)  ! Alkalinity contributions: -1 for PO4
+         _SET_DIAGNOSTIC_ (self%id_fZINIp,fZIN1p)
+         _SET_DIAGNOSTIC_(self%id_fZIRDp,fZIRDp)
+         _SET_DIAGNOSTIC_(self%id_fZIRPp,fZIRPp)
 
          ! -------------------------------
          ! Nitrogen
@@ -354,6 +390,9 @@ contains
          ! Ammonium exudation
          _SET_ODE_(self%id_N4n,+ fZINIn)
          _SET_ODE_(self%id_TA, + fZINIn)  ! Alkalinity contributions: +1 for NH4
+         _SET_DIAGNOSTIC_ (self%id_fZINIn,fZINIn)
+         _SET_DIAGNOSTIC_(self%id_fZIRDn,fZIRDn)
+         _SET_DIAGNOSTIC_(self%id_fZIRPn,fZIRPn)
 
          ! -------------------------------
          ! Silicate

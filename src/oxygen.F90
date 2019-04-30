@@ -24,6 +24,7 @@ module ersem_oxygen
       type (type_horizontal_dependency_id) :: id_wnd
 
       type (type_diagnostic_variable_id) :: id_eO2mO2,id_osat,id_aou
+      type (type_horizontal_diagnostic_variable_id) ::  id_fair
 
       integer :: ISWO2X
    contains
@@ -47,10 +48,11 @@ contains
 
       call self%register_state_variable(self%id_O2o,'o','mmol O_2/m^3','oxygen',300._rk)
 
-      call self%register_diagnostic_variable(self%id_eO2mO2,'eO2mO2','1','relative oxygen saturation', &
+      call self%register_diagnostic_variable(self%id_eO2mO2,'eO2mO2','1','relative saturation', &
          standard_variable=standard_variables%fractional_saturation_of_oxygen)
-      call self%register_diagnostic_variable(self%id_osat,'osat','mmol O_2/m^3','oxygen saturation concentration')
-      call self%register_diagnostic_variable(self%id_aou,'AOU','mmol O_2/m^3','apparent oxygen utilisation')
+      call self%register_diagnostic_variable(self%id_osat,'osat','mmol O_2/m^3','saturation concentration')
+      call self%register_diagnostic_variable(self%id_aou,'AOU','mmol O_2/m^3','apparent utilisation')
+      call self%register_diagnostic_variable(self%id_fair,'fair','mmol O_2/m^2/d','air-sea flux', source=source_do_surface)
 
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
       call self%register_dependency(self%id_X1X,standard_variables%practical_salinity)
@@ -65,7 +67,7 @@ contains
       _DECLARE_ARGUMENTS_DO_
 
       real(rk) :: O2o,ETW,X1X,OSAT
-      
+
       _LOOP_BEGIN_
          _GET_(self%id_O2o,O2o)
          _GET_(self%id_ETW,ETW)
@@ -83,7 +85,7 @@ contains
 
       real(rk) :: O2o,ETW,X1X,wnd
       real(rk) :: OSAT,ko2o
-      
+
       _HORIZONTAL_LOOP_BEGIN_
          _GET_(self%id_O2o,O2o)
          _GET_(self%id_ETW,ETW)
@@ -94,17 +96,18 @@ contains
          if (wnd.lt.0._rk) wnd=0._rk
 
          if (wnd.gt.11._rk) then
-            ko2o = sqrt((1953.4_rk-128._rk*etw+3.9918_rk*etw**2-  &
-               0.050091_rk*etw**3)/660._rk) * (0.02383_rk * wnd**3)
+            ko2o = (0.02383_rk * wnd**3)*(max(0.0_rk,1953.4_rk-128._rk*etw+3.9918_rk*etw**2-  &
+               0.050091_rk*etw**3)/660._rk)**(-0.5_rk)    ! Wanninkhof & NcGillis 1999 ? (the reference has 0.0283)
          else
-            ko2o = sqrt((1953.4_rk-128._rk*etw+3.9918_rk*etw**2- &
-               0.050091_rk*etw**3)/660._rk) * (0.31_rk * wnd**2)
+            ko2o = (0.31_rk * wnd**2)*(max(0.0_rk,1953.4_rk-128._rk*etw+3.9918_rk*etw**2- &
+               0.050091_rk*etw**3)/660._rk) **(-0.5_rk)   ! Wanninkhof 1992
          endif
 
          ! units of ko2 converted from cm/hr to m/day
          ko2o = ko2o*(24._rk/100._rk)
 
          _SET_SURFACE_EXCHANGE_(self%id_O2o,ko2o*(OSAT-O2o))
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fair,ko2o*(OSAT-O2o))
       _HORIZONTAL_LOOP_END_
    end subroutine
 

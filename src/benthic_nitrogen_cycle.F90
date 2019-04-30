@@ -15,6 +15,7 @@ module ersem_benthic_nitrogen_cycle
       type (type_state_variable_id)        :: id_N4n
       type (type_dependency_id)            :: id_ETW,id_ph
       type (type_horizontal_dependency_id) :: id_D1m,id_K6_sms,id_layer2_thickness
+      type (type_horizontal_diagnostic_variable_id) :: id_jM3M4n,id_jM3G4n
       type (type_horizontal_diagnostic_variable_id) :: id_nrate
       real(rk) :: q10nit,hM4M3,sM4M3,xno3
       real(rk) :: pammon,pdenit,xn2,hM3G4
@@ -44,7 +45,7 @@ contains
       call self%get_parameter(self%sM4M3, 'sM4M3', '1/d',          'maximum nitrification rate at 10 degrees Celsius')
       call self%get_parameter(self%xno3,  'xno3',  'mol O_2/mol N','oxygen consumed per nitrate produced')
 
-      call self%register_diagnostic_variable(self%id_nrate,'nrate','mmol N/m^2/day','benthic nitrification rate',domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_nrate,'nrate','mmol N/m^2/d','benthic nitrification rate',domain=domain_bottom,source=source_do_bottom)
       call self%register_state_dependency(self%id_K3n,'K3n','mmol N/m^2','benthic nitrate in 1st layer')
       call self%register_state_dependency(self%id_K4n,'K4n','mmol N/m^2','benthic ammonium in 1st layer')
       call self%register_state_dependency(self%id_G2o,'G2o','mmol O_2/m^2','benthic oxygen in 1st layer')
@@ -61,7 +62,7 @@ contains
       ! Denitrification
       call self%get_parameter(self%pammon,'pammon','-','fraction of oxygen demand fulfilled by denitrification under anaerobic conditions')
       call self%get_parameter(self%pdenit,'pdenit','-','fraction of denitrification producing dinitrogen gas (remainder produces ammonium)')
-      call self%get_parameter(self%xn2,   'xn2','-','oxygen produced per N2 produced')
+      call self%get_parameter(self%xn2,   'xn2','mol O_2/mol N','oxygen demand fulfilled by reduction of nitrate to dinitrogen gas')
       call self%get_parameter(self%hM3G4,'hM3G4','mmol N/m^3','Michaelis-Menten constant for nitrate limitation of denitrification')
 
       ! Create our own state avriable for dinitrogen gas
@@ -73,6 +74,10 @@ contains
       call self%register_state_dependency(self%id_K4n2,'K4n2','mmol N/m^2','benthic ammonium in 2nd layer')
       call self%register_state_dependency(self%id_G2o2,'G2o2','mmol O_2/m^2',  'oxygen in 2nd layer')
       call self%register_dependency(self%id_layer2_thickness,'layer2_thickness','m','thickness of 2nd layer')
+
+! diagnostic fluxes
+      call self%register_diagnostic_variable(self%id_jM3M4n,'jM3M4n','mmol N/m^2/d','layer 2 ammonification flux',  source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_jM3G4n,'jM3G4n','mmol N/m^2/d','layer 2 de-nitrification flux',source=source_do_bottom)
 
       ! Create a child model that provides a K6 diagnostic. Other models (e.g., anaerobic bacteria) can attach to that to provide it with sink/source terms.
       ! In turn, these are then picked up by this model (type_ersem_benthic_nitrogen_cycle) and translated into chnages in NO3 and O2.
@@ -104,10 +109,10 @@ contains
 
          ! Nitrification (oxygenated layer only):
          ! Reaction: (NH4+,OH-) + 2*O2 -> (NO3-,H+) + 2*H2O
-         ! treated as first order reaction for NH4 in the oxygenated layer
-         ! Average nitrate density (mmol/m3): MU_m
+         ! Treated as first order reaction for NH4 in the oxygenated layer, but dampened by presence of nitrate.
 
-         ! Average nitrate density in first/oxygenated layer
+         ! Average nitrate concentration in first (oxygenated) sediment layer
+         ! (mmol/m3 - per sediment volume, not pore water volume, as porosity is not considered!)
          MU_m = max(0.0_rk,K3nP)/D1m
 
          ! Limitation factor for temperature (Q_10)
@@ -135,34 +140,40 @@ contains
          if (.not.legacy_ersem_compatibility) _SET_BOTTOM_ODE_(self%id_benTA,-2*jM4M3n)
 
          ! Retrieve oxygen debt to to anaerobic respiration, depth-integrated nitrate in oxidized layer, thickness of oxidized layer.
-         _GET_HORIZONTAL_(self%id_K6_sms,K6_sms) 
+         _GET_HORIZONTAL_(self%id_K6_sms,K6_sms)
          _GET_HORIZONTAL_(self%id_K3n2,K3n2)
          _GET_HORIZONTAL_(self%id_layer2_thickness,layer2_thickness)
 
          ! FABM provides sources-sinks of K6 in per second - convert to our internal time unit (per day).
-          K6_sms = K6_sms * self%dt
+         K6_sms = K6_sms * self%dt
 
-         ! From nitrate per m2 in layer 2 to nitrate concentration per unit sediment
-         ! (not pore water concentration as it does not consider porosity!)
+         ! Average nitrate concentration in second (denitrification) layer
+         ! (mmol/m3 - per sediment volume, not pore water volume, as porosity is not considered!)
          MU_m2 = K3n2/layer2_thickness
+
+         ! Denitrification is a Michaelis-Menten function of nitrate availability
          eN2 = MU_m2/(MU_m2+self%hM3G4)
 
-         ! Oxygen debt in anaerobic layer:
-         ! expression in nitrate reduction (100%):
-        jMIno3 = -K6_sms/(self%xno3 *(1._rk - self%pdenit) + self%xn2*self%pdenit)
-        jM3M4n = jMIno3*eN2*self%pammon*(1._rk-self%pdenit)
+         ! Convert oxygen demand (mmol O2/m2/d) into nitrate reduction (mmol NO3/m2/d),
+         ! accounting for the fractions of nitrate converted to NH4 and to N2.
+         jMIno3 = -K6_sms/(self%xno3 *(1._rk - self%pdenit) + self%xn2*self%pdenit)
 
-        jM3G4n = jMIno3*eN2*self%pammon*       self%pdenit
+         ! Partition nitrate reduction flux into NH4 and N2 production fluxes.
+         jM3M4n = jMIno3*eN2*self%pammon*(1._rk-self%pdenit)
+         jM3G4n = jMIno3*eN2*self%pammon*       self%pdenit
 
-        _SET_BOTTOM_ODE_(self%id_K4n2, jM3M4n)
-        _SET_BOTTOM_ODE_(self%id_K3n2, -jM3M4n -jM3G4n)
-        _SET_BOTTOM_ODE_(self%id_G4n, jM3G4n)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_jM3M4n,jM3M4n)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_jM3G4n,jM3G4n)
+
+         _SET_BOTTOM_ODE_(self%id_K4n2, jM3M4n)
+         _SET_BOTTOM_ODE_(self%id_K3n2, -jM3M4n -jM3G4n)
+         _SET_BOTTOM_ODE_(self%id_G4n, jM3G4n)
 
          ! Alkalinity contributions: +1 for NH4, -1 for nitrate
-        if (.not.legacy_ersem_compatibility) _SET_BOTTOM_ODE_(self%id_benTA2, 2*jM3M4n + jM3G4n)
+         if (.not.legacy_ersem_compatibility) _SET_BOTTOM_ODE_(self%id_benTA2, 2*jM3M4n + jM3G4n)
 
-        ! Oxygen dynamics: after denitrification is taken into account, use actual oxygen to pay off remaining oxygen debt.
-        _SET_BOTTOM_ODE_(self%id_G2o2, K6_sms + self%xno3*jM3M4n + self%xn2*jM3G4n)
+         ! Oxygen dynamics: after denitrification is taken into account, use actual oxygen to pay off remaining oxygen debt.
+         _SET_BOTTOM_ODE_(self%id_G2o2, K6_sms + self%xno3*jM3M4n + self%xn2*jM3G4n)
 
       _HORIZONTAL_LOOP_END_
 

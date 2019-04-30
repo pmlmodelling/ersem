@@ -22,8 +22,10 @@ module ersem_bacteria_docdyn
       type (type_dependency_id)     :: id_ETW,id_eO2mO2
       type (type_state_variable_id),allocatable,dimension(:) :: id_RPc,id_RPp,id_RPn,id_RPf
       type (type_model_id),         allocatable,dimension(:) :: id_RP
-      type (type_diagnostic_variable_id) :: id_fB1O3c
-
+      type (type_diagnostic_variable_id) :: id_fB1O3c, id_fB1NIn, id_fB1N1p
+      type (type_diagnostic_variable_id) :: id_fR1B1c, id_fR2B1c, id_fR3B1c,id_fB1R1c, id_fB1R2c, id_fB1R3c
+      type (type_diagnostic_variable_id) :: id_fR1B1n,id_fB1R1n,id_fR1B1p,id_fB1R1p
+      type (type_diagnostic_variable_id) :: id_minn,id_minp
       ! Parameters
       integer  :: nRP
       integer  :: iswBlimX
@@ -103,11 +105,11 @@ contains
 
       ! Register links to labile dissolved organic matter pools.
       call self%register_state_dependency(self%id_R1c,'R1c','mg C/m^3',  'labile dissolved organic carbon')
-      call self%register_state_dependency(self%id_R1p,'R1p','mmol P/m^3','labile dissolved organic phosphorus')    
-      call self%register_state_dependency(self%id_R1n,'R1n','mmol N/m^3','labile dissolved organic nitrogen')    
+      call self%register_state_dependency(self%id_R1p,'R1p','mmol P/m^3','labile dissolved organic phosphorus')
+      call self%register_state_dependency(self%id_R1n,'R1n','mmol N/m^3','labile dissolved organic nitrogen')
 
       ! Register links to semi-labile dissolved organic matter pools.
-      call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','semi-labile dissolved organic carbon')    
+      call self%register_state_dependency(self%id_R2c,'R2c','mg C/m^3','semi-labile dissolved organic carbon')
 
       ! Register links to particulate organic matter pools.
       call self%get_parameter(self%nRP,'nRP','','number of substrates',default=0)
@@ -118,9 +120,9 @@ contains
       allocate(self%id_RPf(self%nRP))
       do iRP=1,self%nRP
          write (index,'(i0)') iRP
-         call self%register_state_dependency(self%id_RPc(iRP),'RP'//trim(index)//'c','mg C/m^3',   'carbon in substrate '//trim(index))    
-         call self%register_state_dependency(self%id_RPn(iRP),'RP'//trim(index)//'n','mmol N/m^3', 'nitrogen in substrate '//trim(index))    
-         call self%register_state_dependency(self%id_RPp(iRP),'RP'//trim(index)//'p','mmol P/m^3', 'phosphorus in substrate '//trim(index))    
+         call self%register_state_dependency(self%id_RPc(iRP),'RP'//trim(index)//'c','mg C/m^3',   'carbon in substrate '//trim(index))
+         call self%register_state_dependency(self%id_RPn(iRP),'RP'//trim(index)//'n','mmol N/m^3', 'nitrogen in substrate '//trim(index))
+         call self%register_state_dependency(self%id_RPp(iRP),'RP'//trim(index)//'p','mmol P/m^3', 'phosphorus in substrate '//trim(index))
          call self%register_model_dependency(self%id_RP(iRP),'RP'//trim(index))
          call self%request_coupling_to_model(self%id_RPc(iRP),self%id_RP(iRP),'c')  ! For now link to hardcoded "c" to get a direct link to state mg C/m3 (and not a diagnostic for mmol C/m3)
          call self%request_coupling_to_model(self%id_RPn(iRP),self%id_RP(iRP),standard_variables%total_nitrogen)
@@ -130,7 +132,7 @@ contains
             call self%request_coupling_to_model(self%id_RPf(iRP),self%id_RP(iRP),standard_variables%total_iron)
          end if
       end do
-      
+
       ! Register links to semi-refractory dissolved organic matter pool.
       call self%register_state_dependency(self%id_R3c,'R3c','mg C/m^3','semi-refractory DOC')
 
@@ -147,20 +149,33 @@ contains
       ! Register links to external total dissolved inorganic carbon, dissolved oxygen pools
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide')
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen')
-      call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)    
+      call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)
 
       ! Register environmental dependencies (temperature, suspendend sediment, pH, oxygen saturation)
       call self%register_dependency(self%id_ETW,standard_variables%temperature)
       call self%register_dependency(self%id_eO2mO2,standard_variables%fractional_saturation_of_oxygen)
 
       ! Register diagnostics.
-      call self%register_diagnostic_variable(self%id_fB1O3c,'fB1O3c','mg C/m^3/d','respiration',output=output_time_step_averaged)
+      call self%register_diagnostic_variable(self%id_fB1O3c,'fB1O3c','mg C/m^3/d','respiration')
+      call self%register_diagnostic_variable(self%id_fB1NIn,'fB1NIn','mmol N/m^3/d','release of DIN')
+      call self%register_diagnostic_variable(self%id_fB1N1p,'fB1N1p','mmol P/m^3/d','release of DIP')
 
-      ! Contribute to aggregate fluxes.
-      call self%add_to_aggregate_variable(bacterial_respiration_rate,self%id_fB1O3c)
+      call self%register_diagnostic_variable(self%id_fB1R1c,'fB1R1c','mg C/m^3/d','release of labile DOC ')
+      call self%register_diagnostic_variable(self%id_fB1R2c,'fB1R2c','mg C/m^3/d','release of semi-labile DOC ')
+      call self%register_diagnostic_variable(self%id_fB1R3c,'fB1R3c','mg C/m^3/d','release of semi-refractory DOC ')
+      call self%register_diagnostic_variable(self%id_fB1R1n,'fB1R1n','mmol N/m^3/d','release of DON')
+      call self%register_diagnostic_variable(self%id_fB1R1p,'fB1R1p','mmol P/m^3/d','release of DOP')
 
+      call self%register_diagnostic_variable(self%id_fR1B1c,'fR1B1c','mg C/m^3/d','uptake of labile DOC ')
+      call self%register_diagnostic_variable(self%id_fR2B1c,'fR2B1c','mg C/m^3/d','uptake of semi-labile DOC ')
+      call self%register_diagnostic_variable(self%id_fR3B1c,'fR3B1c','mg C/m^3/d','uptake of semi-refractory DOC ')
+      call self%register_diagnostic_variable(self%id_fR1B1n,'fR1B1n','mmol N/m^3/d','uptake of DON')
+      call self%register_diagnostic_variable(self%id_fR1B1p,'fR1B1p','mmol P/m^3/d','uptake of DOP')
+
+      call self%register_diagnostic_variable(self%id_minn,'minn','mmol N/m^3/d','mineralisation of DON to DIN')
+      call self%register_diagnostic_variable(self%id_minp,'minp','mmol P/m^3/d','mineralisation of DOP to DIP')
    end subroutine
-   
+
    subroutine do(self,_ARGUMENTS_DO_)
 
       class (type_ersem_bacteria_docdyn),intent(in) :: self
@@ -184,7 +199,7 @@ contains
       real(rk) :: CORROX
       integer  :: iRP
       real(rk),dimension(self%nRP) :: RPc,RPcP,RPnP,RPpP
-      real(rk),dimension(self%nRP) :: fRPB1p,fRPB1n
+      real(rk),dimension(self%nRP) :: fRPB1c,fRPB1p,fRPB1n
 
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
@@ -222,7 +237,7 @@ contains
          qnB1c = B1n/B1c
 !..Temperature effect on pelagic bacteria:
 
-         etB1 = self%q10B1X**((ETW-10._rk)/10._rk) - self%q10B1X**((ETW-32._rk)/3._rk)
+         etB1 = max(0.0_rk,self%q10B1X**((ETW-10._rk)/10._rk) - self%q10B1X**((ETW-32._rk)/3._rk))
 
 !..Prevailing Oxygen limitation for bacteria:
 
@@ -255,7 +270,8 @@ contains
          sugB1 = 0.0_rk
       end if
             ! = MIN(rumB1,rutB1)=MIN(rumB1/(R1cP+R2cP*rR2B1X,sutB1) avoid pot. div. by 0
-      rugB1 = sugB1*(R1cP+R2cP*self%rR2B1X+R3cP*self%rR3B1X+sum(RPcP*self%sRPR1/sutB1))
+      fRPB1c = sugB1*RPcP*self%sRPR1/sutB1
+      rugB1 = sugB1*(R1cP+R2cP*self%rR2B1X+R3cP*self%rR3B1X)+sum(fRPB1c)
 
 !..Respiration :
 
@@ -267,7 +283,7 @@ contains
 !                * rugB1  + srsB1X * B1cP(I) * etB1
           _SET_DIAGNOSTIC_(self%id_fB1O3c,fB1O3c)
 
-! specific release of semilabile DOC 
+! specific release of semilabile DOC
 ! fudge factor 1. as used in Polimene et al. AME 2006
          sB1R2=max(0._rk,max(1._rk-(qpB1c/self%qpB1cX),1._rk-(qnB1c/self%qnB1cX)))*1._rk
          fB1R2c=sB1R2*B1cP
@@ -290,8 +306,16 @@ contains
          _SET_ODE_(self%id_R1c,+ fB1R1c - sugB1*R1cP)
          _SET_ODE_(self%id_R2c,+ fB1R2c - sugB1*R2cP*self%rR2B1X)
          _SET_ODE_(self%id_R3c,+ fB1R3c - sugB1*R3cP*self%rR3B1X)
+
+         _SET_DIAGNOSTIC_(self%id_fB1R1c, fB1R1c)
+         _SET_DIAGNOSTIC_(self%id_fB1R2c, fB1R2c)
+         _SET_DIAGNOSTIC_(self%id_fB1R3c, fB1R3c)
+         _SET_DIAGNOSTIC_(self%id_fR1B1c, sugB1*R1cP)
+         _SET_DIAGNOSTIC_(self%id_fR2B1c, sugB1*R2cP*self%rR2B1X)
+         _SET_DIAGNOSTIC_(self%id_fR3B1c, sugB1*R3cP*self%rR3B1X)
+
          do iRP=1,self%nRP
-            _SET_ODE_(self%id_RPc(iRP),- sugB1*RPcP(iRP)*self%sRPR1(iRP))
+            _SET_ODE_(self%id_RPc(iRP), -fRPB1c(iRP))
          end do
 
          _SET_ODE_(self%id_O3c,+ fB1O3c/CMass)
@@ -317,7 +341,7 @@ contains
 
 !..Source equations
 
-         fRPB1p = sugB1*RPpP*self%sRPR1
+         fRPB1p = sugB1*RPpP*self%sRPR1/sutB1
          _SET_ODE_(self%id_p, sum(fRPB1p))
          do iRP=1,self%nRP
             _SET_ODE_(self%id_RPp(iRP), - fRPB1p(iRP))
@@ -327,6 +351,11 @@ contains
          _SET_ODE_(self%id_N1p, + fB1N1p)
          _SET_ODE_(self%id_R1p, + fB1RDp - fR1B1p)
          _SET_ODE_(self%id_TA,  - fB1N1p)   ! Contribution to alkalinity: -1 for phosphate
+
+!..Set diagnostics
+         _SET_DIAGNOSTIC_(self%id_fB1N1p,fB1N1p)
+         _SET_DIAGNOSTIC_(self%id_fB1R1p, fB1RDp)
+         _SET_DIAGNOSTIC_(self%id_fR1B1p, fR1B1p)
 
 !..Nitrogen dynamics in bacteria........................................
 
@@ -347,7 +376,7 @@ contains
 
 !..Source equations
 
-         fRPB1n = sugB1*RPnP*self%sRPR1
+         fRPB1n = sugB1*RPnP*self%sRPR1/sutB1
          _SET_ODE_(self%id_n, sum(fRPB1n))
          do iRP=1,self%nRP
             _SET_ODE_(self%id_RPn(iRP), - fRPB1n(iRP))
@@ -358,6 +387,11 @@ contains
          _SET_ODE_(self%id_R1n, + fB1RDn   - fR1B1n)
          _SET_ODE_(self%id_TA,  + fB1NIn)   ! Contribution to alkalinity: +1 for ammonium
 
+!..Set diagnostics
+         _SET_DIAGNOSTIC_(self%id_fB1NIn,fB1NIn)
+         _SET_DIAGNOSTIC_(self%id_fB1R1n, fB1RDn)
+         _SET_DIAGNOSTIC_(self%id_fR1B1n, fR1B1n)
+
       ! Leave spatial loops (if any)
       _LOOP_END_
 
@@ -365,12 +399,12 @@ contains
 
    end subroutine do
 
-   
+
    subroutine remineralization(self,_ARGUMENTS_DO_)
 
       class (type_ersem_bacteria_docdyn),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_
-      
+
       integer :: iRP
       real(rk) :: R1pP,R1nP
       real(rk) :: N7fP
@@ -394,7 +428,11 @@ contains
          _SET_ODE_(self%id_N1p, + fR1N1p)
          _SET_ODE_(self%id_N4n, + fR1NIn)
          _SET_ODE_(self%id_TA,  - fR1N1p + fR1NIn)   ! Contributions to alkalinity: -1 for phosphate, +1 for ammonium
-         
+
+         !.. set Diagnostics
+         _SET_DIAGNOSTIC_(self%id_minn,fR1NIn)
+         _SET_DIAGNOSTIC_(self%id_minp,fR1N1p)
+
          if (use_iron) then
             ! remineralization of particulate iron to Fe
             do iRP=1,self%nRP
@@ -404,12 +442,12 @@ contains
 
             ! sink of Fe
 
-            ! This term takes into account the scavenging due to hydroxide precipitation and it is supposed to be 
+            ! This term takes into account the scavenging due to hydroxide precipitation and it is supposed to be
             ! regulated by a threshold concentration (0.6 nM). See Aumont et al., 2003 (GBC) and Vichi et al., 2007 (JMS) for references.
             ! (Luca, 12/08)
             _GET_(self%id_N7f,N7fP)
             n7fsink=self%fsinkX*max(0._rk,N7fP-0.6_rk)
-            
+
             do iRP=1,self%nRP
                if (fRPn7f(iRP)/=0.0_rk) _SET_ODE_(self%id_RPf(iRP),-fRPn7f(iRP))
             end do
@@ -420,5 +458,5 @@ contains
       _LOOP_END_
 
    end subroutine remineralization
-   
+
 end module

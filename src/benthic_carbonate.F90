@@ -17,6 +17,7 @@ module ersem_benthic_carbonate
 
       type (type_horizontal_diagnostic_variable_id) :: id_ph,id_pco2,id_CarbA, id_BiCarb, id_Carb
       type (type_horizontal_diagnostic_variable_id) :: id_Om_cal,id_Om_arg
+      integer :: phscale
 
    contains
       procedure :: initialize
@@ -30,9 +31,16 @@ contains
       class (type_ersem_benthic_carbonate), intent(inout), target :: self
       integer,                      intent(in)            :: configunit
 
+      call self%get_parameter(self%phscale,'pHscale','','pH scale (0: SWS, 1: total)',default=1,minimum=-1,maximum=1)
       call self%register_horizontal_dependency(self%id_G3c,'G3c','mmol C/m^2','carbon dioxide')
       call self%register_horizontal_dependency(self%id_benTA,'benTA','mmol eq/m^2','benthic alkalinity')
-      call self%register_diagnostic_variable(self%id_ph,    'pH',    '-','pH',domain=domain_bottom)
+      if (self%phscale==1) then
+             call self%register_diagnostic_variable(self%id_ph, 'pH', '-', 'pH on total scale',missing_value=0._rk,domain=domain_bottom,source=source_do_bottom)
+      elseif (self%phscale==0) then
+             call self%register_diagnostic_variable(self%id_ph, 'pH', '-', 'pH on seawater scale',missing_value=0._rk,domain=domain_bottom,source=source_do_bottom)
+      elseif (self%phscale==-1) then
+             call self%register_diagnostic_variable(self%id_ph, 'pH', '-', 'pH on seawater scale',missing_value=0._rk,domain=domain_bottom,source=source_do_bottom)
+      end if
       call self%register_diagnostic_variable(self%id_pco2,  'pCO2',  '1e-6',    'partial pressure of CO2',source=source_do_bottom)
       call self%register_diagnostic_variable(self%id_CarbA, 'CarbA', 'mmol/m^3','carbonic acid concentration',source=source_do_bottom)
       call self%register_diagnostic_variable(self%id_BiCarb,'BiCarb','mmol/m^3','bicarbonate concentration',source=source_do_bottom)
@@ -69,7 +77,7 @@ contains
 
          TA = TA/1.0e6_rk                ! from umol kg-1 to mol kg-1
          Ctot  = O3C / 1.e3_rk / density ! from mmol m-3 to mol kg-1
-         call co2dyn (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success)   ! NB pressure from dbar to bar
+         call co2dyn (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success,self%phscale)   ! NB pressure from dbar to bar
          if (success) then
             ! Carbonate system iterative scheme converged -  save associated diagnostics.
             ! Convert outputs from fraction to ppm (pCO2) and from mol kg-1 to mmol m-3 (concentrations).
@@ -96,4 +104,3 @@ contains
    end subroutine do_bottom
 
 end module
-

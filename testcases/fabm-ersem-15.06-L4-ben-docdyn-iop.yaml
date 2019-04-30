@@ -55,6 +55,8 @@ instances:
       iswCO2: 1                                            # carbonate system diagnostics (0: off, 1: on), default = 1
       iswASFLUX: 1                                         # air-sea CO2 exchange (0: none, 1: Nightingale and Liss, 2: Wanninkhof 1992 without chemical enhancement, 3: Wanninkhof 1992 with chemical enhancement, 4: Wanninkhof 1999), default = 1
       iswtalk: 2                                           # alkalinity formulation (1-4: from salinity and temperature, 5: dynamic alkalinity), default = 5
+      pHscale: 1                                           # pH scale (1: total, 0: SWS, -1: SWS backward compatible), default = 1
+      iswbioalk: 1                                         # use bioalkalinity (0: off, 1: on), default = 1
     initialization:
       c: 2130.0                                            # total dissolved inorganic carbon (mmol C/m^3)
   R1:
@@ -92,7 +94,7 @@ instances:
       iopABS: 1e-05                                        # specific shortwave absorption (m^2/mg C), default = 0.0
       iopBBS: 1.6e-05                                      # specific shortwave backscatter (m^2/mg C), default = 0.0
       rm: 1.0                                              # sinking velocity (m/d), default = 0.0
-      ndeposition: 2                                       # number of target pools for sedimentation, default = 0
+      ndeposition: 2                                       # number of target pools for sedimentation, default = 1
       qxc2: 0.1                                            # fraction of carbon sinking into deposition target 2 (-)
       qxn2: 0.1                                            # fraction of nitrogen sinking into deposition target 2 (-)
       qxp2: 0.06                                           # fraction of phosphorus sinking into deposition target 2 (-)
@@ -112,7 +114,7 @@ instances:
       iopABS: 1e-05                                        # specific shortwave absorption (m^2/mg C), default = 0.0
       iopBBS: 1.6e-05                                      # specific shortwave backscatter (m^2/mg C), default = 0.0
       rm: 5.0                                              # sinking velocity (m/d), default = 0.0
-      ndeposition: 2                                       # number of target pools for sedimentation, default = 0
+      ndeposition: 2                                       # number of target pools for sedimentation, default = 1
       qxc2: 0.1                                            # fraction of carbon sinking into deposition target 2 (-)
       qxn2: 0.1                                            # fraction of nitrogen sinking into deposition target 2 (-)
       qxp2: 0.06                                           # fraction of phosphorus sinking into deposition target 2 (-)
@@ -134,7 +136,7 @@ instances:
       iopABS: 1e-05                                        # specific shortwave absorption (m^2/mg C), default = 0.0
       iopBBS: 1.6e-05                                      # specific shortwave backscatter (m^2/mg C), default = 0.0
       rm: 10.0                                             # sinking velocity (m/d), default = 0.0
-      ndeposition: 2                                       # number of target pools for sedimentation, default = 0
+      ndeposition: 2                                       # number of target pools for sedimentation, default = 1
       qxc2: 0.1                                            # fraction of carbon sinking into deposition target 2 (-)
       qxn2: 0.1                                            # fraction of nitrogen sinking into deposition target 2 (-)
       qxp2: 0.06                                           # fraction of phosphorus sinking into deposition target 2 (-)
@@ -162,9 +164,8 @@ instances:
     model: ersem/benthic_column_particulate_matter
     parameters:
       composition: cnpsf                                   # elemental composition
-      resuspension: true                                   # enable resuspension, default = false
-      vel_crit: 0.02                                       # critical shear velocity for resuspension (m/s)
       c0: 0.001                                            # background carbon concentration (mg C/m^2), default = 0.0
+      resuspension: true                                   # enable resuspension, default = false
     initialization:
       c: 3052.0                                            # carbon (mg C/m^2)
       n: 3.5                                               # nitrogen (mmol N/m^2)
@@ -697,7 +698,7 @@ instances:
     model: ersem/benthic_base
     parameters:
       composition: c                                       # elemental composition
-      remin: 0.05                                          # remineralisation rate (1/d), default = 0.0
+      remin: 0.05                                          # remineralisation rate at 10 degrees Celsius (1/d), default = 0.0
       c0: 1e-05                                            # background carbon concentration (mg C/m^2), default = 0.0
     initialization:
       c: 0.05                                              # carbon (mg C/m^2)
@@ -801,7 +802,7 @@ instances:
       composition: s                                       # elemental composition
       minimum_depth: 0.0                                   # minimum depth (m), default = 0.0
       variable_maximum_depth: true                         # maximum depth is variable, default = false
-      remin: 0.007                                         # remineralization rate (1/d), default = 0.0
+      remin: 0.007                                         # remineralization rate at 10 degrees Celsius (1/d), default = 0.0
     coupling:
       Q: Q6
       s_remin_target: K5/per_layer/s1
@@ -813,7 +814,7 @@ instances:
       composition: s                                       # elemental composition
       variable_minimum_depth: true                         # minimum depth is variable, default = false
       maximum_depth: 0.3                                   # maximum depth (m), default = 0.0
-      remin: 0.007                                         # remineralization rate (1/d), default = 0.0
+      remin: 0.007                                         # remineralization rate at 10 degrees Celsius (1/d), default = 0.0
       source_depth_distribution: 2                         # vertical distribution of changes (1: constant absolute rate, 2: constant relative rate, 3: constant carbon-based relative rate), default = 1
     coupling:
       Q: Q6
@@ -830,7 +831,7 @@ instances:
       xno3: 2.0                                            # oxygen consumed per nitrate produced (mol O_2/mol N)
       pammon: 0.5                                          # fraction of oxygen demand fulfilled by denitrification under anaerobic conditions (-)
       pdenit: 0.05                                         # fraction of denitrification producing dinitrogen gas (remainder produces ammonium) (-)
-      xn2: 1.25                                            # oxygen produced per N2 produced (-)
+      xn2: 1.25                                            # oxygen demand fulfilled by reduction of nitrate to dinitrogen gas (mol O_2/mol N)
       hM3G4: 1.0                                           # Michaelis-Menten constant for nitrate limitation of denitrification (mmol N/m^3)
     coupling:
       K3n: K3/per_layer/n1                                 # benthic nitrate in 1st layer (mmol N/m^2)
@@ -852,13 +853,14 @@ instances:
       c0: 1e-06                                            # background concentration (mg C/m^2), default = 0.0
       q10: 2.0                                             # Q_10 temperature coefficient (-)
       dd: 0.001                                            # Michaelis-Menten constant for oxygen limitation through layer thickness (m)
-      suQ7: 2e-06                                          # affinity for refractory matter (m^2/mg C/d)
-      suQ6s: 2e-05                                         # base affinity for particulate organic matter (m^2/mg C/d)
-      suQ6f: 0.0002                                        # additional affinity for particulate organic matter subject to nutrient limitation (m^2/mg C/d)
-      suQ1: 0.0005                                         # affinity for dissolved organic matter (m^2/mg C/d)
-      puinc: 2.0                                           # preference for nutrients relative to carbon in particulate organic matter (-)
-      pue6: 0.1                                            # fraction of consumed particulate organic matter that is excreted (-)
-      pue7: 0.1                                            # fraction of consumed refractory matter that is excreted (-)
+      nfood: 3                                             # number of food sources
+      su1: 0.0005                                          # base affinity for food source 1 (m^2/mg C/d)
+      su2: 2e-05                                           # base affinity for food source 2 (m^2/mg C/d)
+      suf2: 0.0002                                         # additional affinity for food source 2 subject to nutrient limitation (m^2/mg C/d), default = 0.0
+      puinc2: 2.0                                          # affinity for nutrients relative to carbon in food source 2 (-), default = 1.0
+      pue2: 0.1                                            # fraction of consumed food source 2 that is excreted (-), default = 0.0
+      su3: 2e-06                                           # base affinity for food source 3 (m^2/mg C/d)
+      pue3: 0.1                                            # fraction of consumed food source 3 that is excreted (-), default = 0.0
       pur: 0.3                                             # fraction of consumed carbon that is respired (-)
       sr: 0.02                                             # specific rest respiration (1/d)
       pdQ1: 0.1                                            # fraction of dying matter that is dissolved (-)
@@ -868,7 +870,9 @@ instances:
     coupling:
       Q1: Q1
       Q6: H1_Q6
-      Q7: H1_Q7
+      food1: Q1
+      food2: H1_Q6
+      food3: H1_Q7
       Dm: ben_col/D1m                                      # depth interval available to bacteria (m)
       K4n: K4/per_layer/n1_pw                              # ammonium (mmol N/m^2)
       K1p: K1/per_layer/p1_pw                              # phosphate (mmol N/m^2)
@@ -904,13 +908,13 @@ instances:
       c0: 1e-06                                            # background concentration (mg C/m^2), default = 0.0
       q10: 2.0                                             # Q_10 temperature coefficient (-)
       dd: 0.01                                             # Michaelis-Menten constant for oxygen limitation through layer thickness (m)
-      suQ7: 2e-06                                          # affinity for refractory matter (m^2/mg C/d)
-      suQ6s: 2e-05                                         # base affinity for particulate organic matter (m^2/mg C/d)
-      suQ6f: 0.0002                                        # additional affinity for particulate organic matter subject to nutrient limitation (m^2/mg C/d)
-      suQ1: 0.0                                            # affinity for dissolved organic matter (m^2/mg C/d)
-      puinc: 2.0                                           # preference for nutrients relative to carbon in particulate organic matter (-)
-      pue6: 0.0                                            # fraction of consumed particulate organic matter that is excreted (-)
-      pue7: 0.0                                            # fraction of consumed refractory matter that is excreted (-)
+      nfood: 2                                             # number of food sources
+      su1: 2e-05                                           # base affinity for food source 1 (m^2/mg C/d)
+      suf1: 0.0002                                         # additional affinity for food source 1 subject to nutrient limitation (m^2/mg C/d), default = 0.0
+      puinc1: 2.0                                          # affinity for nutrients relative to carbon in food source 1 (-), default = 1.0
+      pue1: 0.0                                            # fraction of consumed food source 1 that is excreted (-), default = 0.0
+      su2: 2e-06                                           # base affinity for food source 2 (m^2/mg C/d)
+      pue2: 0.0                                            # fraction of consumed food source 2 that is excreted (-), default = 0.0
       pur: 0.3                                             # fraction of consumed carbon that is respired (-)
       sr: 0.02                                             # specific rest respiration (1/d)
       pdQ1: 0.0                                            # fraction of dying matter that is dissolved (-)
@@ -920,7 +924,8 @@ instances:
     coupling:
       Q1: Q1
       Q6: H2_Q6
-      Q7: H2_Q7
+      food1: H2_Q6
+      food2: H2_Q7
       Dm: ben_col/layer2_thickness                         # depth interval available to bacteria (m)
       K4n: K4/per_layer/n2_pw                              # ammonium (mmol N/m^2)
       K1p: K1/per_layer/p2_pw                              # phosphate (mmol N/m^2)
@@ -1160,3 +1165,5 @@ instances:
       maximum_depth: 0.03                                  # maximum depth (m), default = 0.0
     coupling:
       Q: Q6
+  erosion:
+    model: ersem/benthic_erosion

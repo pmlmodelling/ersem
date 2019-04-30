@@ -31,6 +31,8 @@ add_library(fabm_models_ersem OBJECT
             benthic_bacteria.F90
             benthic_fauna.F90
             benthic_carbonate.F90
+            benthic_erosion.F90
+            fluff.F90
             zenith_angle.F90
            )
 
@@ -41,7 +43,7 @@ if(FABM_EMBED_VERSION)
   add_custom_target(fabm_models_ersem_version
      ${CMAKE_COMMAND} -DINFILE=${CMAKE_CURRENT_SOURCE_DIR}/version.F90.in -DOUTFILE=${CMAKE_CURRENT_BINARY_DIR}/version.F90 -P ${GET_GIT_INFO_SCRIPT}
      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-     COMMENT "Retrieving description of last ERSEM commit..." 
+     COMMENT "Retrieving description of last ERSEM commit..."
      SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/version.F90.in ${GET_GIT_INFO_SCRIPT}
      VERBATIM
   )

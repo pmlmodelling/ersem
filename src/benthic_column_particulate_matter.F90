@@ -76,7 +76,7 @@ module ersem_benthic_column_particulate_matter
 ! $b \approx 1/z_mean'$. However, this approximation becomes invalid when
 ! z_mean becomes large, and that can happen in the model. To avoid this problem,
 ! we define penetration depth as the mean depth of mass between 0 and \infty.
-! Since our exponential fucntion remains the same, expressions based on that
+! Since our exponential function remains the same, expressions based on that
 ! (e.g., impact of bioturbation) are the same as in the Oldenburg model.
 ! Expressions based on the interpretation of penetration depth (the mean depth of mass
 ! between 0 and \infty in our case, and between 0 and z_bot for the Oldenburg model)
@@ -190,7 +190,7 @@ module ersem_benthic_column_particulate_matter
 !   d/dt z_mean = D/z_mean [1 - exp(-z_tur/z_mean)]
 !
 ! This describes how the penetration depth $z_mean$ changes due to bioturbation up to depth $z_tur$, with
-! the intensity of bioturbation described by diffusivity $D$. It is worth noting that $d/dt z_mean \to \infty$ 
+! the intensity of bioturbation described by diffusivity $D$. It is worth noting that $d/dt z_mean \to \infty$
 ! when $z_mean \to 0$. Thus, in the analytical solution of the model penetration depth cannot become negative
 ! as long as $D>0$.
 !
@@ -237,7 +237,7 @@ module ersem_benthic_column_particulate_matter
 !    d/dt \int_0^z_bot C0 exp(-z/z_mean) = - C_int_\infty z_bot/z_mean^2 exp(-z_bot/z_mean) d/dt z_mean
 !
 ! JB 28/11/2014: this solution was validated in Python with sympy, using the following code
-! 
+!
 !    C_int_infty,z_bot,z,t = sympy.symbols('C_int_infty,z_bot,z,t',positive=True,real=True)
 !    z_mean = sympy.Function('z_mean',positive=True,real=True)(t)
 !    C = C_int_infty/z_mean*sympy.exp(-z/z_mean)
@@ -264,7 +264,7 @@ module ersem_benthic_column_particulate_matter
 !
 ! It's worth noting that the Oldenburg model here has a unit problem: the factor in the exponential
 ! is not dimensionless, but has unit time^-1.
-! 
+!
 ! -------------------------------------------------
 !
 ! This file contains two modules that can be instantiated by the user (from fabm.yaml):
@@ -283,22 +283,20 @@ module ersem_benthic_column_particulate_matter
 !
 ! The "within a single depth interval" functionality is partitioned over two modules:
 !
-! type_ersem_benthic_pom_layer is the master module that describes everything there is to know about
-! the POM contents in a single depth interval. This is the module that can be instantiated from fabm.yaml.
-! Its function is to collect interval-specific sink-source terms and translate those into the change in
-! column-integrated POM and penetration depth.
+! type_ersem_benthic_pom_layer computes the density of all constituents within the specified depth interval.
+! This is the module that can be instantiated from fabm.yaml.
 !
-! type_layer_content_calculator simply computes the mass with the specified depth interval.
-! It is created automatically as a submodel of type_ersem_benthic_pom_layer, and does not
-! interact with the user.
+! type_constituent_for_single_layer_change collects interval-specific sink-source terms for a single constituent
+! and translates those into the change in column-integrated matter and penetration depth. It is created
+! automatically as a submodel of type_ersem_benthic_pom_layer and does not interact with the user.
 !
 ! The split of functionality across two modules is needed because the mass within the interval must be known
 ! early, so all other modules can use it, while the change in column-integrated mass and penetration depth
 ! must be computed late, after all other individual modules have computed interval-specific rates of change.
 ! Thus we have the dependency chain:
-!      1 mass within the desired depth interval (type_layer_content_calculator)
+!      1 mass within the desired depth interval (type_ersem_benthic_pom_layer)
 !   -> 2 interval-specific sink-source terms (all other modules)
-!   -> 3 change in column-integrated mass and penetration depth (type_ersem_benthic_pom_layer)
+!   -> 3 change in column-integrated mass and penetration depth (type_constituent_for_single_layer_change)
 ! Putting 1 and 3 in the same module creates a circular dependency [that's BAD].
 
    use fabm_types
@@ -320,7 +318,8 @@ module ersem_benthic_column_particulate_matter
    type,extends(type_ersem_benthic_base),public :: type_ersem_benthic_column_particulate_matter
       type (type_bottom_state_variable_id) :: id_penetration_c,id_penetration_n,id_penetration_p,id_penetration_s
       type (type_bottom_state_variable_id) :: id_buried_c,id_buried_n,id_buried_p,id_buried_s
-      type (type_horizontal_dependency_id) :: id_D, id_z_tur, id_d_tot
+      type (type_bottom_state_variable_id) :: id_resuspendable_c,id_resuspendable_p,id_resuspendable_n,id_resuspendable_s
+      type (type_horizontal_dependency_id) :: id_D, id_z_tur, id_d_tot, id_er
 
       logical :: burial
    contains
@@ -341,6 +340,7 @@ module ersem_benthic_column_particulate_matter
    type,extends(type_particle_model),public :: type_ersem_benthic_pom_layer
       type (type_constituent_in_single_layer), allocatable :: constituents(:)
       type (type_horizontal_dependency_id) :: id_d_tot ! only used if variable_maximum_depth is set
+      type (type_bottom_state_variable_id) :: id_remin_ox
 
       ! Layer extents
       logical :: variable_minimum_depth                        ! if not set, use minimum depth; if set, take dynamic minimum depth from variable (e.g., depth of oxygenated layer)
@@ -354,13 +354,16 @@ module ersem_benthic_column_particulate_matter
       procedure :: do_bottom  => layer_do_bottom
    end type
 
-   ! Submodel that converts layer-integrated sources of a single consituent into changes in depth-integrated mass and penetration depth.
+   ! Submodel that converts layer-integrated sources of a single constituent into changes in depth-integrated mass and penetration depth.
    type,extends(type_base_model) ::  type_constituent_for_single_layer_change
       type (type_horizontal_dependency_id) :: id_sms           ! layer-integrated rate of change
       type (type_horizontal_dependency_id) :: id_local         ! layer-integrated mass
       type (type_bottom_state_variable_id) :: id_int           ! column-integrated mass
       type (type_bottom_state_variable_id) :: id_pen_depth     ! penetration depth
       type (type_bottom_state_variable_id) :: id_remin_target  ! target variable for remineralized matter
+      type (type_bottom_state_variable_id) :: id_remin_ox      ! oxygen source for mineralisation
+      type (type_horizontal_diagnostic_variable_id) :: id_remin_flux
+      type(type_dependency_id)             :: id_ETW           ! temperature (controls remineralisation rate)
       type (type_horizontal_dependency_id) :: id_d_tot         ! depth of entire sediment column
       type (type_horizontal_dependency_id) :: id_pen_depth_c   ! penetration depth of carbon (only for source_depth_distribution==3!)
 
@@ -373,29 +376,40 @@ module ersem_benthic_column_particulate_matter
       type (type_horizontal_dependency_id) :: id_maximum_depth ! only used if variable_maximum_depth is set
 
       real(rk) :: remin
+      real(rk) :: q10
       integer :: source_depth_distribution
    contains
       procedure :: do_bottom  => constituent_for_single_layer_change_do_bottom
    end type
-
-contains
    
+contains
+
    subroutine initialize(self,configunit)
       class (type_ersem_benthic_column_particulate_matter), intent(inout), target :: self
       integer,                                              intent(in)            :: configunit
 
-      class (type_ersem_benthic_pom_layer),pointer :: single_layer
+      character(len=10)                             :: composition
+      real(rk)                                      :: c0
+      class (type_ersem_benthic_pom_layer), pointer :: single_layer
 
-      ! Perform normal benthic initialization (i.e., for POM without profile or penentration depth)
-      ! This will register state variables for all contituents of the particulate organic matter class,
-      ! e.g., carbon, nitrogen, phosphorus, silicon.
-      call self%type_ersem_benthic_base%initialize(configunit)
+      call self%initialize_ersem_benthic_base()
+
+      call self%get_parameter(composition, 'composition', '', 'elemental composition')
+      call self%get_parameter(c0,'c0','mg C/m^2','background carbon concentration',default=0.0_rk)
+
+      call self%get_parameter(self%resuspension, 'resuspension', '', 'enable resuspension', default=.false.)
+
+      if (index(composition,'c')/=0) call self%add_constituent('c',0.0_rk,c0)
+      if (index(composition,'p')/=0) call self%add_constituent('p',0.0_rk,qpRPIcX*c0)
+      if (index(composition,'n')/=0) call self%add_constituent('n',0.0_rk,qnRPIcX*c0)
+      if (index(composition,'s')/=0) call self%add_constituent('s',0.0_rk,qsRPIcX*c0)
+      if (index(composition,'f')/=0) call self%add_constituent('f',0.0_rk)
 
       ! Add penetration depths for all active constituents.
-      if (_VARIABLE_REGISTERED_(self%id_c)) call self%register_state_variable(self%id_penetration_c,'pen_depth_c','m','penetration depth of carbon')
-      if (_VARIABLE_REGISTERED_(self%id_n)) call self%register_state_variable(self%id_penetration_n,'pen_depth_n','m','penetration depth of nitrogen')
-      if (_VARIABLE_REGISTERED_(self%id_p)) call self%register_state_variable(self%id_penetration_p,'pen_depth_p','m','penetration depth of phosphorus')
-      if (_VARIABLE_REGISTERED_(self%id_s)) call self%register_state_variable(self%id_penetration_s,'pen_depth_s','m','penetration depth of silicate')
+      if (_VARIABLE_REGISTERED_(self%id_c)) call self%register_state_variable(self%id_penetration_c,'pen_depth_c','m','penetration depth of carbon',minimum=0.0_rk)
+      if (_VARIABLE_REGISTERED_(self%id_n)) call self%register_state_variable(self%id_penetration_n,'pen_depth_n','m','penetration depth of nitrogen',minimum=0.0_rk)
+      if (_VARIABLE_REGISTERED_(self%id_p)) call self%register_state_variable(self%id_penetration_p,'pen_depth_p','m','penetration depth of phosphorus',minimum=0.0_rk)
+      if (_VARIABLE_REGISTERED_(self%id_s)) call self%register_state_variable(self%id_penetration_s,'pen_depth_s','m','penetration depth of silicate',minimum=0.0_rk)
 
       ! Bioturbation
       ! Link to related standard variables (defined by ERSEM in shared.F90; not by FABM!)
@@ -408,7 +422,7 @@ contains
       ! Burial
       call self%get_parameter(self%burial,'burial','','enable burial',default=.false.)
       if (self%burial) then
-         ! Add burial modules for all constituents
+         ! Add burial targets for all constituents
          if (_VARIABLE_REGISTERED_(self%id_c)) then
             call self%register_state_dependency(self%id_buried_c,'buried_c','mg C/m^2','buried carbon')
             call self%request_coupling_to_model(self%id_buried_c,'burial_target','c')
@@ -427,6 +441,28 @@ contains
          end if
       end if
 
+      if (self%resuspension) then
+         ! Add dependencies on state variables that will be resuspended, and couple these to the surface layer of our own state variabes.
+         ! This ensures that resuspension does not only update the biomass, but also the penetration depth.
+         call self%register_dependency(self%id_er,sediment_erosion)
+         if (_VARIABLE_REGISTERED_(self%id_c)) then
+            call self%register_state_dependency(self%id_resuspendable_c,'resuspendable_c','mg C/m^2','source of resuspended carbon')
+            call self%request_coupling(self%id_resuspendable_c,'surface/c')
+         end if
+         if (_VARIABLE_REGISTERED_(self%id_p)) then
+            call self%register_state_dependency(self%id_resuspendable_p,'resuspendable_p','mmol P/m^2','source of resuspended phosphorus')
+            call self%request_coupling(self%id_resuspendable_p,'surface/p')
+         end if
+         if (_VARIABLE_REGISTERED_(self%id_n)) then
+            call self%register_state_dependency(self%id_resuspendable_n,'resuspendable_n','mmol N/m^2','source of resuspended nitrogen')
+            call self%request_coupling(self%id_resuspendable_n,'surface/n')
+         end if
+         if (_VARIABLE_REGISTERED_(self%id_s)) then
+            call self%register_state_dependency(self%id_resuspendable_s,'resuspendable_s','mmol Si/m^2','source of resuspended silicate')
+            call self%request_coupling(self%id_resuspendable_s,'surface/s')
+         end if
+      end if
+
       ! Create a submodel for particulate organic matter at the sediment surface
       ! This will receive sinks and sources associated with benthic-pelagic exchange - sedimentation, resuspension.
       allocate(single_layer)
@@ -434,7 +470,7 @@ contains
       call single_layer%parameters%set('variable_maximum_depth',.false.)
       call single_layer%parameters%set('minimum_depth',0.0_rk)
       call single_layer%parameters%set('maximum_depth',0.0_rk)
-      call single_layer%parameters%set('composition',self%composition)
+      call single_layer%parameters%set('composition',composition)
       call single_layer%couplings%set_string('Q',self%name)
       call self%add_child(single_layer,'surface',configunit=configunit)
    end subroutine initialize
@@ -444,13 +480,20 @@ contains
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
       real(rk) :: D,z_tur,z_bot
-      real(rk) :: z_mean,z_mean_sms,burial_flux,C_int
-      call self%type_ersem_benthic_base%do_bottom(_ARGUMENTS_DO_BOTTOM_)
+      real(rk) :: z_mean,z_mean_sms,burial_flux,C_int,v_er,resuspension_flux
+      real(rk) :: max_pen_depth_change = 0.05_rk  ! max change in penetration depth due to bioturbation, in m/d
+      real(rk) :: max_rel_res = 4.0_rk            ! max relative loss of matter due to resuspension, in 1/d
+
       _HORIZONTAL_LOOP_BEGIN_
          ! Get diffusivity and maximum depth of bioturbation
          _GET_HORIZONTAL_(self%id_D,D)
          _GET_HORIZONTAL_(self%id_z_tur,z_tur)
          _GET_HORIZONTAL_(self%id_d_tot,z_bot)
+
+         ! Get sediment erosion rate in m/d
+         if (self%resuspension) then
+            _GET_HORIZONTAL_(self%id_er,v_er)
+         end if
 
          ! Apply change in penetration depth due to bioturbation.
          ! See its derivation in the comments at the top of the file, section "Impact of bioturbation".
@@ -458,46 +501,74 @@ contains
          ! flux at the bottom of the sediment column. See its derivation at the top of the file, section "Impact of burial".
          if (_VARIABLE_REGISTERED_(self%id_c)) then
             _GET_HORIZONTAL_(self%id_penetration_c,z_mean)
-            z_mean_sms = D/z_mean*(1.0_rk - exp(-z_tur/z_mean))
+            z_mean_sms = min(D/z_mean,max_pen_depth_change)*(1.0_rk - exp(-z_tur/z_mean))
             _SET_BOTTOM_ODE_(self%id_penetration_c,z_mean_sms)
-            if (self%burial) then
+            if (self%burial.and.z_mean>0.0_rk) then
                _GET_HORIZONTAL_(self%id_c,C_int)
                burial_flux = C_int/(1.0_rk - exp(-z_bot/z_mean))*exp(-z_bot/z_mean)*z_bot/z_mean*z_mean_sms/z_mean
                _SET_BOTTOM_ODE_(self%id_c,-burial_flux)
                _SET_BOTTOM_ODE_(self%id_buried_c,burial_flux)
             end if
+            if (self%resuspension) then
+               _GET_HORIZONTAL_(self%id_c,C_int)
+               resuspension_flux = C_int*min(max_rel_res, v_er/(z_mean+1.e-8_rk)/(1.0_rk - exp (-z_bot/z_mean)))
+               _SET_BOTTOM_ODE_(self%id_resuspendable_c,-resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspended_c,resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_c,resuspension_flux)
+            end if
          end if
          if (_VARIABLE_REGISTERED_(self%id_p)) then
             _GET_HORIZONTAL_(self%id_penetration_p,z_mean)
-            z_mean_sms = D/z_mean*(1.0_rk - exp(-z_tur/z_mean))
+            z_mean_sms = min(D/z_mean,max_pen_depth_change)*(1.0_rk - exp(-z_tur/z_mean))
             _SET_BOTTOM_ODE_(self%id_penetration_p,z_mean_sms)
-            if (self%burial) then
+            if (self%burial.and.z_mean>0.0_rk) then
                _GET_HORIZONTAL_(self%id_p,C_int)
                burial_flux = C_int/(1.0_rk - exp(-z_bot/z_mean))*exp(-z_bot/z_mean)*z_bot/z_mean*z_mean_sms/z_mean
                _SET_BOTTOM_ODE_(self%id_p,-burial_flux)
                _SET_BOTTOM_ODE_(self%id_buried_p,burial_flux)
             end if
+            if (self%resuspension) then
+               _GET_HORIZONTAL_(self%id_p,C_int)
+               resuspension_flux = C_int*min(max_rel_res, v_er/(z_mean+1.e-8_rk)/(1.0_rk - exp (-z_bot/z_mean)))
+               _SET_BOTTOM_ODE_(self%id_resuspendable_p,-resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspended_p,resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_p,resuspension_flux)
+            end if
          end if
          if (_VARIABLE_REGISTERED_(self%id_n)) then
             _GET_HORIZONTAL_(self%id_penetration_n,z_mean)
-            z_mean_sms = D/z_mean*(1.0_rk - exp(-z_tur/z_mean))
+            z_mean_sms = min(D/z_mean,max_pen_depth_change)*(1.0_rk - exp(-z_tur/z_mean))
             _SET_BOTTOM_ODE_(self%id_penetration_n,z_mean_sms)
-            if (self%burial) then
+            if (self%burial.and.z_mean>0.0_rk) then
                _GET_HORIZONTAL_(self%id_n,C_int)
                burial_flux = C_int/(1.0_rk - exp(-z_bot/z_mean))*exp(-z_bot/z_mean)*z_bot/z_mean*z_mean_sms/z_mean
                _SET_BOTTOM_ODE_(self%id_n,-burial_flux)
                _SET_BOTTOM_ODE_(self%id_buried_n,burial_flux)
             end if
+            if (self%resuspension) then
+               _GET_HORIZONTAL_(self%id_n,C_int)
+               resuspension_flux = C_int*min(max_rel_res, v_er/(z_mean+1.e-8_rk)/(1.0_rk - exp (-z_bot/z_mean)))
+               _SET_BOTTOM_ODE_(self%id_resuspendable_n,-resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspended_n,resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_n,resuspension_flux)
+            end if
          end if
          if (_VARIABLE_REGISTERED_(self%id_s)) then
             _GET_HORIZONTAL_(self%id_penetration_s,z_mean)
-            z_mean_sms = D/z_mean*(1.0_rk - exp(-z_tur/z_mean))
+            z_mean_sms = min(D/z_mean,max_pen_depth_change)*(1.0_rk - exp(-z_tur/z_mean))
             _SET_BOTTOM_ODE_(self%id_penetration_s,z_mean_sms)
-            if (self%burial) then
+            if (self%burial.and.z_mean>0.0_rk) then
                _GET_HORIZONTAL_(self%id_s,C_int)
                burial_flux = C_int/(1.0_rk - exp(-z_bot/z_mean))*exp(-z_bot/z_mean)*z_bot/z_mean*z_mean_sms/z_mean
                _SET_BOTTOM_ODE_(self%id_s,-burial_flux)
                _SET_BOTTOM_ODE_(self%id_buried_s,burial_flux)
+            end if
+            if (self%resuspension) then
+               _GET_HORIZONTAL_(self%id_s,C_int)
+               resuspension_flux = C_int*min(max_rel_res, v_er/(z_mean+1.e-8_rk)/(1.0_rk - exp (-z_bot/z_mean)))
+               _SET_BOTTOM_ODE_(self%id_resuspendable_s,-resuspension_flux)
+               _SET_BOTTOM_EXCHANGE_(self%id_resuspended_s,resuspension_flux)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_resuspension_flux_s,resuspension_flux)
             end if
          end if
       _HORIZONTAL_LOOP_END_
@@ -508,7 +579,7 @@ contains
       integer,                              intent(in)            :: configunit
 
       character(len=10) :: composition
-      real(rk)          :: remin
+      real(rk)          :: remin, q10
       integer           :: source_depth_distribution
       integer           :: iconstituent
 !EOP
@@ -527,7 +598,8 @@ contains
       else
          call self%get_parameter(self%maximum_depth,'maximum_depth','m','maximum depth',default=0.0_rk)
       end if
-      call self%get_parameter(remin,'remin','1/d','remineralization rate',default=0.0_rk)
+      call self%get_parameter(remin,'remin','1/d','remineralization rate at 10 degrees Celsius',default=0.0_rk)
+      if  (remin /= 0._rk) call self%get_parameter(q10, 'q10', '-', 'Q_10 temperature coefficient', default=1.0_rk, minimum=1.0_rk)
       call self%get_parameter(source_depth_distribution,'source_depth_distribution', '','vertical distribution of changes (1: constant absolute rate, 2: constant relative rate, 3: constant carbon-based relative rate)',default=1)
 
       call self%register_dependency(self%id_d_tot,depth_of_sediment_column)
@@ -536,13 +608,13 @@ contains
       do iconstituent=1,len_trim(composition)
          select case (composition(iconstituent:iconstituent))
          case ('c')
-            call layer_initialize_constituent(self,self%constituents(iconstituent),'c','mg C',   'carbon',    remin,source_depth_distribution,standard_variables%total_carbon,1.0_rk/CMass)
+            call layer_initialize_constituent(self,self%constituents(iconstituent),'c','mg C',   'carbon',    remin,q10,source_depth_distribution,standard_variables%total_carbon,1.0_rk/CMass)
          case ('n')
-            call layer_initialize_constituent(self,self%constituents(iconstituent),'n','mmol N', 'nitrogen',  remin,source_depth_distribution,standard_variables%total_nitrogen)
+            call layer_initialize_constituent(self,self%constituents(iconstituent),'n','mmol N', 'nitrogen',  remin,q10,source_depth_distribution,standard_variables%total_nitrogen)
          case ('p')
-            call layer_initialize_constituent(self,self%constituents(iconstituent),'p','mmol P', 'phosphorus',remin,source_depth_distribution,standard_variables%total_phosphorus)
+            call layer_initialize_constituent(self,self%constituents(iconstituent),'p','mmol P', 'phosphorus',remin,q10,source_depth_distribution,standard_variables%total_phosphorus)
          case ('s')
-            call layer_initialize_constituent(self,self%constituents(iconstituent),'s','mmol Si','silicate',  remin,source_depth_distribution,standard_variables%total_silicate)
+            call layer_initialize_constituent(self,self%constituents(iconstituent),'s','mmol Si','silicate',  remin,q10,source_depth_distribution,standard_variables%total_silicate)
          case ('f')
          case default
             call self%fatal_error('layer_initialize','unknown constituent '//composition(iconstituent:iconstituent)//' specified.')
@@ -551,11 +623,11 @@ contains
 
    end subroutine layer_initialize
 
-   subroutine layer_initialize_constituent(self,info,name,units,long_name,remin,source_depth_distribution,aggregate_target,aggregate_scale_factor)
+   subroutine layer_initialize_constituent(self,info,name,units,long_name,remin,q10,source_depth_distribution,aggregate_target,aggregate_scale_factor)
       class (type_ersem_benthic_pom_layer),     intent(inout), target :: self
       class (type_constituent_in_single_layer), intent(inout)         :: info
       character(len=*),                         intent(in)            :: name,units,long_name
-      real(rk),                                 intent(in)            :: remin
+      real(rk),                                 intent(in)            :: remin,q10
       integer,                                  intent(in)            :: source_depth_distribution
       type (type_bulk_standard_variable),       intent(in)            :: aggregate_target
       real(rk),optional,                        intent(in)            :: aggregate_scale_factor
@@ -586,6 +658,7 @@ contains
       allocate(change_processor)
       change_processor%dt = 86400._rk
       change_processor%remin = remin
+      change_processor%q10 = q10
       change_processor%source_depth_distribution = source_depth_distribution
       call self%add_child(change_processor,'change_in_'//name//'_processor',configunit=-1)
       call change_processor%register_state_dependency(change_processor%id_int,name//'_int',units//'/m^2', 'column-integrated '//long_name)
@@ -626,12 +699,18 @@ contains
          ! Register submodel dependencies: layer-integrated mass (subject to remineralization) and sink for remineralized matter.
          call change_processor%register_dependency(change_processor%id_local,name,units//'/m^2','layer-integrated '//long_name)
          call change_processor%register_state_dependency(change_processor%id_remin_target,name//'_remin_target',units//'/m^2','sink for remineralized '//long_name)
-
+         if (name=='c') then 
+             call self%register_state_dependency(self%id_remin_ox,'o_remin_source','mmol O_2/m^2','oxygen')
+             call change_processor%register_state_dependency(change_processor%id_remin_ox,'o_remin_source','mmol O_2/m^2','oxygen')
+             call change_processor%request_coupling(change_processor%id_remin_ox, '../o_remin_source')
+         end if
+         call change_processor%register_diagnostic_variable(change_processor%id_remin_flux,'remin_flux',units//'/m^2/d','mineralisation flux')
          ! Couple submodel dependencies to top-level ("self") equivalents.
          ! For the remineralization target, register an alias at the top level so that it can be coupled directly from fabm.yaml.
          call change_processor%request_coupling(change_processor%id_local,'../'//name)
          call self%add_horizontal_variable(name//'_remin_target',units//'/m^2','sink for remineralized '//long_name,act_as_state_variable=.true.,link=link)
          call change_processor%request_coupling(change_processor%id_remin_target,'../'//name//'_remin_target')
+         call change_processor%register_dependency(change_processor%id_ETW, standard_variables%temperature)
       end if
 
    end subroutine layer_initialize_constituent
@@ -689,6 +768,8 @@ contains
       real(rk) :: d_min,d_max
       real(rk) :: c_int,d_pen,d_pen_c,sms,d_sms
       real(rk) :: c_int_local,sms_remin, d_tot
+      real(rk),parameter :: max_relax = 4.0_rk   ! max relaxation rate for penetration depth (1/d)
+      real(rk) :: relax,eT,ETW
 
       _HORIZONTAL_LOOP_BEGIN_
          ! Determine top and bottom of desired depth interval.
@@ -709,6 +790,9 @@ contains
             d_max = self%maximum_depth
          end if
 
+         ! Ensure that d_max >= d_min:
+         d_max = max(d_max,d_min)
+
          ! Retrieve depth-integrated mass, penetration depth, sinks-sources.
          _GET_HORIZONTAL_(self%id_int,c_int)
          _GET_HORIZONTAL_(self%id_pen_depth,d_pen)
@@ -719,9 +803,13 @@ contains
 
          ! Add local remineralization
          if (self%remin/=0.0_rk) then
+            _GET_(self%id_ETW, ETW)
+            eT  = self%q10**((ETW-10._rk)/10._rk)
             _GET_HORIZONTAL_(self%id_local,c_int_local)
-            sms_remin = self%remin*c_int_local
+            sms_remin = self%remin*c_int_local*eT
             _SET_BOTTOM_ODE_(self%id_remin_target,sms_remin)
+            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_remin_flux,sms_remin)
+            if (_VARIABLE_REGISTERED_(self%id_remin_ox)) _SET_BOTTOM_ODE_(self%id_remin_ox,-sms_remin/CMass)
             sms = sms - sms_remin
          end if
 
@@ -743,7 +831,7 @@ contains
             !
             ! Now we need to find the mean depth of matter. With C(z) = C0*exp(-z/z_mean), this can be written as
             !    \int_d_min^d_max exp(-z/z_mean) z dz / \int_d_min^d_max exp(-z/z_mean) dz
-            ! Anti-derivatives of these expressions are derived near the top to this file.
+            ! Anti-derivatives of these expressions are derived near the top of this file.
             ! For the denominator we found
             !    \int_d_min^d_max exp(-z/z_mean) dz = [-z_mean exp(-z/z_mean)]_d_min^\d_max
             !                                       = z_mean [exp(-d_min/z_mean)-exp(-d_max/z_mean)]
@@ -770,13 +858,19 @@ contains
                   d_sms = d_min + d_pen_c
                end if
             else
-               d_sms = d_min + d_pen - (d_max-d_min)/(exp((d_max-d_min)/d_pen)-1)
+               if ( (d_max-d_min)/d_pen > ZeroX ) then
+                  d_sms = d_min + d_pen - (d_max-d_min)/(exp((d_max-d_min)/d_pen)-1)
+               else
+                  ! Safety valve for pathological cases where d_max == d_min
+                  ! (dmax >= d_min is ensured above)
+                  d_sms = d_min
+               end if
             end if
          end if
 
          ! Compute change in penetration depth. See its derivation in the comments at the top of the file,
          ! section "Impact of sources and sinks at different depths".
-         _GET_HORIZONTAL_(self%id_d_tot,d_tot) 
+         _GET_HORIZONTAL_(self%id_d_tot,d_tot)
          if (legacy_ersem_compatibility) then
             ! Legacy ERSEM clips d_sms to avoid positive feedback that leads to $d_pen->\infty$
             ! This feedback very like stems from the assumption that d_pen<<d_tot.
@@ -789,7 +883,18 @@ contains
             ! This should already prevent a positive feedback, since the last term in the expression below
             ! ensures that the change goes to zero when d_pen>>d_tot. When d_pen<<d_tot, the old result
             ! is recovered. JornB 11/3/2015
-            _SET_BOTTOM_ODE_(self%id_pen_depth, (d_sms-d_pen)*sms/c_int*(1-exp(-d_tot/d_pen)))
+
+            ! In the expression below, we protect against extreme changes in penetration
+            ! depth at small c_int. Note per the analytical derivation, relax = sms/c_int.
+            if (sms==0.0_rk) then
+               ! Separately handle sms==0, in order to prevent 0/0 when sms and c_int are both 0.
+               relax = 0.0_rk
+            else
+               ! The expression below handles c_int==0 gracefully provided the user does not
+               ! activate runtime floating point exceptions that trap division by 0.
+               relax = sign(min(abs(sms)/c_int,max_relax),sms)
+            end if
+            _SET_BOTTOM_ODE_(self%id_pen_depth, (d_sms-d_pen)*relax*(1-exp(-d_tot/d_pen)))
          end if
 
          ! Apply sinks-sources to depth-integrated mass
