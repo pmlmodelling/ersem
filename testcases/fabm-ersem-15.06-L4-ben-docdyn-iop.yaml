@@ -85,6 +85,33 @@ instances:
       c0: 0.0033                                           # background carbon concentration (mg C/m^3), default = 0.0
     initialization:
       c: 12.0                                              # carbon (mg C/m^3)
+  T1:
+    long_name: photolabile terrigenous DOC
+    model: ersem/TDOC
+    parameters:
+      composition: c
+      qn: 0.0042                                       
+      qp: 0.0001                                         # elemental composition
+      c0: 0.0033                                         # background carbon concentration (mg C/m^3), default = 0.0
+      phyref: 0.03                                       #reference photooxidation rate (d-1)
+      iref: 130                                          # reference irradinace for photooxidation (W m-2)
+      floc: 0.000002                                     # flocculation rate (d-1)
+    initialization:
+      c: 12.0
+    coupling:
+      T2: T2/c
+      R8: R8
+      O3: O3/c
+  T2:
+    long_name: non photolabile terrigenous DOC
+    model: ersem/pelagic_base
+    parameters:
+      composition: c
+      qn: 0.0042 
+      qp: 0.0001                                  # elemental composition
+      c0: 0.0033                                           # background carbon concentration (mg C/m^3), default = 0.0
+    initialization:
+      c: 12.0
   R4:
     long_name: small-size pom
     model: ersem/pelagic_base
@@ -245,7 +272,13 @@ instances:
       R1p: R1/p                                            # labile dissolved organic phosphorus (mmol P/m^3)
       R1n: R1/n                                            # labile dissolved organic nitrogen (mmol N/m^3)
       R2c: R2/c                                            # semi-labile dissolved organic carbon (mg C/m^3)
-      R3c: R3/c                                            # semi-refractory DOC (mg C/m^3)
+      R3c: R3/c 
+      T1c: T1/c                                            # photolabile terrigenous dissolved organic carbon (mg C/m^3)
+      T1p: T1/p                                            # photolabile terrigenous dissolved organic phosphorus (mmol P/m^3)
+      T1n: T1/n                                            # photolabile terrigenous dissolved organic nitrogen (mmol N/m^3)
+      T2c: T2/c                                            # non-photolabile terrigenous dissolved organic carbon (mg C/m^3)
+      T2p: T2/p                                            # non-photolabile terrigenous dissolved organic phosphorus (mmol P/m^3)
+      T2n: T2/n                                            # non-photolabile terrigenous dissolved organic nitrogen (mmol N/m^3)
       O3c: O3/c                                            # carbon dioxide (mmol C/m^3)
       O2o: O2/o                                            # oxygen (mmol O_2/m^3)
   pel_nit:
