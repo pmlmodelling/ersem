@@ -57,7 +57,7 @@ contains
       call self%add_constituent('c',0.0_rk,c0)
 
       call self%register_diagnostic_variable(self%id_RainR,'RainR','1','rain ratio')
-      call self%register_diagnostic_variable(self%id_L2O3c,'L2O3c','mg C/m^3/d','calcite dissolution rate',missing_value=0._rk)
+      call self%register_diagnostic_variable(self%id_L2O3c,'L2O3c','mg C/m^3/d','calcite dissolution rate')
       call self%register_dependency(self%id_om_cal,'om_cal','-','calcite saturation')
       call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','total dissolved inorganic carbon')
       call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)

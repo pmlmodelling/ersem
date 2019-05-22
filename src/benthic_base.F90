@@ -26,13 +26,12 @@ module ersem_benthic_base
 
       ! Dependencies for resuspension
       type (type_horizontal_dependency_id) :: id_bedstress
-      type (type_dependency_id)            :: id_dens
+      type (type_dependency_id)            :: id_dens, id_ETW
 
       ! Parameters
-      character(len=10) :: composition
       real(rk) :: reminQIX,pQIN3X
       logical  :: resuspension
-      real(rk) :: er, vel_crit
+      real(rk) :: er, vel_crit, q10
    contains
       procedure :: initialize
       procedure :: do_bottom
@@ -51,19 +50,23 @@ contains
    class (type_ersem_benthic_base), intent(inout), target :: self
    integer,                         intent(in)            :: configunit
 
-   real(rk)          :: c0
+   character(len=10) :: composition
+   real(rk) :: c0
 !
-
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%composition, 'composition', '',   'elemental composition')
-      call self%get_parameter(self%reminQIX,    'remin',       '1/d','remineralisation rate',default=0.0_rk)
-      if (index(self%composition,'n')/=0 .and. self%reminQIX/=0.0_rk) &
-         call self%get_parameter(self%pQIN3X,'pN3','-','nitrate fraction of remineralised nitrogen (remainder is ammonium)',default=0.0_rk)
-      call self%get_parameter(self%resuspension,'resuspension','',   'enable resuspension',  default=.false.)
-
       call self%initialize_ersem_benthic_base()
+
+      call self%get_parameter(composition, 'composition', '', 'elemental composition')
+      call self%get_parameter(self%reminQIX, 'remin', '1/d','remineralisation rate at 10 degrees Celsius',default=0.0_rk)
+      if (self%reminQIX /= 0.0_rk) then
+         call self%get_parameter(self%q10, 'q10', '-', 'Q_10 temperature coefficient', default=1.0_rk, minimum=1.0_rk)
+         if (index(composition,'n') /= 0) &
+            call self%get_parameter(self%pQIN3X, 'pN3', '-', 'nitrate fraction of remineralised nitrogen (remainder is ammonium)', default=0.0_rk)
+         call self%register_dependency(self%id_ETW, standard_variables%temperature)
+      end if
+      call self%get_parameter(self%resuspension, 'resuspension', '', 'enable resuspension', default=.false.)
 
       if (self%resuspension) then
          call self%get_parameter(self%er,'er','1/d','erosion rate',default=0.225_rk)
@@ -74,63 +77,40 @@ contains
 
       call self%get_parameter(c0,'c0','mg C/m^2','background carbon concentration',default=0.0_rk)
 
-      if (index(self%composition,'c')/=0) then
+      if (index(composition,'c')/=0) then
          call self%add_constituent('c',0.0_rk,c0)
-         if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspended_c,'resuspended_c','mg C/m^3','pelagic variable taking up resuspended carbon')
-            call self%request_coupling_to_model(self%id_resuspended_c,'RP','c')
-            call self%register_diagnostic_variable(self%id_resuspension_flux_c,'resuspension_flux_c','mg C/m^2/d','carbon resuspension',source=source_do_bottom)
-         end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_O3c,'O3c','mmol/m^3','dissolved inorganic carbon')
          if (self%reminQIX/=0.0_rk) call self%register_diagnostic_variable(self%id_bremin,'bremin','mg C/m^2/d','carbon remineralization',source=source_do_bottom)
       end if
-      if (index(self%composition,'p')/=0) then
+      if (index(composition,'p')/=0) then
          call self%add_constituent('p',0.0_rk,qpRPIcX*c0)
-         if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspended_p,'resuspended_p','mmol P/m^3','pelagic variable taking up resuspended phosphorus')
-            call self%request_coupling_to_model(self%id_resuspended_p,'RP','p')
-            call self%register_diagnostic_variable(self%id_resuspension_flux_p,'resuspension_flux_p','mmol P/m^2/d','phosphorus resuspension',source=source_do_bottom)
-         end if
          if (self%reminQIX/=0.0_rk) then
             call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
             if (.not._VARIABLE_REGISTERED_(self%id_TA)) call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)
          end if
       end if
-      if (index(self%composition,'n')/=0) then
+      if (index(composition,'n')/=0) then
          call self%add_constituent('n',0.0_rk,qnRPIcX*c0)
-         if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspended_n,'resuspended_n','mmol N/m^3','pelagic variable taking up resuspended nitrogen')
-            call self%request_coupling_to_model(self%id_resuspended_n,'RP','n')
-            call self%register_diagnostic_variable(self%id_resuspension_flux_n,'resuspension_flux_n','mmol N/m^2/d','nitrogen resuspension',source=source_do_bottom)
-         end if
          if (self%reminQIX/=0.0_rk) then
             call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3','nitrate')
             call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','ammonium')
             if (.not._VARIABLE_REGISTERED_(self%id_TA)) call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)
          end if
       end if
-      if (index(self%composition,'s')/=0) then
+      if (index(composition,'s')/=0) then
          call self%add_constituent('s',0.0_rk,qsRPIcX*c0)
-         if (self%resuspension) then
-            call self%register_state_dependency(self%id_resuspended_s,'resuspended_s','mmol Si/m^3','pelagic variable taking up resuspended silicate')
-            call self%request_coupling_to_model(self%id_resuspended_s,'RP','s')
-            call self%register_diagnostic_variable(self%id_resuspension_flux_s,'resuspension_flux_s','mmol Si/m^2/d','silicate resuspension',source=source_do_bottom)
-         end if
          if (self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N5s,'N5s','mmol Si/m^3','silicate')
       end if
-      if (index(self%composition,'f')/=0) then
+      if (index(composition,'f')/=0) then
          call self%add_constituent('f',0.0_rk)
-         if (use_iron.and.self%resuspension) then
-            call self%register_state_dependency(self%id_resuspended_f,'resuspended_f','umol Fe/m^3','pelagic variable taking up resuspended iron')
-            call self%request_coupling_to_model(self%id_resuspended_f,'RP','f')
-            call self%register_diagnostic_variable(self%id_resuspension_flux_f,'resuspension_flux_f','umol Fe/m^2/d','iron resuspension',source=source_do_bottom)
-         end if
          if (use_iron.and.self%reminQIX/=0.0_rk) call self%register_state_dependency(self%id_N7f,'N7f','umol Fe/m^3','dissolved iron')
       end if
    end subroutine
 
    subroutine initialize_ersem_benthic_base(self)
       class (type_ersem_benthic_base), intent(inout), target :: self
+
+      self%resuspension = .false.
 
       ! Set time unit to d-1
       ! This implies that all rates (sink/source terms, vertical velocities) are given in d-1.
@@ -145,27 +125,40 @@ contains
 
       select case (name)
          case ('c')
-            call self%register_state_variable(self%id_c,'c','mg C/m^2','carbon',initial_value,minimum=0._rk,background_value=background_value)
-            call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_c,scale_factor=1._rk/CMass)
-            if (present(qn)) call self%add_to_aggregate_variable(standard_variables%total_nitrogen,  self%id_c,scale_factor=qn)
-            if (present(qp)) call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_c,scale_factor=qp)
+            call register(self%id_c, self%id_resuspended_c, self%id_resuspension_flux_c, 'c', 'mg C', 'carbon', standard_variables%total_carbon, scale_factor=1._rk/CMass)
+            if (present(qn)) call self%add_to_aggregate_variable(standard_variables%total_nitrogen, self%id_c, scale_factor=qn)
+            if (present(qp)) call self%add_to_aggregate_variable(standard_variables%total_phosphorus, self%id_c, scale_factor=qp)
          case ('n')
-            call self%register_state_variable(self%id_n, 'n', 'mmol N/m^2', 'nitrogen', initial_value, minimum=0._rk,background_value=background_value)
-            call self%add_to_aggregate_variable(standard_variables%total_nitrogen,self%id_n)
+            call register(self%id_n, self%id_resuspended_n, self%id_resuspension_flux_n, 'n', 'mmol N', 'nitrogen', standard_variables%total_nitrogen)
          case ('p')
-            call self%register_state_variable(self%id_p, 'p', 'mmol P/m^2', 'phosphorus', initial_value, minimum=0._rk,background_value=background_value)
-            call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_p)
+            call register(self%id_p, self%id_resuspended_p, self%id_resuspension_flux_p, 'p', 'mmol P', 'phosphorus', standard_variables%total_phosphorus)
          case ('s')
-            call self%register_state_variable(self%id_s,'s','mmol Si/m^2','silicate',initial_value,minimum=0._rk,background_value=background_value)
-            call self%add_to_aggregate_variable(standard_variables%total_silicate,self%id_s)
+            call register(self%id_s, self%id_resuspended_s, self%id_resuspension_flux_s, 's', 'mmol Si', 'silicate', standard_variables%total_silicate)
          case ('f')
-            if (use_iron) then
-               call self%register_state_variable(self%id_f,'f','umol Fe/m^2','iron',initial_value,minimum=0._rk,background_value=background_value)
-               call self%add_to_aggregate_variable(standard_variables%total_iron,self%id_f)
-            end if
+            if (use_iron) call register(self%id_f, self%id_resuspended_f, self%id_resuspension_flux_f, 'f', 'umol Fe', 'iron', standard_variables%total_iron)
          case default
             call self%fatal_error('benthic_base_add_constituent','Unknown constituent "'//trim(name)//'".')
       end select
+
+   contains
+
+      subroutine register(variable_id, resuspended_id, resuspended_flux_id, name, base_units, long_name, aggregate_variable, scale_factor)
+         type (type_bottom_state_variable_id),          intent(inout), target :: variable_id
+         type (type_state_variable_id),                 intent(inout), target :: resuspended_id
+         type (type_horizontal_diagnostic_variable_id), intent(inout), target :: resuspended_flux_id
+         character(len=*),                              intent(in)            :: name,base_units,long_name
+         type (type_bulk_standard_variable),            intent(in)            :: aggregate_variable
+         real(rk),                                      intent(in), optional  :: scale_factor
+
+         call self%register_state_variable(variable_id, name, base_units//'/m^2', long_name, initial_value, minimum=0._rk,background_value=background_value)
+         call self%add_to_aggregate_variable(aggregate_variable, variable_id, scale_factor=scale_factor)
+         if (self%resuspension) then
+            call self%register_state_dependency(resuspended_id, 'resuspended_'//name, base_units//'/m^3', 'pelagic variable taking up resuspended '//long_name)
+            call self%request_coupling_to_model(resuspended_id, 'RP', name)
+            call self%register_diagnostic_variable(resuspended_flux_id, 'resuspension_flux_'//name, base_units//'/m^2/d', 'resuspension of '//long_name, source=source_do_bottom)
+         end if
+      end subroutine
+
    end subroutine benthic_base_add_constituent
 
    subroutine do_bottom(self,_ARGUMENTS_DO_BOTTOM_)
@@ -175,6 +168,7 @@ contains
       real(rk) :: bedstress,density
       real(rk) :: fac,state,resuspension_flux
       real(rk) :: max_rel_res = 4.0_rk            ! max relative loss of matter due to resuspension, in 1/d
+      real(rk) :: eT,ETW,reminT
 
       _HORIZONTAL_LOOP_BEGIN_
          if (self%resuspension) then
@@ -239,34 +233,38 @@ contains
 
          ! Remineralization (benthic return)
          if (self%reminQIX/=0.0_rk) then
+            _GET_(self%id_ETW,ETW)
+            eT = self%q10**((ETW-10._rk)/10._rk)
+            reminT=self%reminQIX * eT
+
             if (_VARIABLE_REGISTERED_(self%id_c)) then
                _GET_HORIZONTAL_(self%id_c,state)
-               _SET_BOTTOM_ODE_(self%id_c,-self%reminQIX*state)
-               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_bremin,self%reminQIX*state)
-               _SET_BOTTOM_EXCHANGE_(self%id_O3c,self%reminQIX*state/CMass)
+               _SET_BOTTOM_ODE_(self%id_c,-reminT*state)
+               _SET_HORIZONTAL_DIAGNOSTIC_(self%id_bremin,reminT*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_O3c,reminT*state/CMass)
             end if
             if (_VARIABLE_REGISTERED_(self%id_p)) then
                _GET_HORIZONTAL_(self%id_p,state)
-               _SET_BOTTOM_ODE_(self%id_p,-self%reminQIX*state)
-               _SET_BOTTOM_EXCHANGE_(self%id_N1p,self%reminQIX*state)
-               _SET_BOTTOM_EXCHANGE_(self%id_TA, -self%reminQIX*state)
+               _SET_BOTTOM_ODE_(self%id_p,-reminT*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_N1p,reminT*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_TA, -reminT*state)
             end if
             if (_VARIABLE_REGISTERED_(self%id_n)) then
                _GET_HORIZONTAL_(self%id_n,state)
-               _SET_BOTTOM_ODE_(self%id_n,-self%reminQIX*state)
-               _SET_BOTTOM_EXCHANGE_(self%id_N3n,self%pQIN3X*self%reminQIX*state)
-               _SET_BOTTOM_EXCHANGE_(self%id_N4n,(1.0_rk-self%pQIN3X)*self%reminQIX*state)
-               _SET_BOTTOM_EXCHANGE_(self%id_TA,(1.0_rk-self%pQIN3X)*self%reminQIX*state - self%pQIN3X*self%reminQIX*state)
+               _SET_BOTTOM_ODE_(self%id_n,-reminT*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_N3n,self%pQIN3X*reminT*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_N4n,(1.0_rk-self%pQIN3X)*reminT*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_TA,(1.0_rk-self%pQIN3X)*reminT*state - self%pQIN3X*reminT*state)
             end if
             if (_VARIABLE_REGISTERED_(self%id_s)) then
                _GET_HORIZONTAL_(self%id_s,state)
-               _SET_BOTTOM_ODE_(self%id_s,-self%reminQIX*state)
-               _SET_BOTTOM_EXCHANGE_(self%id_N5s,self%reminQIX*state)
+               _SET_BOTTOM_ODE_(self%id_s,-reminT*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_N5s,reminT*state)
             end if
             if (_VARIABLE_REGISTERED_(self%id_f)) then
                _GET_HORIZONTAL_(self%id_f,state)
-               _SET_BOTTOM_ODE_(self%id_f,-self%reminQIX*state)
-               _SET_BOTTOM_EXCHANGE_(self%id_N7f,self%reminQIX*state)
+               _SET_BOTTOM_ODE_(self%id_f,-reminT*state)
+               _SET_BOTTOM_EXCHANGE_(self%id_N7f,reminT*state)
             end if
          end if   ! Remineralization (benthic return)
 

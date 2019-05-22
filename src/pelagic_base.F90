@@ -23,6 +23,7 @@ module ersem_pelagic_base
       type (type_bottom_state_variable_id),allocatable,dimension(:) :: id_targetc,id_targetn,id_targetp,id_targets,id_targetf
 
       real(rk) :: rm = 0.0_rk
+      real(rk) :: tdep
       integer :: ndeposition
       logical :: no_river_dilution = .false.
       real(rk),allocatable :: qxc(:),qxn(:),qxp(:),qxs(:),qxf(:)
@@ -70,7 +71,7 @@ contains
       end if
       call self%get_parameter(rRPmX, 'rm', 'm/d', 'sinking velocity', default=0.0_rk)
 
-      call self%initialize_ersem_base(rm=rRPmX)
+      call self%initialize_ersem_base(rm=rRPmX, sedimentation=rRPmX>0._rk)
 
       if (index(composition,'c')/=0) then
          call self%add_constituent('c', 0.0_rk, c0, qn, qp)
@@ -98,9 +99,11 @@ contains
       class (type_ersem_pelagic_base), intent(inout), target :: self
       real(rk),optional,               intent(in)            :: rm
       logical, optional,               intent(in)            :: sedimentation
- 
+
+      real(rk) :: vel_crit
+
       ! We are adding a new yaml entry for each ersem_base type related to river dilution behaviour
-      call self%get_parameter(self%no_river_dilution,'no_river_dilution','','Disable river dilution by setting riverine concentrations equal to those in the receiving grid cell',default=.false.)
+      call self%get_parameter(self%no_river_dilution,'no_river_dilution','','disable river dilution by setting riverine concentrations equal to those in the receiving grid cell',default=.false.)
 
       ! Set time unit to d-1
       ! This implies that all rates (sink/source terms, vertical velocities) are given in d-1.
@@ -119,6 +122,9 @@ contains
       end if
 
       if (self%ndeposition>0) then
+         call self%get_parameter(vel_crit,'vel_crit','m/s','critical bed shear velocity for deposition',default=0.01_rk)
+         self%tdep = vel_crit**2
+
          call self%register_dependency(self%id_bedstress,standard_variables%bottom_stress)
          call self%register_dependency(self%id_dens,     standard_variables%density)
       end if
@@ -194,7 +200,7 @@ contains
                if (qx(idep)/=0) then
                   call self%register_state_dependency(id_dep(idep),'deposition_target'//trim(num)//trim(name),trim(base_units)//'/m^2','target pool '//trim(num)//' for '//trim(long_name)//' deposition')
                   call self%request_coupling_to_model(id_dep(idep),'deposition_target'//trim(num),name)
-                  call self%register_diagnostic_variable(id_xdep(idep),'dep'//trim(num)//trim(name),trim(base_units)//'/m^2/d','flux'//trim(num)//' for '//trim(long_name)//' deposition',source=source_do_bottom)
+                  call self%register_diagnostic_variable(id_xdep(idep),'dep'//trim(num)//trim(name),trim(base_units)//'/m^2/d','deposition of '//trim(long_name)//' in target pool '//trim(num),source=source_do_bottom)
                end if
             end do
          end if
@@ -214,12 +220,8 @@ contains
       class (type_ersem_pelagic_base), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
-      ! Bed characteristics - from Puls and Sundermann 1990
-      ! Critical bed shear velocity = 0.01 m/s
-      real(rk) :: tdep = 0.01_rk**2
-
       real(rk) :: tbed,density
-      real(rk) :: fac,sdrate
+      real(rk) :: sdrate
       real(rk) :: w,conc,flux
       integer :: idep
 
@@ -243,16 +245,10 @@ contains
          ! Divide actual bed stress (Pa) by density (kg/m^3) to obtain square of bed shear velocity.
          tbed = tbed/density
 
-         if(tbed<tdep) then
-            ! Bed stress is low enough to allow some sedimentation.
-            fac=1._rk-tbed/tdep
-         else
-            ! Bed stress is too high - no actual sedimentation.
-            fac=0._rk
-         endif
-
+         ! Deposition rate based on sinking velocity but mediated by bottom stress (high stress = no deposition)
+         ! Original reference: Puls and Suendermann 1990. However, they use the ratio of shear velocities, while we use its square.
          !sdrate = min(fsd*fac,pdepth(I)/timestep) ! Jorn: CFL criterion disabled because FABM does not provide timestep
-         sdrate = w*fac
+         sdrate = w * max(0._rk, 1._rk - tbed/self%tdep)
 
          if (_AVAILABLE_(self%id_c)) then
             _GET_(self%id_c,conc)

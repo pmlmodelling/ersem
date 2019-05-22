@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+
 import os
 import tempfile
 import glob
@@ -7,22 +9,22 @@ import argparse
 import yaml
 
 # Try to load pyfabm.
-# If available, we'll use it to automatically add comments to fabm.yaml. 
+# If available, we'll use it to automatically add comments to fabm.yaml.
 try:
     import pyfabm.complete_yaml
 except ImportError:
-    print 'Unable to load pyfabm. Automatic addition of comments to fabm.yaml will be disabled. To fix this, build and install pyfabm by running cmake+make for source directory <FABMDIR>/src/drivers/python.'
+    print('Unable to load pyfabm. Automatic addition of comments to fabm.yaml will be disabled. To fix this, build and install pyfabm by running cmake+make for source directory <FABMDIR>/src/drivers/python.')
     pyfabm = None
 
 # ------------------------------------------
 # Hook into PyYAML to make it preserve the order of dictionary elements (i.e., modules in fabm.yaml).
 try:
     import collections
-    def dict_representer(dumper, data):                                                            
-        return dumper.represent_mapping(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, data.iteritems())                                                                                         
-    def dict_constructor(loader, node):                                                            
-        return collections.OrderedDict(loader.construct_pairs(node))                               
-    yaml.add_representer(collections.OrderedDict, dict_representer)                                
+    def dict_representer(dumper, data):
+        return dumper.represent_mapping(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, data.items())
+    def dict_constructor(loader, node):
+        return collections.OrderedDict(loader.construct_pairs(node))
+    yaml.add_representer(collections.OrderedDict, dict_representer)
     yaml.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, dict_constructor)
 except ImportError:
     pass
@@ -43,7 +45,9 @@ def update(path):
     has_erosion = False
     for name,model,parameters,coupling in enumerateModels(fabm_yaml):
         if model=='ersem/benthic_column_particulate_matter':
-            needs_erosion = True
+            needs_erosion = needs_erosion or parameters.get('resuspension', False)
+            parameters.pop('er', None)
+            parameters.pop('vel_crit', None)
         elif model=='ersem/benthic_erosion':
             has_erosion = True
     if needs_erosion and not has_erosion:

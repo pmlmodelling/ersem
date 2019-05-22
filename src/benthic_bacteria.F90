@@ -31,11 +31,9 @@ module ersem_benthic_bacteria
       type (type_horizontal_diagnostic_variable_id) :: id_fHKIn,id_fHK1p
       type (type_horizontal_diagnostic_variable_id) :: id_fHQ1c,id_fHQPc,id_fHQ1n,id_fHQPn,id_fHQ1p,id_fHQPp
       type (type_horizontal_dependency_id) :: id_Dm
-      type (type_dependency_id) :: id_ETW
 
       integer  :: nfood
       real(rk) :: qnc,qpc
-      real(rk) :: q10
       real(rk) :: dd
       real(rk) :: pur,sr
       real(rk) :: pdQ1
@@ -126,15 +124,15 @@ contains
       call self%request_coupling_to_model(self%id_Q6n,'Q6',standard_variables%total_nitrogen)
       call self%request_coupling_to_model(self%id_Q6p,'Q6',standard_variables%total_phosphorus)
 
-      call self%register_diagnostic_variable(self%id_fHG3c,'fHG3c','mg C/m^2/d',  'respiration',                              domain=domain_bottom,source=source_do_bottom)
-      call self%register_diagnostic_variable(self%id_fHKIn,'fHKIn','mmol N/m^2/d','dissolved inorganic nitrogen release',     domain=domain_bottom,source=source_do_bottom)
-      call self%register_diagnostic_variable(self%id_fHK1p,'fHK1p','mmol P/m^2/d','dissolved inorganic phosphorus release',   domain=domain_bottom,source=source_do_bottom)
-      call self%register_diagnostic_variable(self%id_fHQ1c,'fHQ1c','mg C/m^2/d',  'dissolved organic carbon production',      domain=domain_bottom,source=source_do_bottom)
-      call self%register_diagnostic_variable(self%id_fHQ1n,'fHQ1n','mmol N/m^2/d','dissolved organic nitrogen production',    domain=domain_bottom,source=source_do_bottom)
-      call self%register_diagnostic_variable(self%id_fHQ1p,'fHQ1p','mmol P/m^2/d','dissolved organic phosphorus production',  domain=domain_bottom,source=source_do_bottom)
-      call self%register_diagnostic_variable(self%id_fHQPc,'fHQPc','mg C/m^2/d',  'particulate organic carbon production',    domain=domain_bottom,source=source_do_bottom)
-      call self%register_diagnostic_variable(self%id_fHQPn,'fHQPn','mmol N/m^2/d','particulate organic nitrogen production',  domain=domain_bottom,source=source_do_bottom)
-      call self%register_diagnostic_variable(self%id_fHQPp,'fHQPp','mmol P/m^2/d','particulate organic phosphorus production',domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fHG3c,'fHG3c','mg C/m^2/d',  'respiration',                                 domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fHKIn,'fHKIn','mmol N/m^2/d','release of dissolved inorganic nitrogen',     domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fHK1p,'fHK1p','mmol P/m^2/d','release of dissolved inorganic phosphorus',   domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fHQ1c,'fHQ1c','mg C/m^2/d',  'production of dissolved organic carbon',      domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fHQ1n,'fHQ1n','mmol N/m^2/d','production of dissolved organic nitrogen',    domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fHQ1p,'fHQ1p','mmol P/m^2/d','production of dissolved organic phosphorus',  domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fHQPc,'fHQPc','mg C/m^2/d',  'production of particulate organic carbon',    domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fHQPn,'fHQPn','mmol N/m^2/d','production of particulate organic nitrogen',  domain=domain_bottom,source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_fHQPp,'fHQPp','mmol P/m^2/d','production of particulate organic phosphorus',domain=domain_bottom,source=source_do_bottom)
 
    end subroutine
 

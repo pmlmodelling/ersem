@@ -188,26 +188,26 @@ contains
 
       ! Register diagnostics.
       call self%register_diagnostic_variable(self%id_fB1O3c,'fB1O3c','mg C/m^3/d','respiration')
-      call self%register_diagnostic_variable(self%id_fB1NIn,'fB1NIn','mmol N/m^3/d','bacterial DIN release')
-      call self%register_diagnostic_variable(self%id_fB1N1p,'fB1N1p','mmol P/m^3/d','bacterial DIP release')
+      call self%register_diagnostic_variable(self%id_fB1NIn,'fB1NIn','mmol N/m^3/d','release of DIN')
+      call self%register_diagnostic_variable(self%id_fB1N1p,'fB1N1p','mmol P/m^3/d','release of DIP')
 
-      call self%register_diagnostic_variable(self%id_fB1R1c,'fB1R1c','mg C/m^3/d','bacterial release of labile DOC ')
-      call self%register_diagnostic_variable(self%id_fB1R2c,'fB1R2c','mg C/m^3/d','bacterial release of semi-labile DOC ')
-      call self%register_diagnostic_variable(self%id_fB1R3c,'fB1R3c','mg C/m^3/d','bacterial release of semi-refractory DOC ')
-      call self%register_diagnostic_variable(self%id_fB1R1n,'fB1R1n','mmol N/m^3/d','bacterial DON release')
-      call self%register_diagnostic_variable(self%id_fB1R1p,'fB1R1p','mmol P/m^3/d','bacterial DOP release')
+      call self%register_diagnostic_variable(self%id_fB1R1c,'fB1R1c','mg C/m^3/d','release of labile DOC ')
+      call self%register_diagnostic_variable(self%id_fB1R2c,'fB1R2c','mg C/m^3/d','release of semi-labile DOC ')
+      call self%register_diagnostic_variable(self%id_fB1R3c,'fB1R3c','mg C/m^3/d','release of semi-refractory DOC ')
+      call self%register_diagnostic_variable(self%id_fB1R1n,'fB1R1n','mmol N/m^3/d','release of DON')
+      call self%register_diagnostic_variable(self%id_fB1R1p,'fB1R1p','mmol P/m^3/d','release of DOP')
 
-      call self%register_diagnostic_variable(self%id_fR1B1c,'fR1B1c','mg C/m^3/d','bacterial uptake of labile DOC ')
-      call self%register_diagnostic_variable(self%id_fR2B1c,'fR2B1c','mg C/m^3/d','bacterial uptake of semi-labile DOC ')
-      call self%register_diagnostic_variable(self%id_fR3B1c,'fR3B1c','mg C/m^3/d','bacterial uptake of semi-refractory DOC ')
       call self%register_diagnostic_variable(self%id_fT1B1c,'fT1B1c','mg C/m^3/d','bacterial uptake of photolabile terrigenous DOC ')
       call self%register_diagnostic_variable(self%id_fT2B1c,'fT2B1c','mg C/m^3/d','bacterial uptake of nonphotolabile terrigenous')
 
-      call self%register_diagnostic_variable(self%id_fR1B1n,'fR1B1n','mmol N/m^3/d','bacterial DON uptake')
-      call self%register_diagnostic_variable(self%id_fR1B1p,'fR1B1p','mmol P/m^3/d','bacterial DOP uptake')
+      call self%register_diagnostic_variable(self%id_fR1B1c,'fR1B1c','mg C/m^3/d','uptake of labile DOC ')
+      call self%register_diagnostic_variable(self%id_fR2B1c,'fR2B1c','mg C/m^3/d','uptake of semi-labile DOC ')
+      call self%register_diagnostic_variable(self%id_fR3B1c,'fR3B1c','mg C/m^3/d','uptake of semi-refractory DOC ')
+      call self%register_diagnostic_variable(self%id_fR1B1n,'fR1B1n','mmol N/m^3/d','uptake of DON')
+      call self%register_diagnostic_variable(self%id_fR1B1p,'fR1B1p','mmol P/m^3/d','uptake of DOP')
 
-      call self%register_diagnostic_variable(self%id_minn,'minn','mmol N/m^3/d','N mineralisation')
-      call self%register_diagnostic_variable(self%id_minp,'minp','mmol P/m^3/d','P mineralisation')
+      call self%register_diagnostic_variable(self%id_minn,'minn','mmol N/m^3/d','mineralisation of DON to DIN')
+      call self%register_diagnostic_variable(self%id_minp,'minp','mmol P/m^3/d','mineralisation of DOP to DIP')
    end subroutine
 
    subroutine do(self,_ARGUMENTS_DO_)
@@ -233,7 +233,7 @@ contains
       real(rk) :: CORROX
       integer  :: iRP
       real(rk),dimension(self%nRP) :: RPc,RPcP,RPnP,RPpP
-      real(rk),dimension(self%nRP) :: fRPB1p,fRPB1n
+      real(rk),dimension(self%nRP) :: fRPB1c,fRPB1p,fRPB1n
 
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
@@ -312,7 +312,8 @@ contains
          sugB1 = 0.0_rk
       end if
             ! = MIN(rumB1,rutB1)=MIN(rumB1/(R1cP+R2cP*rR2B1X,sutB1) avoid pot. div. by 0
-      rugB1 = sugB1*(R1cP+R2cP*self%rR2B1X+R3cP*self%rR3B1X+T1cP*self%rT1B1X+T2cP*self%rT2B1X+sum(RPcP*self%sRPR1/sutB1))
+      fRPB1c = sugB1*RPcP*self%sRPR1/sutB1
+      rugB1 = sugB1*(R1cP+R2cP*self%rR2B1X+R3cP*self%rR3B1X+T1cP*self%rT1B1X+T2cP*self%rT2B1X)+sum(fRPB1c)
 
 !..Respiration :
 
@@ -360,7 +361,7 @@ contains
          _SET_DIAGNOSTIC_(self%id_fT2B1c, sugB1*T2cP*self%rT2B1X)
 
          do iRP=1,self%nRP
-            _SET_ODE_(self%id_RPc(iRP),- sugB1*RPcP(iRP)*self%sRPR1(iRP))
+            _SET_ODE_(self%id_RPc(iRP), -fRPB1c(iRP))
          end do
 
          _SET_ODE_(self%id_O3c,+ fB1O3c/CMass)
@@ -387,7 +388,7 @@ contains
 
 !..Source equations
 
-         fRPB1p = sugB1*RPpP*self%sRPR1
+         fRPB1p = sugB1*RPpP*self%sRPR1/sutB1
          _SET_ODE_(self%id_p, sum(fRPB1p))
          do iRP=1,self%nRP
             _SET_ODE_(self%id_RPp(iRP), - fRPB1p(iRP))
@@ -423,7 +424,7 @@ contains
 
 !..Source equations
 
-         fRPB1n = sugB1*RPnP*self%sRPR1
+         fRPB1n = sugB1*RPnP*self%sRPR1/sutB1
          _SET_ODE_(self%id_n, sum(fRPB1n))
          do iRP=1,self%nRP
             _SET_ODE_(self%id_RPn(iRP), - fRPB1n(iRP))

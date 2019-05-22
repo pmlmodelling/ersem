@@ -8,13 +8,12 @@ module ersem_zenith_angle
 
    use fabm_types
    use ersem_shared
-   use ersem_pelagic_base
 
    implicit none
 
    private
 
-   type,extends(type_ersem_pelagic_base),public :: type_ersem_zenith_angle
+   type,extends(type_base_model),public :: type_ersem_zenith_angle
       ! Variables
       type (type_horizontal_dependency_id)          :: id_lon,id_lat
       type (type_horizontal_diagnostic_variable_id) :: id_zenith_angle
@@ -38,9 +37,6 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      ! Initialize pelagic base model (this also sets the time unit to per day, instead of the default per second)
-      call self%initialize_ersem_base(sedimentation=.false.)
-
       ! Register environmental dependencies (lon,lat,zenith,day of year)
       call self%register_horizontal_dependency(self%id_lon,standard_variables%longitude)
       call self%register_horizontal_dependency(self%id_lat,standard_variables%latitude)

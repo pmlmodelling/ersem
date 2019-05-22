@@ -224,8 +224,8 @@ contains
 
       ! Register diagnostics
       call self%register_diagnostic_variable(self%id_fZIO3c,'fZIO3c','mg C/m^3/d','respiration')
-      call self%register_diagnostic_variable(self%id_fZINIn,'fZINIn','mmol N/m^3/d','DIN release')
-      call self%register_diagnostic_variable(self%id_fZINIp,'fZINIp','mmol P/m^3/d','DIP release')
+      call self%register_diagnostic_variable(self%id_fZINIn,'fZINIn','mmol N/m^3/d','release of DIN')
+      call self%register_diagnostic_variable(self%id_fZINIp,'fZINIp','mmol P/m^3/d','release of DIP')
       call self%register_diagnostic_variable(self%id_calc,'calcification','mg C/m^3/d','contribution to total calcification')
       call self%register_diagnostic_variable(self%id_fZIRPc,'fZIRPc','mg C/m^3/d','loss to POC')
       call self%register_diagnostic_variable(self%id_fZIRPn,'fZIRPn','mmol N/m^3/d','loss to PON')

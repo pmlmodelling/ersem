@@ -196,18 +196,18 @@ contains
       call self%register_diagnostic_variable(self%id_netPI, 'netPI', 'mg C/m^3/d','net primary production')
       call self%register_diagnostic_variable(self%id_fO3PIc,'fO3PIc','mg C/m^3/d','gross primary production')
       call self%register_diagnostic_variable(self%id_fPIO3c,'fPIO3c','mg C/m^3/d','respiration')
-      call self%register_diagnostic_variable(self%id_fN3PIn,'fN3PIn','mmol N/m^3/d','phytoplankton oxidised N uptake')
-      call self%register_diagnostic_variable(self%id_fN4PIn,'fN4PIn','mmol N/m^3/d','phytoplankton reduced N uptake')
-      call self%register_diagnostic_variable(self%id_fN1PIp,'fN1PIp','mmol P/m^3/d','phytoplankton P uptake')
-      if (self%use_Si) call self%register_diagnostic_variable(self%id_fN5PIs,'fN5PIs','mmol Si/m^3/d','phytoplankton Si uptake')
-      call self%register_diagnostic_variable(self%id_fPIR1c,'fPIR1c','mg C/m^3/d','phytoplankton loss to labile DOC')
-      call self%register_diagnostic_variable(self%id_fPIR1n,'fPIR1n','mg C/m^3/d','phytoplankton loss to labile DON')
-      call self%register_diagnostic_variable(self%id_fPIR1p,'fPIR1p','mg C/m^3/d','phytoplankton loss to labile DOP')
-      call self%register_diagnostic_variable(self%id_fPIR2c,'fPIR2c','mg C/m^3/d','phytoplankton loss to semi-labile DOC')
-      call self%register_diagnostic_variable(self%id_fPIRPc,'fPIRPc','mg C/m^3/d','phytoplankton loss to POC')
-      call self%register_diagnostic_variable(self%id_fPIRPn,'fPIRPn','mmol N/m^3/d','phytoplankton loss to PON')
-      call self%register_diagnostic_variable(self%id_fPIRPp,'fPIRPp','mmol P/m^3/d','phytoplankton loss to POP')
-      if (self%use_Si) call self%register_diagnostic_variable(self%id_fPIRPs,'fPIRPs','mmol Si/m^3/d','phytoplankton loss to POS')
+      call self%register_diagnostic_variable(self%id_fN3PIn,'fN3PIn','mmol N/m^3/d','uptake of oxidised N')
+      call self%register_diagnostic_variable(self%id_fN4PIn,'fN4PIn','mmol N/m^3/d','uptake of reduced N')
+      call self%register_diagnostic_variable(self%id_fN1PIp,'fN1PIp','mmol P/m^3/d','uptake of P')
+      if (self%use_Si) call self%register_diagnostic_variable(self%id_fN5PIs,'fN5PIs','mmol Si/m^3/d','uptake of Si')
+      call self%register_diagnostic_variable(self%id_fPIR1c,'fPIR1c','mg C/m^3/d','loss to labile DOC')
+      call self%register_diagnostic_variable(self%id_fPIR1n,'fPIR1n','mmol N/m^3/d','loss to labile DON')
+      call self%register_diagnostic_variable(self%id_fPIR1p,'fPIR1p','mmol P/m^3/d','loss to labile DOP')
+      call self%register_diagnostic_variable(self%id_fPIR2c,'fPIR2c','mg C/m^3/d','loss to semi-labile DOC')
+      call self%register_diagnostic_variable(self%id_fPIRPc,'fPIRPc','mg C/m^3/d','loss to POC')
+      call self%register_diagnostic_variable(self%id_fPIRPn,'fPIRPn','mmol N/m^3/d','loss to PON')
+      call self%register_diagnostic_variable(self%id_fPIRPp,'fPIRPp','mmol P/m^3/d','loss to POP')
+      if (self%use_Si) call self%register_diagnostic_variable(self%id_fPIRPs,'fPIRPs','mmol Si/m^3/d','loss to POSi')
 
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_parEIR,standard_variables%downwelling_photosynthetic_radiative_flux)
@@ -272,6 +272,8 @@ contains
       real(rk) :: fPIR1c,fPIR2c
       real(rk) :: pco2a3,cenh
       real(rk) :: RainR, t
+
+      real(rk),parameter :: onedayX = 1.0_rk
 
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
@@ -378,19 +380,22 @@ contains
             cenh = 1.0_rk
          end if
 
-         ! Nutrient-stress lysis rate :
+         ! Nutrient-stress lysis rate (1/d)
          sdo = (1._rk/(MIN(iNs, iNI)+0.1_rk))*self%sdo
 
-         ! Excretion rate, as regulated by nutrient-stress
+         ! Excretion rate, as regulated by nutrient-stress (1/d)
          seo = sum*(1._rk-iNI)*(1._rk-self%pu_ea)
 
-         ! Activity-dependent excretion :
+         ! Activity-dependent excretion (1/d)
          sea = sum*self%pu_ea
+
+         ! Productivity after subtracting excretion fluxes (1/d)
          sug = sum-seo-sea
 
-         ! Apportioning of LOC- and DET- fraction of excretion/lysis fluxes:
+         ! Fraction of lysis flux that is particulate (remainder is dissolved)
          pe_RP = MIN(self%qplc/(qpc+ZeroX), self%qnlc/(qnc+ZeroX), 1.0_rk)
 
+         ! Specific loss (1/d) and carbon loss (mg C/m3/d) to particulate matter due to lysis
          sPIRP = pe_RP*sdo
          fPIRPc = sPIRP*cP
 
@@ -430,21 +435,21 @@ contains
 
          ! Respiration..........................................................
 
-         ! Rest respiration rate :
+         ! Rest respiration rate (1/d)
          srs = et*self%srs
 
-         ! Activity respiration rate :
+         ! Activity respiration rate (1/d)
          sra = sug*self%pu_ra
 
-         ! Total respiration flux :
+         ! Total respiration = production of CO2 (mg C/m3/d)
          fPIO3c = srs*cP + sra*c*cenh
 
-         ! Gross production as flux from inorganic CO2 :
+         ! Gross production = uptake of CO2 (mg C/m3/d)
          fO3PIc = sum*c*cenh
 
-         ! Production and productivity (as used in nutrient uptake equations)
-         sun = sum-(seo+sea+sra)  ! net productivity
-         run = sun*c-srs*cP       ! net production
+         ! Productivity and production (as used in nutrient uptake equations)
+         sun = sum-(seo+sea+sra)  ! net productivity (1/d) - excludes excretion and activity respition, but not rest respiration
+         run = sun*c-srs*cP       ! net production (mg C/m3/d) - excludes excretion and respiration
 
          ! Save net production (equals run if cenh=1)
          _SET_DIAGNOSTIC_(self%id_netPI,(sum*cenh-seo-sea-sra*cenh)*c-srs*cP)
@@ -541,11 +546,11 @@ contains
             ! Silicate flux.............................................
             _GET_(self%id_s,sP)
 
-            ! Excretion loss of silicate
+            ! Loss of silicate due to lysis
             fPIRPs = sdo * sP
 
             ! Loss of excess silicate (qsP1c > qsc)
-            fPIN5s = MAX ( 0._rk, sP-self%qsc * cP)
+            fPIN5s = MAX ( 0._rk, sP-self%qsc * cP) / onedayX
 
             ! Net silicate uptake
             fN5PIs = MAX ( 0._rk, self%qsc*run) - fPIN5s
