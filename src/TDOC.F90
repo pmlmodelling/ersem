@@ -158,9 +158,9 @@ contains
     _SET_ODE_(self%id_RPn,+flocc*self%qn)
     _SET_ODE_(self%id_RPp,+flocc*self%qp)
     _SET_ODE_(self%id_T2c,+photolysis*T1T2)
-    _SET_ODE_(self%id_O3c,photolysis*(1._rk-T1T2)/CMass)
-    _SET_ODE_(self%id_N1p,photolysis*(1._rk-T1T2)*self%qp+photolysis*T1T2*px)
-    _SET_ODE_(self%id_N4n,photolysis*(1._rk-T1T2)*self%qn+photolysis*T1T2*nx)
+    _SET_ODE_(self%id_O3c,+photolysis*(1._rk-T1T2)/CMass)
+    _SET_ODE_(self%id_N1p,+photolysis*(1._rk-T1T2)*self%qp+photolysis*T1T2*px)
+    _SET_ODE_(self%id_N4n,+photolysis*(1._rk-T1T2)*self%qn+photolysis*T1T2*nx)
     _SET_DIAGNOSTIC_(self%id_photolysis, photolysis)
     _SET_DIAGNOSTIC_(self%id_flocc, flocc)
 
