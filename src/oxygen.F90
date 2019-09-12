@@ -154,7 +154,7 @@ contains
       real(rk),parameter :: T = 273.15_rk
 
       ! volume of an ideal gas at standard temp (25C) and pressure (1 atm)
-      real(rk),parameter :: VIDEAL = (R * 298.15_rk / P) *1000._rk
+      real(rk),parameter :: VIDEAL = (R * 273.15_rk / P) *1000._rk
 
       real(rk)           :: ABT
 
