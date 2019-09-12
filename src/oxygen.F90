@@ -104,7 +104,7 @@ contains
            sc = max(0.0_rk, 1953.4_rk - 128._rk*ETW + 3.9918_rk*ETW**2 - 0.050091_rk*ETW**3)
          else
            ! New formulation for the Schmidt number for O2 following Wanninkhof 2014
-           T = max(min(T,40.0_rk), -2.0_rk)
+           T = max(min(ETW,40.0_rk), -2.0_rk)
            sc = 1920.4_rk - 135.6_rk*T + 5.2122_rk*T**2._rk - 0.10939_rk*T**3 + 0.00093777_rk*T**4._rk
          endif
 
@@ -153,7 +153,7 @@ contains
       real(rk),parameter :: P = 101325_rk
       real(rk),parameter :: T = 273.15_rk
 
-      ! volume of an ideal gas at standard temp (25C) and pressure (1 atm)
+      ! volume of an ideal gas at standard temp (0C) and pressure (1 atm)
       real(rk),parameter :: VIDEAL = (R * 273.15_rk / P) *1000._rk
 
       real(rk)           :: ABT
