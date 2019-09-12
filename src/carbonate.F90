@@ -44,7 +44,7 @@ contains
 !-----------------------------------------------------------------------
 !BOC
       call self%get_parameter(self%iswCO2X,'iswCO2','','carbonate system diagnostics (0: off, 1: on)',default=1)
-      call self%get_parameter(self%iswASFLUX,'iswASFLUX','','air-sea CO2 exchange (0: none, 1: Nightingale and Liss, 2: Wanninkhof 1992 without chemical enhancement, 3: Wanninkhof 1992 with chemical enhancement, 4: Wanninkhof 1999)',default=1)
+      call self%get_parameter(self%iswASFLUX,'iswASFLUX','','air-sea CO2 exchange (0: none, 1: Nightingale et al. 2000, 2: Wanninkhof 1992 without chemical enhancement, 3: Wanninkhof 1992 with chemical enhancement, 4: Wanninkhof and McGillis 1999, 5: Wanninkhof 1992 switching to Wanninkhof and McGillis 1999, 6: Wanninkhof 2014)',default=6)
       call self%get_parameter(self%iswtalk,'iswtalk','','alkalinity formulation (1-4: from salinity and temperature, 5: dynamic alkalinity)',default=5)
       call self%get_parameter(self%phscale,'pHscale','','pH scale (1: total, 0: SWS, -1: SWS backward compatible)',default=1,minimum=-1,maximum=1)
       if (self%iswtalk<1.or.self%iswtalk>5) call self%fatal_error('initialize','iswtalk takes values between 1 and 5 only')
@@ -236,7 +236,7 @@ contains
          _GET_HORIZONTAL_(self%id_wnd,wnd)
          _GET_HORIZONTAL_(self%id_PCO2A,PCO2A)
 
-         if (wnd.lt.0._rk) wnd=0._rk
+         wnd = max(wnd, 0.0_rk)
 
          if (self%iswtalk/=5) then
             ! Alkalinity is parameterized as function of salinity and temperature.
@@ -265,25 +265,34 @@ contains
          if (legacy_ersem_compatibility) then
            ! Old formulation for the Schmidt number, valid only for T<30
            ! left for documentation and back compatibility
-           sc=2073.1_rk-125.62_rk*T+3.6276_rk*T**2._rk-0.043219_rk*T**3
+           sc = 2073.1_rk-125.62_rk*T+3.6276_rk*T**2._rk-0.043219_rk*T**3
          else
-           !new formulation for the Schmidt number following Wanninkof, 2014
-           T=min(T,40._rk)
-           sc=2116.8_rk-136.25_rk*T+4.7353_rk*T**2._rk-0.092307_rk*T**3+0.0007555_rk*T**4._rk
+           ! New formulation for the Schmidt number for CO2 following Wanninkhof 2014
+           T = max(min(T,40.0_rk), -2.0_rk)
+           sc = 2116.8_rk - 136.25_rk*T + 4.7353_rk*T**2._rk - 0.092307_rk*T**3 + 0.0007555_rk*T**4._rk
          endif
-         if   (self%ISWASFLUX==1) then        !Nightingale and Liss parameterisation
-               fwind =  (0.222_rk *wnd**2.0_rk + 0.333_rk * wnd)*(sc/600._rk)**(-0.5_rk)
+
+         if     (self%iswASFLUX==1) then      ! Nightingale et al. 2000
+               fwind = (0.222_rk*wnd**2.0_rk + 0.333_rk*wnd)*(sc/600._rk)**(-0.5_rk)
          elseif (self%iswASFLUX==2) then      ! Wanninkhof 1992 without chemical enhancement
-               fwind=0.31_rk*wnd**2.0_rk*(sc/660._rk)**(-0.5_rk)
-         elseif (self%iswASFLUX==3)THEN       ! Wanninkhof 1992 with chemical enhancement
-               fwind=(2.5_rk*(0.5246_rk+0.016256_rk*T+0.00049946_rk*T**2.0_rk)+0.3_rk*wnd**2.0_rk)*(sc/660._rk)**(-0.5_rk)
-         elseif(self%iswASFLUX==4)THEN             ! Wanninkhof 1999
-              fwind=0.0283_rk*wnd**3.0_rk*(sc/660._rk)**(-0.5_rk)
+               fwind = 0.31_rk*wnd**2.0_rk*(sc/660._rk)**(-0.5_rk)
+         elseif (self%iswASFLUX==3) then      ! Wanninkhof 1992 with chemical enhancement
+               fwind = (2.5_rk*(0.5246_rk+0.016256_rk*T+0.00049946_rk*T**2.0_rk) + 0.3_rk*wnd**2.0_rk)*(sc/660._rk)**(-0.5_rk)
+         elseif (self%iswASFLUX==4) then      ! Wanninkhof and McGillis 1999
+               fwind = 0.0283_rk*wnd**3.0_rk*(sc/660._rk)**(-0.5_rk)
+         elseif (self%iswASFLUX==5) then      ! Wanninkhof 1992 switching to Wanninkhof and McGillis 1999
+            if (wnd.gt.11._rk) then
+               fwind = 0.0283_rk*wnd**3.0_rk*(sc/660._rk)**(-0.5_rk)  ! Wanninkhof & McGillis 1999
+            else
+               fwind = 0.31_rk*wnd**2.0_rk*(sc/660._rk)**(-0.5_rk)    ! Wanninkhof 1992
+            endif
+         elseif (self%iswASFLUX==6) then      ! Wanninkhof 2014
+               fwind = 0.251_rk*wnd**2.0_rk*(sc/660._rk)**(-0.5_rk)
          endif
 
          _SET_HORIZONTAL_DIAGNOSTIC_(self%id_wnd_diag,wnd) ! diagnostic in m/s
 
-         fwind=fwind*24._rk/100._rk   ! convert to m/day
+         fwind = fwind*24._rk/100._rk   ! convert from cm/hr to m/day
          UPTAKE = fwind * k0co2 * ( PCO2A/1.e6_rk - PCO2 )
 
          FAIRCO2 = UPTAKE * 1.e3_rk * density
