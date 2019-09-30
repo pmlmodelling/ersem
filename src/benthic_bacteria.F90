@@ -108,10 +108,10 @@ contains
       call self%register_state_dependency(self%id_G2o,'G2o','mmol O_2/m^2','oxygen')
       call self%register_state_dependency(self%id_G3c,'G3c','mmol C/m^2','dissolved inorganic carbon')
       if (.not.legacy_ersem_compatibility) call self%register_state_dependency(self%id_benTA,'benTA','mEq/m^2','benthic alkalinity')
-      call self%register_state_dependency(self%id_Q1c,'Q1c','mg C/m^2',  'dissolved organic carbon')
+      call self%register_state_dependency(self%id_Q1c,'Q1c','mmol C/m^2','dissolved organic carbon')
       call self%register_state_dependency(self%id_Q1n,'Q1n','mmol N/m^2','dissolved organic nitrogen')
       call self%register_state_dependency(self%id_Q1p,'Q1p','mmol P/m^2','dissolved organic phosphorus')
-      call self%register_state_dependency(self%id_Q6c,'Q6c','mg C/m^2',  'particulate organic carbon')
+      call self%register_state_dependency(self%id_Q6c,'Q6c','mmol C/m^2','particulate organic carbon')
       call self%register_state_dependency(self%id_Q6n,'Q6n','mmol N/m^2','particulate organic nitrogen')
       call self%register_state_dependency(self%id_Q6p,'Q6p','mmol P/m^2','particulate organic phosphorus')
 
