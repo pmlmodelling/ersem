@@ -20,12 +20,12 @@ module ersem_TDOC
       type (type_dependency_id)                     :: id_ETW,id_EIR
       type (type_dependency_id)            :: id_X1X             ! Salinity
 !      type (type_horizontal_dependency_id)          :: id_R1c,id_R1d
-!      type (type_horizontal_diagnostic_variable_id) :: id_airseaN2O
+      type (type_horizontal_diagnostic_variable_id) :: id_surface_photolysis
       type (type_diagnostic_variable_id) :: id_photolysis,id_flocc
 
    ! Parameters
 
-      real(rk) :: suva, iref,phyref,phyt,floc,qp,qn,scx,sbx
+      real(rk) :: suva, iref,phyref,surf_phyref,phyt,floc,qp,qn,scx,sbx
    contains
 !     Model procedures
       procedure :: initialize
@@ -53,6 +53,7 @@ contains
 !      call self%get_parameter(self%suva,'suva','m2*mmol C-1',            'specific UV absorption at 350 nm')
       call self%get_parameter(self%iref,'iref','W m-2',            'reference irradiance')
       call self%get_parameter(self%phyref,'phyref','d-1 ',            'reference photooxidation rate')
+      call self%get_parameter(self%surf_phyref,'surf_phyref','d-1 ',            'reference surface_photooxidation rate',default=0._rk)
       call self%get_parameter(self%phyt,'phyt','adim',            'photooxidated fraction of T1 going into T2) ')
       call self%get_parameter(self%floc,'floc','(mmol C-3)-1*d-1 ',            'reference photooxidation rate')
       call self%get_parameter(self%qp,    'qp',    'mmol P/mg C','phosphorus to carbon ratio')
@@ -95,6 +96,7 @@ contains
       call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
       call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','ammonium')
       call self%register_diagnostic_variable(self%id_photolysis,'photolysis','mgC/m^3/d','photolysis')
+      call self%register_horizontal_diagnostic_variable(self%id_surface_photolysis,'surface_photolysis','mgC/m^2/d','surface photolysis')
       call self%register_diagnostic_variable(self%id_flocc,'flocc','mgC/m^3/d','flocculation')
 
       ! Register contribution to light extinction
@@ -167,5 +169,48 @@ contains
     _LOOP_END_
 
    end subroutine do
+
+   subroutine do_surface(self,_ARGUMENTS_DO_SURFACE_)
+      class (type_ersem_TDOC), intent(in) :: self
+      _DECLARE_ARGUMENTS_DO_SURFACE_
+
+         real (rk) :: EIR,photolysis,c,T1T2,T2c,T2n,T2p
+         real (rk) :: Xn,Xp,XXn,nx,px
+
+         _GET_(self%id_EIR,EIR)
+         _GET_(self%id_c,c)
+         _GET_WITH_BACKGROUND_(self%id_T2c,T2c)
+         _GET_WITH_BACKGROUND_(self%id_T2n,T2n)
+         _GET_WITH_BACKGROUND_(self%id_T2p,T2p)
+
+         IF(T2c.gt.0._rk) then
+            Xn=self%qn/(T2n/T2c)
+            Xp=self%qp/(T2p/T2c)
+            nx=self%qn-(T2n/T2c)
+            px=self%qp-(T2p/T2c)
+         else
+            Xn=0._rk
+            Xp=0._rk
+            nx=1._rk
+            px=1._rk
+         endif
+
+          XXn=min(Xn,Xp)
+         ! Photolysis
+         photolysis=self%surf_phyref*(EIR/self%iref)*c
+         ! in order to ensure mass conservation, the fraction of carbon going from T1 to T2 after photolysis is down regulated 
+         ! if T1 has less  N and/or P than T2. Any excess of nutrients is redirected into the dissolved pool (N1p and N4n). (Luca, July 2018)    
+         T1T2=self%phyt*min(1._rk,XXn)
+         
+
+         _SET_SURFACE_EXCHANGE_(self%id_c,-photolysis)
+         _SET_SURFACE_EXCHANGE_(self%id_T2c,+photolysis*T1T2)
+         _SET_SURFACE_EXCHANGE_(self%id_O3c,+photolysis*(1._rk-T1T2)/CMass)
+         _SET_SURFACE_EXCHANGE_(self%id_N1p,+photolysis*(1._rk-T1T2)*self%qp+photolysis*T1T2*px)
+         _SET_SURFACE_EXCHANGE_(self%id_N4n,+photolysis*(1._rk-T1T2)*self%qn+photolysis*T1T2*nx)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_surface_photolysis, photolysis)
+
+      _HORIZONTAL_LOOP_END_    
+    end subroutine
    
 end module
