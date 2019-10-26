@@ -12,6 +12,7 @@ module ersem_oxygen
 ! Thus, the oxygen debt is included as part of utilization.
 
    use fabm_types
+   use ersem_shared
 
    implicit none
 
@@ -26,7 +27,7 @@ module ersem_oxygen
       type (type_diagnostic_variable_id) :: id_eO2mO2,id_osat,id_aou
       type (type_horizontal_diagnostic_variable_id) ::  id_fair
 
-      integer :: ISWO2X
+      integer :: iswO2X, iswASFLUX
    contains
       procedure :: initialize
       procedure :: do
@@ -44,7 +45,8 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%ISWO2X,'ISWO2','','saturation formulation (1: legacy ERSEM, 2: Weiss 1970)')
+      call self%get_parameter(self%iswO2X,'iswO2','','saturation formulation (1: legacy ERSEM, 2: Weiss 1970, 3: Nightingale et al. 2000, 4: Wanninkhof 2014)')
+      call self%get_parameter(self%iswASFLUX,'iswASFLUX','','air-sea O2 exchange (0: none, 1: Nightingale et al. 2000, 2: Wanninkhof 1992 without chemical enhancement, 3: Wanninkhof 1992 with chemical enhancement, 4: Wanninkhof and McGillis 1999, 5: Wanninkhof 1992 switching to Wanninkhof and McGillis 1999, 6: Wanninkhof 2014)',default=6)
 
       call self%register_state_variable(self%id_O2o,'o','mmol O_2/m^3','oxygen',300._rk)
 
@@ -83,31 +85,55 @@ contains
       class (type_ersem_oxygen), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_SURFACE_
 
-      real(rk) :: O2o,ETW,X1X,wnd
-      real(rk) :: OSAT,ko2o
+      real(rk) :: O2o,ETW,T,X1X,wnd
+      real(rk) :: OSAT,sc,ko2o,FAIRO2
 
       _HORIZONTAL_LOOP_BEGIN_
          _GET_(self%id_O2o,O2o)
          _GET_(self%id_ETW,ETW)
          _GET_(self%id_X1X,X1X)
          _GET_HORIZONTAL_(self%id_wnd,wnd)
+
+         wnd = max(wnd, 0.0_rk)
+
          OSAT = oxygen_saturation_concentration(self,ETW,X1X)
 
-         if (wnd.lt.0._rk) wnd=0._rk
-
-         if (wnd.gt.11._rk) then
-            ko2o = (0.02383_rk * wnd**3)*(max(0.0_rk,1953.4_rk-128._rk*etw+3.9918_rk*etw**2-  &
-               0.050091_rk*etw**3)/660._rk)**(-0.5_rk)    ! Wanninkhof & NcGillis 1999 ? (the reference has 0.0283)
+         if (legacy_ersem_compatibility) then
+           ! Old formulation for the Schmidt number,
+           ! left for documentation and back compatibility
+           sc = max(0.0_rk, 1953.4_rk - 128._rk*ETW + 3.9918_rk*ETW**2 - 0.050091_rk*ETW**3)
          else
-            ko2o = (0.31_rk * wnd**2)*(max(0.0_rk,1953.4_rk-128._rk*etw+3.9918_rk*etw**2- &
-               0.050091_rk*etw**3)/660._rk) **(-0.5_rk)   ! Wanninkhof 1992
+           ! New formulation for the Schmidt number for O2 following Wanninkhof 2014
+           T = max(min(ETW,40.0_rk), -2.0_rk)
+           sc = 1920.4_rk - 135.6_rk*T + 5.2122_rk*T**2._rk - 0.10939_rk*T**3 + 0.00093777_rk*T**4._rk
+         endif
+
+         if     (self%iswASFLUX==1) then      ! Nightingale et al. 2000
+               ko2o = (0.222_rk*wnd**2.0_rk + 0.333_rk*wnd)*(sc/600._rk)**(-0.5_rk)
+         elseif (self%iswASFLUX==2) then      ! Wanninkhof 1992 without chemical enhancement
+               ko2o = 0.31_rk*wnd**2.0_rk*(sc/660._rk)**(-0.5_rk)
+         elseif (self%iswASFLUX==3) then      ! Wanninkhof 1992 with chemical enhancement
+               ko2o = (2.5_rk*(0.5246_rk+0.016256_rk*T+0.00049946_rk*T**2.0_rk) + 0.3_rk*wnd**2.0_rk)*(sc/660._rk)**(-0.5_rk)
+         elseif (self%iswASFLUX==4) then      ! Wanninkhof and McGillis 1999
+               ko2o = 0.0283_rk*wnd**3.0_rk*(sc/660._rk)**(-0.5_rk)
+         elseif (self%iswASFLUX==5) then      ! Wanninkhof 1992 switching to Wanninkhof and McGillis 1999
+            if (wnd.gt.11._rk) then
+               ko2o = 0.0283_rk*wnd**3.0_rk*(sc/660._rk)**(-0.5_rk)  ! Wanninkhof & McGillis 1999
+               ! Note: Old ERSEM had a typo of 0.02383 instead of 0.0283
+            else
+               ko2o = 0.31_rk*wnd**2.0_rk*(sc/660._rk)**(-0.5_rk)    ! Wanninkhof 1992
+            endif
+         elseif (self%iswASFLUX==6) then      ! Wanninkhof 2014
+               ko2o = 0.251_rk*wnd**2.0_rk*(sc/660._rk)**(-0.5_rk)
          endif
 
          ! units of ko2 converted from cm/hr to m/day
          ko2o = ko2o*(24._rk/100._rk)
 
-         _SET_SURFACE_EXCHANGE_(self%id_O2o,ko2o*(OSAT-O2o))
-         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fair,ko2o*(OSAT-O2o))
+         FAIRO2 = ko2o*(OSAT-O2o)
+
+         _SET_SURFACE_EXCHANGE_(self%id_O2o,FAIRO2)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fair,FAIRO2)
       _HORIZONTAL_LOOP_END_
    end subroutine
 
@@ -127,8 +153,8 @@ contains
       real(rk),parameter :: P = 101325_rk
       real(rk),parameter :: T = 273.15_rk
 
-      ! volume of an ideal gas at standard temp (25C) and pressure (1 atm)
-      real(rk),parameter :: VIDEAL = (R * 298.15_rk / P) *1000._rk
+      ! volume of an ideal gas at standard temp (0C) and pressure (1 atm)
+      real(rk),parameter :: VIDEAL = (R * 273.15_rk / P) *1000._rk
 
       real(rk)           :: ABT
 

@@ -85,7 +85,7 @@ contains
          _GET_(self%id_abESS,abESS)    ! Suspended silt absorption
          iopABS = iopABS+abESS+self%a0w
          iopBBS = iopBBS+bpk+self%b0w
-         xEPS = (1._rk+.005_rk*zenithA)*iopABS+4.18_rk*(1._rk-.52_rk*exp(-10.8_rk*iopABS))*iopBBS
+         xEPS = (1._rk+.005_rk*zenithA)*iopABS+4.18_rk*(1._rk-.52_rk*exp(-10.8_rk*iopABS))*iopBBS ! Lee et al. (2005) J Geophys Res Eq 11
          xtnc = xEPS*dz
          EIR = buffer/xtnc*(1.0_rk-exp(-xtnc))  ! Note: this computes the vertical average, not the value at the layer centre.
          buffer = buffer*exp(-xtnc)

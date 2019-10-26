@@ -599,7 +599,12 @@ contains
          call self%get_parameter(self%maximum_depth,'maximum_depth','m','maximum depth',default=0.0_rk)
       end if
       call self%get_parameter(remin,'remin','1/d','remineralization rate at 10 degrees Celsius',default=0.0_rk)
-      if  (remin /= 0._rk) call self%get_parameter(q10, 'q10', '-', 'Q_10 temperature coefficient', default=1.0_rk, minimum=1.0_rk)
+      if  (remin /= 0._rk) then
+         call self%get_parameter(q10, 'q10', '-', 'Q_10 temperature coefficient', default=1.0_rk, minimum=1.0_rk)
+      else
+         q10=1.0_rk
+      endif
+
       call self%get_parameter(source_depth_distribution,'source_depth_distribution', '','vertical distribution of changes (1: constant absolute rate, 2: constant relative rate, 3: constant carbon-based relative rate)',default=1)
 
       call self%register_dependency(self%id_d_tot,depth_of_sediment_column)
