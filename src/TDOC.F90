@@ -29,7 +29,7 @@ module ersem_TDOC
    contains
 !     Model procedures
       procedure :: initialize
-!      procedure :: do_surface
+      procedure :: do_surface
       procedure :: do
    end type
 
