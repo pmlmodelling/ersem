@@ -98,11 +98,11 @@ instances:
       sbx: 0.69                                         # log(salinity) (psu) at which flocculation is max.max is assumed to be around 2 psu. 0.69=log(2)
       scx: 1.35                                         # salinity function parameter. 1.35 allows the max flocc rate to decrease of one order of magnitude at 35 psu  
       phyt: 0.24                                        # fraction of T1 going to T2 after photolysis
-      chemEIR_Scaling: 2.                               # scaling factor for incoming radiation activiating photochemical reactions
+      chemEIR_scaling: 2.                               # scaling factor for incoming radiation activiating photochemical reactions
     initialization:
       c: 1200.0
     coupling:
-      chemEIR: light/perEIR
+      chemEIR: light/parEIR
       T2: T2
       RPc: R6/c
       RPn: R6/n
