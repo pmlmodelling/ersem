@@ -178,6 +178,9 @@ contains
          real (rk) :: chemEIR,photolysis,c,T1T2,T2c,T2n,T2p
          real (rk) :: Xn,Xp,XXn,nx,px
 
+! Enter horizontal loops (if any)
+      _HORIZONTAL_LOOP_BEGIN_
+
          _GET_(self%id_chemEIR,chemEIR)
          _GET_(self%id_c,c)
          _GET_WITH_BACKGROUND_(self%id_T2c,T2c)
