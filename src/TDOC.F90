@@ -101,13 +101,16 @@ contains
       call self%register_state_dependency(self%id_RPc,'RPc','mg C/m^3',   'particulate organic carbon')
       call self%register_state_dependency(self%id_RPp,'RPp','mmol P/m^3', 'particulate organic phosphorus')
       call self%register_state_dependency(self%id_RPn,'RPn','mmol N/m^3', 'particulate organic nitrogen')
-      call self%register_model_dependency(self%id_T1_older,'T1_older')
-      call self%register_state_dependency(self%id_T1_older_c,'T1_older_c','mg C/m^3','non photolabile terrigenous DOC')
-      call self%register_state_dependency(self%id_T1_older_n,'T1_older_n','mmol N/m^3','non photolabile terrigenous DON')
-      call self%register_state_dependency(self%id_T1_older_p,'T1_older_p','mmol P/m^3','non photolabile terrigenous DOP')
-      call self%request_coupling_to_model(self%id_T1_older_c,self%id_T1_older,'c')
-      call self%request_coupling_to_model(self%id_T1_older_n,self%id_T1_older,standard_variables%total_nitrogen)
-      call self%request_coupling_to_model(self%id_T1_older_p,self%id_T1_older,standard_variables%total_phosphorus)
+      
+      if ((self%bioaging.gt.0._rk).or.(self%photoaging.gt.0._rk)) then
+          call self%register_model_dependency(self%id_T1_older,'T1_older')
+          call self%register_state_dependency(self%id_T1_older_c,'T1_older_c','mg C/m^3','non photolabile terrigenous DOC')
+          call self%register_state_dependency(self%id_T1_older_n,'T1_older_n','mmol N/m^3','non photolabile terrigenous DON')
+          call self%register_state_dependency(self%id_T1_older_p,'T1_older_p','mmol P/m^3','non photolabile terrigenous DOP')
+          call self%request_coupling_to_model(self%id_T1_older_c,self%id_T1_older,'c')
+          call self%request_coupling_to_model(self%id_T1_older_n,self%id_T1_older,standard_variables%total_nitrogen)
+          call self%request_coupling_to_model(self%id_T1_older_p,self%id_T1_older,standard_variables%total_phosphorus)
+      end if
 
       call self%register_model_dependency(self%id_T2,'T2')
       call self%register_state_dependency(self%id_T2c,'T2c','mg C/m^3','non photolabile terrigenous DOC')
@@ -137,7 +140,7 @@ contains
       shadow%qp=self%qp
       shadow%bioaging=self%bioaging
       call shadow%couplings%set_string('parent',self%name)
-      call shadow%couplings%set_string('T1_older_parent','T1_older')
+      if ((self%bioaging.gt.0._rk)) call shadow%couplings%set_string('T1_older_parent','../T1_older')
       call self%add_child(shadow,'shadow',configunit=configunit)      
 
    end subroutine initialize
@@ -195,9 +198,11 @@ contains
 
     _SET_ODE_(self%id_c,-(1._rk+self%photoaging)*photolysis-flocc)
     
-    _SET_ODE_(self%id_T1_older_c,self%photoaging*photolysis)
-    _SET_ODE_(self%id_T1_older_n,self%photoaging*photolysis*self%qn)
-    _SET_ODE_(self%id_T1_older_p,self%photoaging*photolysis*self%qp)
+    if (self%photoaging.gt.0._rk) then
+       _SET_ODE_(self%id_T1_older_c,self%photoaging*photolysis)
+       _SET_ODE_(self%id_T1_older_n,self%photoaging*photolysis*self%qn)
+       _SET_ODE_(self%id_T1_older_p,self%photoaging*photolysis*self%qp)
+    end if
     
     _SET_ODE_(self%id_RPc,+flocc)
     _SET_ODE_(self%id_RPn,+flocc*self%qn)
@@ -249,8 +254,15 @@ contains
          T1T2=self%phyt*min(1._rk,XXn)
          
 
-         _SET_SURFACE_EXCHANGE_(self%id_c,-photolysis)
+         _SET_SURFACE_EXCHANGE_(self%id_c,-photolysis*(1+self%photoaging))
          _SET_SURFACE_EXCHANGE_(self%id_T2c,+photolysis*T1T2)
+         
+         if (self%photoaging.gt.0._rk) then
+            _SET_SURFACE_EXCHANGE_(self%id_T1_older_c,self%photoaging*photolysis)
+            _SET_SURFACE_EXCHANGE_(self%id_T1_older_n,self%photoaging*photolysis*self%qn)
+            _SET_SURFACE_EXCHANGE_(self%id_T1_older_p,self%photoaging*photolysis*self%qp)
+         end if         
+         
          _SET_SURFACE_EXCHANGE_(self%id_O3c,+photolysis*(1._rk-T1T2)/CMass)
          _SET_SURFACE_EXCHANGE_(self%id_N1p,+photolysis*(1._rk-T1T2)*self%qp+photolysis*T1T2*px)
          _SET_SURFACE_EXCHANGE_(self%id_N4n,+photolysis*(1._rk-T1T2)*self%qn+photolysis*T1T2*nx)
@@ -267,25 +279,23 @@ contains
       
       self%dt = 3600._rk*24._rk
 
-      call self%register_diagnostic_variable(self%id_c_shadow,'c','mgC/m^3','shadow carbon')
+      call self%register_diagnostic_variable(self%id_c_shadow,'c','mgC/m^3','shadow carbon',act_as_state_variable=.true.,output=output_none)
       call self%add_to_aggregate_variable(standard_variables%total_carbon,self%id_c_shadow)
       call self%add_to_aggregate_variable(standard_variables%total_phosphorus,self%id_c_shadow,scale_factor=self%qp)
       call self%add_to_aggregate_variable(standard_variables%total_nitrogen,self%id_c_shadow,scale_factor=self%qn)
       
       call self%register_model_dependency(self%id_parent,'parent')
       call self%register_state_dependency(self%id_parent_c,'parent_c','mg C/m^3','non photolabile terrigenous DOC')
-
-
       call self%request_coupling_to_model(self%id_parent_c,self%id_parent,'c')
-
-
       
-      call self%register_model_dependency(self%id_T1_older_parent,'T1_older')
-      call self%register_state_dependency(self%id_T1_older_parent_c,'T1_older_parent_c','mg C/m^3','non photolabile terrigenous DOC')
-      call self%request_coupling_to_model(self%id_T1_older_parent_c,self%id_T1_older_parent,'c')
+      if (self%bioaging.gt.0._rk) then
+          call self%register_model_dependency(self%id_T1_older_parent,'T1_older_parent')
+          call self%register_state_dependency(self%id_T1_older_parent_c,'T1_older_parent_c','mg C/m^3','non photolabile terrigenous DOC')
+          call self%request_coupling_to_model(self%id_T1_older_parent_c,self%id_T1_older_parent,'c')
+!          call copy_fluxes(self,self%id_c_shadow,self%id_T1_older_parent_c,self%bioaging)
+      end if
 
       call copy_fluxes(self,self%id_c_shadow,self%id_parent_c,(1._rk+self%bioaging))
-      call copy_fluxes(self,self%id_c_shadow,self%id_T1_older_parent_c,self%bioaging)
       
    end subroutine shadow_initialize
    
