@@ -86,8 +86,8 @@ contains
          call self%register_diagnostic_variable(self%id_BiCarb,'BiCarb','mmol/m^3','bicarbonate concentration',missing_value=0._rk)
          call self%register_diagnostic_variable(self%id_Carb,  'Carb',  'mmol/m^3','carbonate concentration',standard_variable=standard_variables%mole_concentration_of_carbonate_expressed_as_carbon,missing_value=0._rk)
 
-         call self%register_diagnostic_variable(self%id_Om_cal,'Om_cal','-','calcite saturation')
-         call self%register_diagnostic_variable(self%id_Om_arg,'Om_arg','-','aragonite saturation')
+         call self%register_diagnostic_variable(self%id_Om_cal,'Om_cal','-','calcite saturation',missing_value=4._rk)
+         call self%register_diagnostic_variable(self%id_Om_arg,'Om_arg','-','aragonite saturation',missing_value=3._rk)
       end if
       if (self%iswASFLUX>=1) then
          call self%register_diagnostic_variable(self%id_fair,'fair','mmol C/m^2/d','air-sea flux of CO2',source=source_do_surface)
