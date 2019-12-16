@@ -151,7 +151,7 @@ contains
          call self%register_state_dependency(self%id_TDn(iTD),'TD'//trim(index)//'n','mmol N/m^3', 'nitrogen in substrate '//trim(index))
          call self%register_state_dependency(self%id_TDp(iTD),'TD'//trim(index)//'p','mmol P/m^3', 'phosphorus in substrate '//trim(index))
          call self%register_model_dependency(self%id_TD(iTD),'TD'//trim(index))
-         call self%request_coupling_to_model(self%id_TDc(iTD),self%id_RP(iRP),'c')  ! For now link to hardcoded "c" to get a direct link to state mg C/m3 (and not a diagnostic for mmol C/m3)
+         call self%request_coupling_to_model(self%id_TDc(iTD),self%id_TD(iTD),'c')  ! For now link to hardcoded "c" to get a direct link to state mg C/m3 (and not a diagnostic for mmol C/m3)
          call self%request_coupling_to_model(self%id_TDn(iTD),self%id_TD(iTD),standard_variables%total_nitrogen)
          call self%request_coupling_to_model(self%id_TDp(iTD),self%id_TD(iTD),standard_variables%total_phosphorus)
          call self%register_diagnostic_variable(self%id_fTDB1c(iTD),'fT'//trim(index)//'B1c','mg C/m^3/d','bacterial uptake of terrigenous DOC'//trim(index))
@@ -170,7 +170,7 @@ contains
       allocate(self%rTDB1X(self%nTD))
       do iTD=1,self%nTD
          write (index,'(i0)') iTD
-         call self%get_parameter(self%rTDB1X(iTD),'rTD'//trim(index)//'B1X','-','fraction of  substrate T'//trim(index)//'available to bacteria')
+         call self%get_parameter(self%rTDB1X(iTD),'rTD'//trim(index),'-','fraction of  substrate T'//trim(index)//'available to bacteria')
       end do
 
       call self%get_parameter(self%rR2B1X,'rR2','-','fraction of semi-labile DOC available to bacteria')
@@ -234,8 +234,8 @@ contains
       integer  :: iRP, iTD
       real(rk),dimension(self%nRP) :: RPc,RPcP,RPnP,RPpP
       real(rk),dimension(self%nRP) :: fRPB1c,fRPB1p,fRPB1n
-      real(rk),dimension(self%nRP) :: TDcP,TDc,TDnP,TDpP
-      real(rk),dimension(self%nRP) :: fTDB1c,fTDB1p,fTDB1n
+      real(rk),dimension(self%nTD) :: TDcP,TDc,TDnP,TDpP
+      real(rk),dimension(self%nTD) :: fTDB1c,fTDB1p,fTDB1n
       
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
@@ -274,9 +274,9 @@ contains
 
          do iTD=1,self%nTD
             _GET_WITH_BACKGROUND_(self%id_TDc(iTD),TDc(iTD))
-            _GET_(self%id_TDc(iTD),TDcP(iRP))
-            _GET_(self%id_TDn(iTD),TDnP(iRP))
-            _GET_(self%id_TDp(iTD),TDpP(iRP))         
+            _GET_(self%id_TDc(iTD),TDcP(iTD))
+            _GET_(self%id_TDn(iTD),TDnP(iTD))
+            _GET_(self%id_TDp(iTD),TDpP(iTD))         
          end do
          
          qpB1c = B1p/B1c
