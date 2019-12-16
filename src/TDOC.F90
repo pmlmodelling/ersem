@@ -17,9 +17,10 @@ module ersem_TDOC
       ! Variables
       type (type_state_variable_id) :: id_RPc,id_T2c, id_O3c
       type (type_state_variable_id) :: id_RPn, id_RPp, id_T2n, id_T2p, id_N1p, id_N4n
-      type (type_state_variable_id) :: id_T1_older_c,id_T1_older_n,id_T1_older_p
-      type (type_model_id) :: id_T2, id_T1_older
+      type (type_state_variable_id) :: id_TD_older_c,id_TD_older_n,id_TD_older_p
+      type (type_model_id) :: id_T2, id_TD_older
       type (type_dependency_id)                     :: id_ETW, id_chemEIR
+      type (type_dependency_id) ::   id_shadow_bioflux
       type (type_dependency_id)            :: id_X1X             ! Salinity
 !      type (type_horizontal_dependency_id)          :: id_R1c,id_R1d
       type (type_horizontal_diagnostic_variable_id) :: id_surface_photolysis, id_surface_photo_aging
@@ -29,6 +30,7 @@ module ersem_TDOC
 
       real(rk) :: suva, iref,phyref,surf_phyref,phyt,floc,qp,qn,scx,sbx,chemEIR_scaling
       real(rk) :: age, photoaging,bioaging
+      logical  :: is_photolabile
       
    contains
 !     Model procedures
@@ -41,8 +43,8 @@ module ersem_TDOC
    ! this is currently needed because the microbial degradation flux (calculated by the bacteria module) is needed here for the aging of tDOC
    type,extends(type_particle_model),public :: type_ersem_shadow_tDOC
       type (type_diagnostic_variable_id) :: id_c_shadow   ! shadow state variable
-      type (type_state_variable_id) :: id_parent_c, id_T1_older_parent_c ! ,id_parent_n, id_T1_older_parent_n,id_parent_p, id_T1_older_parent_p
-      type (type_model_id) :: id_parent, id_T1_older_parent
+      type (type_state_variable_id) :: id_parent_c, id_TD_older_parent_c ! ,id_parent_n, id_T1_older_parent_n,id_parent_p, id_T1_older_parent_p
+      type (type_model_id) :: id_parent, id_TD_older_parent
       
       real (rk)  :: qn, qp, bioaging
 
@@ -71,21 +73,26 @@ contains
 !BOC
 !      call self%get_parameter(self%kuw,'kuw', 'm-1',              'extinction of UV in the water')
 !      call self%get_parameter(self%suva,'suva','m2*mmol C-1',            'specific UV absorption at 350 nm')
-      call self%get_parameter(self%iref,'iref','W m-2',            'reference irradiance')
-      call self%get_parameter(self%phyref,'phyref','d-1 ',            'reference photooxidation rate')
-      call self%get_parameter(self%surf_phyref,'surf_phyref','d-1 ',            'reference surface_photooxidation rate',default=0._rk)
-      call self%get_parameter(self%phyt,'phyt','adim',            'photooxidated fraction of T1 going into T2) ')
-      call self%get_parameter(self%floc,'floc','(mmol C-3)-1*d-1 ',            'reference photooxidation rate')
       call self%get_parameter(self%qp,    'qp',    'mmol P/mg C','phosphorus to carbon ratio')
       call self%get_parameter(self%qn,    'qn',    'mmol N/mg C','nitrogen to carbon ratio')
       call self%get_parameter(EPS,     'EPS',    'm^2/mg C','specific shortwave attenuation', default=4.E-4_rk)
       call self%get_parameter(c0,'c0','mg C/m^3','background carbon concentration')
-      call self%get_parameter(self%sbx,   'sbx',   'psu',        'optimal salinity')
-      call self%get_parameter(self%scx,   'scx',   '',        'salinity function parameter')
-      call self%get_parameter(self%chemEIR_scaling, 'chemEIR_scaling', '', 'scaling factor for incoming radiation activating photochemical reaction', default=1._rk)
       !call self%get_parameter(self%age, 'age', 'd', 'Characteristic age of the tDOC pool', default=0._rk))  ! for now the parameter is calculated a priori
       call self%get_parameter(self%photoaging, 'photoaging', '-', 'aging due to photo oxidation')
       call self%get_parameter(self%bioaging, 'bioaging', '-', 'aging due to microbial oxidation')
+      call self%get_parameter(self%is_photolabile,'photolabile','-',            'definition of the type of tDOC: True=photolabile; False=non-photolabile')
+      
+      ! if it is photolabile then set all process parameters
+      if (self%is_photolabile) then
+         call self%get_parameter(self%chemEIR_scaling, 'chemEIR_scaling', '', 'scaling factor for incoming radiation activating photochemical reaction', default=1._rk)
+         call self%get_parameter(self%iref,'iref','W m-2',            'reference irradiance')
+         call self%get_parameter(self%phyref,'phyref','d-1 ',            'reference photooxidation rate',default=0._rk)
+         call self%get_parameter(self%surf_phyref,'surf_phyref','d-1 ',            'reference surface_photooxidation rate',default=0._rk)
+         call self%get_parameter(self%phyt,'phyt','adim',            'photooxidated fraction of T1 going into T2) ')
+         call self%get_parameter(self%floc,'floc','(mmol C-3)-1*d-1 ',            'reference photooxidation rate')
+         call self%get_parameter(self%sbx,   'sbx',   'psu',        'optimal salinity')
+         call self%get_parameter(self%scx,   'scx',   '',        'salinity function parameter')
+      endif
       
 ! Allow ERSEM base model to declare our own state variables.
       call self%initialize_ersem_base(sedimentation=.false.)
@@ -96,39 +103,44 @@ contains
 !      call self%register_dependency(self%id_EIR,'EIR','W/m^2','downwelling_shortwave_flux', &
 !              standard_variable=standard_variables%downwelling_shortwave_flux,source=source_do_column)
       !call self%register_dependency(self%id_EIR,standard_variables%downwelling_shortwave_flux)
-      call self%register_dependency(self%id_chemEIR,'chemEIR','W/m^2','incoming radiation activating photochemical reaction')
-      call self%register_dependency(self%id_X1X,standard_variables%practical_salinity)
-      call self%register_state_dependency(self%id_RPc,'RPc','mg C/m^3',   'particulate organic carbon')
-      call self%register_state_dependency(self%id_RPp,'RPp','mmol P/m^3', 'particulate organic phosphorus')
-      call self%register_state_dependency(self%id_RPn,'RPn','mmol N/m^3', 'particulate organic nitrogen')
+      
+      if (self%is_photolabile) then
+          call self%register_dependency(self%id_X1X,standard_variables%practical_salinity)
+          call self%register_state_dependency(self%id_RPc,'RPc','mg C/m^3',   'particulate organic carbon')
+          call self%register_state_dependency(self%id_RPp,'RPp','mmol P/m^3', 'particulate organic phosphorus')
+          call self%register_state_dependency(self%id_RPn,'RPn','mmol N/m^3', 'particulate organic nitrogen')
+          call self%register_model_dependency(self%id_T2,'T2')
+          call self%register_state_dependency(self%id_T2c,'T2c','mg C/m^3','non photolabile terrigenous DOC')
+          call self%register_state_dependency(self%id_T2n,'T2n','mmol N/m^3','non photolabile terrigenous DON')
+          call self%register_state_dependency(self%id_T2p,'T2p','mmol P/m^3','non photolabile terrigenous DOP')
+          call self%request_coupling_to_model(self%id_T2c,self%id_T2,'c')
+          call self%request_coupling_to_model(self%id_T2n,self%id_T2,standard_variables%total_nitrogen)
+          call self%request_coupling_to_model(self%id_T2p,self%id_T2,standard_variables%total_phosphorus)
+          call self%register_dependency(self%id_chemEIR,'chemEIR','W/m^2','incoming radiation activating photochemical reaction')
+          call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide sink')
+          call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
+          call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','ammonium')
+          call self%register_diagnostic_variable(self%id_photolysis,'photolysis','mgC/m^3/d','photolysis')
+          call self%register_horizontal_diagnostic_variable(self%id_surface_photolysis,'surface_photolysis','mgC/m^2/d','surface photolysis')
+          call self%register_diagnostic_variable(self%id_flocc,'flocc','mgC/m^3/d','flocculation')
+      end if
       
       if ((self%bioaging.gt.0._rk).or.(self%photoaging.gt.0._rk)) then
-          call self%register_model_dependency(self%id_T1_older,'T1_older')
-          call self%register_state_dependency(self%id_T1_older_c,'T1_older_c','mg C/m^3','non photolabile terrigenous DOC')
-          call self%register_state_dependency(self%id_T1_older_n,'T1_older_n','mmol N/m^3','non photolabile terrigenous DON')
-          call self%register_state_dependency(self%id_T1_older_p,'T1_older_p','mmol P/m^3','non photolabile terrigenous DOP')
-          call self%request_coupling_to_model(self%id_T1_older_c,self%id_T1_older,'c')
-          call self%request_coupling_to_model(self%id_T1_older_n,self%id_T1_older,standard_variables%total_nitrogen)
-          call self%request_coupling_to_model(self%id_T1_older_p,self%id_T1_older,standard_variables%total_phosphorus)
-      end if
+          call self%register_model_dependency(self%id_TD_older,'TD_older')
+          call self%register_state_dependency(self%id_TD_older_c,'TD_older_c','mg C/m^3','non photolabile terrigenous DOC')
+          call self%register_state_dependency(self%id_TD_older_n,'TD_older_n','mmol N/m^3','non photolabile terrigenous DON')
+          call self%register_state_dependency(self%id_TD_older_p,'TD_older_p','mmol P/m^3','non photolabile terrigenous DOP')
+          call self%request_coupling_to_model(self%id_TD_older_c,self%id_TD_older,'c')
+          call self%request_coupling_to_model(self%id_TD_older_n,self%id_TD_older,standard_variables%total_nitrogen)
+          call self%request_coupling_to_model(self%id_TD_older_p,self%id_TD_older,standard_variables%total_phosphorus)
+          if (self%is_photolabile) then 
+             call self%register_diagnostic_variable(self%id_photo_aging,'photoaging','mgC/m^3/d','aging due to 3D photoloysis')      
+             call self%register_horizontal_diagnostic_variable(self%id_surface_photo_aging,'surface_photoaging','mgC/m^2/d','aging due to surface photolysis')
+          end if
+          
 
-      call self%register_model_dependency(self%id_T2,'T2')
-      call self%register_state_dependency(self%id_T2c,'T2c','mg C/m^3','non photolabile terrigenous DOC')
-      call self%register_state_dependency(self%id_T2n,'T2n','mmol N/m^3','non photolabile terrigenous DON')
-      call self%register_state_dependency(self%id_T2p,'T2p','mmol P/m^3','non photolabile terrigenous DOP')
-      call self%request_coupling_to_model(self%id_T2c,self%id_T2,'c')
-      call self%request_coupling_to_model(self%id_T2n,self%id_T2,standard_variables%total_nitrogen)
-      call self%request_coupling_to_model(self%id_T2p,self%id_T2,standard_variables%total_phosphorus)
-
-      call self%register_state_dependency(self%id_O3c,'O3c','mmol C/m^3','carbon dioxide sink')
-      ! Register links to nutrient pools.
-      call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
-      call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','ammonium')
-      call self%register_diagnostic_variable(self%id_photolysis,'photolysis','mgC/m^3/d','photolysis')
-      call self%register_diagnostic_variable(self%id_photo_aging,'photoaging','mgC/m^3/d','aging due to 3D photoloysis')
-      call self%register_horizontal_diagnostic_variable(self%id_surface_photolysis,'surface_photolysis','mgC/m^2/d','surface photolysis')
-      call self%register_horizontal_diagnostic_variable(self%id_surface_photo_aging,'surface_photoaging','mgC/m^2/d','aging due to surface photolysis')
-      call self%register_diagnostic_variable(self%id_flocc,'flocc','mgC/m^3/d','flocculation')
+          
+    end if
 
       ! Register contribution to light extinction
       call self%add_to_aggregate_variable(standard_variables%attenuation_coefficient_of_photosynthetic_radiative_flux, &
@@ -140,9 +152,13 @@ contains
       shadow%qp=self%qp
       shadow%bioaging=self%bioaging
       call shadow%couplings%set_string('parent',self%name)
-      if ((self%bioaging.gt.0._rk)) call shadow%couplings%set_string('T1_older_parent','../T1_older')
+      if ((self%bioaging.gt.0._rk)) call shadow%couplings%set_string('TD_older_parent','../TD_older')
       call self%add_child(shadow,'shadow',configunit=configunit)      
 
+      if bioaging
+                call copier%register_dependency(%id_sms,         'sms',         '','sources minus sinks')
+          call copier%request_coupling(copier%id_sms,         trim(source_variable%link%target%name)//'_sms_tot')
+      
    end subroutine initialize
    
    
@@ -158,6 +174,7 @@ contains
 ! Enter spatial loops (if any)
       _LOOP_BEGIN_
 
+    if (self%is_photolabile) then
       _GET_(self%id_c,c)
       _GET_(self%id_T2c,T2cP)
 !      _GET_(self%id_R8c,R8cP)
@@ -169,19 +186,19 @@ contains
       _GET_(self%id_chemEIR,chemEIR)
       _GET_(self%id_X1X,X1X)
 
-    IF(T2c.gt.0._rk) then
-    Xn=self%qn/(T2n/T2c)
-    Xp=self%qp/(T2p/T2c)
-    nx=self%qn-(T2n/T2c)
-    px=self%qp-(T2p/T2c)
-    else
-    Xn=0._rk
-    Xp=0._rk
-    nx=1._rk
-    px=1._rk
-    endif
-
-    XXn=min(Xn,Xp)
+      IF(T2c.gt.0._rk) then
+      Xn=self%qn/(T2n/T2c)
+      Xp=self%qp/(T2p/T2c)
+      nx=self%qn-(T2n/T2c)
+      px=self%qp-(T2p/T2c)
+      else
+      Xn=0._rk
+      Xp=0._rk
+      nx=1._rk
+      px=1._rk
+      endif
+  
+      XXn=min(Xn,Xp)
 
 !Flocculation is assumed to be (log-normal) function of salinity(sal)
 
@@ -190,31 +207,32 @@ contains
      flocc=self%floc*sal*c**2
 
 ! Photolysis
-    photolysis=self%phyref*(chemEIR*self%chemEIR_scaling/self%iref)*c
+     photolysis=self%phyref*(chemEIR*self%chemEIR_scaling/self%iref)*c
 
 ! in order to ensure mass conservation, the fraction of carbon going from T1 to T2 after photolysis is down regulated 
 ! if T1 has less  N and/or P than T2. Any excess of nutrients is redirected into the dissolved pool (N1p and N4n). (Luca, July 2018)    
-    T1T2=self%phyt*min(1._rk,XXn)
+     T1T2=self%phyt*min(1._rk,XXn)
 
-    _SET_ODE_(self%id_c,-(1._rk+self%photoaging)*photolysis-flocc)
+     _SET_ODE_(self%id_c,-(1._rk+self%photoaging)*photolysis-flocc)
     
-    if (self%photoaging.gt.0._rk) then
-       _SET_ODE_(self%id_T1_older_c,self%photoaging*photolysis)
-       _SET_ODE_(self%id_T1_older_n,self%photoaging*photolysis*self%qn)
-       _SET_ODE_(self%id_T1_older_p,self%photoaging*photolysis*self%qp)
-    end if
+     if (self%photoaging.gt.0._rk) then
+        _SET_ODE_(self%id_TD_older_c,self%photoaging*photolysis)
+        _SET_ODE_(self%id_TD_older_n,self%photoaging*photolysis*self%qn)
+        _SET_ODE_(self%id_TD_older_p,self%photoaging*photolysis*self%qp)
+     end if
     
-    _SET_ODE_(self%id_RPc,+flocc)
-    _SET_ODE_(self%id_RPn,+flocc*self%qn)
-    _SET_ODE_(self%id_RPp,+flocc*self%qp)
-    _SET_ODE_(self%id_T2c,+photolysis*T1T2)
-    _SET_ODE_(self%id_O3c,+photolysis*(1._rk-T1T2)/CMass)
-    _SET_ODE_(self%id_N1p,+photolysis*(1._rk-T1T2)*self%qp+photolysis*T1T2*px)
-    _SET_ODE_(self%id_N4n,+photolysis*(1._rk-T1T2)*self%qn+photolysis*T1T2*nx)
-    _SET_DIAGNOSTIC_(self%id_photolysis, photolysis)
-    _SET_DIAGNOSTIC_(self%id_flocc, flocc)
-
-    _LOOP_END_
+      _SET_ODE_(self%id_RPc,+flocc)
+      _SET_ODE_(self%id_RPn,+flocc*self%qn)
+      _SET_ODE_(self%id_RPp,+flocc*self%qp)
+      _SET_ODE_(self%id_T2c,+photolysis*T1T2)
+      _SET_ODE_(self%id_O3c,+photolysis*(1._rk-T1T2)/CMass)
+      _SET_ODE_(self%id_N1p,+photolysis*(1._rk-T1T2)*self%qp+photolysis*T1T2*px)
+      _SET_ODE_(self%id_N4n,+photolysis*(1._rk-T1T2)*self%qn+photolysis*T1T2*nx)
+      _SET_DIAGNOSTIC_(self%id_photolysis, photolysis)
+      _SET_DIAGNOSTIC_(self%id_flocc, flocc)
+   
+   end if !is_photolabile
+   _LOOP_END_
 
    end subroutine do
 
@@ -228,6 +246,7 @@ contains
 ! Enter horizontal loops (if any)
       _HORIZONTAL_LOOP_BEGIN_
 
+      if (self%is_photolabile) then
          _GET_(self%id_chemEIR,chemEIR)
          _GET_(self%id_c,c)
          _GET_WITH_BACKGROUND_(self%id_T2c,T2c)
@@ -258,16 +277,16 @@ contains
          _SET_SURFACE_EXCHANGE_(self%id_T2c,+photolysis*T1T2)
          
          if (self%photoaging.gt.0._rk) then
-            _SET_SURFACE_EXCHANGE_(self%id_T1_older_c,self%photoaging*photolysis)
-            _SET_SURFACE_EXCHANGE_(self%id_T1_older_n,self%photoaging*photolysis*self%qn)
-            _SET_SURFACE_EXCHANGE_(self%id_T1_older_p,self%photoaging*photolysis*self%qp)
+            _SET_SURFACE_EXCHANGE_(self%id_TD_older_c,self%photoaging*photolysis)
+            _SET_SURFACE_EXCHANGE_(self%id_TD_older_n,self%photoaging*photolysis*self%qn)
+            _SET_SURFACE_EXCHANGE_(self%id_TD_older_p,self%photoaging*photolysis*self%qp)
          end if         
          
          _SET_SURFACE_EXCHANGE_(self%id_O3c,+photolysis*(1._rk-T1T2)/CMass)
          _SET_SURFACE_EXCHANGE_(self%id_N1p,+photolysis*(1._rk-T1T2)*self%qp+photolysis*T1T2*px)
          _SET_SURFACE_EXCHANGE_(self%id_N4n,+photolysis*(1._rk-T1T2)*self%qn+photolysis*T1T2*nx)
          _SET_HORIZONTAL_DIAGNOSTIC_(self%id_surface_photolysis, photolysis)
-
+    end if !is_photolabile
       _HORIZONTAL_LOOP_END_    
     end subroutine
 
@@ -289,10 +308,11 @@ contains
       call self%request_coupling_to_model(self%id_parent_c,self%id_parent,'c')
       
       if (self%bioaging.gt.0._rk) then
-          call self%register_model_dependency(self%id_T1_older_parent,'T1_older_parent')
-          call self%register_state_dependency(self%id_T1_older_parent_c,'T1_older_parent_c','mg C/m^3','non photolabile terrigenous DOC')
-          call self%request_coupling_to_model(self%id_T1_older_parent_c,self%id_T1_older_parent,'c')
-!          call copy_fluxes(self,self%id_c_shadow,self%id_T1_older_parent_c,self%bioaging)
+          call self%register_model_dependency(self%id_TD_older_parent,'TD_older_parent')
+          call self%register_state_dependency(self%id_TD_older_parent_c,'TD_older_parent_c','mg C/m^3','non photolabile terrigenous DOC')
+          call self%request_coupling_to_model(self%id_TD_older_parent_c,self%id_TD_older_parent,'c')
+          !call copy_fluxes(self,self%id_c_shadow,self%id_TD_older_parent_c,self%bioaging)
+
       end if
 
       call copy_fluxes(self,self%id_c_shadow,self%id_parent_c,(1._rk+self%bioaging))
