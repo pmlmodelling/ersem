@@ -217,9 +217,9 @@ contains
      _SET_ODE_(self%id_c,-(1._rk+self%photoaging)*photolysis-flocc)
     
      if (self%photoaging.gt.0._rk) then
-        _SET_ODE_(self%id_TD_older_c,self%photoaging*photolysis/CMASS)
-        _SET_ODE_(self%id_TD_older_n,self%photoaging*photolysis*self%qn)
-        _SET_ODE_(self%id_TD_older_p,self%photoaging*photolysis*self%qp)
+        _SET_ODE_(self%id_TD_older_c,self%photoaging*photolysis)
+!         _SET_ODE_(self%id_TD_older_n,self%photoaging*photolysis*self%qn)
+!         _SET_ODE_(self%id_TD_older_p,self%photoaging*photolysis*self%qp)
      end if
      
      !if (self%bioaging.gt.0._rk) then
@@ -260,18 +260,34 @@ contains
          _GET_WITH_BACKGROUND_(self%id_T2n,T2n)
          _GET_WITH_BACKGROUND_(self%id_T2p,T2p)
 
-         IF(T2c.gt.0._rk) then
-            Xn=self%qn/(T2n/T2c)
-            Xp=self%qp/(T2p/T2c)
-            nx=self%qn-(T2n/T2c)
-            px=self%qp-(T2p/T2c)
-         else
-            Xn=0._rk
-            Xp=0._rk
-            nx=1._rk
-            px=1._rk
-         endif
+         ! YA: this BLOCK is commented because does not work as it should
+         ! for now I leave it like that and force behaviour as if T1 stoichiometry is identical to T2 stoichiometry (True for LOCATE 3D runs)
+!          IF(T2c.gt.0._rk) then
+!             Xn=self%qn/(T2n/T2c)
+!             Xp=self%qp/(T2p/T2c)
+!             nx=self%qn-(T2n/T2c)
+!             px=self%qp-(T2p/T2c)
+!          else
+!             Xn=0._rk
+!             Xp=0._rk
+!             nx=1._rk
+!             px=1._rk
+!          endif
+! 
+!          ! the two following checks are needed because due to roundings, N and P are not conserved otherwise
+!          if (abs(nx).lt.1.e-5_rk) then
+!               nx=0._rk
+!               Xn=1._rk
+!          endif
+!          if (abs(px).lt.1.e-5_rk) then 
+!              px=0._rk
+!              Xp=1._rk
+!          endif
 
+              nx=0._rk
+              Xn=1._rk
+              px=0._rk
+              Xp=1._rk
           XXn=min(Xn,Xp)
          ! Photolysis
          photolysis=self%surf_phyref*(chemEIR*self%chemEIR_scaling/self%iref)*c
@@ -285,13 +301,14 @@ contains
          
          if (self%photoaging.gt.0._rk) then
             _SET_SURFACE_EXCHANGE_(self%id_TD_older_c,self%photoaging*photolysis)
-            _SET_SURFACE_EXCHANGE_(self%id_TD_older_n,self%photoaging*photolysis*self%qn)
-            _SET_SURFACE_EXCHANGE_(self%id_TD_older_p,self%photoaging*photolysis*self%qp)
+!             _SET_SURFACE_EXCHANGE_(self%id_TD_older_n,-self%photoaging*photolysis*self%qn)
+!             _SET_SURFACE_EXCHANGE_(self%id_TD_older_p,-self%photoaging*photolysis*self%qp)
          end if         
          
          _SET_SURFACE_EXCHANGE_(self%id_O3c,+photolysis*(1._rk-T1T2)/CMass)
-         _SET_SURFACE_EXCHANGE_(self%id_N1p,+photolysis*(1._rk-T1T2)*self%qp+photolysis*T1T2*px)
-         _SET_SURFACE_EXCHANGE_(self%id_N4n,+photolysis*(1._rk-T1T2)*self%qn+photolysis*T1T2*nx)
+         if (nx.NE.0._rk) write(6,*) trim(self%name),T2c,T2n,self%qn,Xn
+         _SET_SURFACE_EXCHANGE_(self%id_N1p,+photolysis*(1._rk-T1T2)*self%qp)!+photolysis*T1T2*px)
+         _SET_SURFACE_EXCHANGE_(self%id_N4n,+photolysis*(1._rk-T1T2)*self%qn)!+photolysis*T1T2*nx)
          _SET_HORIZONTAL_DIAGNOSTIC_(self%id_surface_photolysis, photolysis)
     end if !is_photolabile
       _HORIZONTAL_LOOP_END_    
@@ -318,7 +335,7 @@ contains
           call self%register_model_dependency(self%id_TD_older_parent,'TD_older_parent')
           call self%register_state_dependency(self%id_TD_older_parent_c,'TD_older_parent_c','mg C/m^3','non photolabile terrigenous DOC')
           call self%request_coupling_to_model(self%id_TD_older_parent_c,self%id_TD_older_parent,'c')
-          call copy_fluxes(self,self%id_c_shadow,self%id_TD_older_parent_c,-self%bioaging)
+          call copy_fluxes(self,self%id_c_shadow,self%id_TD_older_parent_c,-self%bioaging)  ! - because an uptake (negative flux) from bacteria correspond to increase of the older DOC (positive fulx)
 
       end if
 
