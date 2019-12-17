@@ -24,7 +24,7 @@ module ersem_TDOC
       type (type_dependency_id)            :: id_X1X             ! Salinity
 !      type (type_horizontal_dependency_id)          :: id_R1c,id_R1d
       type (type_horizontal_diagnostic_variable_id) :: id_surface_photolysis, id_surface_photo_aging
-      type (type_diagnostic_variable_id) :: id_photolysis,id_flocc, id_photo_aging
+      type (type_diagnostic_variable_id) :: id_photolysis,id_flocc, id_photo_aging, id_bio_aging
 
    ! Parameters
 
@@ -134,10 +134,10 @@ contains
           call self%request_coupling_to_model(self%id_TD_older_n,self%id_TD_older,standard_variables%total_nitrogen)
           call self%request_coupling_to_model(self%id_TD_older_p,self%id_TD_older,standard_variables%total_phosphorus)
           if (self%is_photolabile) then 
-             call self%register_diagnostic_variable(self%id_photo_aging,'photoaging','mgC/m^3/d','aging due to 3D photoloysis')      
+             call self%register_diagnostic_variable(self%id_photo_aging,'photoaging','mgC/m^3/d','aging due to 3D photoloysis')
              call self%register_horizontal_diagnostic_variable(self%id_surface_photo_aging,'surface_photoaging','mgC/m^2/d','aging due to surface photolysis')
           end if
-          
+          call self%register_diagnostic_variable(self%id_bio_aging,'bioaging','mgC/m^3/d','aging due to microbial degrdation')      
 
           
     end if
@@ -152,13 +152,14 @@ contains
       shadow%qp=self%qp
       shadow%bioaging=self%bioaging
       call shadow%couplings%set_string('parent',self%name)
-      if ((self%bioaging.gt.0._rk)) call shadow%couplings%set_string('TD_older_parent','../TD_older')
       call self%add_child(shadow,'shadow',configunit=configunit)      
+      if ((self%bioaging.gt.0._rk)) then 
+          call shadow%couplings%set_string('TD_older_parent','../TD_older')
+          !call self%register_dependency(self%id_shadow_bioflux,'B_degradation','','bacterial degradation of tDOC')
+          !call self%request_coupling(self%id_shadow_bioflux,trim(shadow%id_c_shadow%link%target%name//'_sms_tot')) !
+          !call copy_fluxes(self,shadow%id_c_shadow,self%id_c,(1._rk+self%bioaging))
+      endif
 
-      if bioaging
-                call copier%register_dependency(%id_sms,         'sms',         '','sources minus sinks')
-          call copier%request_coupling(copier%id_sms,         trim(source_variable%link%target%name)//'_sms_tot')
-      
    end subroutine initialize
    
    
@@ -168,7 +169,7 @@ contains
       _DECLARE_ARGUMENTS_DO_
 
    ! !LOCAL VARIABLES:
-    real(rk) :: flocc,photolysis,R8cP,R8c,T2c,T2n,T2p,O3c,O3cP,T2cP,chemEIR,c,Xp,Xn,XXn,T1T2,px,nx
+    real(rk) :: flocc,photolysis,R8cP,R8c,T2c,T2n,T2p,O3c,O3cP,T2cP,chemEIR,c,Xp,Xn,XXn,T1T2,px,nx, bio_flux
     real(rk) :: X1X,sal
 
 ! Enter spatial loops (if any)
@@ -216,10 +217,16 @@ contains
      _SET_ODE_(self%id_c,-(1._rk+self%photoaging)*photolysis-flocc)
     
      if (self%photoaging.gt.0._rk) then
-        _SET_ODE_(self%id_TD_older_c,self%photoaging*photolysis)
+        _SET_ODE_(self%id_TD_older_c,self%photoaging*photolysis/CMASS)
         _SET_ODE_(self%id_TD_older_n,self%photoaging*photolysis*self%qn)
         _SET_ODE_(self%id_TD_older_p,self%photoaging*photolysis*self%qp)
      end if
+     
+     !if (self%bioaging.gt.0._rk) then
+     !   _GET_(self%id_shadow_bioflux,bio_flux)
+     !   _SET_ODE_(self%id_TD_older_c,self%bioaging*bio_flux)
+     !   _SET_DIAGNOSTIC_(self%id_bio_aging,self%bioaging*bio_flux)
+     !endif
     
       _SET_ODE_(self%id_RPc,+flocc)
       _SET_ODE_(self%id_RPn,+flocc*self%qn)
@@ -311,11 +318,11 @@ contains
           call self%register_model_dependency(self%id_TD_older_parent,'TD_older_parent')
           call self%register_state_dependency(self%id_TD_older_parent_c,'TD_older_parent_c','mg C/m^3','non photolabile terrigenous DOC')
           call self%request_coupling_to_model(self%id_TD_older_parent_c,self%id_TD_older_parent,'c')
-          !call copy_fluxes(self,self%id_c_shadow,self%id_TD_older_parent_c,self%bioaging)
+          call copy_fluxes(self,self%id_c_shadow,self%id_TD_older_parent_c,-self%bioaging)
 
       end if
 
-      call copy_fluxes(self,self%id_c_shadow,self%id_parent_c,(1._rk+self%bioaging))
+      call copy_fluxes(self,self%id_c_shadow,self%id_parent_c,1._rk+self%bioaging)!scale_factor=(1._rk+self%bioaging))
       
    end subroutine shadow_initialize
    
