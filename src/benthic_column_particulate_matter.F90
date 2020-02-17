@@ -709,7 +709,7 @@ contains
              call change_processor%register_state_dependency(change_processor%id_remin_ox,'o_remin_source','mmol O_2/m^2','oxygen')
              call change_processor%request_coupling(change_processor%id_remin_ox, '../o_remin_source')
          end if
-         call change_processor%register_diagnostic_variable(change_processor%id_remin_flux,'remin_flux',units//'/m^2/d','mineralisation flux')
+         call change_processor%register_diagnostic_variable(change_processor%id_remin_flux,'remin_flux',units//'/m^2/d','mineralisation flux',source=source_do_bottom)
          ! Couple submodel dependencies to top-level ("self") equivalents.
          ! For the remineralization target, register an alias at the top level so that it can be coupled directly from fabm.yaml.
          call change_processor%request_coupling(change_processor%id_local,'../'//name)

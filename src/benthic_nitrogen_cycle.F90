@@ -83,7 +83,7 @@ contains
       ! In turn, these are then picked up by this model (type_ersem_benthic_nitrogen_cycle) and translated into chnages in NO3 and O2.
       allocate(child)
       call self%add_child(child,'K6_calculator',configunit=configunit)
-      call child%register_diagnostic_variable(child%id_K6,'K6','mmol O_2/m^2','oxygen debt due to anaerobic respiration',act_as_state_variable=.true.,output=output_none,domain=domain_bottom,source=source_do_bottom)
+      call child%register_diagnostic_variable(child%id_K6,'K6','mmol O_2/m^2','oxygen debt due to anaerobic respiration',act_as_state_variable=.true.,output=output_none,domain=domain_bottom,source=source_none)
       call self%register_dependency(self%id_K6_sms,'K6_sms','mmol O_2/m^2/s','sources-sinks of oxygen debt')
       call self%request_coupling('K6_sms','K6_calculator/K6_sms_tot')
    end subroutine initialize
