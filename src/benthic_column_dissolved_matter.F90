@@ -322,21 +322,27 @@ contains
          ! The concentration at the bottom interface is zero by definition.
          call compute_final_equilibrium_profile(diff(self%last_layer),c_top,sms_per_layer(self%last_layer),sum(sms_per_layer(self%last_layer+1:)),Dm(nlayers)-d_top,H_eq,c_int_per_layer_eq(self%last_layer))
 
+         d_top = d_top + max(self%minD, H_eq)
+         if (H_eq <= self%minD) then
+            ! Layer too thin - treat it as completely collapsed (next layer starts with orginal surface concentration c_top)
+            c_int_per_layer_eq(self%last_layer) = 0
+         else
+            ! Layer present - next layer starts with 0 concentration at its surface
+            c_top = 0
+         end if
+
          ! Relax depth-integrated mass c_int towards its equilibrium value (sum of depth-integrated equilibrium values of all layers)
          _SET_BOTTOM_ODE_(info%id_int, (poro*sum(self%ads(:self%last_layer)*c_int_per_layer_eq(:self%last_layer))-c_int)/self%relax - sum(sms_per_layer(:self%last_layer)))
 
-         ! Relax the depth of the bottom interface of the last layer towards equilibrium value, d_top+max(self%minD,H_eq)
-         _SET_BOTTOM_ODE_(self%id_layer,(d_top+max(self%minD,H_eq)-Dm(self%last_layer))/self%relax)
+         ! Relax the depth of the bottom interface of the last layer towards equilibrium value
+         _SET_BOTTOM_ODE_(self%id_layer, (d_top - Dm(self%last_layer)) / self%relax)
 
          if (.not.info%nonnegative) then
             ! Deeper source terms are allowed to be non-zero [typically negative].
             ! In that case, the concentration gradient at the bottom of the last layer will be non-zero too,
             ! and the deeper layers will contain [typically negative] matter. Integrate this and add it to the column integral.
-            if (H_eq<=0.0_rk) c_int_per_layer_eq(self%last_layer) = 0  ! NB could also call compute_equilibrium_profile(diff(self%last_layer),c_top,sms_per_layer(self%last_layer),sum(sms_per_layer(self%last_layer+1:)),self%minD,c_bot,c_int_per_layer_eq(self%last_layer))
-            c_top = 0
-            d_top = d_top + max(0.0_rk,H_eq)
             do ilayer=self%last_layer+1,nlayers
-               call compute_equilibrium_profile(diff(ilayer),c_top,sms_per_layer(ilayer),sum(sms_per_layer(ilayer+1:)),Dm(ilayer)-d_top,c_bot,c_int_per_layer_eq(ilayer))
+               call compute_equilibrium_profile(diff(ilayer),c_top,sms_per_layer(ilayer),sum(sms_per_layer(ilayer+1:)),max(Dm(ilayer)-d_top, 0._rk),c_bot,c_int_per_layer_eq(ilayer))
                d_top = Dm(ilayer)
                c_top = c_bot
             end do
