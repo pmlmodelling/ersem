@@ -93,8 +93,7 @@ contains
          call self%get_parameter(self%minD, 'minD','m',  'minimum depth of zero-concentration isocline')
 
          write (index,'(i0)') self%last_layer
-         call self%register_state_dependency(self%id_layer,'layer','m','depth of bottom interface of final layer', &
-            standard_variable=type_horizontal_standard_variable(name='depth_of_bottom_interface_of_layer_'//trim(index)))
+         call self%register_state_dependency(self%id_layer, type_horizontal_standard_variable(name='depth_of_bottom_interface_of_layer_'//trim(index)))
       end if
       self%ads = 1.0_rk
       do ilayer=1,self%last_layer

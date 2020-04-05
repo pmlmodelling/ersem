@@ -637,8 +637,7 @@ contains
       type (type_bulk_standard_variable),       intent(in)            :: aggregate_target
       real(rk),optional,                        intent(in)            :: aggregate_scale_factor
 
-      class (type_constituent_for_single_layer_change),pointer :: change_processor
-      type (type_link),                                pointer :: link
+      class (type_constituent_for_single_layer_change), pointer :: change_processor
 
       ! Register the only diagnostic for this constituent: mass integrated over desired depth interval.
       ! This diagnostic acts like a state variable, so that other models can provides sinks and sources.
@@ -713,7 +712,7 @@ contains
          ! Couple submodel dependencies to top-level ("self") equivalents.
          ! For the remineralization target, register an alias at the top level so that it can be coupled directly from fabm.yaml.
          call change_processor%request_coupling(change_processor%id_local,'../'//name)
-         call self%add_horizontal_variable(name//'_remin_target',units//'/m^2','sink for remineralized '//long_name,act_as_state_variable=.true.,link=link)
+         call self%add_horizontal_variable(name//'_remin_target',units//'/m^2','sink for remineralized '//long_name,act_as_state_variable=.true.)
          call change_processor%request_coupling(change_processor%id_remin_target,'../'//name//'_remin_target')
          call change_processor%register_dependency(change_processor%id_ETW, standard_variables%temperature)
       end if
