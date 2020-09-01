@@ -47,7 +47,7 @@ contains
 !BOC
       call self%initialize_ersem_benthic_base()
 
-      call self%get_parameter(self%iswcal,'iswcal','','dissolution dependence on calcite saturation (0: constant, 1: power law, 2: hyperbolic)', minimum=0, maximum=2)
+      call self%get_parameter(self%iswcal,'iswcal','','dissolution dependence on calcite saturation (0: none, 1: power law, 2: hyperbolic)', minimum=0, maximum=2)
       select case (self%iswcal)
          case (1)
             call self%get_parameter(self%ndiss,'ndiss','-','power of the dissolution law (Keir 1980)')
@@ -55,12 +55,11 @@ contains
             call self%get_parameter(self%KcalomX,'KcalomX','-','half-saturation constant for calcification limitation from saturation state')
       end select
       if (self%iswcal == 0) then
-         ! For backward compatibility: constant dissolution as in benthic_base
-         call self%get_parameter(self%sL2O3X, 'sL2O3', '1/d','specific dissolution rate', default=0.0_rk)
-         self%fdissmin = 1.0_rk
+         call self%get_parameter(self%fdissmin, 'fdiss', '1/d','specific dissolution rate', default=0.0_rk)
+         self%sL2O3X = 0.0_rk
       else
-         call self%get_parameter(self%sL2O3X, 'sL2O3', '1/d','maximum specific dissolution rate', default=0.0_rk)
-         call self%get_parameter(self%fdissmin, 'fdissmin', '1/d','minimum dissolution rate as fraction of maximum', minimum=0._rk, maximum=1._rk, default=0.001_rk)
+         call self%get_parameter(self%sL2O3X, 'fdissmax', '1/d','maximum specific dissolution rate', minimum=0._rk, default=0.0_rk)
+         call self%get_parameter(self%fdissmin, 'fdissmin', '1/d','minimum specific dissolution rate', minimum=0._rk, default=0.001_rk * self%sL2O3X)
          call self%register_dependency(self%id_Om_Cal,'Om_Cal','-','calcite saturation')
       end if
       call self%get_parameter(c0,'c0','mg C/m^2','background calcite concentration',default=0.0_rk)
@@ -94,7 +93,7 @@ contains
             fdiss = max(0._rk,(1._rk-om_cal)/(1._rk-om_cal+self%KcalomX))
          end if
 
-         fdiss = max(fdiss, self%fdissmin)* self%sL2O3X
+         fdiss = max(fdiss* self%sL2O3X, self%fdissmin)
 
          _SET_BOTTOM_ODE_(self%id_c, -fdiss*bL2c)
          _SET_HORIZONTAL_DIAGNOSTIC_(self%id_dissolution, -fdiss*bL2c)

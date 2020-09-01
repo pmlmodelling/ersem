@@ -43,7 +43,7 @@ def enumerateModels2(fabm_yaml):
             yield name, data
 
 
-def update(path):
+def update(path, clean=True):
     print('Updating %s...' % path)
     with io.open(path, 'r') as f:
         fabm_yaml = yaml.load(f, Loader=yaml.SafeLoader)
@@ -99,9 +99,9 @@ def update(path):
             parameters = data.setdefault('parameters', {})
             parameters.pop('composition', None)
             parameters['iswcal'] = 0
-            parameters['sL2O3'] = parameters.pop('remin', 0.)
+            parameters['fdiss'] = parameters.pop('remin', 0.)
 
-    if pyfabm is not None:
+    if clean and pyfabm is not None:
         # Write YAML to temporary file.
         with tempfile.NamedTemporaryFile('w', delete=False) as f:
             yaml.dump(fabm_yaml, f, default_flow_style=False, indent=2)
@@ -118,7 +118,8 @@ def update(path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='This script updates a fabm.yaml ERSEM configuration to make it compatible with the latest version of the ERSEM code.')
     parser.add_argument('path', nargs='+', help='Path to your fabm.yaml file that will be updated.', default=[])
+    parser.add_argument('--noclean', action='store_true', help='Do not use pyfabm to add comments.')
     args = parser.parse_args()
     for path in args.path:
         for p in glob.glob(path):
-            update(p)
+            update(p, clean=not args.noclean)
