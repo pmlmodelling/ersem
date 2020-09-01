@@ -76,6 +76,7 @@ contains
       integer           :: ilayer, iconstituent
       character(len=16) :: index
       real(rk)          :: c0
+      type (type_horizontal_standard_variable) :: standard_variable
 
       class (type_dissolved_matter_per_layer), pointer :: profile
 
@@ -93,7 +94,8 @@ contains
          call self%get_parameter(self%minD, 'minD','m',  'minimum depth of zero-concentration isocline')
 
          write (index,'(i0)') self%last_layer
-         call self%register_state_dependency(self%id_layer, type_horizontal_standard_variable(name='depth_of_bottom_interface_of_layer_'//trim(index)))
+         standard_variable%name = 'depth_of_bottom_interface_of_layer_'//trim(index)
+         call self%register_state_dependency(self%id_layer, standard_variable)
       end if
       self%ads = 1.0_rk
       do ilayer=1,self%last_layer
@@ -136,9 +138,11 @@ contains
       call profile%register_dependency(profile%id_poro,sediment_porosity)
       do ilayer=1,nlayers
          write (index,'(i0)') ilayer
-         call self%register_dependency(self%id_diff(ilayer),    type_horizontal_standard_variable(name='diffusivity_in_sediment_layer_'//trim(index)))
-         call self%register_dependency(self%id_Dm(ilayer),      type_horizontal_standard_variable(name='depth_of_bottom_interface_of_layer_'//trim(index)))
-         call profile%register_dependency(profile%id_Dm(ilayer),type_horizontal_standard_variable(name='depth_of_bottom_interface_of_layer_'//trim(index)))
+         standard_variable%name = 'diffusivity_in_sediment_layer_'//trim(index)
+         call self%register_dependency(self%id_diff(ilayer),    standard_variable)
+         standard_variable%name = 'depth_of_bottom_interface_of_layer_'//trim(index)
+         call self%register_dependency(self%id_Dm(ilayer),      standard_variable)
+         call profile%register_dependency(profile%id_Dm(ilayer),standard_variable)
       end do
       call self%request_coupling   (self%id_Dm(nlayers),   depth_of_sediment_column)
       call profile%request_coupling(profile%id_Dm(nlayers),depth_of_sediment_column)
