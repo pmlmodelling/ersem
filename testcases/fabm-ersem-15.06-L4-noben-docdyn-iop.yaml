@@ -45,7 +45,7 @@ instances:
     long_name: oxygen
     model: ersem/oxygen
     parameters:
-      ISWO2: 2                                            # saturation formulation (1: legacy ERSEM, 2: Weiss 1970)
+      iswO2: 2                                            # saturation formulation (1: legacy ERSEM, 2: Weiss 1970, 3: Nightingale et al. 2000, 4: Wanninkhof 2014)
     initialization:
       o: 300.0                                            # oxygen (mmol O_2/m^3)
   O3:
@@ -53,7 +53,7 @@ instances:
     model: ersem/carbonate
     parameters:
       iswCO2: 1                                           # carbonate system diagnostics (0: off, 1: on), default = 1
-      iswASFLUX: 1                                        # air-sea CO2 exchange (0: none, 1: Nightingale and Liss, 2: Wanninkhof 1992 without chemical enhancement, 3: Wanninkhof 1992 with chemical enhancement, 4: Wanninkhof 1999), default = 1
+      iswASFLUX: 1                                        # air-sea CO2 exchange (0: none, 1: Nightingale et al. 2000, 2: Wanninkhof 1992 without chemical enhancement, 3: Wanninkhof 1992 with chemical enhancement, 4: Wanninkhof and McGillis 1999, 5: Wanninkhof 1992 switching to Wanninkhof and McGillis 1999, 6: Wan, default = 6
       iswtalk: 2                                          # alkalinity formulation (1-4: from salinity and temperature, 5: dynamic alkalinity), default = 5
       pHscale: 1                                          # pH scale (1: total, 0: SWS, -1: SWS backward compatible), default = 1
       iswbioalk: 1                                        # use bioalkalinity (0: off, 1: on), default = 1
@@ -698,12 +698,15 @@ instances:
       O3c: O3/c                                           # total dissolved inorganic carbon (mmol C/m^3)
   bL2:
     long_name: benthic calcite
-    model: ersem/benthic_base
+    model: ersem/benthic_calcite
     parameters:
-      composition: c                                      # elemental composition
-      remin: 0.05                                         # remineralisation rate at 10 degrees Celsius (1/d), default = 0.0
-      c0: 1e-05                                           # background carbon concentration (mg C/m^2), default = 0.0
+      iswcal: 1                                           # dissolution dependence on calcite saturation (0: none, 1: power law, 2: hyperbolic)
+      ndiss: 2.22                                         # power of the dissolution law (Keir 1980) (-)
+      fdissmax: 30.0                                      # maximum specific dissolution rate (1/d), default = 0.0
+      fdissmin: 0.05                                      # minimum specific dissolution rate (1/d), default = 0.03
+      c0: 1e-05                                           # background calcite concentration (mg C/m^2), default = 0.0
     initialization:
       c: 0.05                                             # carbon (mg C/m^2)
     coupling:
+      Om_Cal: O3/Om_cal                                   # calcite saturation (-)
       O3c: O3/c                                           # dissolved inorganic carbon (mmol/m^3)

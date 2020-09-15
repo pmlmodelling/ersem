@@ -599,7 +599,12 @@ contains
          call self%get_parameter(self%maximum_depth,'maximum_depth','m','maximum depth',default=0.0_rk)
       end if
       call self%get_parameter(remin,'remin','1/d','remineralization rate at 10 degrees Celsius',default=0.0_rk)
-      if  (remin /= 0._rk) call self%get_parameter(q10, 'q10', '-', 'Q_10 temperature coefficient', default=1.0_rk, minimum=1.0_rk)
+      if  (remin /= 0._rk) then
+         call self%get_parameter(q10, 'q10', '-', 'Q_10 temperature coefficient', default=1.0_rk, minimum=1.0_rk)
+      else
+         q10=1.0_rk
+      endif
+
       call self%get_parameter(source_depth_distribution,'source_depth_distribution', '','vertical distribution of changes (1: constant absolute rate, 2: constant relative rate, 3: constant carbon-based relative rate)',default=1)
 
       call self%register_dependency(self%id_d_tot,depth_of_sediment_column)
@@ -632,8 +637,7 @@ contains
       type (type_bulk_standard_variable),       intent(in)            :: aggregate_target
       real(rk),optional,                        intent(in)            :: aggregate_scale_factor
 
-      class (type_constituent_for_single_layer_change),pointer :: change_processor
-      type (type_link),                                pointer :: link
+      class (type_constituent_for_single_layer_change), pointer :: change_processor
 
       ! Register the only diagnostic for this constituent: mass integrated over desired depth interval.
       ! This diagnostic acts like a state variable, so that other models can provides sinks and sources.
@@ -704,11 +708,11 @@ contains
              call change_processor%register_state_dependency(change_processor%id_remin_ox,'o_remin_source','mmol O_2/m^2','oxygen')
              call change_processor%request_coupling(change_processor%id_remin_ox, '../o_remin_source')
          end if
-         call change_processor%register_diagnostic_variable(change_processor%id_remin_flux,'remin_flux',units//'/m^2/d','mineralisation flux')
+         call change_processor%register_diagnostic_variable(change_processor%id_remin_flux,'remin_flux',units//'/m^2/d','mineralisation flux',source=source_do_bottom)
          ! Couple submodel dependencies to top-level ("self") equivalents.
          ! For the remineralization target, register an alias at the top level so that it can be coupled directly from fabm.yaml.
          call change_processor%request_coupling(change_processor%id_local,'../'//name)
-         call self%add_horizontal_variable(name//'_remin_target',units//'/m^2','sink for remineralized '//long_name,act_as_state_variable=.true.,link=link)
+         call self%add_horizontal_variable(name//'_remin_target',units//'/m^2','sink for remineralized '//long_name,act_as_state_variable=.true.)
          call change_processor%request_coupling(change_processor%id_remin_target,'../'//name//'_remin_target')
          call change_processor%register_dependency(change_processor%id_ETW, standard_variables%temperature)
       end if

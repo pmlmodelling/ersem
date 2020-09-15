@@ -76,6 +76,7 @@ contains
       integer           :: ilayer, iconstituent
       character(len=16) :: index
       real(rk)          :: c0
+      type (type_horizontal_standard_variable) :: standard_variable
 
       class (type_dissolved_matter_per_layer), pointer :: profile
 
@@ -93,8 +94,8 @@ contains
          call self%get_parameter(self%minD, 'minD','m',  'minimum depth of zero-concentration isocline')
 
          write (index,'(i0)') self%last_layer
-         call self%register_state_dependency(self%id_layer,'layer','m','depth of bottom interface of final layer', &
-            standard_variable=type_horizontal_standard_variable(name='depth_of_bottom_interface_of_layer_'//trim(index)))
+         standard_variable%name = 'depth_of_bottom_interface_of_layer_'//trim(index)
+         call self%register_state_dependency(self%id_layer, standard_variable)
       end if
       self%ads = 1.0_rk
       do ilayer=1,self%last_layer
@@ -137,9 +138,11 @@ contains
       call profile%register_dependency(profile%id_poro,sediment_porosity)
       do ilayer=1,nlayers
          write (index,'(i0)') ilayer
-         call self%register_dependency(self%id_diff(ilayer),    type_horizontal_standard_variable(name='diffusivity_in_sediment_layer_'//trim(index)))
-         call self%register_dependency(self%id_Dm(ilayer),      type_horizontal_standard_variable(name='depth_of_bottom_interface_of_layer_'//trim(index)))
-         call profile%register_dependency(profile%id_Dm(ilayer),type_horizontal_standard_variable(name='depth_of_bottom_interface_of_layer_'//trim(index)))
+         standard_variable%name = 'diffusivity_in_sediment_layer_'//trim(index)
+         call self%register_dependency(self%id_diff(ilayer),    standard_variable)
+         standard_variable%name = 'depth_of_bottom_interface_of_layer_'//trim(index)
+         call self%register_dependency(self%id_Dm(ilayer),      standard_variable)
+         call profile%register_dependency(profile%id_Dm(ilayer),standard_variable)
       end do
       call self%request_coupling   (self%id_Dm(nlayers),   depth_of_sediment_column)
       call profile%request_coupling(profile%id_Dm(nlayers),depth_of_sediment_column)
@@ -322,21 +325,27 @@ contains
          ! The concentration at the bottom interface is zero by definition.
          call compute_final_equilibrium_profile(diff(self%last_layer),c_top,sms_per_layer(self%last_layer),sum(sms_per_layer(self%last_layer+1:)),Dm(nlayers)-d_top,H_eq,c_int_per_layer_eq(self%last_layer))
 
+         d_top = d_top + max(self%minD, H_eq)
+         if (H_eq <= self%minD) then
+            ! Layer too thin - treat it as completely collapsed (next layer starts with orginal surface concentration c_top)
+            c_int_per_layer_eq(self%last_layer) = 0
+         else
+            ! Layer present - next layer starts with 0 concentration at its surface
+            c_top = 0
+         end if
+
          ! Relax depth-integrated mass c_int towards its equilibrium value (sum of depth-integrated equilibrium values of all layers)
          _SET_BOTTOM_ODE_(info%id_int, (poro*sum(self%ads(:self%last_layer)*c_int_per_layer_eq(:self%last_layer))-c_int)/self%relax - sum(sms_per_layer(:self%last_layer)))
 
-         ! Relax the depth of the bottom interface of the last layer towards equilibrium value, d_top+max(self%minD,H_eq)
-         _SET_BOTTOM_ODE_(self%id_layer,(d_top+max(self%minD,H_eq)-Dm(self%last_layer))/self%relax)
+         ! Relax the depth of the bottom interface of the last layer towards equilibrium value
+         _SET_BOTTOM_ODE_(self%id_layer, (d_top - Dm(self%last_layer)) / self%relax)
 
          if (.not.info%nonnegative) then
             ! Deeper source terms are allowed to be non-zero [typically negative].
             ! In that case, the concentration gradient at the bottom of the last layer will be non-zero too,
             ! and the deeper layers will contain [typically negative] matter. Integrate this and add it to the column integral.
-            if (H_eq<=0.0_rk) c_int_per_layer_eq(self%last_layer) = 0  ! NB could also call compute_equilibrium_profile(diff(self%last_layer),c_top,sms_per_layer(self%last_layer),sum(sms_per_layer(self%last_layer+1:)),self%minD,c_bot,c_int_per_layer_eq(self%last_layer))
-            c_top = 0
-            d_top = d_top + max(0.0_rk,H_eq)
             do ilayer=self%last_layer+1,nlayers
-               call compute_equilibrium_profile(diff(ilayer),c_top,sms_per_layer(ilayer),sum(sms_per_layer(ilayer+1:)),Dm(ilayer)-d_top,c_bot,c_int_per_layer_eq(ilayer))
+               call compute_equilibrium_profile(diff(ilayer),c_top,sms_per_layer(ilayer),sum(sms_per_layer(ilayer+1:)),max(Dm(ilayer)-d_top, 0._rk),c_bot,c_int_per_layer_eq(ilayer))
                d_top = Dm(ilayer)
                c_top = c_bot
             end do
