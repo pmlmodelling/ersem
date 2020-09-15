@@ -348,6 +348,14 @@ contains
         BTOT=0.0004128_rk*S/35._rk
       ENDIF
 
+      ! Initialize CO2CLC inputs that are marked intent(inout) to avoid compiler warnings
+      ! These are not used in practice because we set ICALC=1
+      pH = 0._rk
+      PCO2 = 0._rk
+      H2CO3 = 0._rk
+      HCO3 = 0._rk
+      CO3 = 0._rk
+
       CALL CO2SET(PRSS,Tmax,S,k0co2,k1co2,k2co2,kb,hscale)
       CALL CO2CLC(k0co2,k1co2,k2co2,kb,ICALC,BORON,BTOT,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,success)
 
