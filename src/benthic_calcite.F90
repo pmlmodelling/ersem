@@ -21,7 +21,7 @@ module ersem_benthic_calcite
       type (type_dependency_id)                     :: id_Om_Cal
 
       ! Parameters
-      real(rk) :: sL2O3X, fdissmin, ndiss, KcalomX
+      real(rk) :: fdissmax, fdissmin, ndiss, KcalomX
       integer  :: iswcal
       
    contains
@@ -39,7 +39,6 @@ contains
    class (type_ersem_benthic_calcite), intent(inout), target :: self
    integer,                         intent(in)            :: configunit
 
-   character(len=10) :: composition
    real(rk) :: c0
 !
 !EOP
@@ -56,10 +55,10 @@ contains
       end select
       if (self%iswcal == 0) then
          call self%get_parameter(self%fdissmin, 'fdiss', '1/d','specific dissolution rate', default=0.0_rk)
-         self%sL2O3X = 0.0_rk
+         self%fdissmax = 0.0_rk
       else
-         call self%get_parameter(self%sL2O3X, 'fdissmax', '1/d','maximum specific dissolution rate', minimum=0._rk, default=0.0_rk)
-         call self%get_parameter(self%fdissmin, 'fdissmin', '1/d','minimum specific dissolution rate', minimum=0._rk, default=0.001_rk * self%sL2O3X)
+         call self%get_parameter(self%fdissmax, 'fdissmax', '1/d','maximum specific dissolution rate', minimum=0._rk, default=0.0_rk)
+         call self%get_parameter(self%fdissmin, 'fdissmin', '1/d','minimum specific dissolution rate', minimum=0._rk, default=0.001_rk * self%fdissmax)
          call self%register_dependency(self%id_Om_Cal,'Om_Cal','-','calcite saturation')
       end if
       call self%get_parameter(c0,'c0','mg C/m^2','background calcite concentration',default=0.0_rk)
@@ -77,7 +76,7 @@ contains
       _DECLARE_ARGUMENTS_DO_BOTTOM_
 
       real(rk) :: bL2c
-      real(rk) :: Om_Cal, O3c, TA
+      real(rk) :: Om_Cal
       real(rk) :: fdiss
 
       _HORIZONTAL_LOOP_BEGIN_
@@ -93,7 +92,7 @@ contains
             fdiss = max(0._rk,(1._rk-om_cal)/(1._rk-om_cal+self%KcalomX))
          end if
 
-         fdiss = max(fdiss* self%sL2O3X, self%fdissmin)
+         fdiss = max(fdiss * self%fdissmax, self%fdissmin)
 
          _SET_BOTTOM_ODE_(self%id_c, -fdiss*bL2c)
          _SET_HORIZONTAL_DIAGNOSTIC_(self%id_dissolution, -fdiss*bL2c)

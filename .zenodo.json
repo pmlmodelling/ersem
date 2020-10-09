@@ -1,0 +1,23 @@
+{
+    "description": "<p>ERSEM: European Regional Seas Ecosystem Model</p>\n\n<p>For more information please visit&nbsp;<a href=\"http://ersem.com\">http://ersem.com</a>.</p>", 
+    "license": "GPL-3.0+", 
+    "title": "ERSEM", 
+    "grants": [
+        {
+            "id": "10.13039/501100000690::NE/L003066/1"
+        }, 
+        {
+            "id": "10.13039/501100000690::NE/R015953/1"
+        }, 
+        {
+            "id": "10.13039/501100000690::NE/K001876/1"
+        }
+    ], 
+    "upload_type": "software", 
+    "creators": [
+        {
+            "name": "Marine Systems Modelling group, Plymouth Marine Laboratory"
+        }
+    ], 
+    "access_right": "open"
+}
