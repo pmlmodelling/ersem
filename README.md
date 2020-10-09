@@ -13,7 +13,7 @@ pelagic, ERSEM by default distinguishes:
 * 3 types of zooplankton: nanoflagellates, microzooplankton, mesozooplankon
 * bacteria
 
-The bentic system includes:
+The benthic system includes:
 
 * 3 types of infauna: meiofauna, suspension feeders, deposit feeders
 * 2 types of bacteria: aerobic and anaerobic
