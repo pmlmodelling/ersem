@@ -28,7 +28,7 @@ Through [FABM](http://fabm.net), ERSEM can be coupled to a wide range of
 hydrodynamic models including NEMO, FVCOM, ROMS and GOTM. FABM also makes it
 easy to customise the default set of functional types described above, and to
 combine ERSEM with modules representing other parts of the ecosystem, including
-fish communities, shellfish, seagrass meadows and spectraly resolved irradiance.
+fish communities, shellfish, seagrass meadows and spectrally resolved irradiance.
 
 # How to cite
 
