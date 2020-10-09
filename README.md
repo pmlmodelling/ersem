@@ -19,7 +19,7 @@ ERSEM is built on top of [FABM](http://fabm.net), which allows it to be coupled 
 
 # Support
 
-We strongly encourage everyone using the ERSEM code to [register as user](https://pml.ac.uk/Modelling_at_PML/Access_Code). This will give you access user mailing lists where you can discuss problems and suggestions with the developers and other users and receive information and news on the latest developments.
+We strongly encourage everyone using the ERSEM code to [register as a user](https://pml.ac.uk/Modelling_at_PML/Access_Code). This will give you access user mailing lists where you can discuss problems and suggestions with the developers and other users and receive information and news on the latest developments.
 
 # License
 
