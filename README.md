@@ -88,7 +88,7 @@ Now get the ERSEM, FABM and GOTM source codes:
 
     git clone https://github.com/pmlmodelling/ersem.git
     git clone https://github.com/fabm-model/fabm.git
-    git clone --recurse-submodules https://github.com/gotm-model/code.git
+    git clone --recurse-submodules https://github.com/gotm-model/code.git gotm
 
 This locally creates "gotm", "fabm", "ersem" directories with source code.
 
@@ -237,25 +237,25 @@ General:
 * cmake autodetects a suitable Fortran compiler. If a Fortran compiler is not
   found or you are unhappy with the compiler cmake selected, you can override
   this by providing cmake with `-DCMAKE_Fortran_COMPILER=<COMPILER_EXECUTABLE>`.
-  Note: if you change CMAKE_Fortran_COMPILER (or provide it for the first time,
-  while you previously ran cmake without), you need to clean (remove everything
-  in) your build directory first!
+  Note: if you change `CMAKE_Fortran_COMPILER` (or provide it for the first time,
+  while you previously ran cmake without), you need to empty your build
+  directory first!
 * When building GOTM or FABM's 0d driver, cmake will try to auto-detect NetCDF
   using `nf-config`. If nf-config is not present on your system, you'll need to
   provide cmake with the path(s) to the NetCDF include directories
   (`-DNetCDF_INCLUDE_DIRS=<PATH>`) and the path(s) to the NetCDF libraries
   (`-DNetCDF_LIBRARIES=<PATH>`). If you need to provide multiple paths to these
   variables, the individual paths should be separated by semi-colons. A common
-  reason to use this: On some systems, nf-config does not detect where
-  netcdf.mod is installed, which means you have to tell cmake by adding
-  `-DNetCDF_INCLUDE_DIRS=<PATH_TO_netcdf.mod>`. For instance, when using
-  gfortran on Fedora, `<PATH_TO_netcdf.mod>` can be
+  reason to use this: On some systems, `nf-config` does not detect where
+  `netcdf.mod` is installed, which means you have to tell cmake by adding
+  `-DNetCDF_INCLUDE_DIRS=<netcdf.mod_DIR>`. For instance, when using
+  gfortran on Fedora, `<netcdf.mod_DIR>` can be
   `/usr/lib64/gfortran/modules`. In that case you usually do not need to provide
   `-DNetCDF_LIBRARIES=<PATH>`. Also, on some systems (like in the current LTS
-  release of Ubuntu), nf-config is not included in the netcdf packages. In these
-  cases, specify `-DNetCDF_CONFIG_EXECUTABLE=<PATH_TO_nc-config>` when calling
-  cmake, or create a link to nc-config somewhere in your default path, to get
-  auto-detection working.
+  release of Ubuntu), `nf-config` is not included in the NetCDF packages. In this
+  case, you can use `nc-config`: specify `-DNetCDF_CONFIG_EXECUTABLE=<PATH_TO_nc-config>`
+  when calling cmake, or create a link to `nc-config` somewhere in your default
+  path, to get auto-detection working.
 * By default, cmake will select the "release" build type, which creates an
   executable without debugging information. If you want to compile in debug mode,
   specify `-DCMAKE_BUILD_TYPE=debug` in the call to cmake. When using gfortran,
@@ -275,12 +275,12 @@ Specific platforms:
   `-DCMAKE_Fortran_COMPILER=ftn` to cmake to make sure cmake uses Cray's
   compiler wrapper script for Fortran compilation. Compilation should succeed
   with all three programming environments (intel, gnu, cray).
-* Ubuntu LTS: nf-config is not included in the netcdf packages, but nc-config
-  is. Specify `-DNetCDF_CONFIG_EXECUTABLE=<PATH_TO_nc-config>` when calling
-  cmake, or create a link from nf-config to nc-config somewhere in your default
-  path to get auto-detection of NetCDF paths working.
-* Fedora: nf-config does not detect where netcdf.mod is installed (typically in
-  `/usr/lib64/gfortran/modules`). This means you have to tell cmake by adding
+* Ubuntu LTS: `nf-config` is not included in the netcdf packages, but
+  `nc-config` is. Specify `-DNetCDF_CONFIG_EXECUTABLE=<PATH_TO_nc-config>` when
+  calling cmake, or create a link from `nf-config` to `nc-config` somewhere in
+  your default path to get auto-detection of NetCDF paths working.
+* Fedora: `nf-config` does not detect where `netcdf.mod` is installed (typically
+  in `/usr/lib64/gfortran/modules`). This means you have to tell cmake by adding
   `-DNetCDF_INCLUDE_DIRS=/usr/lib64/gfortran/modules`.
 
 ## Windows
@@ -302,27 +302,28 @@ installed TortoiseGit.
 After these two program are installed, you can obtain the code by right-clicking
 in Windows Explorer within a directory where you want the source code
 directories, and choosing "Git Clone...". In the window that appears, set the
-URL, check the target directory and click OK. Do this for the following URLs:
+URL, ensure "recursive" is checked and click OK. Do this for the following URLs:
 
-* GOTM: https://github.com/gotm-model/code.git
-* FABM: https://github.com/fabm-model/fabm.git
 * ERSEM: https://github.com/pmlmodelling/ersem.git
+* FABM: https://github.com/fabm-model/fabm.git
+* GOTM: https://github.com/gotm-model/code.git (also change `code` to `gotm`
+  for the target directory)
 
 To compile the code, you need [CMake](https://www.cmake.org/). If CMake is
-installed, open "CMake (cmake-gui)", specify GOTM's `src` directory for "Where
-is the source code", choose a directory of your choice (but outside the source
-directory!) for "Where to build the binaries", and click Configure. Choose the
-generator that matches your Visual Studio version (avoid the IA64 option) and
-click Finish. Several configuration options will appear, among which `FABM_BASE`.
-This option must be set to the directory with the FABM source code. After doing
-so, click "Configure". Then a new option `FABM_ERSEM_BASE` will appear, which
-must be set to the path to the directory with ERSEM source code. Keep clicking
-"Configure" until there are no red-coloured options left. Then press "Generate".
-This will create a `gotm.sln` Visual Studio solution in the specified build
-directory, which you can now open with Visual Studio.
+installed, open "CMake (cmake-gui)", specify the directory with GOTM code for
+"Where is the source code", choose an empty directory of your choice for
+"Where to build the binaries", and click Configure. Choose the generator that
+matches your Visual Studio version and click Finish. Several configuration
+options will appear, among which `FABM_BASE`. This option must be set to the
+directory with the FABM source code. After doing so, click "Configure". Then a
+new option `FABM_ERSEM_BASE` will appear, which must be set to the path to the
+directory with ERSEM source code. Keep clicking "Configure" until there are no
+red-coloured options left. Then press "Generate". This will create a `gotm.sln`
+Visual Studio solution in the specified build directory, which you can now open
+with Visual Studio.
 
 It is good practice to keep up to date with the latest code from the GOTM, FABM
-and ERSEM repositories by regularly right-clicking the repository directory,
+and ERSEM repositories by regularly right-clicking each repository directory,
 choosing "Git Sync...", and clicking the "Pull" button in the window that then
 appears.
 
