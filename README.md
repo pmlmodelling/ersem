@@ -2,7 +2,7 @@
 
 [ERSEM](http://ersem.com) is a marine ecosystem model. It describes the
 biogeochemical cycling of carbon, nitrogen, phosphorus, silicon, oxygen and iron through pelagic and benthic ecosystems.
-The ecosystem is divided into functional types, which are further subdivided by trait (for instance, size). In the pelagic, ERSEM by default represents:
+The ecosystem is divided into functional types, which are further subdivided by traits such as size. In the pelagic, ERSEM by default represents:
 
 * 4 types of phytoplankton: diatoms, picophytoplankton, nanophytoplankton, microphytoplankton
 * 3 types of zooplankton: nanoflagellates, microzooplankton, mesozooplankon
@@ -15,7 +15,15 @@ The bentic system includes:
 
 In addition, ERSEM tracks the concentrations of phosphate, nitrate, ammonium, silicate, iron, oxygen, dissolved inorganic carbon and alkalinity in the pelagic and in sediment porewaters. It also includes several classes of particulate and dissolved organic matter in pelagic and sediment. A carbonate system module calculates pH and calcium carbonate saturation.
 
-ERSEM is built on top of [FABM](http://fabm.net), which allows it to be coupled to a wide range of hydrodynamic models including NEMO, FVCOM, ROMS and GOTM. It also makes it easy to customise the default set of functional types described above, and to combine ERSEM with additional ecosystem modules, such as fish communities, seagrass meadows and spectraly resolved irradiance.
+Through [FABM](http://fabm.net), ERSEM can be coupled to a wide range of hydrodynamic models including NEMO, FVCOM, ROMS and GOTM. FABM also makes it easy to customise the default set of functional types described above, and to combine ERSEM with additional ecosystem modules, such as fish communities, seagrass meadows and spectraly resolved irradiance.
+
+# How to cite
+
+If you would like to refer to ERSEM in publications, please cite:
+
+Butenschön, M., Clark, J., Aldridge, J.N., Allen, J.I., Artioli, Y., Blackford, J., Bruggeman, J., Cazenave, P., Ciavatta, S., Kay, S., Lessin, G., van Leeuwen, S., van der Molen, J., de Mora, L., Polimene, L., Sailley, S., Stephens, N., Torres, R. (2016). ERSEM 15.06: a generic model for marine biogeochemistry and the ecosystem dynamics of the lower trophic levels. Geoscientific Model Development, 9(4), 1293–1339. doi: [10.5194/gmd-9-1293-2016](https://doi.org/10.5194/gmd-9-1293-2016).
+
+To refer to the ERSEM website, please use http://ersem.com.
 
 # Support
 
@@ -124,7 +132,9 @@ Example Jupyter notebooks that use the Python front-end can be found in `<FABMDI
 
 ### NEMO + FABM + ERSEM
 
-FABM needs to be compiled separately before the compilation of NEMO.
+This requires a customised NEMO codebase with the FABM coupler integrated. To obtain access to this code, please [register](https://pml.ac.uk/Modelling_at_PML/Access_Code).
+
+FABM-ERSEM needs to be compiled separately before the compilation of NEMO.
 Usually, the following suffices for this:
 
     mkdir -p ~/build/nemo
