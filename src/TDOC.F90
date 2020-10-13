@@ -121,7 +121,7 @@ contains
           call self%register_state_dependency(self%id_N1p,'N1p','mmol P/m^3','phosphate')
           call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3','ammonium')
           call self%register_diagnostic_variable(self%id_photolysis,'photolysis','mgC/m^3/d','photolysis')
-          call self%register_horizontal_diagnostic_variable(self%id_surface_photolysis,'surface_photolysis','mgC/m^2/d','surface photolysis')
+          call self%register_horizontal_diagnostic_variable(self%id_surface_photolysis,'surface_photolysis','mgC/m^2/d','surface photolysis',source=source_do_surface)
           call self%register_diagnostic_variable(self%id_flocc,'flocc','mgC/m^3/d','flocculation')
       end if
       
@@ -135,7 +135,7 @@ contains
           call self%request_coupling_to_model(self%id_TD_older_p,self%id_TD_older,standard_variables%total_phosphorus)
           if (self%is_photolabile) then 
              call self%register_diagnostic_variable(self%id_photo_aging,'photoaging','mgC/m^3/d','aging due to 3D photoloysis')
-             call self%register_horizontal_diagnostic_variable(self%id_surface_photo_aging,'surface_photoaging','mgC/m^2/d','aging due to surface photolysis')
+             call self%register_horizontal_diagnostic_variable(self%id_surface_photo_aging,'surface_photoaging','mgC/m^2/d','aging due to surface photolysis',source=source_do_surface)
           end if
           call self%register_diagnostic_variable(self%id_bio_aging,'bioaging','mgC/m^3/d','aging due to microbial degrdation')      
 
