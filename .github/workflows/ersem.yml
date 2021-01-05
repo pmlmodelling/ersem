@@ -48,5 +48,5 @@ jobs:
         - name: Building GOTM-FABM-ERSEM
           run: |
               mkdir build && cd build
-              cmake ../gotm/src -DFABM_BASE=../fabm -DFABM_ERSEM_BASE=.. -DCMAKE_Fortran_COMPILER=/usr/bin/gfortran
+              cmake ../gotm -DFABM_BASE=../fabm -DFABM_ERSEM_BASE=.. -DCMAKE_Fortran_COMPILER=/usr/bin/gfortran
               make install
