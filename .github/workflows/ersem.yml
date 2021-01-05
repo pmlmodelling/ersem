@@ -38,8 +38,8 @@ jobs:
           uses: actions/setup-python@v2
           with:
               python-version: '3.x'
-        - name: Installing gfortran
-          run: sudo apt-get install gfortran
+        - name: Installing gfortran and netCDF
+          run: sudo apt-get install gfortran libnetcdff-dev
         - name: Cloning FABM and GOTM
           run: |
               git clone https://github.com/fabm-model/fabm.git
