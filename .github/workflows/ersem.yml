@@ -38,6 +38,8 @@ jobs:
           uses: actions/setup-python@v2
           with:
               python-version: '3.x'
+        - name: Installing gfortran
+          run: sudo apt-get install gfortran
         - name: Cloning FABM and GOTM
           run: |
               git clone https://github.com/fabm-model/fabm.git
@@ -46,5 +48,5 @@ jobs:
         - name: Building GOTM-FABM-ERSEM
           run: |
               mkdir build && cd build
-              cmake ../gotm/src -DFABM_BASE=../fabm -DFABM_ERSEM_BASE=..
+              cmake ../gotm/src -DFABM_BASE=../fabm -DFABM_ERSEM_BASE=.. -DCMAKE_Fortran_COMPILER=/usr/bin/gfortran
               make install
