@@ -18,8 +18,8 @@ jobs:
           uses: actions/setup-python@v2
           with:
               python-vesion: '3.x'
-        - name: Installing wheel
-          run: python -m pip install --user wheel
+        - name: Installing wheel and numpy
+          run: python -m pip install wheel numpy
         - name: Cloning FABM
           run: git clone https://github.com/fabm-model/fabm.git
         - name: Building FABM-ERSEM
@@ -27,5 +27,7 @@ jobs:
               mkdir build && cd build
               cmake ../fabm/src/drivers/python -DFABM_ERSEM_BASE=..
               make install
+        - name: Check installation
+          run: python -c "import fabm"
 
 
