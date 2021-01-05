@@ -42,6 +42,7 @@ jobs:
           run: |
               git clone https://github.com/fabm-model/fabm.git
               git clone https://github.com/gotm-model/code.git gotm
+              cd gotm && git submodule update --init --recursive && cd ..
         - name: Building GOTM-FABM-ERSEM
           run: |
               mkdir build && cd build
