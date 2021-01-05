@@ -9,14 +9,17 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+  build-fabm-ersem:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Run a one-line script
-        run: echo Hello, world!
-      - name: Run a multi-line script
+      - name: Cloning FABN
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+            cd ..
+            git clone https://github.com/fabm-model/fabm.git
+      - name: Building FABN-ERSEM
+        run: |
+          cmake fabm/src/drivers/python -DFABM_ERSEM_BASE=ersem
+          make install
+
 
