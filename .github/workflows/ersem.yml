@@ -13,13 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Cloning FABN
+      - name: Cloning FABM
+        run: git clone https://github.com/fabm-model/fabm.git
+      - name: Building FABM-ERSEM
         run: |
-            cd ..
-            git clone https://github.com/fabm-model/fabm.git
-      - name: Building FABN-ERSEM
-        run: |
-          cmake fabm/src/drivers/python -DFABM_ERSEM_BASE=ersem
+          mkdir build && cd build
+          cmake ../fabm/src/drivers/python -DFABM_ERSEM_BASE=..
           make install
 
 
