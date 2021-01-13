@@ -9,7 +9,7 @@ on:
     branches: [ master ]
 
 jobs:
-  build-fabm-ersem:
+  build-pyfabm-ersem:
     runs-on: ubuntu-latest
     steps:
         - uses: actions/checkout@v2
@@ -20,7 +20,7 @@ jobs:
         - name: Building and installing FABM-ERSEM
           run: |
               branch=$(git branch --show-current)
-              ./github-actions/fabm-ersem-build.sh $branch
+              ./github-actions/pyfabm-ersem-build.sh $branch
         - name: Check installation
           run: python -c "import fabm"
   build-gotm-fabm-ersem:
