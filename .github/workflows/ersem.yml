@@ -17,7 +17,7 @@ jobs:
           uses: actions/setup-python@v2
           with:
               python-version: '3.x'
-        - name: Building and installing FABM-ERSEM
+        - name: Building and installing PyFABM-ERSEM
           run: |
               branch=$(git branch --show-current)
               ./github-actions/pyfabm-ersem-build.sh $branch
@@ -31,3 +31,11 @@ jobs:
           run: |
               branch=$(git branch --show-current)
               ./github-actions/gotm-fabm-ersem-build.sh $branch
+  build-fabm0d-gotm-ersem:
+    runs-on: ubuntu-latest
+    steps:
+        - uses: actions/checkout@v2
+        - name: Building and installing FABM0d-GOTM-ERSEM
+          run: |
+              branch=$(git branch --show-current)
+              ./github-actions/fabm0d-gotm-ersem-build.sh $branch

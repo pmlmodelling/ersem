@@ -13,7 +13,7 @@ cd ersem && git checkout $BRANCH && cd ..
 echo "Installing numpy and wheel"
 python -m pip install wheel numpy
 
-echo "Building FABM-ERSEM"
+echo "Building PyFABM-ERSEM"
 mkdir build && cd build
 cmake ../fabm/src/drivers/python -DFABM_ERSEM_BASE=../ersem
 make install
