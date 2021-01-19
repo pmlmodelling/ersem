@@ -9,20 +9,18 @@
 Welcome to ERSEMS's documentation!
 ##################################
 
-.. figure:: ../../images/ERSEM.png
-   :alt: ERSEM diagram
-   :width: 100.0%
-
-.. mdinclude:: ../../README.md
-    :start-line: 4
-
-Table Of Contents
------------------
-  
 .. toctree::
    :maxdepth: 2
    :titlesonly:
    :caption: Contents:
 
    build
-   tutorials
+   tutorials/index
+
+.. figure:: ../images/ERSEM.png
+   :alt: ERSEM diagram
+   :width: 100.0%
+
+.. mdinclude:: ../../README.md
+    :start-line: 4
+
