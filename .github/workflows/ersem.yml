@@ -9,7 +9,7 @@ on:
     branches: [ master ]
 
 jobs:
-  build-pyfabm-ersem:
+  build-pyfabm-ersem-debian:
     runs-on: ubuntu-latest
     steps:
         - uses: actions/checkout@v2
@@ -17,25 +17,31 @@ jobs:
           uses: actions/setup-python@v2
           with:
               python-version: '3.x'
+        - name: Installing PyFABM-ERSEM dependences
+          run: ./github-actions/pyfabm-ersem/pyfabm-ersem-dep-debian.sh
         - name: Building and installing PyFABM-ERSEM
           run: |
               branch=$(git branch --show-current)
-              ./github-actions/pyfabm-ersem-build.sh $branch
+              ./github-actions/pyfabm-ersem/pyfabm-ersem-build.sh $branch
         - name: Check installation
           run: python -c "import fabm"
-  build-gotm-fabm-ersem:
+  build-gotm-fabm-ersem-debian:
     runs-on: ubuntu-latest
     steps:
         - uses: actions/checkout@v2
+        - name: Installing GOTM-FABM-ERSEM dependences
+          run: ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-dep-debian.sh 
         - name: Building and installing GOTM-FABM-ERSEM
           run: |
               branch=$(git branch --show-current)
-              ./github-actions/gotm-fabm-ersem-build.sh $branch
-  build-fabm0d-gotm-ersem:
+              ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-build.sh $branch
+  build-fabm0d-gotm-ersem-debian:
     runs-on: ubuntu-latest
     steps:
         - uses: actions/checkout@v2
+        - name: Installing FABM0d-GOTM-ERSEM dependences
+          run: ./github-actions/fabm0d-gotm-ersem/fabm0d-gotm-ersem-dep-debian.sh
         - name: Building and installing FABM0d-GOTM-ERSEM
           run: |
               branch=$(git branch --show-current)
-              ./github-actions/fabm0d-gotm-ersem-build.sh $branch
+              ./github-actions/fabm0d-gotm-ersem/fabm0d-gotm-ersem-build.sh $branch

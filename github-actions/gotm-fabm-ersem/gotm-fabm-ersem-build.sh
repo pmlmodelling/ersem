@@ -14,10 +14,7 @@ cd gotm && git submodule update --init --recursive && cd ..
 echo "Checking out branch: $BRANCH"
 cd ersem && git checkout $BRANCH && cd ..
 
-echo "Installing netCDF"
-sudo apt install libnetcdff-dev
-
-echo "Building FABM-GOTM-ERSEM"
+echo "Building GOTM-FABM-ERSEM"
 mkdir build && cd build
-cmake ../fabm/src/drivers/0d -DGOTM_BASE=../gotm -DFABM_ERSEM_BASE=../ersem
+cmake ../gotm -DFABM_BASE=../fabm -DFABM_ERSEM_BASE=../ersem
 make install

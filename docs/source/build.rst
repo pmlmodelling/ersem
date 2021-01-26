@@ -36,9 +36,16 @@ FABM0d-GOTM-ERSEM
 FABM’s 0d driver allows you to run biogeochemical models in a
 "well-mixed box" under arbitrary (time-varying) environmental forcing.
 
-To install FABMod-GOTM-ERSEM we suggest you use the following script below
+To run the install script, you will need to have ``netCDF`` installed.
+An example of how to do this is here:
 
-.. literalinclude:: ../../github-actions/fabm0d-gotm-ersem-build.sh
+.. literalinclude:: ../../github-actions/fabm0d-gotm-ersem/fabm0d-gotm-ersem-dep-debian.sh
+    :language: bash
+    :linenos:
+
+To install FABM0d-GOTM-ERSEM we suggest you use the following script below
+
+.. literalinclude:: ../../github-actions/fabm0d-gotm-ersem/fabm0d-gotm-ersem-build.sh
     :language: bash
     :linenos:
 
@@ -50,18 +57,32 @@ metadata (e.g., variable information), to add documentation to fabm.yaml
 files, or to retrieve sources-sinks and diagnostics while manipulating
 the environment.
 
-To install PyFABM-ERSEM we suggest you use the following script below
+To run the install script you will need to have ``wheel`` and ``numpy`` installed.
+This can be done via:
 
-.. literalinclude:: ../../github-actions/pyfabm-ersem-build.sh
+.. literalinclude:: ../../github-actions/pyfabm-ersem/pyfabm-ersem-dep-debian.sh
+    :language: bash
+    :linenos:
+
+To install PyFABM-ERSEM, we suggest you use the following script below
+
+.. literalinclude:: ../../github-actions/pyfabm-ersem/pyfabm-ersem-build.sh
     :language: bash
     :linenos:
 
 GOTM-FABM-ERSEM
 ~~~~~~~~~~~~~~~
 
-To install GOTM-FABM-ERSEM we suggest you use the following script below
+To run the install script, you will need to have ``netCDF`` installed.
+An example of how to do this is here:
 
-.. literalinclude:: ../../github-actions/gotm-fabm-ersem-build.sh
+.. literalinclude:: ../../github-actions/gotm-fabm-ersem/gotm-fabm-ersem-dep-debian.sh
+    :language: bash
+    :linenos:
+
+To install GOTM-FABM-ERSEM, we suggest you use the following script below
+
+.. literalinclude:: ../../github-actions/gotm-fabm-ersem/gotm-fabm-ersem-build.sh
     :language: bash
     :linenos:
 
@@ -71,6 +92,13 @@ and tricks/troubleshooting <#tips-and-trickstroubleshooting>`__.
 
 Now you should have a GOTM executable with FABM and ERSEM support at
 ``~/local/gotm/bin/gotm``.
+
+
+.. note::
+    It is not necessary to use ``pip`` or ``apt`` to install dependences. We 
+    suggest that `conda <https://docs.conda.io/en/latest/>`__ would also work
+    well.
+
 
 Tips and tricks/troubleshooting
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
