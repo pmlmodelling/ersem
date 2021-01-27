@@ -23,8 +23,10 @@ jobs:
           run: |
               branch=$(git branch --show-current)
               ./github-actions/pyfabm-ersem/pyfabm-ersem-build.sh $branch
-        - name: Check installation
-          run: python -c "import fabm"
+        - name: Running pyfabm tutorial
+          run: |
+              python -m pip install matplotlib
+              python github-actions/pyfabm-ersem/pyfabm-tut.py
   build-gotm-fabm-ersem-debian:
     runs-on: ubuntu-latest
     steps:
