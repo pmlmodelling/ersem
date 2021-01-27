@@ -9,18 +9,18 @@
 Welcome to ERSEMS's documentation!
 ##################################
 
+.. mdinclude:: ../../README.md
+    :end-line: 2
+.. mdinclude:: ../../README.md
+    :start-line: 6
+
 .. toctree::
    :maxdepth: 2
    :titlesonly:
    :caption: Contents:
-
-   build
-   tutorials/index
-
-.. figure:: ../images/ERSEM.png
-   :alt: ERSEM diagram
-   :width: 100.0%
-
-.. mdinclude:: ../../README.md
-    :start-line: 4
-
+   
+   concept
+   use_cases/index
+   license
+   acknowledgements
+   support
