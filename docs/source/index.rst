@@ -24,3 +24,4 @@ Welcome to ERSEMS's documentation!
    license
    acknowledgements
    support
+   api

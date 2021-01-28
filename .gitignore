@@ -1,2 +1,5 @@
 # Removing docs build
 docs/build/
+
+# Removing pycache
+__pycache__
