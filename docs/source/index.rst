@@ -20,7 +20,7 @@ Welcome to ERSEMS's documentation!
    :caption: Contents:
    
    concept
-   use_cases/index
+   use_cases/use_cases
    license
    acknowledgements
    support

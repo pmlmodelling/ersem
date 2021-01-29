@@ -6,3 +6,6 @@ __pycache__
 
 # the api is built each time the docs
 docs/source/api.rst
+
+# removing swap files
+*.swp
