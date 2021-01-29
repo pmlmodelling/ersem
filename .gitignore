@@ -3,3 +3,6 @@ docs/build/
 
 # Removing pycache
 __pycache__
+
+# the api is built each time the docs
+docs/source/api.rst
