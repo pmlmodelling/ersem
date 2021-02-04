@@ -13,7 +13,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('_scripts'))
-import api_generator
+import module_index_generator
 sys.path.insert(0, os.path.abspath('../../'))
 
 
@@ -56,6 +56,6 @@ html_theme = 'sphinx_rtd_theme'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-api_generator.create('api.rst')
+module_index_generator.create('module_index.rst')
 
 autosectionlabel_prefix_document = True
