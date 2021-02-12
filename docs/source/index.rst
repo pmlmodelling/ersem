@@ -6,7 +6,7 @@
    contain the root `toctree` directive.
 
 ##################################
-Welcome to ERSEMS's documentation!
+Welcome to ERSEM's documentation!
 ##################################
 
 .. mdinclude:: ../../README.md
@@ -19,9 +19,10 @@ Welcome to ERSEMS's documentation!
    :titlesonly:
    :caption: Contents:
    
-   concept
-   use_cases/use_cases
+   The ERSEM Model <model_info/index>
+   Use cases <use_cases/index>
+   module_index
    license
    acknowledgements
    support
-   module_index
+   references

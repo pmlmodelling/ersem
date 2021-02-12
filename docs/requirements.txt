@@ -2,3 +2,6 @@ sphinx
 sphinx_rtd_theme
 m2r2
 numpy
+sphinxcontrib-bibtex
+beautifulsoup4
+pdfplumber

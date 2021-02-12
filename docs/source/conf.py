@@ -14,6 +14,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('_scripts'))
 import module_index_generator
+import ersem_webpage
 sys.path.insert(0, os.path.abspath('../../'))
 
 
@@ -33,7 +34,9 @@ release = '2021'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['m2r2',
-              'sphinx.ext.autosectionlabel']
+              'sphinx.ext.autosectionlabel',
+              'sphinxcontrib.bibtex',
+              'sphinx.ext.imgmath']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -57,5 +60,9 @@ html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
 module_index_generator.create('module_index.rst')
+ersem_webpage.generator_web_doc('model_info/ERSEM_model.rst')
+ersem_webpage.generator_history('model_info/history.rst')
 
 autosectionlabel_prefix_document = True
+
+bibtex_bibfiles = ['ref.bib']

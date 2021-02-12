@@ -9,9 +9,9 @@ ERSEM use cases
    :titlesonly:
    :caption: Contents:
 
-   gotm
-   fabm0d
    pyfabm
+   fabm0d
+   gotm
    nemo
 
 Linux
