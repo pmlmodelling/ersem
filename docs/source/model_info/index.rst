@@ -14,6 +14,7 @@ Here we outline the features of the ERSEM model.
   
    Background <ERSEM_model>
    concept
+   description
    history
    benthos
    pelagic

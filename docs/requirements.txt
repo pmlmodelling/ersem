@@ -4,4 +4,3 @@ m2r2
 numpy
 sphinxcontrib-bibtex
 beautifulsoup4
-pdfplumber

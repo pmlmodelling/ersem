@@ -61,7 +61,6 @@ html_static_path = ['_static']
 
 module_index_generator.create('module_index.rst')
 ersem_webpage.generator_web_doc('model_info/ERSEM_model.rst')
-ersem_webpage.generator_history('model_info/history.rst')
 
 autosectionlabel_prefix_document = True
 
