@@ -16,5 +16,3 @@ Here we outline the features of the ERSEM model.
    concept
    description
    history
-   benthos
-   pelagic

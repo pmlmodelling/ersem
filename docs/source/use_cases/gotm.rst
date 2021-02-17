@@ -32,25 +32,35 @@ Now you should have a GOTM executable with FABM and ERSEM support at
 Running GOTM-FABM-ERSEM
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-To use GOTM with ERSEM, copy an ERSEM configuration (recommended:
-``testcases/fabm-ersem-15.06-L4-ben-docdyn-iop.yaml``) to your GOTM
-setup directory. This file needs to be named ``fabm.yaml``. You also
-need to prescribe two additional forcing variables: atmospheric pCO2 (in
-ppm) and light absorption by sediment (1/m). This can be done in
-``gotm.yaml`` under the ``fabm`` section, by adding something like:
+To run the model, you must first obtain or generate a set of input or 
+forcing files. Setups for the L4 and BATS sites which were used in 
+:cite:`ERSEM` are stored under version control and can be accessed 
+here. Forcing data for the SSB sampling sites can be accessed here. 
+The following example uses the L4 setup described in :cite:`ERSEM`. 
 
-::
+The L4 sampling site is one part of the 
+`Western Channel Observatory (WCO) <http://www.westernchannelobservatory.org.uk/>`__, 
+and is located at (50°15.0'N; 4°13.0'W).
 
-   input:
-     mole_fraction_of_carbon_dioxide_in_air: 411.29
-     absorption_of_silt: 0.07
+To run the tutorial, you will first need to clone the configuration files
+and then run `gotm`. This is done with the following:
 
-It is good practice to keep up to date with the latest code from the
-ERSEM, FABM and GOTM repositories by regularly running ``git pull`` in
-all directories under ``<SOURCEDIR>``.
+.. literalinclude:: ../../../github-actions/gotm-fabm-ersem/gotm-tut-config-setup.sh
+    :language: bash
+    :linenos:
+.. note::
+    The following script requires ``matplotlib`` and ``numpy`` to be installed. This can
+    easily be done via ``pip`` in the following way:
 
-If the ERSEM, FABM or GOTM source codes change (e.g., because you made
-changes to the code yourself or ran ``git pull``), you need to
-recompile. This does *not* require rerunning cmake. Instead, return to
-the build directory and rerun ``make install``. For instance
-``cd gotm && make install``.
+    .. code-block:: bash
+        
+        python -m pip install matplotlib numpy
+
+
+To visualise the results, we again use a python script. Running the script you will need
+to add a commandline argument ``--model-path`` which is the path to the output from
+the GOTM-FABM-ERSEM run.
+
+.. literalinclude:: ../../../github-actions/gotm-fabm-ersem/gotm-tut.py
+    :language: python
+    :linenos:
