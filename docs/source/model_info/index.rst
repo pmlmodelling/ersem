@@ -12,7 +12,7 @@ Here we outline the features of the ERSEM model.
    :titlesonly:
    :caption: Contents:
   
-   Background <ERSEM_model>
    concept
-   description
    history
+   description
+

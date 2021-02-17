@@ -1,9 +1,3 @@
-.. _model:
-
-###############
-The ERSEM Model
-###############
-
 
 `ERSEM  <https://www.pml.ac.uk/Modelling_at_PML/Models/ERSEM>`__ (European Regional Seas Ecosystem Model), has grown in scale and scope in recent years. It addresses biogeochemical and ecological systems in many applications in global regional seas and more recently the global ocean, engaging in a range of problem solving, predictive and impact studies. 
 
