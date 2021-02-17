@@ -20,7 +20,8 @@ Welcome to ERSEM's documentation!
    :caption: Contents:
    
    The ERSEM Model <model_info/index>
-   Use cases <use_cases/index>
+   ERSEM tutorials <tutorials/index>
+   troubleshooting
    module_index
    license
    acknowledgements

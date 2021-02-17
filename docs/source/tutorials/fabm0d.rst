@@ -1,8 +1,8 @@
 .. _fabm0d:
 
-#################
-FABM0d-GOTM-ERSEM
-#################
+############################
+fabm0d: ERSEM in an aquarium
+############################
 
 FABM’s 0d driver allows you to run biogeochemical models in a
 "well-mixed box" under arbitrary (time-varying) environmental forcing.

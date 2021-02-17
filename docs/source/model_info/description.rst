@@ -4,16 +4,9 @@
 ERSEM area models
 #################
 
-ERSEM is a planktonic ecosystem model which has been coupled to a number 
-of different hydrodynamic models. It describes the biogeochemical cycling 
-of carbon and the nutrients nitrogen, phosphorous, silicon, oxygen and iron. 
-The ecosystem is subdivided into three functional types: producers 
-(phytoplankton), decomposers (bacteria} and consumers (zooplankton), and 
-then further subdivided by trait (size, silica uptake) to create a foodweb. 
-Physiological and population processes are included in the descriptions of 
-functional group dynamics. Four phytoplankton, three zooplankton and one 
-bacteria are represented, along with the cycling of carbon, nitrogen, 
-phosphorous, silicon and oxygen through pelagic and benthic ecosystems.
+ERSEM is used in a variety of different models, the table bellow outlines several
+of these models.
+
 
 +-------------------------------+----------+-----+-----------------------+----------+-----------------------------------+
 | Area                          | Includes       | Spatial Scale                    | Quality (data used)               |
@@ -79,6 +72,9 @@ Key
     - 25. CEH river discharge and temperature.
 
 
+.. note::
+    The table of area models is not yet complete, please ERSEM's issue
+    tracking for updates.
 
 Existing uses:
 ~~~~~~~~~~~~~~

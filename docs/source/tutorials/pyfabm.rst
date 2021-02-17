@@ -1,8 +1,8 @@
 .. _pyfabm:
 
-############
-PyFABM-ERSEM
-############
+#############################
+Python front-end (``pyfabm``)
+#############################
 
 ``FABM`` comes with a ``pyfabm`` package for the ``python`` programming language.
 This package enables you to access 
@@ -23,7 +23,7 @@ To build the ``python`` driver and use it with ``ERSEM``, you must first obtain
 copies of the ``FABM`` and ``ERSEM`` codes. The latest version of each can be 
 obtained by cloning their respective code repositories using 
 `git <https://git-scm.com/>`__. The instructions of how to do this are found
-:ref:`here <use_cases>`.
+:ref:`here <tutorials>`.
 
 To run the install script you will need to have ``wheel`` and ``numpy`` installed.
 This can be done via:

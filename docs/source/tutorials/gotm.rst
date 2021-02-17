@@ -1,8 +1,8 @@
 .. _gotm:
 
-###############
-GOTM-FABM-ERSEM
-###############
+#############################
+GOTM: ERSEM in a water column 
+#############################
 
 
 Building GOTM-FABM-ERSEM
