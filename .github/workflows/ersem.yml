@@ -44,7 +44,8 @@ jobs:
         - name: Running tutorial
           run: |
               ./github-actions/gotm-fabm-ersem/gotm-tut-config-setup.sh
-              python -m pip install matplotlib
+              sudo apt install libnetcdff-dev
+              python -m pip install matplotlib netCDF4
               python github-actions/gotm-fabm-ersem/gotm-tut.py -p ersem-setups/L4
   build-fabm0d-gotm-ersem-debian:
     runs-on: ubuntu-latest
