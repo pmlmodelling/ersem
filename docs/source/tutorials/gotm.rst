@@ -49,12 +49,12 @@ and then run `gotm`. This is done with the following:
     :language: bash
     :linenos:
 .. note::
-    The following script requires ``matplotlib`` and ``numpy`` to be installed. This can
-    easily be done via ``pip`` in the following way:
+    The following script requires ``matplotlib``, ``netCDF4`` and ``numpy`` to be 
+    installed. This can easily be done via ``pip`` in the following way:
 
     .. code-block:: bash
         
-        python -m pip install matplotlib numpy
+        python -m pip install matplotlib numpy netCDF4
 
 
 To visualise the results, we again use a python script. Running the script you will need
