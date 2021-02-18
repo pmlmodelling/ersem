@@ -1,10 +1,9 @@
 #!/bin/bash
 
 echo "Cloning config repo"
-git clone https://github.com/pmlmodelling/gotm-ersem-setups.git
+git clone https://github.com/pmlmodelling/ersem-setups.git
 
-cd gotm-ersem-setups/L4
-
+cd ersem-setups/L4
 
 echo "Running GOTM with repo configuration"
-./gotm
+~/local/gotm/bin/gotm

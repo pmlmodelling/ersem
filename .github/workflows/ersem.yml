@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: build-ersem
+name: ersem
 
 on:
   push:
@@ -31,12 +31,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
         - uses: actions/checkout@v2
+        - name: Setup python
+          uses: actions/setup-python@v2
+          with:
+              python-version: '3.x'
         - name: Installing GOTM-FABM-ERSEM dependences
           run: ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-dep-debian.sh 
         - name: Building and installing GOTM-FABM-ERSEM
           run: |
               branch=$(git branch --show-current)
               ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-build.sh $branch
+        - name: Running tutorial
+          run: |
+              ./github-actions/gotm-fabm-ersem/gotm-tut-config-setup.sh
+              python -m pip install matplotlib
+              python github-actions/gotm-fabm-ersem/gotm-tut.py -p ersem-setups/L4
   build-fabm0d-gotm-ersem-debian:
     runs-on: ubuntu-latest
     steps:
