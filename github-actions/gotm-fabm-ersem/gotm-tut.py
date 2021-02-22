@@ -18,9 +18,6 @@ except ImportError:
     sys.exit()
 
 def plot_time_series(axes, data, depth, model_var_name):
-    """
-
-    """
     times = data.variables['time']
     dates = nc.num2date(times[:],
                         units=times.units,
@@ -36,11 +33,13 @@ def plot_time_series(axes, data, depth, model_var_name):
         depth_offset = depth + zi[i, -1]  # Remove offset introduced by the moving free surface
 
         var_time_series.append(np.interp(depth_offset, z[i, :], var[i, :].squeeze()))
-    dates = [str(d) for d in dates]
+    dates = [str(d).split(" ")[0] for d in dates]
     axes.plot(dates, var_time_series)
-    axes.set_xlabel('Time')
     axes.set_ylabel('{} ({})'.format(model_var_name, var.units))
-
+    for i, t in enumerate(axes.get_xticklabels()):
+        if (i % np.floor(len(dates)/10)) != 0:
+            t.set_visible(False)
+    axes.xaxis.set_ticks_position('none')
 
 
 model_file_name = "L4_time_daily_mean_16.06.nc"
@@ -54,17 +53,12 @@ depth = 0.0
 
 fig, ax_arr = plt.subplots(3,1)
 plot_time_series(ax_arr[0], data, depth, 'N1_p')
-ax_arr[0].set_xticklabels([])
-ax_arr[0].set_xlabel('')
 
 # Nitrate and nitrite
 plot_time_series(ax_arr[1], data, depth, 'N3_n')
-ax_arr[1].set_xticklabels([])
-ax_arr[1].set_xlabel('')
 
 # Silicate
 plot_time_series(ax_arr[2], data, depth, 'N5_s')
-
 
 # Plot formatting
 for ax in ax_arr:

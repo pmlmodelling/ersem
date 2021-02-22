@@ -64,3 +64,7 @@ the GOTM-FABM-ERSEM run.
 .. literalinclude:: ../../../github-actions/gotm-fabm-ersem/gotm-tut.py
     :language: python
     :linenos:
+
+.. image:: ../../images/gotm_fig.png
+   :alt: Example ``pyfabm`` output
+   :width: 100.0%
