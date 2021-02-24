@@ -16,3 +16,8 @@ Here we outline the features of the ERSEM model.
    history
    description
 
+.. figure:: ../../images/ERSEM.png
+   :alt: ERSEM diagram
+   :width: 100.0%
+
+   ERSEM schematic

@@ -4,7 +4,13 @@
 ERSEM use cases
 ===============
 
-In this section, we give several tutorials of common use cases for ERSEM.
+ERSEM is mainly run with 3D hydrodynamic models such as 
+`NEMO <https://www.nemo-ocean.eu/>`__  and 
+`FVCOM <http://fvcom.smast.umassd.edu/fvcom/>`__. However, due to its
+flexiblilty, it can also be run as a 0D box model or within a 1D water column,
+via `GOTM <https://gotm.net/portfolio/>`__. Parts of the library can also 
+be called directly from Python through the ``pyfabm`` interface.
+Here we describe several tutorials for the common use cases for ERSEM.
 
 .. toctree::
    :maxdepth: 2
@@ -15,6 +21,7 @@ In this section, we give several tutorials of common use cases for ERSEM.
    fabm0d
    gotm
    nemo
+   fvcom
 
 .. note::
     The tutorials presented here are run via 
@@ -24,21 +31,21 @@ In this section, we give several tutorials of common use cases for ERSEM.
 Obtaining source code
 ~~~~~~~~~~~~~~~~~~~~~
 
-Now get the ERSEM, FABM and GOTM source codes:
+To get the ERSEM and FABM source codes:
 
 .. code-block:: bash
 
    git clone https://github.com/pmlmodelling/ersem.git
    git clone https://github.com/fabm-model/fabm.git
-   git clone --recurse-submodules https://github.com/gotm-model/code.git gotm
 
-This locally creates ``gotm``, ``fabm``, ``ersem`` directories with source
+This locally creates ``ersem`` and ``fabm`` directories with source
 code.
 
-Note: the above gets you ERSEM’s public stable release. Developers can
-check out the the developers’ version by substituting
-``git@gitlab.ecosystem-modelling.pml.ac.uk:edge/ersem.git`` for
-``https://github.com/pmlmodelling/ersem.git``.
+For water column models, you will need the GOTM source code:
+
+.. code-block:: bash
+
+   git clone --recurse-submodules https://github.com/gotm-model/code.git gotm
 
 To build the code, you will need: \* `a recent Fortran
 compiler <https://github.com/fabm-model/fabm/wiki/Building-and-installing#supported-compilers>`__
