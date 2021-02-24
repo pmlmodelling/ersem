@@ -26,30 +26,38 @@ To install FABM0d-GOTM-ERSEM we suggest you use the following script below
 Running FABM0d
 ~~~~~~~~~~~~~~
 
-To use the driver, you need a configuration file can ``run.nml``, which you
-could take from ``<SOURCEDIR>/fabm/testcases/0d/run.nml``. In addition,
-you need a file with forcing data for surface shortwave radiation,
-temperature and salinity, e.g.,
-``<SOURCEDIR>/fabm/testcases/0d/env_nns_annual.dat``. The local name of
-this file is configured in ``run.nml``, variable ``env_file``. Finally,
-you can provide additional forcing with a ``input.yaml`` file, which can
-contain entries such as
 
-::
+To run the model, you must first obtain or generate a set of input or 
+forcing files. Setups for the L4 site  are stored under version control 
+and can be accessed here. 
 
-   wind_speed:
-     file: wind.dat
-     column: 1
-     scale_factor: 1.0
-   absorption_of_silt:
-     constant_value: 0.07
-   mole_fraction_of_carbon_dioxide_in_air:
-     constant_value: 411.29
-   bottom_stress:
-     constant_value: 0.0
+To run the tutorial, you will first need to clone the configuration files
+and then run `FABM0d`. This is done with the following:
 
-This specifies that wind speed must be read from file wind.dat (first
-column, no scaling), the light absorption by silt must be set to a
-constant value of 0.07 m-1, atmospheric pCO2 to 411.29 ppm, and bottom
-stress to 0 Pa. The “column” and “scale_factor” attributes in the case
-of wind_speed are optional. They default to 1 and 1.0, respectively.
+.. literalinclude:: ../../../github-actions/fabm0d-gotm-ersem/aquarium-tut-config-setup.sh
+    :language: bash
+    :linenos:
+.. note::
+    The following script requires ``matplotlib``, ``netCDF`` and ``numpy`` to be 
+    installed. This can easily be done via ``pip`` in the following way:
+
+    .. code-block:: bash
+        
+        python -m pip install matplotlib numpy netCDF
+
+
+To visualise the results, we again use a python script. Running the script you will need
+to add a commandline argument ``--model-path`` which is the path to the output from
+the FABM0d run.
+
+.. literalinclude:: ../../../github-actions/fabm0d-gotm-ersem/aquarium-tut.py
+    :language: python
+    :linenos:
+
+.. image:: ../../images/aquarium_in_fig.png
+   :alt: Example FABM0d input data
+   :width: 100.0%
+
+.. image:: ../../images/aquarium_out_fig.png
+   :alt: Example FABM0d output
+   :width: 100.0%

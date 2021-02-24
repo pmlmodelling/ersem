@@ -1,8 +1,10 @@
 import argparse
-from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
+from matplotlib import ticker
 import numpy as np
 import os
 import sys
+import re
 
 
 parser = argparse.ArgumentParser()
@@ -18,6 +20,9 @@ except ImportError:
     sys.exit()
 
 def plot_time_series(axes, data, depth, model_var_name):
+    # sets the maximum number of labels on the x axis to be 10
+    xticks = ticker.MaxNLocator(10)
+
     times = data.variables['time']
     dates = nc.num2date(times[:],
                         units=times.units,
@@ -27,6 +32,9 @@ def plot_time_series(axes, data, depth, model_var_name):
     zi = data.variables['zi'][:].squeeze()
     var = data.variables[model_var_name]
 
+    long_label = '{} ({})'.format(var.long_name, var.units)
+    y_label = re.sub(r'(\s\S*?)\s', r'\1\n',long_label)
+
     # Interpolate variable data to the given depth below the moving free surface
     var_time_series = []
     for i in range(var.shape[0]):
@@ -35,11 +43,8 @@ def plot_time_series(axes, data, depth, model_var_name):
         var_time_series.append(np.interp(depth_offset, z[i, :], var[i, :].squeeze()))
     dates = [str(d).split(" ")[0] for d in dates]
     axes.plot(dates, var_time_series)
-    axes.set_ylabel('{} ({})'.format(model_var_name, var.units))
-    for i, t in enumerate(axes.get_xticklabels()):
-        if (i % np.floor(len(dates)/10)) != 0:
-            t.set_visible(False)
-    axes.xaxis.set_ticks_position('none')
+    axes.set_ylabel(y_label)
+    axes.xaxis.set_major_locator(xticks)
 
 
 model_file_name = "L4_time_daily_mean_16.06.nc"
@@ -52,6 +57,9 @@ data.set_auto_maskandscale(True)
 depth = 0.0
 
 fig, ax_arr = plt.subplots(3,1)
+DPI = fig.get_dpi()
+fig.set_size_inches(1200.0/float(DPI),800.0/float(DPI))
+
 plot_time_series(ax_arr[0], data, depth, 'N1_p')
 
 # Nitrate and nitrite
