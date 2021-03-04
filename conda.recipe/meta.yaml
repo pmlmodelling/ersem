@@ -1,0 +1,33 @@
+
+package:
+  name: ersem
+  version: 1.0.0
+
+source:
+  path: ..
+
+
+requirements:
+  build:
+    - git
+    - cmake
+    - make
+    - netcdf-fortran
+    - gfortran_linux-64
+    - libgfortran4
+    - numpy
+    - wheel
+
+  run:
+    - netcdf-fortran
+    - gfortran_linux-64
+    - libgfortran4
+    - libgfortran
+    - numpy
+    - matplotlib
+    - netCDF4
+
+about:
+  home: https://github.com/pmlmodelling/ersem
+  summary: "European Regional Seas Ecosystem Model" 
+  license: GPL-3
