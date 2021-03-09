@@ -4,7 +4,8 @@ git clone https://github.com/gotm-model/code.git gotm
 cd gotm && git submodule update --init --recursive && cd ..
 
 mkdir build_pyfabm && cd build_pyfabm
-cmake -DCMAKE_INSTALL_PREFIX:PATH=$PREFIX ../fabm/src/drivers/python -DFABM_ERSEM_BASE=..
+cmake ../fabm/src/drivers/python -DFABM_ERSEM_BASE=.. -DCMAKE_INSTALL_PREFIX:PATH=$PREFIX 
+sed -i -e 's/--user//g' cmake_install.cmake
 make -j${CPU_COUNT}
 make install DESTDIR=$PREFIX
 cd ..

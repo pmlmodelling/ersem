@@ -19,6 +19,7 @@ requirements:
     - wheel
 
   run:
+    - python
     - netcdf-fortran
     - gfortran_linux-64
     - libgfortran4
