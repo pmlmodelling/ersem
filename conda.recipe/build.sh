@@ -5,6 +5,8 @@ cd gotm && git submodule update --init --recursive && cd ..
 
 mkdir build_pyfabm && cd build_pyfabm
 cmake ../fabm/src/drivers/python -DFABM_ERSEM_BASE=.. -DCMAKE_INSTALL_PREFIX:PATH=$PREFIX 
+# This makes sure pyfabm is built in the correct enviroment
+# Will be changed once pyfabm install is updated.
 sed -i -e 's/--user//g' cmake_install.cmake
 make -j${CPU_COUNT}
 make install DESTDIR=$PREFIX
