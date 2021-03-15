@@ -23,6 +23,7 @@ requirements:
     - numpy
     - matplotlib
     - netCDF4
+    - netcdf-fortran
 
 about:
   home: https://github.com/pmlmodelling/ersem
