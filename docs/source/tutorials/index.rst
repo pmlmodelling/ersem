@@ -1,7 +1,7 @@
 .. _tutorials:
 
 
-ERSEM use cases
+ERSEM tutorials
 ===============
 
 ERSEM is mainly run with 3D hydrodynamic models such as 
@@ -23,38 +23,21 @@ Here we describe several tutorials for the common use cases for ERSEM.
    nemo
    fvcom
 
-.. note::
-    The tutorials presented here are run via 
-    `github actions <https://github.com/pmlmodelling/ersem/actions>`__ 
-    on every pull request.
+.. _conda-install:
 
-Obtaining source code
-~~~~~~~~~~~~~~~~~~~~~
+``conda`` installation
+~~~~~~~~~~~~~~~~~~~~~~
 
-To get the ERSEM and FABM source codes:
-
-.. code-block:: bash
-
-   git clone https://github.com/pmlmodelling/ersem.git
-   git clone https://github.com/fabm-model/fabm.git
-
-This locally creates ``ersem`` and ``fabm`` directories with source
-code.
-
-For water column models, you will need the GOTM source code:
+We recommend using ``conda`` to obtain the latest version of ``ersem``. The
+conda package includes interfaces for :ref:`pyfabm`, :ref:`fabm0d` and 
+:ref:`gotm` tutorials, and can be installed as follows:
 
 .. code-block:: bash
 
-   git clone --recurse-submodules https://github.com/gotm-model/code.git gotm
-
-To build the code, you will need: \* `a recent Fortran
-compiler <https://github.com/fabm-model/fabm/wiki/Building-and-installing#supported-compilers>`__
-\* `cmake <https://www.cmake.org>`__ 3.0 or higher. First check whether
-you have that installed: run ``cmake --version`` on the command line.
-
-.. note::
-    It is not necessary to use ``pip`` or ``apt`` to install dependences. We 
-    suggest that `conda <https://docs.conda.io/en/latest/>`__ or 
-    `brew <https://brew.sh/>`__ would also work well.
+    conda create -n ersem-tut -y
+    conda activate ersem-tut
+    conda install -c pmlmodelling ersem -y
 
 
+To install ``ersem`` from source please look at the 
+:ref:`developers documentation <developers>`.

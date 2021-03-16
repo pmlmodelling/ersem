@@ -22,6 +22,7 @@ Welcome to ERSEM's documentation!
    The ERSEM Model <model_info/index>
    ERSEM tutorials <tutorials/index>
    troubleshooting
+   developers/index
    module_index
    license
    acknowledgements

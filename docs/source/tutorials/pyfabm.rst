@@ -15,35 +15,12 @@ simulations. More information about ``pyfabm`` can be found on the
 `FABM wiki page <https://github.com/fabm-model/fabm/wiki/python>`__. 
 Below you can find brief instructions on how to use ``pyfabm`` with ERSEM.
 
-
-Building ``pyfabm``
-~~~~~~~~~~~~~~~~~~~
-
-To build the ``python`` driver and use it with ``ERSEM``, you must first obtain 
-copies of the ``FABM`` and ``ERSEM`` codes. The latest version of each can be 
-obtained by cloning their respective code repositories using 
-`git <https://git-scm.com/>`__. The instructions of how to do this are found
-:ref:`here <tutorials>`.
-
-To run the install script you will need to have ``wheel`` and ``numpy`` installed.
-This can be done via:
-
-.. literalinclude:: ../../../github-actions/pyfabm-ersem/pyfabm-ersem-dep-debian.sh
-    :language: bash
-    :linenos:
-
-To install PyFABM-ERSEM, we suggest you use the following script below
-
-.. literalinclude:: ../../../github-actions/pyfabm-ersem/pyfabm-ersem-build.sh
-    :language: bash
-    :linenos:
-
-Running ``pyfabm``
-~~~~~~~~~~~~~~~~~~
+Running ``pyfabm`` tutorial
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To demonstrate how ``pyfabm`` can be used with ERSEM, we will calculate the 
 oxygen saturation concentration as a function of temperature and salinity 
-using the method implemented in ERSEM, which is taken from Weiss (1970).
+using the method implemented in ERSEM, which is taken from :cite:`WEISS1970`.
 
 .. note::
     The following script requires ``matplotlib`` to be installed. This can

@@ -7,25 +7,8 @@ fabm0d: ERSEM in an aquarium
 FABM’s 0d driver allows you to run biogeochemical models in a
 "well-mixed box" under arbitrary (time-varying) environmental forcing.
 
-Building FABM0d
-~~~~~~~~~~~~~~~
-
-To run the install script, you will need to have ``netCDF`` installed.
-An example of how to do this is here:
-
-.. literalinclude:: ../../../github-actions/fabm0d-gotm-ersem/fabm0d-gotm-ersem-dep-debian.sh
-    :language: bash
-    :linenos:
-
-To install FABM0d-GOTM-ERSEM we suggest you use the following script below
-
-.. literalinclude:: ../../../github-actions/fabm0d-gotm-ersem/fabm0d-gotm-ersem-build.sh
-    :language: bash
-    :linenos:
-
-Running FABM0d
-~~~~~~~~~~~~~~
-
+Running FABM0d tutorial
+~~~~~~~~~~~~~~~~~~~~~~~
 
 To run the model, you must first obtain or generate a set of input or 
 forcing files. Setups for the L4 site  are stored under version control 

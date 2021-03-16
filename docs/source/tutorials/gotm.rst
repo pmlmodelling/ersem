@@ -4,39 +4,14 @@
 GOTM: ERSEM in a water column 
 #############################
 
-
-Building GOTM-FABM-ERSEM
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-To run the install script, you will need to have ``netCDF`` installed.
-An example of how to do this is here:
-
-.. literalinclude:: ../../../github-actions/gotm-fabm-ersem/gotm-fabm-ersem-dep-debian.sh
-    :language: bash
-    :linenos:
-
-To install GOTM-FABM-ERSEM, we suggest you use the following script below
-
-.. literalinclude:: ../../../github-actions/gotm-fabm-ersem/gotm-fabm-ersem-build.sh
-    :language: bash
-    :linenos:
-
-
-If you experience NetCDF issues when running ``make install``, see `tips
-and tricks/troubleshooting <#tips-and-trickstroubleshooting>`__.
-
-Now you should have a GOTM executable with FABM and ERSEM support at
-``~/local/gotm/bin/gotm``.
-
-
-Running GOTM-FABM-ERSEM
-~~~~~~~~~~~~~~~~~~~~~~~
-
 To run the model, you must first obtain or generate a set of input or 
 forcing files. Setups for the L4 and BATS sites which were used in 
 :cite:`ERSEM` are stored under version control and can be accessed 
 here. Forcing data for the SSB sampling sites can be accessed here. 
 The following example uses the L4 setup described in :cite:`ERSEM`. 
+
+Running GOTM-FABM-ERSEM
+~~~~~~~~~~~~~~~~~~~~~~~
 
 The L4 sampling site is one part of the 
 `Western Channel Observatory (WCO) <http://www.westernchannelobservatory.org.uk/>`__, 
