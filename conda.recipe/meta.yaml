@@ -4,8 +4,7 @@ package:
   version: 20.10
 
 source:
-  path: ..
-
+  git_url: https://github.com/pmlmodelling/ersem.git
 
 requirements:
   build:
