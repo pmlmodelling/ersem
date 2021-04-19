@@ -1,0 +1,11 @@
+# Removing docs build
+docs/build/
+
+# Removing pycache
+__pycache__
+
+# the module index is built each time the docs
+docs/source/module_index.rst
+
+# removing swap files
+*.swp
