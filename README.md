@@ -1,4 +1,5 @@
 ![Tests](https://github.com/pmlmodelling/ersem/workflows/build-ersem/badge.svg) 
+[![Documentation Status](https://readthedocs.org/projects/ersem/badge/?version=latest)](https://ersem.readthedocs.io/en/latest/?badge=latest)
 
 # ERSEM
 
@@ -8,6 +9,11 @@
 biogeochemical cycling of carbon, nitrogen, phosphorus, silicon, oxygen and
 iron through pelagic and benthic ecosystems. 
 
+- **Installation Instructions:** conda: https://ersem.readthedocs.io/en/latest/tutorials/index.html#conda-installation, source: https://ersem.readthedocs.io/en/latest/developers/index.html
+- **User Documentation & Example Usage:** https://ersem.readthedocs.io/en/latest/
+- **Automated Tests:** Run via GitHub Actions https://github.com/pmlmodelling/ersem/actions
+- **Acknowledgements:** https://ersem.readthedocs.io/en/latest/acknowledgements.html
+- **License:** https://ersem.readthedocs.io/en/latest/license.html
 
 # How to cite
 
