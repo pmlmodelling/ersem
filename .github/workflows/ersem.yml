@@ -50,7 +50,11 @@ jobs:
               ./github-actions/gotm-fabm-ersem/gotm-tut-config-setup.sh
               sudo apt install libnetcdff-dev
               python -m pip install matplotlib netCDF4
-              python github-actions/gotm-fabm-ersem/gotm-tut.py -p ersem-setups/L4
+              python github-actions/gotm-fabm-ersem/gotm_tut.py -p ersem-setups/L4
+        - name: Running gotm systests
+          run: |
+              python -m pip install pytest
+              pytest github-actions/gotm-fabm-ersem
   build-fabm0d-gotm-ersem-debian:
     runs-on: ubuntu-latest
     steps:

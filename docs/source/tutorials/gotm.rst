@@ -36,7 +36,7 @@ To visualise the results, we again use a python script. Running the script you w
 to add a commandline argument ``--model-path`` which is the path to the output from
 the GOTM-FABM-ERSEM run.
 
-.. literalinclude:: ../../../github-actions/gotm-fabm-ersem/gotm-tut.py
+.. literalinclude:: ../../../github-actions/gotm-fabm-ersem/gotm_tut.py
     :language: python
     :linenos:
 
