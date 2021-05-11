@@ -14,6 +14,15 @@ except ImportError:
 
 
 def main(model_path):
+    """
+    Run GOTM-ERSEM tutorial
+
+    :param model_path: Full path to netCDF model output
+    :type model_path: str
+
+    :return: Dictionary containing output model variables for systests
+    :rtype: dict
+    """
 
     # Dictionary used to save output variables for testing
     output_vars = {}
@@ -48,11 +57,7 @@ def main(model_path):
         output_vars[model_var_name] = var_time_series
         output_vars['dates'] = dates
 
-
-    model_file_name = "L4_time_daily_mean_16.06.nc"
-
-    fname = os.path.join(model_path, model_file_name)
-    data = nc.Dataset(fname, 'r')
+    data = nc.Dataset(model_path, 'r')
     data.set_auto_maskandscale(True)
 
     # Depth at which to compare the model and data, given as relative to the moving free surface.
@@ -71,6 +76,7 @@ def main(model_path):
         ax.set_ylim(0)
 
     plt.show()
+
     return output_vars
 
 if __name__ == "__main__":

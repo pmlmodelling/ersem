@@ -1,5 +1,5 @@
 """
-Basic unit tests for pyfabm tutorial
+Basic systests for pyfabm tutorial
 """
 
 import unittest

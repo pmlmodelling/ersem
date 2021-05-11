@@ -12,7 +12,7 @@ import aquarium_tut
 
 class AquariumTests(unittest.TestCase):
     """
-    aquarium tests
+    Aquarium 0D model tests
     """
     @patch("aquarium_tut.plt.show")
     def setUp(self, mock_show):

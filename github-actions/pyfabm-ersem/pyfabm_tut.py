@@ -5,6 +5,15 @@ import os
 import pyfabm
 
 def main():
+    """
+    Run pyfabm-ERSEM tutorial
+
+    :param model_path: Full path to netCDF model output
+    :type model_path: str
+
+    :return: list of oxygen saturation concentrations
+    :rtype: list
+    """
     dir_path = os.path.dirname(os.path.realpath(__file__))
     ersem_dir = os.path.dirname(os.path.dirname(dir_path))
 

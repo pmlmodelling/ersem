@@ -12,14 +12,16 @@ import gotm_tut
 
 class GotmTests(unittest.TestCase):
     """
-    gotm tests
+    GOTM tests
     """
     @patch("gotm_tut.plt.show")
     def setUp(self, mock_show):
         """
         Set up variables for tests
         """
-        self.model_path = os.path.join("ersem-setups", "L4")
+        self.model_path = os.path.join("ersem-setups",
+                                       "L4",
+                                       "L4_time_daily_mean_16.06.nc")
         dir_path = os.path.dirname(os.path.realpath(__file__))
         expected_value_file = os.path.join(dir_path, "expected.txt")
         with open(expected_value_file, "rb") as fp:

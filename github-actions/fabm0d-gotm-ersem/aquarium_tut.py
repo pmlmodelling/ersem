@@ -15,6 +15,15 @@ except ImportError:
 
 
 def main(model_path):
+    """
+    Run FABM0D-ERSEM tutorial
+
+    :param model_path: Full path to netCDF model output
+    :type model_path: str
+
+    :return: Dictionary containing output model variables for systests
+    :rtype: dict
+    """
     # Dictionary used to save input and output variables for testing
     test_vars = {}
     def plot_var(axes, x, y, label):
@@ -41,6 +50,8 @@ def main(model_path):
                         calendar=times.calendar)
     dates = [str(d).split(" ")[0] for d in dates]
     test_vars["dates"] = dates
+
+    # Plotting input data
     input_data = ["light_parEIR", "temp", "salt"]
     fig, ax_arr = plt.subplots(len(input_data), 1)
     DPI = fig.get_dpi()
@@ -49,14 +60,16 @@ def main(model_path):
         plot_var(ax, dates, data, label)
     fig.suptitle("Input data")
 
-    input_data = ["N1_p", "N3_n", "B1_c", "P2_c"]
+    # Plotting output data
+    output_data = ["N1_p", "N3_n", "B1_c", "P2_c"]
     fig, ax_arr = plt.subplots(len(input_data), 1)
     DPI = fig.get_dpi()
     fig.set_size_inches(1200.0/float(DPI),800.0/float(DPI))
-    for ax, label in zip(ax_arr, input_data):
+    for ax, label in zip(ax_arr, output_data):
         plot_var(ax, dates, data, label)
     fig.suptitle("Output data")
     plt.show()
+
     return test_vars
 
 if __name__ == "__main__":
