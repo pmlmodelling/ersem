@@ -25,7 +25,6 @@ class GotmTests(unittest.TestCase):
         with open(expected_value_file, "rb") as fp:
             self.expected = pickle.load(fp)
         self.value_dict = gotm_tut.main(self.model_path)
-        print(self.value_dict)
 
     def test_dates_value(self):
         """
