@@ -4,7 +4,7 @@ Basic systests for gotm tutorial
 
 import unittest
 from unittest.mock import patch
-import pickle
+import json
 import numpy as np
 import os
 
@@ -23,9 +23,9 @@ class GotmTests(unittest.TestCase):
                                        "L4",
                                        "L4_time_daily_mean_16.06.nc")
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        expected_value_file = os.path.join(dir_path, "expected.txt")
-        with open(expected_value_file, "rb") as fp:
-            self.expected = pickle.load(fp)
+        expected_value_file = os.path.join(dir_path, "expected.json")
+        with open(expected_value_file, "r") as fp:
+            self.expected = json.load(fp)
         self.value_dict = gotm_tut.main(self.model_path)
 
     def test_dates_value(self):
