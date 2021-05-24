@@ -26,7 +26,11 @@ jobs:
         - name: Running pyfabm tutorial
           run: |
               python -m pip install matplotlib
-              python github-actions/pyfabm-ersem/pyfabm-tut.py
+              python github-actions/pyfabm-ersem/pyfabm_tut.py
+        - name: Running pyfabm systests
+          run: |
+              python -m pip install pytest
+              pytest github-actions/pyfabm-ersem
   build-gotm-fabm-ersem-debian:
     runs-on: ubuntu-latest
     steps:
@@ -46,7 +50,11 @@ jobs:
               ./github-actions/gotm-fabm-ersem/gotm-tut-config-setup.sh
               sudo apt install libnetcdff-dev
               python -m pip install matplotlib netCDF4
-              python github-actions/gotm-fabm-ersem/gotm-tut.py -p ersem-setups/L4
+              python github-actions/gotm-fabm-ersem/gotm_tut.py -p ersem-setups/L4/L4_time_daily_mean_16.06.nc
+        - name: Running gotm systests
+          run: |
+              python -m pip install pytest
+              pytest github-actions/gotm-fabm-ersem
   build-fabm0d-gotm-ersem-debian:
     runs-on: ubuntu-latest
     steps:
@@ -66,4 +74,8 @@ jobs:
               ./github-actions/fabm0d-gotm-ersem/aquarium-tut-config-setup.sh
               sudo apt install libnetcdff-dev
               python -m pip install matplotlib netCDF4
-              python github-actions/fabm0d-gotm-ersem/aquarium-tut.py -p ersem-setups/0d-aquarium/output.nc
+              python github-actions/fabm0d-gotm-ersem/aquarium_tut.py -p ersem-setups/0d-aquarium/output.nc
+        - name: Running aquarium systests
+          run: |
+              python -m pip install pytest
+              pytest github-actions/fabm0d-gotm-ersem

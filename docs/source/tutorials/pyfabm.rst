@@ -32,7 +32,7 @@ using the method implemented in ERSEM, which is taken from :cite:`WEISS1970`.
 
 With ``pyfabm`` installed, this can be achieved using the following code:
 
-.. literalinclude:: ../../../github-actions/pyfabm-ersem/pyfabm-tut.py
+.. literalinclude:: ../../../github-actions/pyfabm-ersem/pyfabm_tut.py
     :language: python
     :linenos:
 

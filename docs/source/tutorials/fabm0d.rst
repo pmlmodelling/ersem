@@ -33,7 +33,7 @@ To visualise the results, we again use a python script. Running the script you w
 to add a commandline argument ``--model-path`` which is the path to the output from
 the FABM0d run.
 
-.. literalinclude:: ../../../github-actions/fabm0d-gotm-ersem/aquarium-tut.py
+.. literalinclude:: ../../../github-actions/fabm0d-gotm-ersem/aquarium_tut.py
     :language: python
     :linenos:
 
