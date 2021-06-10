@@ -20,7 +20,7 @@ module ersem_TDOC
       type (type_state_variable_id) :: id_TD_older_c,id_TD_older_n,id_TD_older_p
       type (type_model_id) :: id_T2, id_TD_older
       type (type_dependency_id)                     :: id_ETW, id_chemEIR
-      type (type_dependency_id) ::   id_shadow_bioflux
+      type (type_dependency_id) ::   id_shadow_bioflux, id_dz
       type (type_dependency_id)            :: id_X1X             ! Salinity
 !      type (type_horizontal_dependency_id)          :: id_R1c,id_R1d
       type (type_horizontal_diagnostic_variable_id) :: id_surface_photolysis, id_surface_photo_aging
@@ -105,6 +105,7 @@ contains
       !call self%register_dependency(self%id_EIR,standard_variables%downwelling_shortwave_flux)
       
       if (self%is_photolabile) then
+          call self%register_dependency(self%id_dz, standard_variables%cell_thickness)
           call self%register_dependency(self%id_X1X,standard_variables%practical_salinity)
           call self%register_state_dependency(self%id_RPc,'RPc','mg C/m^3',   'particulate organic carbon')
           call self%register_state_dependency(self%id_RPp,'RPp','mmol P/m^3', 'particulate organic phosphorus')
@@ -248,7 +249,7 @@ contains
       _DECLARE_ARGUMENTS_DO_SURFACE_
 
          real (rk) :: chemEIR,photolysis,c,T1T2,T2c,T2n,T2p
-         real (rk) :: Xn,Xp,XXn,nx,px
+         real (rk) :: Xn,Xp,XXn,nx,px,dz
 
 ! Enter horizontal loops (if any)
       _HORIZONTAL_LOOP_BEGIN_
@@ -256,6 +257,7 @@ contains
       if (self%is_photolabile) then
          _GET_(self%id_chemEIR,chemEIR)
          _GET_(self%id_c,c)
+         _GET_(self%id_dz,dz)
          _GET_WITH_BACKGROUND_(self%id_T2c,T2c)
          _GET_WITH_BACKGROUND_(self%id_T2n,T2n)
          _GET_WITH_BACKGROUND_(self%id_T2p,T2p)
@@ -290,7 +292,16 @@ contains
               Xp=1._rk
           XXn=min(Xn,Xp)
          ! Photolysis
+         ! this is the real photolitic rate in mgC/m3/d
          photolysis=self%surf_phyref*(chemEIR*self%chemEIR_scaling/self%iref)*c
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_surface_photolysis, photolysis)
+
+         ! because this is a do_surface subroutine only _set_surface_exchange_ can be used, not _set_ode_
+         ! _set_surface_exchange_ requires the flux being vertically integrated (units = 1/m2/d)
+         ! so the flux is multiplied by the cell thickness. _set_surface_exchange_ will re-convert back the unit automatically
+
+         photolysis = photolysis * dz
+
          ! in order to ensure mass conservation, the fraction of carbon going from T1 to T2 after photolysis is down regulated 
          ! if T1 has less  N and/or P than T2. Any excess of nutrients is redirected into the dissolved pool (N1p and N4n). (Luca, July 2018)    
          T1T2=self%phyt*min(1._rk,XXn)
@@ -309,7 +320,6 @@ contains
          if (nx.NE.0._rk) write(6,*) trim(self%name),T2c,T2n,self%qn,Xn
          _SET_SURFACE_EXCHANGE_(self%id_N1p,+photolysis*(1._rk-T1T2)*self%qp)!+photolysis*T1T2*px)
          _SET_SURFACE_EXCHANGE_(self%id_N4n,+photolysis*(1._rk-T1T2)*self%qn)!+photolysis*T1T2*nx)
-         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_surface_photolysis, photolysis)
     end if !is_photolabile
       _HORIZONTAL_LOOP_END_    
     end subroutine
