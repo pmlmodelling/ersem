@@ -7,7 +7,6 @@ from unittest.mock import patch
 import json
 import numpy as np
 import os
-import pyfabm
 
 
 import netCDF4 as nc
