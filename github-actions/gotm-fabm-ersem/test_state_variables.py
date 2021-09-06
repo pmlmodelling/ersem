@@ -11,22 +11,6 @@ import os
 
 import netCDF4 as nc
 
-STATE_VAR = ['N1_p', 'N3_n', 'N4_n', 'N5_s', 'O2_o', 'O3_c', 'O3_bioalk',
-             'R1_c', 'R1_n', 'R1_p', 'R2_c', 'R3_c', 'R4_c', 'R4_n',
-             'R4_p', 'R6_c', 'R6_n', 'R6_p', 'R6_s', 'R8_c', 'R8_n',
-             'R8_p', 'R8_s', 'B1_c', 'B1_n', 'B1_p', 'P1_c', 'P1_n',
-             'P1_p', 'P1_Chl', 'P1_s', 'P2_c', 'P2_n', 'P2_p', 'P2_Chl',
-             'P3_c', 'P3_n', 'P3_p', 'P3_Chl', 'P4_c', 'P4_n', 'P4_p',
-             'P4_Chl', 'Z4_c', 'Z5_c', 'Z5_n', 'Z5_p', 'Z6_c', 'Z6_n',
-             'Z6_p', 'L2_c', 'Q1_c', 'Q1_p', 'Q1_n', 'Q6_c', 'Q6_p',
-             'Q6_n', 'Q6_s', 'Q6_pen_depth_c', 'Q6_pen_depth_n',
-             'Q6_pen_depth_p', 'Q6_pen_depth_s', 'Q7_c', 'Q7_p', 'Q7_n',
-             'Q7_pen_depth_c', 'Q7_pen_depth_n', 'Q7_pen_depth_p',
-             'Q17_c', 'Q17_p', 'Q17_n', 'bL2_c', 'ben_col_D1m',
-             'ben_col_D2m', 'K1_p', 'K3_n', 'K4_n', 'K5_s', 'G2_o',
-             'G2_o_deep', 'G3_c', 'ben_nit_G4n', 'H1_c', 'H2_c',
-             'Y2_c', 'Y3_c', 'Y4_c']
-
 
 class StateVariablesTest(unittest.TestCase):
     """
@@ -45,6 +29,7 @@ class StateVariablesTest(unittest.TestCase):
                                   "L4_time_daily_mean_16.06.nc")
         dir_path = os.path.dirname(os.path.realpath(__file__))
         expected_value_file = os.path.join(dir_path, "expected_state.json")
+
         with open(expected_value_file, "r") as fp:
             self.expected = json.load(fp)
         self.data = nc.Dataset(model_path, 'r')
@@ -56,7 +41,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "N1_p"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_N3_n_value(self):
         """
@@ -64,7 +49,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "N3_n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_N4_n_value(self):
         """
@@ -72,7 +57,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "N4_n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_N5_s_value(self):
         """
@@ -80,7 +65,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "N5_s"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_O2_o_value(self):
         """
@@ -88,7 +73,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "O2_o"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_O3_c_value(self):
         """
@@ -96,7 +81,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "O3_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_O3_bioalk_value(self):
         """
@@ -104,7 +89,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "O3_bioalk"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_R1_c_value(self):
         """
@@ -112,7 +97,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "R1_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_R1_n_value(self):
         """
@@ -120,7 +105,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "R1_n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_R1_p_value(self):
         """
@@ -128,7 +113,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "R1_p"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_R2_c_value(self):
         """
@@ -136,7 +121,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "R2_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_R3_c_value(self):
         """
@@ -144,7 +129,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "R3_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_R4_c_value(self):
         """
@@ -152,7 +137,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "R4_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_R4_n_value(self):
         """
@@ -160,7 +145,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "R4_n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_R4_p_value(self):
         """
@@ -168,7 +153,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "R4_p"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_R6_c_value(self):
         """
@@ -176,7 +161,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "R6_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_R6_n_value(self):
         """
@@ -184,7 +169,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "R6_n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_R6_p_value(self):
         """
@@ -192,7 +177,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "R6_p"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_R6_s_value(self):
         """
@@ -200,7 +185,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "R6_s"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_R8_c_value(self):
         """
@@ -208,7 +193,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "R8_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_R8_n_value(self):
         """
@@ -216,7 +201,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "R8_n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_R8_p_value(self):
         """
@@ -224,7 +209,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "R8_p"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_R8_s_value(self):
         """
@@ -232,7 +217,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "R8_s"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_B1_c_value(self):
         """
@@ -240,7 +225,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "B1_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_B1_n_value(self):
         """
@@ -248,7 +233,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "B1_n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_B1_p_value(self):
         """
@@ -256,7 +241,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "B1_p"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_P1_c_value(self):
         """
@@ -264,7 +249,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "P1_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_P1_n_value(self):
         """
@@ -272,7 +257,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "P1_n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_P1_p_value(self):
         """
@@ -280,7 +265,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "P1_p"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_P1_Chl_value(self):
         """
@@ -288,7 +273,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "P1_Chl"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_P1_s_value(self):
         """
@@ -296,7 +281,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "P1_s"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_P2_c_value(self):
         """
@@ -304,7 +289,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "P2_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_P2_n_value(self):
         """
@@ -312,7 +297,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "P2_n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_P2_p_value(self):
         """
@@ -320,7 +305,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "P2_p"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_P2_Chl_value(self):
         """
@@ -328,7 +313,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "P2_Chl"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_P3_c_value(self):
         """
@@ -336,7 +321,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "P3_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_P3_n_value(self):
         """
@@ -344,7 +329,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "P3_n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_P3_p_value(self):
         """
@@ -352,7 +337,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "P3_p"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_P3_Chl_value(self):
         """
@@ -360,7 +345,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "P3_Chl"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_P4_c_value(self):
         """
@@ -368,7 +353,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "P4_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_P4_n_value(self):
         """
@@ -376,7 +361,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "P4_n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_P4_p_value(self):
         """
@@ -384,7 +369,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "P4_p"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_P4_Chl_value(self):
         """
@@ -392,7 +377,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "P4_Chl"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_Z4_c_value(self):
         """
@@ -400,7 +385,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Z4_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_Z5_c_value(self):
         """
@@ -408,7 +393,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Z5_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_Z5_n_value(self):
         """
@@ -416,7 +401,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Z5_n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_Z5_p_value(self):
         """
@@ -424,7 +409,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Z5_p"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_Z6_c_value(self):
         """
@@ -432,7 +417,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Z6_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_Z6_n_value(self):
         """
@@ -440,7 +425,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Z6_n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_Z6_p_value(self):
         """
@@ -448,7 +433,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Z6_p"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_L2_c_value(self):
         """
@@ -456,7 +441,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "L2_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[:, -1])
+            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
     def test_Q1_c_value(self):
         """
@@ -464,7 +449,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Q1_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Q1_p_value(self):
         """
@@ -472,7 +457,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Q1_p"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Q1_n_value(self):
         """
@@ -480,7 +465,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Q1_n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Q6_c_value(self):
         """
@@ -488,7 +473,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Q6_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Q6_p_value(self):
         """
@@ -496,7 +481,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Q6_p"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Q6_n_value(self):
         """
@@ -504,7 +489,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Q6_n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Q6_s_value(self):
         """
@@ -512,7 +497,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Q6_s"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Q6_pen_depth_c_value(self):
         """
@@ -520,7 +505,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Q6_pen_depth_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Q6_pen_depth_n_value(self):
         """
@@ -528,7 +513,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Q6_pen_depth_n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Q6_pen_depth_p_value(self):
         """
@@ -536,7 +521,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Q6_pen_depth_p"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Q6_pen_depth_s_value(self):
         """
@@ -544,7 +529,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Q6_pen_depth_s"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Q7_c_value(self):
         """
@@ -552,7 +537,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Q7_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Q7_p_value(self):
         """
@@ -560,7 +545,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Q7_p"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Q7_n_value(self):
         """
@@ -568,7 +553,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Q7_n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Q7_pen_depth_c_value(self):
         """
@@ -576,7 +561,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Q7_pen_depth_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Q7_pen_depth_n_value(self):
         """
@@ -584,7 +569,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Q7_pen_depth_n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Q7_pen_depth_p_value(self):
         """
@@ -592,7 +577,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Q7_pen_depth_p"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Q17_c_value(self):
         """
@@ -600,7 +585,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Q17_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Q17_p_value(self):
         """
@@ -608,7 +593,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Q17_p"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Q17_n_value(self):
         """
@@ -616,7 +601,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Q17_n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_bL2_c_value(self):
         """
@@ -624,7 +609,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "bL2_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_ben_col_D1m_value(self):
         """
@@ -632,7 +617,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "ben_col_D1m"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_ben_col_D2m_value(self):
         """
@@ -640,7 +625,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "ben_col_D2m"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_K1_p_value(self):
         """
@@ -648,7 +633,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "K1_p"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_K3_n_value(self):
         """
@@ -656,7 +641,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "K3_n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_K4_n_value(self):
         """
@@ -664,7 +649,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "K4_n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_K5_s_value(self):
         """
@@ -672,7 +657,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "K5_s"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_G2_o_value(self):
         """
@@ -680,7 +665,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "G2_o"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_G2_o_deep_value(self):
         """
@@ -688,7 +673,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "G2_o_deep"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_G3_c_value(self):
         """
@@ -696,7 +681,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "G3_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_ben_nit_G4n_value(self):
         """
@@ -704,7 +689,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "ben_nit_G4n"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_H1_c_value(self):
         """
@@ -712,7 +697,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "H1_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_H2_c_value(self):
         """
@@ -720,7 +705,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "H2_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Y2_c_value(self):
         """
@@ -728,7 +713,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Y2_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Y3_c_value(self):
         """
@@ -736,7 +721,7 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Y3_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
 
     def test_Y4_c_value(self):
         """
@@ -744,4 +729,4 @@ class StateVariablesTest(unittest.TestCase):
         """
         name = "Y4_c"
         assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze())
+            self.expected[name], self.data.variables[name][:].squeeze()[-1])
