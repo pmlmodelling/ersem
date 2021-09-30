@@ -15,6 +15,7 @@ import sys
 sys.path.insert(0, os.path.abspath('_scripts'))
 import module_index_generator
 import ersem_webpage
+import subprocess
 sys.path.insert(0, os.path.abspath('../../'))
 
 
@@ -27,7 +28,12 @@ author = 'The PML Modelling Group'
 # The full version, including alpha/beta/rc tags
 release = '2021'
 
-
+if os.path.isdir("ersem-setups"):
+    os.chdir("ersem-setups")
+    subprocess.run(['git', 'pull'])
+    os.chdir("..")
+else:
+    subprocess.run(['git', 'clone', 'git@github.com:pmlmodelling/ersem-setups.git'])
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
@@ -36,7 +42,8 @@ release = '2021'
 extensions = ['m2r2',
               'sphinx.ext.autosectionlabel',
               'sphinxcontrib.bibtex',
-              'sphinx.ext.imgmath']
+              'sphinx.ext.imgmath',
+              'sphinx_panels']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

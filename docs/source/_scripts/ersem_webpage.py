@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 from urllib import request
-
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 
 def generator_web_doc(file_name):
     url = "https://www.pml.ac.uk/Modelling_at_PML/Models/ERSEM"
