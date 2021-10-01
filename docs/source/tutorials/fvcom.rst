@@ -54,9 +54,18 @@ you are using.
         :linenos:
 
 The key lines to change are:
+
 * 74--75
 * 174
 * 458--465
+
+After building FVCOM-ERSEM, we surgest you use a HPC scheduler, for example,
+`SLURM <https://slurm.schedmd.com/documentation.html>`_ to run example. An
+example of the SLURM script used here is given below:
+
+.. literalinclude:: ../ersem-setups/ideal_estuary/model/estuary/launch_estuary.slurm
+    :language: bash
+    :linenos:
 
 Example output from FVCOM-ERSEM
 ###############################
