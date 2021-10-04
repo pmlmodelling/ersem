@@ -12,7 +12,7 @@ Unlike the other tutorials in this section we go through setting up
 FVCOM-ERSEM on the HPC machine and then running and plotting the results.
 
 This tutorial is based on the scripts found in the 
-`ERSEM's setups repository <https://github.com/pmlmodelling/ersem-setups>`_.
+`ERSEM's setups repositor <https://github.com/pmlmodelling/ersem-setups>`_.
 The individual scripts can be found in the `ideal_estuary` folder.
 
 .. note::
@@ -70,7 +70,7 @@ example of the SLURM script used here is given below:
 Example output from FVCOM-ERSEM
 ###############################
 
-We provide two ``python`` scripts to demonstrate how to visualise both the
+We provide two ``python`` scripts to demonstait how to visualise both the
 input files and the output files. The plotting uses ``PyFVCOM``, we suggest
 you ask for access `here <https://www.pml.ac.uk/Modelling_at_PML/Access_Code>`_,
 however, a version of the code is available on 

@@ -20,8 +20,8 @@ Here we describe several tutorials for the common use cases for ERSEM.
    pyfabm
    fabm0d
    gotm
-   nemo
    fvcom
+   nemo
 
 .. _conda-install:
 
