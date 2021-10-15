@@ -24,7 +24,7 @@ Building and running FVCOM-ERSEM
 
 The three key packages required to run this tutorial are:
 
-* `FVCOM <https://gitlab.ecosystem-modelling.pml.ac.uk/fvcom/uk-fvcom>`__ (UK version -- see note)
+* `FVCOM <https://gitlab.ecosystem-modelling.pml.ac.uk/fvcom/uk-fvcom#fabm-ersem>`__ (UK version -- see note)
 * `FABM <https://github.com/fabm-model/fabm>`__
 * `ERSEM <https://github.com/pmlmodelling/ersem>`__
 
@@ -132,11 +132,7 @@ The following plots videos are produced from the plots produced by the
 
 	.. image:: ../../images/total_chl.gif
 
-.. dropdown:: Integrated total mussel food
-
-	.. image:: ../../images/total_food.gif
-
-.. dropdown:: Traver1 concentration
+.. dropdown:: Tracer1 concentration
 
 	.. image:: ../../images/tracer1_c.gif
 
