@@ -40,7 +40,7 @@ class ProfillingTest(unittest.TestCase):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         profile_path = os.path.join("ersem-setups",
                                     "L4",
-                                    "gprof.csv")
+                                    "gprof_2.csv")
         expected_value_file = os.path.join(dir_path, "gprof.csv")
         self.ersem_expected, self.gotm_expected, self.fabm_expected, \
                 self.netcdf_expected, = load_profile(expected_value_file)
@@ -93,7 +93,7 @@ class ProfillingTest(unittest.TestCase):
         """
         name = self.ersem["name"].tolist()
         name_expected = self.ersem_expected["name"].tolist()
-        self.assertListEqual(name_expected, name)
+        self.assertListEqual(sorted(name_expected), sorted(name))
 
     def test_gotm_func_names(self):
         """
@@ -101,7 +101,7 @@ class ProfillingTest(unittest.TestCase):
         """
         name = self.gotm["name"].tolist()
         name_expected = self.gotm_expected["name"].tolist()
-        self.assertListEqual(name_expected, name)
+        self.assertListEqual(sorted(name_expected), sorted(name))
 
     def test_fabm_func_names(self):
         """
@@ -109,7 +109,7 @@ class ProfillingTest(unittest.TestCase):
         """
         name = self.fabm["name"].tolist()
         name_expected = self.fabm_expected["name"].tolist()
-        self.assertListEqual(name_expected, name)
+        self.assertListEqual(sorted(name_expected), sorted(name))
 
     def test_netcdf_func_names(self):
         """
@@ -117,7 +117,7 @@ class ProfillingTest(unittest.TestCase):
         """
         name = self.netcdf["name"].tolist()
         name_expected = self.netcdf_expected["name"].tolist()
-        self.assertListEqual(name_expected, name)
+        self.assertListEqual(sorted(name_expected), sorted(name))
 
     def test_ersem_func_calls(self):
         """
