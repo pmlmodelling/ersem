@@ -38,8 +38,7 @@ class ProfillingTest(unittest.TestCase):
         Set up variables for tests
         """
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        profile_path = os.path.join(dir_path,
-                                    "ersem-setups",
+        profile_path = os.path.join("ersem-setups",
                                     "L4",
                                     "gprof.csv")
         expected_value_file = os.path.join(dir_path, "gprof.csv")
