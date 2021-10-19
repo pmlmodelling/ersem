@@ -5,7 +5,6 @@ Basic profilling tests for gotm tutorial
 import unittest
 from unittest.mock import patch
 import json
-import numpy as np
 import os
 import pandas as pd
 
