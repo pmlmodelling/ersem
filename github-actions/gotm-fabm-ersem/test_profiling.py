@@ -7,6 +7,7 @@ from unittest.mock import patch
 import json
 import os
 import pandas as pd
+import glob
 
 
 def load_profile(csv_file):
@@ -20,13 +21,36 @@ def load_profile(csv_file):
             for r in cols]
     df.columns = cols
     df = df.drop(df.index[[0,1]])
-    name = "name"
+    df = df.dropna(axis='rows')
+    for c in cols[:-1]:
+        df[c] = df[c].astype(float)
+    ersem = df.loc[df["name"].str.startswith("__ersem", na=False)]
+    gotm = df.loc[df["name"].str.startswith("__gotm", na=False)]
+    fabm = df.loc[df["name"].str.startswith("__fabm", na=False)]
+    netcdf = df.loc[df["name"].str.startswith("__netcdf", na=False)]
+    return df, ersem, gotm, fabm, netcdf
 
-    ersem = df.loc[df[name].str.startswith("__ersem", na=False)]
-    gotm = df.loc[df[name].str.startswith("__gotm", na=False)]
-    fabm = df.loc[df[name].str.startswith("__fabm", na=False)]
-    netcdf = df.loc[df[name].str.startswith("__netcdf", na=False)]
-    return ersem, gotm, fabm, netcdf
+def average_df(csv_path):
+    csv_files = glob.glob(os.path.join(csv_path, "*.csv"))
+    df = []
+    for i, csv_file in enumerate(csv_files):
+        temp_df, _, _, _, _ = load_profile(csv_file)
+        index = temp_df.index
+        if i == 0:
+            df = temp_df
+        else:
+            df = pd.concat([df, temp_df])
+    df = df.groupby(by=["name"]).mean()
+    df = df.sort_values(by=["% time"], ascending=False)
+    cols = df.columns.tolist() + ["name"]
+    df.reset_index(inplace=True)
+    df = df[cols]
+    ersem = df.loc[df["name"].str.startswith("__ersem", na=False)]
+    gotm = df.loc[df["name"].str.startswith("__gotm", na=False)]
+    fabm = df.loc[df["name"].str.startswith("__fabm", na=False)]
+    netcdf = df.loc[df["name"].str.startswith("__netcdf", na=False)]
+    return df, ersem, gotm, fabm, netcdf
+
 
 class ProfillingTest(unittest.TestCase):
     """
@@ -39,13 +63,12 @@ class ProfillingTest(unittest.TestCase):
         """
         dir_path = os.path.dirname(os.path.realpath(__file__))
         profile_path = os.path.join("ersem-setups",
-                                    "L4",
-                                    "gprof_2.csv")
+                                    "L4")
         expected_value_file = os.path.join(dir_path, "gprof.csv")
-        self.ersem_expected, self.gotm_expected, self.fabm_expected, \
+        _, self.ersem_expected, self.gotm_expected, self.fabm_expected, \
                 self.netcdf_expected, = load_profile(expected_value_file)
-        self.ersem, self.gotm, self.fabm, self.netcdf, = \
-                load_profile(profile_path)
+        _, self.ersem, self.gotm, self.fabm, self.netcdf, = \
+                average_df(profile_path)
 
     def test_ersem_total_time(self):
         """
@@ -126,9 +149,9 @@ class ProfillingTest(unittest.TestCase):
         self.ersem['self calls'] = self.ersem['self calls'].astype(float)
         self.ersem_expected['self calls'] = self.ersem_expected['self calls'].astype(float)
         calls = \
-                {n: c for n, c in zip(self.ersem['name'], self.ersem['self calls'])}
+                {n: c for n, c in zip(self.ersem["name"], self.ersem['self calls'])}
         calls_expected = \
-                {n: c for n, c in zip(self.ersem['name'], self.ersem['self calls'])}
+                {n: c for n, c in zip(self.ersem["name"], self.ersem['self calls'])}
         assert calls == calls_expected
 
     def test_gotm_func_calls(self):
@@ -138,9 +161,9 @@ class ProfillingTest(unittest.TestCase):
         self.gotm['self calls'] = self.gotm['self calls'].astype(float)
         self.gotm_expected['self calls'] = self.gotm_expected['self calls'].astype(float)
         calls = \
-                {n: c for n, c in zip(self.gotm['name'], self.gotm['self calls'])}
+                {n: c for n, c in zip(self.gotm["name"], self.gotm['self calls'])}
         calls_expected = \
-                {n: c for n, c in zip(self.gotm['name'], self.gotm['self calls'])}
+                {n: c for n, c in zip(self.gotm["name"], self.gotm['self calls'])}
         assert calls == calls_expected
 
     def test_fabm_func_calls(self):
@@ -150,9 +173,9 @@ class ProfillingTest(unittest.TestCase):
         self.fabm['self calls'] = self.fabm['self calls'].astype(float)
         self.fabm_expected['self calls'] = self.fabm_expected['self calls'].astype(float)
         calls = \
-                {n: c for n, c in zip(self.fabm['name'], self.fabm['self calls'])}
+                {n: c for n, c in zip(self.fabm["name"], self.fabm['self calls'])}
         calls_expected = \
-                {n: c for n, c in zip(self.fabm['name'], self.fabm['self calls'])}
+                {n: c for n, c in zip(self.fabm["name"], self.fabm['self calls'])}
         assert calls == calls_expected
 
     def test_netcdf_func_calls(self):
@@ -162,9 +185,9 @@ class ProfillingTest(unittest.TestCase):
         self.netcdf['self calls'] = self.netcdf['self calls'].astype(float)
         self.netcdf_expected['self calls'] = self.netcdf_expected['self calls'].astype(float)
         calls = \
-                {n: c for n, c in zip(self.netcdf['name'], self.netcdf['self calls'])}
+                {n: c for n, c in zip(self.netcdf["name"], self.netcdf['self calls'])}
         calls_expected = \
-                {n: c for n, c in zip(self.netcdf['name'], self.netcdf['self calls'])}
+                {n: c for n, c in zip(self.netcdf["name"], self.netcdf['self calls'])}
         assert calls == calls_expected
 
 

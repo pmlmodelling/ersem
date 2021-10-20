@@ -97,9 +97,8 @@ jobs:
               ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-build.sh -f "-DCMAKE_Fortran_FLAGS="-pg""
         - name: Running config
           run: |
-              ./github-actions/gotm-fabm-ersem/gotm-tut-config-setup.sh
+              ./github-actions/gotm-fabm-ersem/gotm-profiling.sh
         - name: Running gotm profilling
           run: |
-              gprof -b -Q ~/local/gotm/bin/gotm ersem-setups/L4/gmon.out | awk -v OFS=',' '{print $1,$2,$3,$4,$5,$6,$7}' | sed -e '1,3d' > ersem-setups/L4/gprof.csv
               python -m pip install pytest pandas
-              pytest github-actions/gotm-fabm-ersem/test_profiling.py
+              pytest -s github-actions/gotm-fabm-ersem/test_profiling.py
