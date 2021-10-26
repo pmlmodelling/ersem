@@ -7,6 +7,7 @@ from unittest.mock import patch
 import json
 import os
 import pandas as pd
+import pytest
 import glob
 
 
@@ -71,6 +72,7 @@ class ProfillingTest(unittest.TestCase):
         self.df, self.ersem, self.gotm, self.fabm, self.netcdf, = \
             average_df(profile_path)
 
+    @pytest.mark.skip()
     def test_ersem_time_percentage(self):
         """
         Checks total ERSEM call times are the same
@@ -79,6 +81,7 @@ class ProfillingTest(unittest.TestCase):
         ersem_perc_expected = self.ersem_expected["% time"].sum()
         assert abs(ersem_perc - ersem_perc_expected) <= 1.0
 
+    @pytest.mark.skip()
     def test_fabm_time_percentage(self):
         """
         Checks total FABM call times are the same
@@ -87,6 +90,7 @@ class ProfillingTest(unittest.TestCase):
         fabm_perc_expected = self.fabm_expected["% time"].sum()
         assert abs(fabm_perc - fabm_perc_expected) <= 1.0
 
+    @pytest.mark.skip()
     def test_gotm_time_percentage(self):
         """
         Checks total GOTM call times are the same
@@ -95,6 +99,7 @@ class ProfillingTest(unittest.TestCase):
         gotm_perc_expected = self.gotm_expected["% time"].sum()
         assert abs(gotm_perc - gotm_perc_expected) <= 1.0
 
+    @pytest.mark.skip()
     def test_netcdf_time_percentage(self):
         """
         Checks total netCDF call times are the same
@@ -103,6 +108,7 @@ class ProfillingTest(unittest.TestCase):
         netcdf_perc_expected = self.netcdf_expected["% time"].sum()
         assert abs(netcdf_perc - netcdf_perc_expected) <= 1.0
 
+    @pytest.mark.skip()
     def test_total_time(self):
         """
         Checks to see that the total time does not change by more than
