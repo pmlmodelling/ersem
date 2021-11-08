@@ -1,5 +1,6 @@
 # Removing docs build
 docs/build/
+*.bak
 
 # Removing pycache
 __pycache__
@@ -9,3 +10,6 @@ docs/source/module_index.rst
 
 # removing swap files
 *.swp
+
+# the ERSEM setups repo should be cloned each time
+docs/source/ersem-setups
