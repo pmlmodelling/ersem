@@ -59,7 +59,7 @@ The key lines to change are:
 * 174
 * 458--465
 
-After building FVCOM-ERSEM, we surgest you use a HPC scheduler, for example,
+After building FVCOM-ERSEM, we suggest you use a HPC scheduler, for example,
 `SLURM <https://slurm.schedmd.com/documentation.html>`_ to run example. An
 example of the SLURM script used here is given below:
 
