@@ -33,7 +33,7 @@ if os.path.isdir("ersem-setups"):
     subprocess.run(['git', 'pull'])
     os.chdir("..")
 else:
-    subprocess.run(['git', 'clone', 'git@github.com:pmlmodelling/ersem-setups.git'])
+    subprocess.run(['git', 'clone', 'https://github.com/pmlmodelling/ersem-setups.git'])
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
