@@ -18,17 +18,13 @@ scripts container `here <https://github.com/dalepartridge/AMM7-NEMO4-FABM-setup>
 also need access to the shared folder within the ARCHER2 project id `n01` to obtain the forcing
 files.
 
-.. note::
-    You will need to get access to the 
-    `NEMO-ERSEM code <https://www.pml.ac.uk/Modelling_at_PML/Access_Code>`_.
-
 Obtain NEMO-ERSEM container
 ###########################
 
 The key packages for that are installed into 
 `NEMO-ERSEM container <https://github.com/pmlmodelling/NEMO-container>`_ are:
 
-* `NEMO <https://gitlab.ecosystem-modelling.pml.ac.uk/gle/nemo404>`__ (UK version -- see note)
+* `NEMO <https://github.com/pmlmodelling/NEMO4.0-FABM>`__
 * `XIOS <http://forge.ipsl.jussieu.fr/ioserver/svn/XIOS/branchs/xios-2.5>`__
 * `FABM <https://github.com/fabm-model/fabm>`__
 * `ERSEM <https://github.com/pmlmodelling/ersem>`__
