@@ -100,35 +100,35 @@ example uses.
 
 The following plots represent a months output of a NEMO-ERSEM simulation on the AMM7 domain.
 
-.. dropdown:: Potential temperature
+.. dropdown:: Potential temperature, ``degC``
 
 	.. image:: ../../images/NEMO_temp.gif
 
-.. dropdown::  Salinity
+.. dropdown::  Salinityi, ``psu``
 
 	.. image:: ../../images/NEMO_sal.gif
 
-.. dropdown:: Phosphate phosphorus
+.. dropdown:: Phosphate phosphorus, ``mmol P/m^3``
 
 	.. image:: ../../images/NEMO_N1_p.gif
 
-.. dropdown::  Nitrate nitrogen
+.. dropdown::  Nitrate nitrogen, ``mmol N/m^3``
 
 	.. image:: ../../images/NEMO_N3_n.gif
 
-.. dropdown:: Carbonate total dissolved inorganic carbon
+.. dropdown:: Carbonate total dissolved inorganic carbon, ``mmol C/m^3``
 
 	.. image:: ../../images/NEMO_O3_c.gif
 
-.. dropdown:: Diatoms chlorophyll
+.. dropdown:: Diatoms chlorophyll, ``mg/m^3``
 
 	.. image:: ../../images/NEMO_P1_Chl.gif
 
-.. dropdown:: Medium-sized POM carbon
+.. dropdown:: Medium-sized POM carbon, ``mg C/m^3``
 
 	.. image:: ../../images/NEMO_R6_c.gif
 
-.. dropdown:: Oxygen
+.. dropdown:: Oxygen, ``O_2/m^3``
 
 	.. image:: ../../images/NEMO_O2_o.gif
 
