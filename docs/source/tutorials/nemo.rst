@@ -12,9 +12,10 @@ NEMO-ERSEM on the Atlantic Margin Model 7 (AMM7) using a high performance comput
 `singularity container <https://sylabs.io/guides/3.5/user-guide/introduction.html>`__ with
 NEMO-ERSEM install on it.
 
-This tutorial is based on utilising the 
-`container <https://sylabs.io/guides/3.5/user-guide/introduction.html>`_ with the configuration
-scripts container `here <https://github.com/dalepartridge/AMM7-NEMO4-FABM-setup>`_. You will
+This tutorial is based on utilising a
+`singularity container <https://sylabs.io/guides/3.5/user-guide/introduction.html>`_ with NEMO-ERSEM
+install within. The configuration scripts used in the installation can be found
+`here <https://github.com/dalepartridge/AMM7-NEMO4-FABM-setup>`_. You will
 also need access to the shared folder within the ARCHER2 project id `n01` to obtain the forcing
 files.
 
@@ -29,21 +30,26 @@ The key packages for that are installed into
 * `FABM <https://github.com/fabm-model/fabm>`__
 * `ERSEM <https://github.com/pmlmodelling/ersem>`__
 
-ERSEM and FABM are freely available on GitHub and XIOS is available through the NEMO consotium
-svn server, however, for NEMO you will have to register for the code -- see note above. Full instructions 
-how to build the container can be found `here <https://github.com/pmlmodelling/NEMO-container>`__.
+NEMO, ERSEM and FABM are freely available on GitHub and XIOS is available through the NEMO consotium
+svn server. Full instructions how to build the container can be found 
+`here <https://github.com/pmlmodelling/NEMO-container>`__, we note that
+`this <https://github.com/pmlmodelling/NEMO-container>`__ repository is based on the 
+`CoNES repository <https://github.com/NOC-MSM/CoNES>`__.
 
 Running the container on ARCHER2
 ################################
 
-To generate the `slurm <https://slurm.schedmd.com/documentation.html>`__ scheduling scripts to 
-run the model follow the instructions 
+The instructions to generate the `slurm <https://slurm.schedmd.com/documentation.html>`__ HPC 
+scheduling scripts can be found 
 `here <https://docs.archer2.ac.uk/research-software/nemo/nemo/#building-a-run-script>`__. 
+These are used to run the model on ARCHER2.
 
-The slurm script schedulers, 
+The scripts generated via  
 `mkslurm <https://docs.archer2.ac.uk/research-software/nemo/nemo/#building-a-run-script>`__,
-requires two executables, namely `xios_server.exe` and `nemo`. The script below shows an example how
-you set up the singulartiy container, `nemo.sif`, to be used as an executable. 
+require two executables, namely `xios_server.exe` and `nemo`. In a native installation, one would
+simply link the `XIOS` and `NEMO` executables to `xios_server.exe` and `nemo`. However, when using
+the singularity container, you are required to create `xios_server.exe` and `nemo` executables based on 
+the following bash script:
 
 .. code-block:: bash
     :caption: Example script to run container, user is required to change `[RUNING-DIR]` and 
