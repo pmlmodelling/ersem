@@ -10,6 +10,7 @@ import os
 
 import aquarium_tut
 
+
 class AquariumTests(unittest.TestCase):
     """
     Aquarium 0D model tests
@@ -28,12 +29,13 @@ class AquariumTests(unittest.TestCase):
             self.expected = json.load(fp)
         self.value_dict = aquarium_tut.main(self.model_path)
 
+
     def test_dates_value(self):
         """
         Checks the dates (dates) values are the same
         """
         name = "dates"
-        assert np.allclose(self.expected[name], self.value_dict[name])
+        assert np.array_equal(self.expected[name], self.value_dict[name])
 
     def test_light_value(self):
         """
