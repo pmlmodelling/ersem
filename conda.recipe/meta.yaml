@@ -1,0 +1,30 @@
+
+package:
+  name: ersem
+  version: 20.10
+
+source:
+  git_url: https://github.com/pmlmodelling/ersem.git
+
+requirements:
+  build:
+    - git
+    - cmake
+    - make
+    - netcdf-fortran
+    - gfortran_linux-64
+    - libgfortran4
+    - numpy
+    - wheel
+
+  run:
+    - python
+    - numpy
+    - matplotlib
+    - netCDF4
+    - netcdf-fortran
+
+about:
+  home: https://github.com/pmlmodelling/ersem
+  summary: "European Regional Seas Ecosystem Model (ERSEM) is a marine ecosystem model. It describes the biogeochemical cycling of carbon, nitrogen, phosphorus, silicon, oxygen and iron through pelagic and benthic ecosystems. The ecosystem is divided into functional types, which are further subdivided by traits such as size."
+  license: GPL-3

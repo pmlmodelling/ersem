@@ -1,0 +1,104 @@
+# This is a basic workflow to help you get started with Actions
+
+name: ersem
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  schedule:
+    - cron: '0 9 * * 1'
+jobs:
+  build-pyfabm-ersem-debian:
+    runs-on: ubuntu-latest
+    steps:
+        - uses: actions/checkout@v2
+        - name: Setup python
+          uses: actions/setup-python@v2
+          with:
+              python-version: '3.x'
+        - name: Installing PyFABM-ERSEM dependences
+          run: ./github-actions/pyfabm-ersem/pyfabm-ersem-dep-debian.sh
+        - name: Building and installing PyFABM-ERSEM
+          run: |
+              branch=$(git branch --show-current)
+              ./github-actions/pyfabm-ersem/pyfabm-ersem-build.sh $branch
+        - name: Running pyfabm tutorial
+          run: |
+              python -m pip install matplotlib
+              python github-actions/pyfabm-ersem/pyfabm_tut.py
+        - name: Running pyfabm systests
+          run: |
+              python -m pip install pytest
+              pytest github-actions/pyfabm-ersem
+  build-gotm-fabm-ersem-debian:
+    runs-on: ubuntu-latest
+    steps:
+        - uses: actions/checkout@v2
+        - name: Setup python
+          uses: actions/setup-python@v2
+          with:
+              python-version: '3.x'
+        - name: Installing GOTM-FABM-ERSEM dependences
+          run: ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-dep-debian.sh 
+        - name: Building and installing GOTM-FABM-ERSEM
+          run: |
+              branch=$(git branch --show-current)
+              ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-build.sh -b $branch
+        - name: Running tutorial
+          run: |
+              ./github-actions/gotm-fabm-ersem/gotm-tut-config-setup.sh
+              sudo apt install libnetcdff-dev
+              python -m pip install matplotlib netCDF4
+              python github-actions/gotm-fabm-ersem/gotm_tut.py -p ersem-setups/L4/L4_time_daily_mean_16.06.nc
+        - name: Running gotm tests
+          run: |
+              python -m pip install pytest
+              pytest github-actions/gotm-fabm-ersem/test_state_variables.py github-actions/gotm-fabm-ersem/test_gotm.py
+
+  build-fabm0d-gotm-ersem-debian:
+    runs-on: ubuntu-latest
+    steps:
+        - uses: actions/checkout@v2
+        - name: Setup python
+          uses: actions/setup-python@v2
+          with:
+              python-version: '3.x'
+        - name: Installing FABM0d-GOTM-ERSEM dependences
+          run: ./github-actions/fabm0d-gotm-ersem/fabm0d-gotm-ersem-dep-debian.sh
+        - name: Building and installing FABM0d-GOTM-ERSEM
+          run: |
+              branch=$(git branch --show-current)
+              ./github-actions/fabm0d-gotm-ersem/fabm0d-gotm-ersem-build.sh $branch
+        - name: Running tutorial
+          run: |
+              ./github-actions/fabm0d-gotm-ersem/aquarium-tut-config-setup.sh
+              sudo apt install libnetcdff-dev
+              python -m pip install matplotlib netCDF4
+              python github-actions/fabm0d-gotm-ersem/aquarium_tut.py -p ersem-setups/0d-aquarium/output.nc
+        - name: Running aquarium systests
+          run: |
+              python -m pip install pytest
+              pytest github-actions/fabm0d-gotm-ersem
+  build-gotm-profilling:
+    runs-on: ubuntu-latest
+    steps:
+        - uses: actions/checkout@v2
+        - name: Setup python
+          uses: actions/setup-python@v2
+          with:
+              python-version: '3.x'
+        - name: Installing GOTM-FABM-ERSEM dependences
+          run: ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-dep-debian.sh 
+        - name: Building and installing GOTM-FABM-ERSEM
+          run: |
+              branch=$(git branch --show-current)
+              ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-build.sh -f "-DCMAKE_Fortran_FLAGS="-pg""
+        - name: Running config
+          run: |
+              ./github-actions/gotm-fabm-ersem/gotm-profiling.sh
+        - name: Running gotm profilling
+          run: |
+              python -m pip install pytest pandas
+              pytest -s github-actions/gotm-fabm-ersem/test_profiling.py
