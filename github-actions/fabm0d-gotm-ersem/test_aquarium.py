@@ -10,6 +10,7 @@ import os
 
 import aquarium_tut
 
+
 class AquariumTests(unittest.TestCase):
     """
     Aquarium 0D model tests
@@ -28,6 +29,7 @@ class AquariumTests(unittest.TestCase):
             self.expected = json.load(fp)
         self.value_dict = aquarium_tut.main(self.model_path)
 
+
     def test_dates_value(self):
         """
         Checks the dates (dates) values are the same
@@ -41,46 +43,46 @@ class AquariumTests(unittest.TestCase):
         values are the same
         """
         name = "light_parEIR"
-        assert np.array_equal(self.expected[name], self.value_dict[name])
+        assert np.allclose(self.expected[name], self.value_dict[name])
 
     def test_temp_value(self):
         """
         Checks the temp (temp) values are the same
         """
         name = "temp"
-        assert np.array_equal(self.expected[name], self.value_dict[name])
+        assert np.allclose(self.expected[name], self.value_dict[name])
 
     def test_salt_value(self):
         """
         Checks the salinity (salt) values are the same
         """
         name = "salt"
-        assert np.array_equal(self.expected[name], self.value_dict[name])
+        assert np.allclose(self.expected[name], self.value_dict[name])
 
     def test_phosphorus_value(self):
         """
         Checks the phosphate phosphorus (N1_p) values are the same
         """
         name = "N1_p"
-        assert np.array_equal(self.expected[name], self.value_dict[name])
+        assert np.allclose(self.expected[name], self.value_dict[name])
 
     def test_nitrogen_value(self):
         """
         Checks the nitrate nitrogen (N3_n) values are the same
         """
         name = "N3_n"
-        assert np.array_equal(self.expected[name], self.value_dict[name])
+        assert np.allclose(self.expected[name], self.value_dict[name])
 
     def test_bcarbon_value(self):
         """
         Checks the bacteria carbon (B1_c) values are the same
         """
         name = "B1_c"
-        assert np.array_equal(self.expected[name], self.value_dict[name])
+        assert np.allclose(self.expected[name], self.value_dict[name])
 
     def test_ncarbon_value(self):
         """
         Checks the nanophytoplankton carbon (P2_c) values are the same
         """
         name = "B1_c"
-        assert np.array_equal(self.expected[name], self.value_dict[name])
+        assert np.allclose(self.expected[name], self.value_dict[name])
