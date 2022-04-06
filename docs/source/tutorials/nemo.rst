@@ -99,42 +99,55 @@ example uses.
             `[VARIABLE]` to the exact location of the NEMO output and the variable to be plotted, respectively.
 
     import nctoolkit as nc
-
+    
+    # path to netCDF file
     ff = [PATH_TO_NETCDF_FILE]
     ds = nc.open_data(ff)
-    plot = ds.plot([VARIABLE])
 
-The following plots represent a months output of a NEMO-ERSEM simulation on the AMM7 domain.
+    # removes colours from land values
+    ds.set_missing(0)
+
+    # draws the outline of the land
+    ds.fix_nemo_ersem_grid()
+
+    # Selects the final timestep for plotting
+    ds.select(time=[len(ds.times)-1])
+
+    # plots the variable, note, the colour bar will change for each plot since autoscale
+    # is set to False
+    plot = ds.plot([VARIABLE], autoscale=False)
+
+The following plots show the last timestep of the model monthly run from the NEMO-ERSEM simulation on the AMM7 domain.
 
 .. dropdown:: Potential temperature, ``degC``
 
-	.. image:: ../../images/NEMO_temp.gif
+	.. image:: ../../images/temp_NEMO.png
 
-.. dropdown::  Salinityi, ``psu``
+.. dropdown::  Salinity, ``psu``
 
-	.. image:: ../../images/NEMO_sal.gif
+	.. image:: ../../images/sal_NEMO.png
 
 .. dropdown:: Phosphate phosphorus, ``mmol P/m^3``
 
-	.. image:: ../../images/NEMO_N1_p.gif
+	.. image:: ../../images/N1_p_NEMO.png
 
 .. dropdown::  Nitrate nitrogen, ``mmol N/m^3``
 
-	.. image:: ../../images/NEMO_N3_n.gif
+	.. image:: ../../images/N3_n_NEMO.png
 
 .. dropdown:: Carbonate total dissolved inorganic carbon, ``mmol C/m^3``
 
-	.. image:: ../../images/NEMO_O3_c.gif
+	.. image:: ../../images/O3_c_NEMO.png
 
 .. dropdown:: Diatoms chlorophyll, ``mg/m^3``
 
-	.. image:: ../../images/NEMO_P1_Chl.gif
+	.. image:: ../../images/P1_Chl_NEMO.png
 
 .. dropdown:: Medium-sized POM carbon, ``mg C/m^3``
 
-	.. image:: ../../images/NEMO_R6_c.gif
+	.. image:: ../../images/R6_c_NEMO.png
 
 .. dropdown:: Oxygen, ``O_2/m^3``
 
-	.. image:: ../../images/NEMO_O2_o.gif
+	.. image:: ../../images/O2_o_NEMO.png
 
