@@ -2,27 +2,27 @@
 
 
 #############################
-NEMO: Atlantic Margin Model 7
+NEMO: Atlantic Margin Model
 #############################
 
-This tutorial gives an end to end example how to install and then use
-NEMO-ERSEM on the Atlantic Margin Model 7 (AMM7) using a high performance computing
-(HPC) machine. We have used
-`ARCHER2 <https://www.archer2.ac.uk/>`__ together with a 
+This tutorial gives an end-to-end example on how to install and then run
+NEMO-ERSEM on the 7 km Atlantic Margin Model 7 (AMM7) domain using a high performance computing
+(HPC) machine. Here we have used UK National Supercomputing Service
+`ARCHER2 <https://www.archer2.ac.uk/>`__ with a 
 `singularity container <https://sylabs.io/guides/3.5/user-guide/introduction.html>`__ with
-NEMO-ERSEM install on it.
+NEMO-ERSEM installed on it.
 
 This tutorial is based on utilising a
-`singularity container <https://sylabs.io/guides/3.5/user-guide/introduction.html>`_ with NEMO-ERSEM
+`singularity container <https://sylabs.io/guides/3.5/user-guide/introduction.html>`_ with a NEMO-ERSEM
 install within. The configuration scripts used in the installation can be found
 `here <https://github.com/dalepartridge/AMM7-NEMO4-FABM-setup>`_. You will
 also need access to the shared folder within the ARCHER2 project id `n01` to obtain the forcing
 files.
 
-Obtain NEMO-ERSEM container
+Obtaining NEMO-ERSEM container
 ###########################
 
-The key packages for that are installed into 
+The key packages that are installed into 
 `NEMO-ERSEM container <https://github.com/pmlmodelling/NEMO-container>`_ are:
 
 * `NEMO <https://github.com/pmlmodelling/NEMO4.0-FABM>`__
@@ -30,11 +30,10 @@ The key packages for that are installed into
 * `FABM <https://github.com/fabm-model/fabm>`__
 * `ERSEM <https://github.com/pmlmodelling/ersem>`__
 
-NEMO, ERSEM and FABM are freely available on GitHub and XIOS is available through the NEMO consotium
+NEMO, ERSEM and FABM are freely available on GitHub and XIOS is available through the NEMO consortium
 svn server. Full instructions how to build the container can be found 
-`here <https://github.com/pmlmodelling/NEMO-container>`__, we note that
-`this <https://github.com/pmlmodelling/NEMO-container>`__ repository is based on the 
-`CoNES repository <https://github.com/NOC-MSM/CoNES>`__.
+`here <https://github.com/pmlmodelling/NEMO-container>`__. We note these instructions are based on the 
+"Containerisation of NEMO Employing Singularity" `(CoNES) <https://github.com/NOC-MSM/CoNES>`__ repository.
 
 Running the container on ARCHER2
 ################################
@@ -45,15 +44,15 @@ scheduling scripts can be found
 These are used to run the model on ARCHER2.
 
 The scripts generated via  
-`mkslurm <https://docs.archer2.ac.uk/research-software/nemo/nemo/#building-a-run-script>`__,
+`mkslurm <https://docs.archer2.ac.uk/research-software/nemo/nemo/#building-a-run-script>`__
 require two executables, namely `xios_server.exe` and `nemo`. In a native installation, one would
 simply link the `XIOS` and `NEMO` executables to `xios_server.exe` and `nemo`. However, when using
 the singularity container, you are required to create `xios_server.exe` and `nemo` executables based on 
 the following bash script:
 
 .. code-block:: bash
-    :caption: Example script to run container, user is required to change `[RUNING-DIR]` and 
-              `[INPUT-DIR]` to the coresponding directories and `[NEMO-XIOS]` to either `nemo`
+    :caption: Example script to run container. User is required to change `[RUNING-DIR]` and 
+              `[INPUT-DIR]` to the corresponding directories, and `[NEMO-XIOS]` to either `nemo`
               or `xios`.
 
     #! /bin/bash
@@ -83,13 +82,13 @@ the following bash script:
     singularity run ${BIND_OPTS} --home [RUNING-DIR] nemo.sif [NEMO-XIOS]
 
 The CoNES `documentation <https://cones.readthedocs.io/en/latest/?badge=latest>`__ gives additional 
-information how to run NEMO singularity containers.
+information on how to run NEMO singularity containers.
 
 
 Example output from NEMO-ERSEM
 ##############################
 
-To visualise NEMO output, we recomend using `nctoolkit <https://github.com/pmlmodelling/nctoolkit>`__.
+To visualise NEMO output, we recommend using `nctoolkit <https://github.com/pmlmodelling/nctoolkit>`__.
 A basic example of how to use `nctoolkit` is given below. Within the 
 `documentation <https://nctoolkit.readthedocs.io/en/latest/>`__ of `nctoolkit` one will find additional
 example uses.
@@ -110,14 +109,14 @@ example uses.
     # draws the outline of the land
     ds.fix_nemo_ersem_grid()
 
-    # Selects the final timestep for plotting
+    # selects the final timestep for plotting
     ds.select(time=[len(ds.times)-1])
 
-    # plots the variable, note, the colour bar will change for each plot since autoscale
+    # plots the variable. Note, the colour bar will change for each plot since autoscale
     # is set to False
     plot = ds.plot([VARIABLE], autoscale=False)
 
-The following plots show the last timestep of the model monthly run from the NEMO-ERSEM simulation on the AMM7 domain.
+The following plots show the surface distributions of a subset of variables from the NEMO-ERSEM simulation on the AMM7 domain.
 
 .. dropdown:: Potential temperature, ``degC``
 
