@@ -25,10 +25,10 @@ Obtaining NEMO-ERSEM container
 The key packages that are installed into 
 `NEMO-ERSEM container <https://github.com/pmlmodelling/NEMO-container>`_ are:
 
-* `NEMO <https://github.com/pmlmodelling/NEMO4.0-FABM>`__
-* `XIOS <http://forge.ipsl.jussieu.fr/ioserver/svn/XIOS/branchs/xios-2.5>`__
-* `FABM <https://github.com/fabm-model/fabm>`__
-* `ERSEM <https://github.com/pmlmodelling/ersem>`__
+* `NEMO (physical ocean model) <https://github.com/pmlmodelling/NEMO4.0-FABM>`__
+* `XIOS (input/output server) <http://forge.ipsl.jussieu.fr/ioserver/svn/XIOS/branchs/xios-2.5>`__
+* `FABM (biogeochemical framework) <https://github.com/fabm-model/fabm>`__
+* `ERSEM (biogeochemical model) <https://github.com/pmlmodelling/ersem>`__
 
 NEMO, ERSEM and FABM are freely available on GitHub and XIOS is available through the NEMO consortium
 svn server. Full instructions how to build the container can be found 
@@ -117,6 +117,10 @@ example uses.
     plot = ds.plot([VARIABLE], autoscale=False)
 
 The following plots show the surface distributions of a subset of variables from the NEMO-ERSEM simulation on the AMM7 domain.
+
+.. note::
+    
+    The plots below are snapshots take from the model output at `30/01/2005`.
 
 .. dropdown:: Potential temperature, ``degC``
 
