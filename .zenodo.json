@@ -1,5 +1,5 @@
 {
-    "description": "<p>ERSEM: European Regional Seas Ecosystem Model</p>\n\n<p>For more information please visit&nbsp;<a href=\"http://ersem.com\">http://ersem.com</a>.</p>", 
+    "description": "<p>ERSEM: European Regional Seas Ecosystem Model</p>\n\n<p>For more information please visit&nbsp;<a href=\"http://ersem.com\">https://ersem.com</a>.</p>", 
     "license": "GPL-3.0+", 
     "title": "ERSEM", 
     "grants": [
