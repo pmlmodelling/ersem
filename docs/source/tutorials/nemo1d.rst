@@ -12,7 +12,7 @@ Pacific Ocean with biogeochemistry of L4 station in the Western English
 Channel. Users are encouraged to modify this example for their own purposes.
 
 To get started, you need to follow the instructions for setting up
-the `C1D_PAPA configuration <https://forge.ipsl.jussieu.fr/nemo/chrome/site/doc/NEMO/guide/html/cfgs.html#c1d-papa>__`
+the `C1D_PAPA configuration <https://forge.ipsl.jussieu.fr/nemo/chrome/site/doc/NEMO/guide/html/cfgs.html#c1d-papa>`__
 
 
 Running 1D NEMO-FABM-ERSEM
