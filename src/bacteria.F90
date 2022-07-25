@@ -21,7 +21,7 @@ module ersem_bacteria
       type (type_dependency_id)     :: id_ETW,id_eO2mO2
       type (type_state_variable_id),allocatable,dimension(:) :: id_RPc,id_RPp,id_RPn,id_RPf
       type (type_model_id),         allocatable,dimension(:) :: id_RP
-      type (type_diagnostic_variable_id) :: id_fB1O3c, id_fB1NIn, id_fB1N1p
+      type (type_diagnostic_variable_id) :: id_fB1O3c, id_fB1NIn, id_fB1N1p, id_bgeff
       type (type_diagnostic_variable_id) :: id_minn,id_minp
 
       ! Parameters
@@ -158,6 +158,8 @@ contains
       call self%register_diagnostic_variable(self%id_fB1N1p,'fB1N1p','mmol P/m^3/d','release of DIP')
       call self%register_diagnostic_variable(self%id_minn,'minn','mmol N/m^3/d','mineralisation of N')
       call self%register_diagnostic_variable(self%id_minp,'minp','mmol P/m^3/d','mineralisation of P')
+      call self%register_diagnostic_variable(self%id_bgeff, '-', 'mg C/m^3/d','bacterial growth efficiency')
+
 
    end subroutine
 
@@ -263,6 +265,8 @@ contains
          ELSE
             bgeff=0._rk
          ENDIF
+
+         _SET_DIAGNOSTIC_(self%id_bgeff, bgeff)
 
 !..Source equations
 

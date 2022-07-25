@@ -22,7 +22,7 @@ module ersem_bacteria_docdyn
       type (type_dependency_id)     :: id_ETW,id_eO2mO2
       type (type_state_variable_id),allocatable,dimension(:) :: id_RPc,id_RPp,id_RPn,id_RPf
       type (type_model_id),         allocatable,dimension(:) :: id_RP
-      type (type_diagnostic_variable_id) :: id_fB1O3c, id_fB1NIn, id_fB1N1p
+      type (type_diagnostic_variable_id) :: id_fB1O3c, id_fB1NIn, id_fB1N1p, id_bgeff
       type (type_diagnostic_variable_id) :: id_fR1B1c, id_fR2B1c, id_fR3B1c,id_fRPB1c,id_fB1R1c, id_fB1R2c, id_fB1R3c
       type (type_diagnostic_variable_id) :: id_fR1B1n,id_fB1R1n,id_fR1B1p,id_fB1R1p,id_fRPB1n,id_fRPB1p
       type (type_diagnostic_variable_id) :: id_minn,id_minp
@@ -159,6 +159,7 @@ contains
       call self%register_diagnostic_variable(self%id_fB1O3c,'fB1O3c','mg C/m^3/d','respiration')
       call self%register_diagnostic_variable(self%id_fB1NIn,'fB1NIn','mmol N/m^3/d','release of DIN')
       call self%register_diagnostic_variable(self%id_fB1N1p,'fB1N1p','mmol P/m^3/d','release of DIP')
+      call self%register_diagnostic_variable(self%id_bgeff, '-', 'mg C/m^3/d','bacterial growth efficiency')
 
       call self%register_diagnostic_variable(self%id_fB1R1c,'fB1R1c','mg C/m^3/d','release of labile DOC ')
       call self%register_diagnostic_variable(self%id_fB1R2c,'fB1R2c','mg C/m^3/d','release of semi-labile DOC ')
@@ -301,6 +302,8 @@ contains
          ELSE
             bgeff=0._rk
          ENDIF
+
+         _SET_DIAGNOSTIC_(self%id_bgeff, bgeff)
 
 !..Source equations
 
