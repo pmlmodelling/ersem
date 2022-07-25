@@ -193,7 +193,7 @@ contains
       real(rk) :: etB1,eO2B1
       real(rk) :: sB1RD,sutB1,rumB1,sugB1,rugB1,rraB1,fB1O3c
       real(rk) :: sB1R2,fB1R2c,fB1R3c,fB1RDc
-      real(rk) :: netb1,bge
+      real(rk) :: netb1,bgeff
       real(rk) :: fB1N1p,fR1B1p,fB1RDp
       real(rk) :: fB1NIn,fR1B1n,fB1RDn
       real(rk) :: R3c,R2cP,R3cP
@@ -297,9 +297,9 @@ contains
 
          netb1 = rugB1 - fB1o3c - fB1RDc
          IF (netB1.gt.0._rk) THEN
-            BGE=netB1/rugB1
+            bgeff=netB1/rugB1
          ELSE
-            BGE=0._rk
+            bgeff=0._rk
          ENDIF
 
 !..Source equations
