@@ -14,6 +14,7 @@ module ersem_model_library
    use ersem_bacteria
    use ersem_bacteria_docdyn
    use ersem_nitrification
+   use ersem_nitrous_oxide
    use ersem_light
    use ersem_light_iop
    use ersem_light_iop_ady
