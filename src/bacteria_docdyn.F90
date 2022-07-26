@@ -321,14 +321,16 @@ contains
          fB1R3c=self%frB1R3*rraB1
          fB1RDc = fB1R1c + fB1R2c + fB1R3c
 
+! Denitrification implemented as in Sankar et al. (2008), doi.org/10.1016/j.ecolmodel.2018.01.016
      if (self%denit == 1) then      
-        denitpot = self%DeniX * N3n
-        deniteff = max(0._rk, self%urB1_O2X * (1._rk-o2state) * fB1O3c / self%omonX)
-        fdenit = min(denitpot, deniteff)
+        denitpot = self%DeniX * N3n !eq.6
+        deniteff = max(0._rk, self%urB1_O2X * (1._rk-o2state) * fB1O3c / self%omonX) !eq.7
+        fdenit = min(denitpot, deniteff) !eq.5
 
         _SET_DIAGNOSTIC_(self%id_fdenit,fdenit)
         _SET_ODE_(self%id_N3n, -fdenit)
 
+! Reduced sulfur formation corresponds to eq.9 in Sankar et al. (2008)
         fanox = self%omrox * (self%urB1_O2X * (1._rk-o2state) * fB1O3c - self%omonX * fdenit)
         freox = self%reoX * etB1 * o2state * N6
 
