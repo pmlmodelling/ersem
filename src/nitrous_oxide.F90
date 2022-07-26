@@ -1,5 +1,13 @@
 #include "fabm_driver.h"
 
+!------------------------------------------------------------------------
+! This module calculates saturation concentrations and air-sea
+! exchange of nitrous oxide. Production of nitrous oxide is implemented
+! in nitrification module (nitrification.F90).
+! For implementation and validation of nitrous oxide on the North-West 
+! European Shelf see Lessin et al. (2020): doi.org/10.1029/2019JG005613
+!------------------------------------------------------------------------
+
 module ersem_nitrous_oxide
 
    use fabm_types
