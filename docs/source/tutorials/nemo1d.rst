@@ -67,7 +67,7 @@ The script above will compile the model and move the nemo executable into your w
 
 Note that you might need to edit the architecture file depending on the machine you are compiling and running the model on. This will include compiler version, compiler flags and links to netCDF libraries. Here, we are pointing our compilation to arch-GCC_PMPC.fcm file (available within NEMO4.0-FABM repository) to compile on a typical PML workstation running Fedora Linux distribution and using a GNU Fortran compiler.
 
-Step 2: Getting ready to run the model
+Step 3: Getting ready to run the model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Now, you need to let NEMO know that you are running the simulation with ERSEM. Within your working directory, create a link to the desired configuration, e.g.:
@@ -94,7 +94,7 @@ ERSEM requires some external inputs, which we must provde. The following lines s
 
 Create links to or copy namelist files from cfgs/C1D_PAPA_FABM_ERSEM folder in your working repository. Repeat the same procedure for *.xml files. file_def_nemo.xml defines which outputs will be saved, and at what frequency. For the purpose of our example, we will save a range of daily averaged pelagic and benthic state and diagnostic variables. Use this file as a template to specify your own range of outputs.
 
-Step 3: Running the model... at last...
+Step 4: Running the model... at last...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Finally, you are ready to launch the model...
