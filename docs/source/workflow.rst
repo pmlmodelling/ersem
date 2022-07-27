@@ -21,9 +21,9 @@ issues too.
 Private developments
 --------------------
 
-The only private developments would come from 
-specific projects - these require significant scientific changes to the model,
-and thus, are isolated from the public version of the code.
+Private developments are those generated within new and ongoing projects that requires
+significant scientific changes to the code that will be initially isolated from the public 
+version of the code
 
 Workflow for private developments
 +++++++++++++++++++++++++++++++++
@@ -48,7 +48,7 @@ The workflow for private developments is as follows:
 Public developments
 -------------------
 
-The following come under public developments:
+The following changes are considered public developments and would need to follow a slightly different workflow (see below):
 
 1. Documentation - new descriptions and updates to current documentation, these include new ERSEM tutorials or 
    fixes to current docs
