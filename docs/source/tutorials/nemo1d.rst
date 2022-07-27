@@ -6,18 +6,18 @@ NEMO-ERSEM in a water column
 #############################
 
 This tutorial demonstrates how to configure and run NEMO 1D (water-column)
-testcase C1D_PAPA with ERSEM biogeochemistry. It is a demonstration of
-concept only, as it combines hydrodynamics of PAPA station in the North
+testcase C1D_PAPA with ERSEM biogeochemistry. It is only a demonstration of
+the concept, as it combines hydrodynamics of PAPA station in the North
 Pacific Ocean with biogeochemistry of L4 station in the Western English
 Channel. Users are encouraged to modify this example for their own purposes.
+Before starting, read the description of the NEMO `C1D_PAPA configuration <https://forge.ipsl.jussieu.fr/nemo/chrome/site/doc/NEMO/guide/html/cfgs.html#c1d-papa>`__.
 
 Step 1: Obtaining the code
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To get started, you need to follow the instructions for setting up
-the `C1D_PAPA configuration <https://forge.ipsl.jussieu.fr/nemo/chrome/site/doc/NEMO/guide/html/cfgs.html#c1d-papa>`__. The input data must be obtained from NEMO Reference configurations inputs repository on `Zenodo <https://zenodo.org/record/1472245#.Yt6_QIzMKEI>`__.
+The input data must be obtained from NEMO Reference configurations inputs repository on `Zenodo <https://zenodo.org/record/1472245#.Yt6_QIzMKEI>`__ and unpacked into your working directory.
 
-NEMO4 code base with FABM support can be obtained in the corresponding `repository <https://github.com/pmlmodelling/NEMO4.0-FABM>`__. You will also need to download `FABM <https://github.com/fabm-model/fabm>`__ and `ERSEM <https://github.com/pmlmodelling/ersem>`__. Finally, you need to download I/O server `XIOS-2.5 <https://forge.ipsl.jussieu.fr/nemo/chrome/site/doc/NEMO/guide/html/install.html#extract-and-install-xios>`__, and `install it. <https://forge.ipsl.jussieu.fr/ioserver/>`__. Copy xios_server.exe executable into your working directory.
+NEMO4 code base with FABM support can be obtained in the corresponding `repository <https://github.com/pmlmodelling/NEMO4.0-FABM>`__. You will also need to download `FABM <https://github.com/fabm-model/fabm>`__ and `ERSEM <https://github.com/pmlmodelling/ersem>`__. Finally, you need to download I/O server `XIOS-2.5 <https://forge.ipsl.jussieu.fr/nemo/chrome/site/doc/NEMO/guide/html/install.html#extract-and-install-xios>`__, and `install it <https://forge.ipsl.jussieu.fr/ioserver/>`__. Copy xios_server.exe executable into your working directory.
 
 
 Step 2: Compiling the code
@@ -36,7 +36,7 @@ First, you need to compile FABM with ERSEM support and specifying nemo as a phys
         make -j4
         cd $old                         # return to the original directory
         
-After that, you need to compile NEMO. C1D_PAPA_FABM configuration has been added to the NEMO4.0-FABM to support this, or you can create your own. The critical point is to provide the necessary compilation keys in cpp_X.fcm file, i.e. key_c1d for compilation in 1D, and key_fabm for FABM support:
+After that, you need to compile NEMO. You can refer to the C1D_PAPA_FABM_ERSEM configuration that has been added to the NEMO4.0-FABM. The critical point is to provide the necessary compilation keys in cpp_X.fcm file, i.e. key_c1d for compilation in 1D, and key_fabm for FABM support:
 
   .. code-block:: bash
   
@@ -59,8 +59,8 @@ Next, compile the model by executing the following lines:
     ARCH=GCC_PMPC
 
     cd $NEMO_BUILD_DIR
-    ./makenemo -m $ARCH -r C1D_PAPA_FABM -n C1D_PAPA_FABM_BLD_SCRATCH | tee compile.log
-    mv $NEMO_BUILD_DIR/cfgs/C1D_PAPA_FABM_BLD_SCRATCH/BLD/bin/nemo.exe $RUNDIR/
+    ./makenemo -m $ARCH -r C1D_PAPA_FABM_ERSEM -n C1D_PAPA_FABM_ERSEM_BLD_SCRATCH | tee compile.log
+    mv $NEMO_BUILD_DIR/cfgs/C1D_PAPA_FABM_ERSEM_BLD_SCRATCH/BLD/bin/nemo.exe $RUNDIR/
     echo "Done."
     
 The script above will compile the model and move the nemo executable into your working directory.
@@ -92,6 +92,15 @@ ERSEM requires some external inputs, which we must provde. The following lines s
            value: 1.0e-10
            standard_name: gelbstoff_absorption_satellite
 
-    
+Create links to or copy namelist files from cfgs/C1D_PAPA_FABM_ERSEM folder in your working repository. Repeat the same procedure for *.xml files. file_def_nemo.xml defines which outputs will be saved, and at what frequency. For the purpose of our example, we will save a range of daily averaged pelagic and benthic state and diagnostic variables. Use this file as a template to specify your own range of outputs.
+
+Step 3: Running the model... at last...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Finally, you are ready to launch the model...
+
+ .. code-block:: bash
+ 
+      ./nemo.exe
 
 
