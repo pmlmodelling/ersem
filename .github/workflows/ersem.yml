@@ -22,8 +22,8 @@ jobs:
           run: ./github-actions/pyfabm-ersem/pyfabm-ersem-dep-debian.sh
         - name: Building and installing PyFABM-ERSEM
           run: |
-              branch=$(git branch --show-current)
-              ./github-actions/pyfabm-ersem/pyfabm-ersem-build.sh $branch
+              BRANCH=${{ github.head_ref }}
+              ./github-actions/pyfabm-ersem/pyfabm-ersem-build.sh $BRANCH
         - name: Running pyfabm tutorial
           run: |
               python -m pip install matplotlib
@@ -44,8 +44,8 @@ jobs:
           run: ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-dep-debian.sh 
         - name: Building and installing GOTM-FABM-ERSEM
           run: |
-              branch=$(git branch --show-current)
-              ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-build.sh -b $branch
+              BRANCH=${{ github.head_ref }}
+              ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-build.sh -b $BRANCH
         - name: Running tutorial
           run: |
               ./github-actions/gotm-fabm-ersem/gotm-tut-config-setup.sh
@@ -69,8 +69,8 @@ jobs:
           run: ./github-actions/fabm0d-gotm-ersem/fabm0d-gotm-ersem-dep-debian.sh
         - name: Building and installing FABM0d-GOTM-ERSEM
           run: |
-              branch=$(git branch --show-current)
-              ./github-actions/fabm0d-gotm-ersem/fabm0d-gotm-ersem-build.sh $branch
+              BRANCH=${{ github.head_ref }}
+              ./github-actions/fabm0d-gotm-ersem/fabm0d-gotm-ersem-build.sh -b $BRANCH
         - name: Running tutorial
           run: |
               ./github-actions/fabm0d-gotm-ersem/aquarium-tut-config-setup.sh
@@ -93,8 +93,8 @@ jobs:
           run: ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-dep-debian.sh 
         - name: Building and installing GOTM-FABM-ERSEM
           run: |
-              branch=$(git branch --show-current)
-              ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-build.sh -f "-DCMAKE_Fortran_FLAGS="-pg""
+              BRANCH=${{ github.head_ref }}
+              ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-build.sh -b $BRANCH -f "-DCMAKE_Fortran_FLAGS="-pg""
         - name: Running config
           run: |
               ./github-actions/gotm-fabm-ersem/gotm-profiling.sh
