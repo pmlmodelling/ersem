@@ -159,7 +159,7 @@ contains
       call self%register_diagnostic_variable(self%id_fB1O3c,'fB1O3c','mg C/m^3/d','respiration')
       call self%register_diagnostic_variable(self%id_fB1NIn,'fB1NIn','mmol N/m^3/d','release of DIN')
       call self%register_diagnostic_variable(self%id_fB1N1p,'fB1N1p','mmol P/m^3/d','release of DIP')
-      call self%register_diagnostic_variable(self%id_bgeff, '-', 'mg C/m^3/d','bacterial growth efficiency')
+      call self%register_diagnostic_variable(self%id_bgeff,'bgeff','','bacterial growth efficiency')
 
       call self%register_diagnostic_variable(self%id_fB1R1c,'fB1R1c','mg C/m^3/d','release of labile DOC ')
       call self%register_diagnostic_variable(self%id_fB1R2c,'fB1R2c','mg C/m^3/d','release of semi-labile DOC ')

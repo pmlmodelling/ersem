@@ -158,7 +158,7 @@ contains
       call self%register_diagnostic_variable(self%id_fB1N1p,'fB1N1p','mmol P/m^3/d','release of DIP')
       call self%register_diagnostic_variable(self%id_minn,'minn','mmol N/m^3/d','mineralisation of N')
       call self%register_diagnostic_variable(self%id_minp,'minp','mmol P/m^3/d','mineralisation of P')
-      call self%register_diagnostic_variable(self%id_bgeff, '-', 'mg C/m^3/d','bacterial growth efficiency')
+      call self%register_diagnostic_variable(self%id_bgeff,'bgeff','','bacterial growth efficiency')
 
 
    end subroutine
