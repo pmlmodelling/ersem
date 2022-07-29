@@ -94,7 +94,7 @@ jobs:
         - name: Building and installing GOTM-FABM-ERSEM
           run: |
               BRANCH=${{ github.head_ref }}
-              ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-build.sh -b $BRANCH -f "-DCMAKE_Fortran_FLAGS="-pg""
+              ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-build.sh -f "-DCMAKE_Fortran_FLAGS="-pg"" -b $BRANCH
         - name: Running config
           run: |
               ./github-actions/gotm-fabm-ersem/gotm-profiling.sh
