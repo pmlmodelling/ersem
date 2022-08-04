@@ -52,7 +52,7 @@ contains
       call self%get_parameter(self%sN4N3X,'sN4N3','1/d',             'specific nitrification rate')
       call self%get_parameter(self%chN3oX,'chN3o','(mmol O_2/m^3)^3','Michaelis-Menten constant for cubic oxygen dependence of nitrification')
       call self%get_parameter(self%ISWn2o,'ISWn2o','',               'activate n2o production', default = .false.)
-      call self%get_parameter(self%N4O5minX,'N4O5minX','-','minimal fraction of N2O production')
+      if (self%ISWn2o) call self%get_parameter(self%N4O5minX,'N4O5minX','-','minimal fraction of N2O production')
       call self%get_parameter(self%chN4nX,'chN4n','(mmol N/m^3)^3','Michaelis-Menten constant for cubic ammonium dependence of nitrification', default=0.0_rk)
 
       ! Register diagnostic variables
