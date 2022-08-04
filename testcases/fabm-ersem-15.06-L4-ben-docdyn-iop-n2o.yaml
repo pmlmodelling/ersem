@@ -263,12 +263,13 @@ instances:
       sN4N3: 0.5                                           # specific nitrification rate (1/d)
       chN3o: 2700.0                                        # Michaelis-Menten constant for cubic oxygen dependence of nitrification ((mmol O_2/m^3)^3)
       chN4n: 0.5                                           # Michaelis-Menten constant for cubic ammonium dependence of nitrification ((mmol N/m^3)^3), default = 0.0
-      N4O5minX: 0.001                                     # fraction of N going to N2O during nitrification
+      ISWn2o: true                                        # activate production of nitrous oxide (default = false)
+      N4O5minX: 0.001                                      # fraction of N going to N2O during nitrification
     coupling:
       N3n: N3/n                                            # nitrate (mmol N/m^3)
       N4n: N4/n                                            # ammonium (mmol N/m^3)
       O2o: O2/o                                            # oxygen (mmol O_2/m^3)
-      O5n: O5/n
+      O5n: O5/n                                            # nitrous oxide (mmol N/m^3)
   P1:
     long_name: diatoms
     model: ersem/primary_producer
