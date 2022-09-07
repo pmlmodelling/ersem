@@ -5,38 +5,35 @@
 NEMO-ERSEM in a water column 
 #############################
 
-This tutorial demonstrates how to configure and run NEMO 1D (water-column)
-testcase C1D_PAPA with ERSEM biogeochemistry. It is only a demonstration of
-the concept, as it combines hydrodynamics of PAPA station in the North
-Pacific Ocean with biogeochemistry of L4 station in the Western English
-Channel. Users are encouraged to modify this example for their own purposes.
-Before starting, read the description of the NEMO `C1D_PAPA configuration <https://forge.ipsl.jussieu.fr/nemo/chrome/site/doc/NEMO/guide/html/cfgs.html#c1d-papa>`__.
+This tutorial demonstrates how to configure and run NEMO 1D (water-column) reference configuration C1D_PAPA with ERSEM biogeochemistry. This example is a demonstration of the concept, as it combines hydrodynamics of ocean station `PAPA <https://www.pmel.noaa.gov/ocs/Papa>`_ in the North Pacific Ocean with biogeochemistry of `L4 station <https://www.westernchannelobservatory.org.uk/>`_ in the Western English Channel. Users are encouraged to modify this example to fit their own purposes.
+
+We recommend to read the brief description of the NEMO `C1D_PAPA configuration <https://forge.ipsl.jussieu.fr/nemo/chrome/site/doc/NEMO/guide/html/cfgs.html#c1d-papa>`__ before continuing with this tutorial.
 
 Step 1: Obtaining the code
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The input data must be obtained from NEMO Reference configurations inputs repository on `Zenodo <https://zenodo.org/record/1472245#.Yt6_QIzMKEI>`__ and unpacked into your working directory.
+The input data must be obtained from `NEMO Reference configurations inputs <https://zenodo.org/record/1472245#.Yt6_QIzMKEI>`__ repository on Zenodo  and unpacked into your working directory.
 
-NEMO4 code base with FABM support can be obtained in the corresponding `repository <https://github.com/pmlmodelling/NEMO4.0-FABM>`__. You will also need to download `FABM <https://github.com/fabm-model/fabm>`__ and `ERSEM <https://github.com/pmlmodelling/ersem>`__. Finally, you need to download I/O server `XIOS-2.5 <https://forge.ipsl.jussieu.fr/nemo/chrome/site/doc/NEMO/guide/html/install.html#extract-and-install-xios>`__, and `install it <https://forge.ipsl.jussieu.fr/ioserver/>`__. Copy xios_server.exe executable into your working directory.
+NEMO4 code base with FABM support can be obtained in the corresponding `repository <https://github.com/pmlmodelling/NEMO4.0-FABM>`__. You will also need to download `FABM <https://github.com/fabm-model/fabm>`__ and `ERSEM <https://github.com/pmlmodelling/ersem>`__. Finally, you will need to download I/O server `XIOS-2.5 <https://forge.ipsl.jussieu.fr/nemo/chrome/site/doc/NEMO/guide/html/install.html#extract-and-install-xios>`__, and `install it <https://forge.ipsl.jussieu.fr/ioserver/>`__. Copy the compiled xios_server.exe executable into your working directory.
 
 
 Step 2: Compiling the code
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-First, you need to compile FABM with ERSEM support and specifying nemo as a physical host. The following commands can be written in an executable file for easy recompilation at any future point:
+First, you will need to compile FABM with ERSEM support, specifying nemo as a physical host. The following commands can be run in a command line or wrapped into an executable file for easy recompilation at any future point:
 
   .. code-block:: bash
         
-        old = `pwd`                      #remember current directory
+        old = `pwd`                      #remember current (working) directory
         mkdir -p ~/build/nemo-fabm-ersem # create directory for the build
         cd ~/build/nemo-fabm-ersem       # go to the build directory
-        cmake <FABM sourcedir> -DFABM_HOST=nemo -DFABM_ERSEM_BASE=<ERSEM sourcedir> -DCMAKE_INSTALL_PREFIX=~/local/fabm/nemo-fabm-ersem
-        #replace <FABM sourcedir> and <ERSEM sourcedir> with corresponding directories of FABM and ERSEM code bases.
+        cmake <FABM_DIR> -DFABM_HOST=nemo -DFABM_ERSEM_BASE=<ERSEM_DIR> -DCMAKE_INSTALL_PREFIX=~/local/fabm/nemo-fabm-ersem
+        #replace <FABM_DIR> and <ERSEM_DIR> with the corresponding directories the FABM and ERSEM code bases were downloaded to.
         make install
         make -j4
-        cd $old                         # return to the original directory
+        cd $old                          # return to the working directory
         
-After that, you need to compile NEMO. You can refer to the C1D_PAPA_FABM_ERSEM configuration that has been added to the NEMO4.0-FABM. The critical point is to provide the necessary compilation keys in cpp_X.fcm file, i.e. key_c1d for compilation in 1D, and key_fabm for FABM support:
+Thereafter, you will need to compile the NEMO executable. You can refer to the C1D_PAPA_FABM_ERSEM configuration provided with the NEMO4.0-FABM. The critical point is to specify all the necessary compilation keys in cpp_X.fcm file, i.e. key_c1d for compilation in 1D, and key_fabm for FABM support:
 
   .. code-block:: bash
   
@@ -50,22 +47,22 @@ Next, compile the model by executing the following lines:
 
     module load mpi
 
-    NEMO_BUILD_DIR=$<NEMODIR>
-    RUNDIR=$<MYRUNDIR>
-    export XIOS_HOME=$<XIOSDIR>
+    NEMO_BUILD_DIR=$<NEMO_DIR>
+    RUN_DIR=$<RUN_DIR>
+    export XIOS_HOME=$<XIOS_DIR>
     export FABM_HOME=$HOME/local/fabm/nemo-fabm-ersem
-    # replace <NEMODIR> and <XIOSDIR> with location of corresponding code bases on your machine, <MYRUNDIR> with your working directory. FABM_HOME in this example corresponds to directory where we installed FABM-ERSEM above.
+    # replace <NEMO_DIR> and <XIOS_DIR> with the path to the corresponding code bases and <RUNDIR> with your working directory. FABM_HOME in this example corresponds to the directory where FABM-ERSEM was installed.
     
-    ARCH=GCC_PMPC
+    ARCH=GCC_PMPC # specify build architecture
 
     cd $NEMO_BUILD_DIR
     ./makenemo -m $ARCH -r C1D_PAPA_FABM_ERSEM -n C1D_PAPA_FABM_ERSEM_BLD_SCRATCH | tee compile.log
-    mv $NEMO_BUILD_DIR/cfgs/C1D_PAPA_FABM_ERSEM_BLD_SCRATCH/BLD/bin/nemo.exe $RUNDIR/
+    mv $NEMO_BUILD_DIR/cfgs/C1D_PAPA_FABM_ERSEM_BLD_SCRATCH/BLD/bin/nemo.exe $RUN_DIR/
     echo "Done."
     
 The script above will compile the model and move the nemo executable into your working directory.
 
-Note that you might need to edit the architecture file depending on the machine you are compiling and running the model on. This will include compiler version, compiler flags and links to netCDF libraries. Here, we are pointing our compilation to arch-GCC_PMPC.fcm file (available within NEMO4.0-FABM repository) to compile on a typical PML workstation running Fedora Linux distribution and using a GNU Fortran compiler.
+Note that you will need to edit the architecture file depending on the machine you are compiling and running the model on. This will include compiler version, compiler flags and links to netCDF libraries. Here, we are pointing our compilation to arch-GCC_PMPC.fcm file (available within NEMO4.0-FABM repository) to compile on a typical PML workstation running Fedora Linux distribution and using a GNU Fortran compiler.
 
 Step 3: Getting ready to run the model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -92,12 +89,10 @@ ERSEM requires some external inputs, which we must provde. The following lines s
            value: 1.0e-10
            standard_name: gelbstoff_absorption_satellite
 
-Create links to or copy namelist files from cfgs/C1D_PAPA_FABM_ERSEM folder in your working repository. Repeat the same procedure for *.xml files. file_def_nemo.xml defines which outputs will be saved, and at what frequency. For the purpose of our example, we will save a range of daily averaged pelagic and benthic state and diagnostic variables. Use this file as a template to specify your own range of outputs.
+Create links to, or copy namelist files from cfgs/C1D_PAPA_FABM_ERSEM folder in your working repository. Repeat the same procedure for *.xml files. file_def_nemo.xml defines which outputs will be saved, and at what frequency. For the purpose of this example, we will save a range of daily averaged pelagic and benthic state and diagnostic variables. Use this file as a template to specify your own range of outputs.
 
-Step 4: Running the model... at last...
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Finally, you are ready to launch the model...
+Step 4: Running the model
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
  .. code-block:: bash
  
