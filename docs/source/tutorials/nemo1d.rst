@@ -12,7 +12,7 @@ We recommend to read the brief description of the NEMO `C1D_PAPA configuration <
 Step 1: Obtaining the code
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The input data must be obtained from `NEMO Reference configurations inputs <https://zenodo.org/record/1472245#.Yt6_QIzMKEI>`__ repository on Zenodo  and unpacked into your working directory.
+The input data contained in INPUTS_C1D_PAPA_v4.0.tar file must be obtained from `NEMO Reference configurations inputs <https://zenodo.org/record/1472245#.Yt6_QIzMKEI>`__ repository on Zenodo  and unpacked into your working directory.
 
 NEMO4 code base with FABM support can be obtained in the corresponding `repository <https://github.com/pmlmodelling/NEMO4.0-FABM>`__. You will also need to download `FABM <https://github.com/fabm-model/fabm>`__ and `ERSEM <https://github.com/pmlmodelling/ersem>`__. Finally, you will need to download I/O server `XIOS-2.5 <https://forge.ipsl.jussieu.fr/nemo/chrome/site/doc/NEMO/guide/html/install.html#extract-and-install-xios>`__, and `install it <https://forge.ipsl.jussieu.fr/ioserver/>`__. Copy the compiled xios_server.exe executable into your working directory.
 
