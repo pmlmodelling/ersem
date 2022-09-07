@@ -89,13 +89,25 @@ ERSEM requires some external inputs, which we must provde. The following lines s
            value: 1.0e-10
            standard_name: gelbstoff_absorption_satellite
 
-Create links to, or copy namelist files from cfgs/C1D_PAPA_FABM_ERSEM folder in your working repository. Repeat the same procedure for *.xml files. file_def_nemo.xml defines which outputs will be saved, and at what frequency. For the purpose of this example, we will save a range of daily averaged pelagic and benthic state and diagnostic variables. Use this file as a template to specify your own range of outputs.
+Create links to, or copy namelist files from cfgs/C1D_PAPA_FABM_ERSEM folder in your working directory. Repeat the same procedure for *.xml files. file_def_nemo.xml defines which outputs will be saved, and at what frequency. For the purpose of this example, we will save a range of daily averaged pelagic and benthic state and diagnostic variables. Use this file as a template to specify your own range of outputs.
 
 Step 4: Running the model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- .. code-block:: bash
+The model is deployed by running the executable file in your working directory:
+
+.. code-block:: bash
  
       ./nemo.exe
 
+As a result, several output files will be generated according to specifications in file_def_nemo.xml file. Additionally, NEMO will generate restart files. We can visualise the outputs using netCDF viewer (e.g. `ncview <http://meteora.ucsd.edu/~pierce/ncview_home_page.html>`_ or `PyNcView <https://github.com/BoldingBruggeman/pyncview>`_), or in Python using `xarray <https://docs.xarray.dev/en/stable/#>`_:
 
+.. code-block:: python
+
+      import xarray as xr              # import xarray
+      import matplotlib.pyplot as plt  # import matplotlib
+      dat = xr.open_dataset('C1D_PAPA_1d_20100615_20110614_ptrc_T.nc')  # open dataset with ERSEM variables 
+      dat.N3_n[:,0:35,1,1].plot(x='time_counter',yincrease=False)       # plot Hovmöller diagram for nitrate
+      plt.title('Modelled nitrate at station PAPA')                     # add plot title
+      
+Note that in the example above we plot nitrate for the entire modelled period, but only the upper 35 layers (from surface down to ~300 m depth). We also have to specify spatial dimensions, as 1D case in NEMO actually has 3x3 grid points in horizontal.
