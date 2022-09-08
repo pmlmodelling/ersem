@@ -114,7 +114,9 @@ As a result, several output files will be generated according to specifications 
       axes[1].set_title('Modelled dissolved oxygen at PAPA')                       # add another title
       fig.tight_layout()                                                           # make it look nice
       
-In the example above we plot the variables over the entire modelled period, but only in the upper 35 vertical layers (from surface down to ~300 m depth). We also have to specify spatial dimensions of the output, as 1D configuration in NEMO actually has horizontal resolution of 3x3 grid points.
+In the example above we plot the variables over the entire modelled period, but only in the upper 35 vertical layers (from surface down to ~300 m depth). We also have to specify spatial dimensions of the output, as 1D configuration in NEMO actually has horizontal resolution of 3x3 grid points. 
+
+The resulting figure should look like this:
 
 .. image:: ../../images/C1D_PAPA_ERSEM_plots.png
    :alt: Example C1D_PAPA_FABM_ERSEM output
