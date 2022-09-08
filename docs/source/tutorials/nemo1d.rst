@@ -20,7 +20,7 @@ NEMO4 code base with FABM support can be obtained in the corresponding `reposito
 Step 2: Compiling the code
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-First, FABM must be compiled with ERSEM support, specifying nemo as a physical host. The following commands can be run in a command line or wrapped into an executable file for easy recompilation at any future point:
+First, FABM must be compiled with ERSEM support, specifying nemo as a physical host model. The following commands can be run in a command line or wrapped into an executable file for easy recompilation at any future point:
 
   .. code-block:: bash
         
