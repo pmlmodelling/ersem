@@ -91,8 +91,8 @@ ERSEM requires some external inputs, which must be provided. The following lines
 
 Create links to, or copy namelist files from NEMO cfgs/C1D_PAPA_FABM_ERSEM folder into the working directory. Repeat the same procedure for *.xml files. file_def_nemo.xml defines which outputs will be saved, and at what frequency. For the purpose of this example, we will save a range of daily averaged pelagic and benthic state and diagnostic variables. This file can be used as a template to specify the desired range of model outputs.
 
-Step 4: Running the model
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Step 4: Running the model and visualising the outputs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The model is deployed by running the executable file in the working directory:
 
