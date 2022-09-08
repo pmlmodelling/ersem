@@ -22,6 +22,7 @@ Here we describe several tutorials for the common use cases for ERSEM.
    gotm
    fvcom
    nemo
+   nemo1d
 
 .. _conda-install:
 
