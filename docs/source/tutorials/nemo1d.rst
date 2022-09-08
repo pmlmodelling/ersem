@@ -14,7 +14,7 @@ Step 1: Obtaining the code
 
 The input data contained in ``INPUTS_C1D_PAPA_v4.0.tar`` file must be obtained from `NEMO Reference configurations inputs <https://zenodo.org/record/1472245#.Yt6_QIzMKEI>`__ repository on Zenodo  and unpacked into the working directory.
 
-NEMO4 code base with FABM support can be obtained in the corresponding `repository <https://github.com/pmlmodelling/NEMO4.0-FABM>`__. The next step is to download `FABM <https://github.com/fabm-model/fabm>`__ and `ERSEM <https://github.com/pmlmodelling/ersem>`__. Finally, I/O server `XIOS-2.5 <https://forge.ipsl.jussieu.fr/nemo/chrome/site/doc/NEMO/guide/html/install.html#extract-and-install-xios>`__ must be downloaded and `installed <https://forge.ipsl.jussieu.fr/ioserver/>`__. The compiled xios_server.exe executable should be copied into the working directory.
+NEMO4 code base with FABM support can be obtained in the corresponding `repository <https://github.com/pmlmodelling/NEMO4.0-FABM>`__. The next step is to download `FABM <https://github.com/fabm-model/fabm>`__ and `ERSEM <https://github.com/pmlmodelling/ersem>`__. Finally, I/O server `XIOS-2.5 <https://forge.ipsl.jussieu.fr/nemo/chrome/site/doc/NEMO/guide/html/install.html#extract-and-install-xios>`__ must be downloaded and `installed <https://forge.ipsl.jussieu.fr/ioserver/>`__. The compiled `xios_server.exe` executable should be copied into the working directory.
 
 
 Step 2: Compiling the code
