@@ -33,7 +33,7 @@ First, FABM must be compiled with ERSEM support, specifying nemo as a physical h
         make -j4
         cd $old                          # return to the working directory
         
-Thereafter, it is time to compile the NEMO executable. Users may refer to the C1D_PAPA_FABM_ERSEM configuration provided with the NEMO4.0-FABM. The critical point is to specify all the necessary compilation keys in cpp_X.fcm file, i.e. key_c1d for compilation in 1D, and key_fabm for FABM support:
+Thereafter, it is time to compile the NEMO executable. Users may refer to the `C1D_PAPA_FABM_ERSEM` configuration provided with the NEMO4.0-FABM. The critical point is to specify all the necessary compilation keys in ``cpp_X.fcm`` file, i.e. key_c1d for compilation in 1D, and key_fabm for FABM support:
 
   .. code-block:: bash
   
