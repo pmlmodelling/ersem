@@ -75,9 +75,13 @@ contains
          end if
       end if
       call self%get_parameter(rRPmX, 'rm', 'm/d', 'sinking velocity', default=0.0_rk)
+      
+      ! k1 is the _degradation_ rate of a first order kinetic rate that will be applied too all constituents
+      ! the value needs to be positive but the process is considered a degradation (i.e. the reaction will lead to consumption)
+      ! the rate can be made dependent on temperature by specifying a q10 value different from 1
       call self%get_parameter(self%k1,'k1','1/d','1st order kinetic rate', default=0.0_rk,minimum=0.0_rk)
       call self%get_parameter(self%q_10, 'q10', '-', 'Q_10 temperature coefficient for the 1st order kinetic', default=1.0_rk, minimum=1.0_rk)
-      if (self%q_10>0._rk) call self%register_dependency(self%id_temp,standard_variables%temperature)
+      if (self%k1>0._rk) call self%register_dependency(self%id_temp,standard_variables%temperature)
       
 
 
@@ -95,6 +99,8 @@ contains
          call self%add_to_aggregate_variable(standard_variables%attenuation_coefficient_of_photosynthetic_radiative_flux, &
             self%id_c,scale_factor=EPS,include_background=.true.)
          if (self%k1/=0._rk) then
+             ! if a degradation rate greater than 0 is specified, then prodC is the link to the module that is the product of the C degradation 
+             ! and kflux_c is the flux
              call self%register_state_dependency(self%id_k_product_c,'prodC','mgC/m^3','product of 1st order kinetic')
              call self%register_diagnostic_variable(self%id_kflux_c,'kflux_c','mmolC/m^3/d','1st order kinetic flux of carbon',source=source_do)
          endif
@@ -102,6 +108,8 @@ contains
       if (index(composition,'n')/=0) then 
          call self%add_constituent('n',0.0_rk,qnRPIcX*c0)
          if (self%k1/=0._rk) then
+             ! if a degradation rate greater than 0 is specified, then prodC is the link to the module that is the product of the N degradation 
+             ! and kflux_n is the flux
              call self%register_state_dependency(self%id_k_product_n,'prodN','mmolN/m^3','product of 1st order kinetic')
              call self%register_diagnostic_variable(self%id_kflux_n,'kflux_n','mmolN/m^3/d','1st order kinetic flux of nitrogen',source=source_do)
          endif
@@ -109,6 +117,8 @@ contains
       if (index(composition,'p')/=0) then 
          call self%add_constituent('p',0.0_rk,qpRPIcX*c0)
          if (self%k1/=0._rk) then
+             ! if a degradation rate greater than 0 is specified, then prodC is the link to the module that is the product of the P degradation 
+             ! and kflux_p is the flux
              call self%register_state_dependency(self%id_k_product_p,'prodP','mmolP/m^3','product of 1st order kinetic')
              call self%register_diagnostic_variable(self%id_kflux_p,'kflux_p','mmolP/m^3/d','1st order kinetic flux of phosphorus',source=source_do)
          endif
@@ -117,6 +127,8 @@ contains
          call self%get_parameter(s0,'s0','mmol Si/m^3','background silicon concentration',default=qsRPIcX*c0)
          call self%add_constituent('s',0.0_rk,s0)
          if (self%k1/=0._rk) then
+             ! if a degradation rate greater than 0 is specified, then prodC is the link to the module that is the product of the Si degradation 
+             ! and kflux_s is the flux
              call self%register_state_dependency(self%id_k_product_s,'prodS','mmolSi/m^3','product of 1st order kinetic')
              call self%register_diagnostic_variable(self%id_kflux_s,'kflux_s','mmolSi/m^3/d','1st order kinetic flux of silicate',source=source_do)
          endif
@@ -124,6 +136,8 @@ contains
       if (index(composition,'f')/=0) then 
           call self%add_constituent('f',0.0_rk)
           if (self%k1/=0._rk) then
+             ! if a degradation rate greater than 0 is specified, then prodC is the link to the module that is the product of the Fe degradation 
+             ! and kflux_f is the flux
              call self%register_state_dependency(self%id_k_product_f,'prodF','nmolFe/m^3','product of 1st order kinetic')
              call self%register_diagnostic_variable(self%id_kflux_f,'kflux_f','nmolFe/m^3/d','1st order kinetic flux of iron',source=source_do)
           endif
