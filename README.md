@@ -5,9 +5,9 @@
 
 ![ERSEM diagram](docs/images/ERSEM.png)
 
-[ERSEM](http://ersem.com) is a marine ecosystem model. It describes the
-biogeochemical cycling of carbon, nitrogen, phosphorus, silicon, oxygen and
-iron through pelagic and benthic ecosystems. 
+[ERSEM](http://ersem.com) is a marine biogeochemical and ecosystem model. It describes the
+cycling of carbon, nitrogen, phosphorus, silicon, oxygen and iron through 
+the lower trophic level pelagic and benthic ecosystems. 
 
 - **Installation Instructions:** conda: https://ersem.readthedocs.io/en/latest/tutorials/index.html#conda-installation, source: https://ersem.readthedocs.io/en/latest/developers/index.html
 - **User Documentation & Example Usage:** https://ersem.readthedocs.io/en/latest/
@@ -17,7 +17,7 @@ iron through pelagic and benthic ecosystems.
 
 # How to cite
 
-If you would like to refer to ERSEM in publications, please cite:
+To refer to ERSEM in publications, please cite:
 
 Butenschön, M., Clark, J., Aldridge, J.N., Allen, J.I., Artioli, Y.,
 Blackford, J., Bruggeman, J., Cazenave, P., Ciavatta, S., Kay, S., Lessin, G.,
@@ -27,9 +27,7 @@ biogeochemistry and the ecosystem dynamics of the lower trophic levels.
 Geoscientific Model Development, 9(4), 1293–1339.
 doi: [10.5194/gmd-9-1293-2016](https://doi.org/10.5194/gmd-9-1293-2016).
 
-If you would like to refer to the ERSEM source code, you can do so by its Zenodo DOI:
+To refer specifically to the ERSEM source code, you may use its Zenodo DOI:
 
 [![DOI](https://zenodo.org/badge/302390544.svg)](https://zenodo.org/badge/latestdoi/302390544)
-
-To refer to the ERSEM website, please use <http://ersem.com>.
 

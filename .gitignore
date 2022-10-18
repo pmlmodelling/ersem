@@ -13,3 +13,6 @@ docs/source/module_index.rst
 
 # the ERSEM setups repo should be cloned each time
 docs/source/ersem-setups
+
+# removing vscode files
+.vscode
