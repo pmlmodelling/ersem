@@ -24,6 +24,7 @@ add_library(fabm_models_ersem OBJECT
             carbonate.F90
             oxygen.F90
             nitrification.F90
+            nitrous_oxide.F90
             benthic_column.F90
             benthic_column_dissolved_matter.F90
             benthic_column_particulate_matter.F90
