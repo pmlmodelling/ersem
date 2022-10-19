@@ -142,6 +142,7 @@ contains
              call self%register_diagnostic_variable(self%id_kflux_f,'kflux_f','nmolFe/m^3/d','1st order kinetic flux of iron',source=source_do)
           endif
       endif
+      if (index(composition,'h')/=0) call self%add_constituent('h',0.0_rk)
 
    end subroutine
 
