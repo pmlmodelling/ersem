@@ -40,10 +40,15 @@ The workflow for private developments is as follows:
 3. Commit all changes outlined in the issue to this branch and push branch to the private ERSEM repo.
 4. Create `pull request <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request>`_
    to merge the branch you have made the changes on into the `master` branch. In the creation of the pull request you
-   will need to assign specific people to review the changes you have made before it can be merged into the master branch.
+   will need to assign specific people to review the changes you have made before it can be merged into the master branch. 
 5. Once the updates have been approved by the reviewer/reviewers they will merge the development into the master branch.
 6. When the private master branch is updated you will need to talk to the ERSEM repo manager to merge those changes back
    to the public repo.
+
+.. note::
+
+    When creating the pull request it is important to add `Fixes #[issue-id-number]`, this will insure that when the 
+    pull request is merged into master the corresponding issue will be closed at the same time.
 
 Public developments
 -------------------
@@ -76,6 +81,11 @@ For public developments, the workflow is pretty simple:
 6. When the public master branch is updated you will need to talk to the ERSEM repo manager to merge those changes back
    to the private repo.
 
+.. note::
+
+    When creating the pull request it is important to add `Fixes #[issue-id-number]`, this will insure that when the 
+    pull request is merged into master the corresponding issue will be closed at the same time.
+
 Notes for reviewers
 -------------------
 
@@ -84,7 +94,8 @@ When `reviewing pull requests <https://docs.github.com/en/pull-requests/collabor
 1. Ensure that the new changes do not adversely affect ERSEM. **Note** some modifications will change the results
    produced by the model, however, it is the author of the changes and reviewer's responsibility to decide
    whether these changes go into ERSEM. If unsure, please contact the ERSEM repository manager.
-2. Ensure that the changes made to the code correctly address the issue created.
+2. Ensure that the changes made to the code correctly address the issue created and that `Fixes #[issue-id-number]`
+   is added to the pull request description to ensure the relevant issue is closed upon merging with master.
 3. For the public ERSEM, make sure that the tests continue to pass.
 
 .. note::
