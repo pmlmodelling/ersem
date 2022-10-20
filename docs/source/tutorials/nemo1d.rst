@@ -24,7 +24,7 @@ First, FABM must be compiled with ERSEM support, specifying nemo as a physical h
 
   .. code-block:: bash
         
-        old = `pwd`                      #remember current (working) directory
+        old=$(pwd)                      #remember current (working) directory
         mkdir -p ~/build/nemo-fabm-ersem # create directory for the build
         cd ~/build/nemo-fabm-ersem       # go to the build directory
         cmake <FABM_DIR> -DFABM_HOST=nemo -DFABM_ERSEM_BASE=<ERSEM_DIR> -DCMAKE_INSTALL_PREFIX=~/local/fabm/nemo-fabm-ersem
