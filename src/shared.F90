@@ -26,6 +26,7 @@ module ersem_shared
 
    ! Aggregate diagnostics for e.g., carbon budgets.
    type (type_bulk_standard_variable),parameter :: total_chlorophyll = type_bulk_standard_variable(name='total_chlorophyll',units='mg/m^3',aggregate_variable=.true.)
+   type (type_bulk_standard_variable),parameter :: total_h = type_bulk_standard_variable(name='total_h',units='mmol/m^3',aggregate_variable=.true.)
    type (type_bulk_standard_variable),parameter :: total_calcite_in_biota = type_bulk_standard_variable(name='total_calcite_in_biota',units='mg C/m^3',aggregate_variable=.true.)
    type (type_bulk_standard_variable),parameter :: secchi_depth = type_bulk_standard_variable(name='secchi_depth',units='m')
 
@@ -44,6 +45,7 @@ module ersem_shared
    type (type_horizontal_standard_variable),parameter :: depth_of_bottom_interface_of_layer_1 = type_horizontal_standard_variable(name='depth_of_bottom_interface_of_layer_1',units='m')
    type (type_horizontal_standard_variable),parameter :: depth_of_bottom_interface_of_layer_2 = type_horizontal_standard_variable(name='depth_of_bottom_interface_of_layer_2',units='m')
    type (type_horizontal_standard_variable),parameter :: pelagic_benthic_transfer_constant = type_horizontal_standard_variable(name='pelagic_benthic_transfer_constant',units='d/m')
+   type (type_horizontal_standard_variable),parameter :: partial_pressure_of_n2o = type_horizontal_standard_variable(name='partial_pressure_of_n2o',units='natm')
    type (type_horizontal_standard_variable),parameter :: sediment_erosion = type_horizontal_standard_variable(name='sediment_erosion',units='m/d')
 
    ! Aggregate absorption and backscatter.
