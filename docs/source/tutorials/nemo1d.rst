@@ -65,14 +65,14 @@ Note that the architecture file might require some editing depending on the mach
 Step 3: Getting ready to run the model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Within the working directory, create a link to the desired model configuration file, e.g.:
+Within the working directory, create a link to the desired model configuration file. For this tutorial, we will link fabm.yaml provided with the cfgs/C1D_PAPA_FABM_ERSEM configuration:
 
   .. code-block:: bash
   
-     ln -sf <ERSEM_DIR>/testcases/fabm-ersem-15.06-L4-noben-docdyn-iop.yaml fabm.yaml
-     # replace <ERSEM_DIR> with the directory containing the ERSEM code.
+     ln -sf <NEMO_DIR>/cgfs/C1D_PAPA_FABM_ERSEM/fabm.yaml.ersem_c1d fabm.yaml
+     # replace <NEMO_DIR> with the directory containing the ERSEM code.
      
-ERSEM requires some external inputs, which must be provided. The following lines should be appended to the fabm.yaml file. Note that for simplicity we are using constant parameter values here. Depending on the configuration, the list of required external inputs will vary.
+ERSEM requires some external inputs, which must be provided. The following lines have been appended to the fabm.yaml file we are using (for simplicity we are using constant parameter values here). Depending on the configuration, the list of required external inputs will vary.
 
   .. code-block:: bash
   
