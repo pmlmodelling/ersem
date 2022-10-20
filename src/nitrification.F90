@@ -15,14 +15,15 @@ module ersem_nitrification
    type,extends(type_ersem_pelagic_base),public :: type_ersem_nitrification
       ! Variables
       type (type_state_variable_id) :: id_O2o,id_TA
-      type (type_state_variable_id) :: id_N3n,id_N4n
+      type (type_state_variable_id) :: id_N3n,id_N4n,id_O5n
       type (type_dependency_id)     :: id_ETW,id_phx
-      type (type_diagnostic_variable_id)     :: id_nitrification
+      type (type_diagnostic_variable_id)     :: id_nitrification, id_fN4O5n, id_fN4N3n
 
       ! Parameters
       real(rk) :: q10
-      real(rk) :: sN4N3X,chN3oX,chN4nX
+      real(rk) :: sN4N3X,chN3oX,chN4nX, N4O5minX
       integer  :: ISWphx
+      logical  :: ISWn2o
    contains
 !     Model procedures
       procedure :: initialize
@@ -50,15 +51,20 @@ contains
       call self%get_parameter(self%ISWphx,'ISWph','',                'pH impact on nitrification (0: off, 1: on)')
       call self%get_parameter(self%sN4N3X,'sN4N3','1/d',             'specific nitrification rate')
       call self%get_parameter(self%chN3oX,'chN3o','(mmol O_2/m^3)^3','Michaelis-Menten constant for cubic oxygen dependence of nitrification')
+      call self%get_parameter(self%ISWn2o,'ISWn2o','',               'activate n2o production', default = .false.)
+      if (self%ISWn2o) call self%get_parameter(self%N4O5minX,'N4O5minX','-','minimal fraction of N2O production')
       call self%get_parameter(self%chN4nX,'chN4n','(mmol N/m^3)^3','Michaelis-Menten constant for cubic ammonium dependence of nitrification', default=0.0_rk)
 
       ! Register diagnostic variables
       call self%register_diagnostic_variable(self%id_nitrification,"rate","mmol/m3/d","rate")
+      call self%register_diagnostic_variable(self%id_fN4N3n,'fN4N3n','mmol N/m^3/d','nitrification',output=output_time_step_averaged)
+      if (self%ISWn2o) call self%register_diagnostic_variable(self%id_fN4O5n,'fN4O5n','mmol N/m^3/d','N2O production',output=output_time_step_averaged)
 
       ! Register links to nutrient and oxygen pools.
       call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3',  'nitrate')
       call self%register_state_dependency(self%id_N4n,'N4n','mmol N/m^3',  'ammonium')
       call self%register_state_dependency(self%id_O2o,'O2o','mmol O_2/m^3','oxygen')
+      if (self%ISWn2o) call self%register_state_dependency(self%id_O5n,'O5n','mmol N/m^3','nitrous oxide')
       call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)
 
       ! Register environmental dependencies (temperature, pH)
@@ -73,7 +79,7 @@ contains
       _DECLARE_ARGUMENTS_DO_
 
       real(rk) :: ETW,phx,O2o,N4n,N4nP
-      real(rk) :: etB1,o2state,n4state,Fph,fN4N3n
+      real(rk) :: etB1,o2state,n4state,Fph,fN4N3n,fN4O5n
 
       ! Leave spatial loops (if any)
       _LOOP_BEGIN_
@@ -101,6 +107,22 @@ contains
             Fph = min(2._rk,max(0._rk,0.6111_rk*phx-3.8889_rk))
             fN4N3n = fN4N3n * Fph
          end if
+         ! N2O production
+         ! A fixed quota of N is assumed to go to N2O during nitrification
+         ! Depending on O2 limitation this quota may increase up to 20 time
+         ! (Cadispoti, 2010). Note that N2O is given as mmol of N m-3 (i.e. 1/2
+         ! mmole N2O m-2)!  (Luca, July 2016)
+
+         if (self%ISWn2o) then
+          fN4O5n=self%N4O5minX*fN4N3n*min(20._rk,(1._rk/o2state))
+         _SET_ODE_(self%id_O5n,fN4O5n)
+         _SET_ODE_(self%id_N3n, -fN4O5n)
+         _SET_DIAGNOSTIC_(self%id_fN4O5n,fN4O5n)
+         end if
+
+         _SET_DIAGNOSTIC_(self%id_fN4N3n,fN4N3n)
+
+
 
          _SET_ODE_(self%id_N3n, + fN4N3n)
          _SET_ODE_(self%id_N4n, - fN4N3n)
