@@ -95,7 +95,7 @@ When `reviewing pull requests <https://docs.github.com/en/pull-requests/collabor
    produced by the model, however, it is the author of the changes and reviewer's responsibility to decide
    whether these changes go into ERSEM. If unsure, please contact the ERSEM repository manager.
 2. Ensure that the changes made to the code correctly address the issue created and that that `Fixes #[issue-id-number]`
-    is added to the pull request description to ensure the relevant issue is closed upon merging with master.
+   is added to the pull request description to ensure the relevant issue is closed upon merging with master.
 3. For the public ERSEM, make sure that the tests continue to pass.
 
 .. note::
