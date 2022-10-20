@@ -29,8 +29,8 @@ First, FABM must be compiled with ERSEM support, specifying nemo as a physical h
         cd ~/build/nemo-fabm-ersem       # go to the build directory
         cmake <FABM_DIR> -DFABM_HOST=nemo -DFABM_ERSEM_BASE=<ERSEM_DIR> -DCMAKE_INSTALL_PREFIX=~/local/fabm/nemo-fabm-ersem
         #replace <FABM_DIR> and <ERSEM_DIR> with the corresponding directories the FABM and ERSEM code bases were downloaded to.
-        make install
         make -j4
+        make install
         cd $old                          # return to the working directory
         
 Thereafter, it is time to compile the NEMO executable. Users may refer to the `C1D_PAPA_FABM_ERSEM` configuration provided with the NEMO4.0-FABM. The critical point is to specify all the necessary compilation keys in ``cpp_X.fcm`` file, i.e. key_c1d for compilation in 1D, and key_fabm for FABM support:
