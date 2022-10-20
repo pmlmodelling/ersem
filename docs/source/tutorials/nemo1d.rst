@@ -45,8 +45,6 @@ Next, compile the model by executing the following lines:
   
     #!/bin/bash
 
-    module load mpi
-
     NEMO_BUILD_DIR=$<NEMO_DIR>
     RUN_DIR=$<RUN_DIR>
     export XIOS_HOME=$<XIOS_DIR>
