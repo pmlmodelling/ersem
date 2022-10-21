@@ -15,6 +15,14 @@ the lower trophic level pelagic and benthic ecosystems.
 - **Acknowledgements:** https://ersem.readthedocs.io/en/latest/acknowledgements.html
 - **License:** https://ersem.readthedocs.io/en/latest/license.html
 
+# Support
+
+We strongly encourage everyone using the ERSEM code to register as a user by filling a
+[short registration form](https://pml.ac.uk/Modelling_at_PML/Access_Code). 
+We’d love to get a better understanding of who is using the ERSEM code and for what 
+applications, as it will help us to provide the best support to the user community. 
+It will also allow you to receive information and news on the latest model developments.
+
 # How to cite
 
 To refer to ERSEM in publications, please cite:

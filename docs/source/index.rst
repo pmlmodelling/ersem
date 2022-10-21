@@ -27,6 +27,5 @@ Welcome to ERSEM's documentation!
    module_index
    license
    acknowledgements
-   support
    references
 
