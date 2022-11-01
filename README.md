@@ -18,7 +18,7 @@ the lower trophic level pelagic and benthic ecosystems.
 # Support
 
 We strongly encourage everyone using the ERSEM code to register as a user by filling a
-[short registration form](https://pml.ac.uk/Modelling_at_PML/Access_Code). 
+[short registration form](https://forms.office.com/r/X0iXv8AvTC). 
 We’d love to get a better understanding of who is using the ERSEM code and for what 
 applications, as it will help us to provide the best support to the user community. 
 It will also allow you to receive information and news on the latest model developments.
