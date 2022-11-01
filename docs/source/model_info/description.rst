@@ -4,8 +4,8 @@
 ERSEM area models
 #################
 
-ERSEM is used in a variety of different models, the table bellow outlines several
-of these models.
+ERSEM is used in a variety of geographical regions, coupled to different physical (hydrodynamic) models.
+The table bellow outlines several of these setups.
 
     
 +-------------------------------+----------+-----+-----------------------+----------+---------------------+
