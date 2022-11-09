@@ -19,8 +19,7 @@ To install GOTM-FABM-ERSEM, we suggest you use the following script below
     :linenos:
 
 
-If you experience NetCDF issues when running ``make install``, see `tips
-and tricks/troubleshooting <#tips-and-trickstroubleshooting>`__.
+If you experience NetCDF issues when running ``make install``, see :ref:`trouble`.
 
 Now you should have a GOTM executable with FABM and ERSEM support at
 ``~/local/gotm/bin/gotm``.
