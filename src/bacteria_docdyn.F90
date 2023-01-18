@@ -334,7 +334,7 @@ contains
         _SET_ODE_(self%id_N3n, -fdenit)
 
 ! Reduced sulfur formation corresponds to eq.9 in Sankar et al. (2008)
-        fanox = self%omrox * (self%urB1_O2X * (1._rk-o2state) * fB1O3c - self%omonX * fdenit)
+        fanox = self%omroX * (self%urB1_O2X * (1._rk-o2state) * fB1O3c - self%omonX * fdenit)
         freox = self%reoX * etB1 * o2state * N6
 
         _SET_DIAGNOSTIC_(self%id_fanox,freox)
@@ -375,7 +375,14 @@ contains
          end do
 
          _SET_ODE_(self%id_O3c,+ fB1O3c/CMass)
-         _SET_ODE_(self%id_O2o,- fB1O3c*self%urB1_O2X)
+
+!..oxygen consumption.....................................................
+ 
+         if (self%denit == 1) then
+         _SET_ODE_(self%id_O2o, -o2state*fB1O3c*self%urB1_O2X - freox/self%omroX) 
+         else 
+         _SET_ODE_(self%id_O2o, -fB1O3c*self%urB1_O2X)
+         end if
 
 !..Phosphorus dynamics in bacteria........................................
 
