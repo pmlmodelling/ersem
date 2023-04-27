@@ -165,8 +165,12 @@ contains
       if (present(nonnegative)) info%nonnegative = nonnegative
 
       ! State variable for depth-integrated matter [adsorbed + in pore water]
-      call self%register_state_variable(info%id_int,name,units,long_name,background_value=background_value)
-      if (.not.info%nonnegative) call self%register_state_variable(info%id_int_deep,name//'_deep',units,long_name//' below zero isocline')
+      if (info%nonnegative) then
+         call self%register_state_variable(info%id_int,name,units,long_name,background_value=background_value,minimum=0._rk)
+      else
+         call self%register_state_variable(info%id_int,name,units,long_name,background_value=background_value)
+         call self%register_state_variable(info%id_int_deep,name//'_deep',units,long_name//' below zero isocline')
+      end if
 
       ! Contribution of state variable to aggregate quantity (if any).
       if (present(aggregate_target)) call self%add_to_aggregate_variable(aggregate_target,info%id_int)
