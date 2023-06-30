@@ -420,9 +420,10 @@ contains
 
       _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fYKIn,excess_n)
       _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fYK1p,excess_p)
-      _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fYQPc,mortflux*cP+excess_c)
-      _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fYQPn,mortflux*cP*self%qnc)
-      _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fYQPp,mortflux*cP*self%qpc)
+      ! fluxes from fauna to POC 
+      _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fYQPc,mortflux*cP+excess_c+fBTYc-nfBTYc) 
+      _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fYQPn,mortflux*cP*self%qnc+sum(grossfluxn)-sum(netfluxn)) 
+      _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fYQPp,mortflux*cP*self%qpc+sum(grossfluxp) - sum(netfluxp)) 
 
       if (.not.legacy_ersem_compatibility) then
          ! Alkalinity contributions: +1 for NH4, -1 for PO4
