@@ -442,7 +442,7 @@ contains
          if (_VARIABLE_REGISTERED_(self%id_s)) then
             call self%register_state_dependency(self%id_buried_s,'buried_s','mmol Si/m^2','buried silicate')
             call self%request_coupling_to_model(self%id_buried_s,'burial_target','s')
-            call self%register_diagnostic_variable(self%id_burial_flux_s,'burial_flux_s','mmol S/m^2/d','burial of silicate',source=source_do_bottom)
+            call self%register_diagnostic_variable(self%id_burial_flux_s,'burial_flux_s','mmol Si/m^2/d','burial of silicate',source=source_do_bottom)
          end if
       end if
 
