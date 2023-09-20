@@ -36,6 +36,7 @@ add_library(fabm_models_ersem OBJECT
             benthic_erosion.F90
             fluff.F90
             zenith_angle.F90
+            methane.F90
            )
 
 add_dependencies(fabm_models_ersem fabm_base)
