@@ -1,14 +1,6 @@
 check_conservation: false
 #require_initialization: true
 instances:
-  N3_flux:
-    model: external_surface_flux
-    coupling:
-      target: N3/n
-  N4_flux:
-    model: external_surface_flux
-    coupling:
-      target: N4/n
   zenithAngle:
     model: ersem/zenith_angle
   light:
