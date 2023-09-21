@@ -64,7 +64,7 @@ contains
       _DECLARE_ARGUMENTS_DO_
 
       real(rk) :: CH4c,ETW,X1X,chltot
-      real(rk) :: koCH4,pCH4a
+      real(rk) :: CH4sat,pCH4a
 
        _LOOP_BEGIN_
           _GET_(self%id_c,CH4c)
@@ -72,9 +72,9 @@ contains
           _GET_(self%id_X1X,X1X)
           _GET_HORIZONTAL_(self%id_pCH4a,pCH4a)
    
-         koCH4 = ch4_transfer_coefficient(self,ETW,X1X)
+         CH4sat = ch4_saturation_concentration(self,ETW,X1X,pCH4a)
 
-       _SET_DIAGNOSTIC_(self%id_satp,(100._rk*CH4c/(KoCH4*pCH4a*1.e-9/1000.)))
+       _SET_DIAGNOSTIC_(self%id_satp,(100._rk*CH4c/CH4sat))
 
       _LOOP_END_
    end subroutine
@@ -84,7 +84,7 @@ contains
       _DECLARE_ARGUMENTS_DO_SURFACE_
 
       real(rk) :: CH4c,ETW,X1X,wnd, fwind
-      real(rk) :: koCH4,sc,ch4flux,pCH4a
+      real(rk) :: CH4sat,sc,ch4flux,pCH4a
 
       _HORIZONTAL_LOOP_BEGIN_
          _GET_(self%id_c,CH4c)
@@ -96,16 +96,15 @@ contains
 ! Schmidt number for CH4 (Wanninkhof, 2014)
  
         sc=2101.2_rk-131.54_rk*ETW+4.4931_rk*ETW**2._rk-0.08676_rk*ETW**3._rk+0.00070663_rk*ETW**4._rk
-        fwind =  0.251_rk * wnd**2 *(sc/660._rk)**(-0.5_rk)
+        fwind =  0.251_rk * wnd**2._rk *(sc/660._rk)**(-0.5_rk)
         fwind=fwind*24._rk/100._rk  ! convert to m/day
 
-        koCH4 = ch4_transfer_coefficient(self,ETW,X1X)
+        CH4sat = ch4_saturation_concentration(self,ETW,X1X,pCH4a)
 
-!        pCH4a is given in natm, so it is here converted to atm  by means of a 1.-9 factor.
-!        To convert nmol/L to mmol/m3 we divide it by 1000.
+
 
         if (self%iswCH4 .eq. 1) then
-         ch4flux = fwind*(KoCH4*pCH4a*1.e-9_rk /  1000._rk - CH4c)
+         ch4flux = fwind*(CH4sat - CH4c)
         else
          ch4flux=0._rk
         endif
@@ -117,10 +116,10 @@ contains
       _HORIZONTAL_LOOP_END_
    end subroutine do_surface
 
-   function ch4_transfer_coefficient(self,ETW,X1X) result(koCH4)
+   function ch4_saturation_concentration(self,ETW,X1X,pCH4a) result(CH4sat)
        class (type_ersem_methane), intent(in) :: self
-       real(rk),                         intent(in) :: ETW,X1X
-       real(rk)                                     :: koCH4
+       real(rk),                         intent(in) :: ETW,X1X,pCH4a
+       real(rk)                                     :: CH4sat
        real(rk)           :: tk,tk100
 
 ! Coefficients for temperature and salinity dependence of methane solubility 
@@ -137,8 +136,16 @@ contains
        TK=ETW+273.15_rk
        TK100=TK/100._rk
 
-        koCH4 = exp(A1+A2/tk100 + A3 * log(tk100) + A4 * tk100 + &
+        CH4sat = exp(A1+A2/tk100 + A3 * log(tk100) + A4 * tk100 + &
         &       X1X * (B1 + B2 * tk100 + B3 * tk100 ** 2._rk))
+        
+!        pCH4a is given in natm, so it is here converted to atm  by means of a 1.-9 factor.
+!        To convert nmol/L to mmol/m3 we divide it by 1000.
+
+        CH4sat = CH4sat * pCH4a * 1.e-9_rk
+        
+        CH4sat = CH4sat / 1000.
+        
     end function
    
 end module
