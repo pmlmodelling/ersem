@@ -19,9 +19,9 @@ module ersem_methane
 
    type,extends(type_ersem_pelagic_base),public :: type_ersem_methane
       ! Variables
-      type (type_dependency_id)                     :: id_ETW,id_X1X,id_chltot
+      type (type_dependency_id)                     :: id_ETW,id_X1X
       type (type_horizontal_dependency_id)          :: id_wnd,id_pCH4a
-      type (type_horizontal_diagnostic_variable_id) :: id_airsea
+      type (type_horizontal_diagnostic_variable_id) :: id_fair
       type (type_diagnostic_variable_id)            :: id_satp
 
       integer :: iswCH4
@@ -55,7 +55,7 @@ contains
       call self%register_dependency(self%id_wnd,standard_variables%wind_speed)
       call self%register_dependency(self%id_pCH4a,partial_pressure_of_ch4)
       call self%register_diagnostic_variable(self%id_satp,'satp','%','methane % saturation')
-      call self%register_diagnostic_variable(self%id_airsea,'airsea','mmol CH4/m^2/d','airsea flux of CH4',source=source_do_surface)
+      call self%register_diagnostic_variable(self%id_fair,'fair','mmol CH4/m^2/d','air-sea flux of CH4',source=source_do_surface)
       call self%get_parameter(self%iswCH4,'iswCH4','','air-sea flux switch (0: off, 1: on)',default=1)
    end subroutine initialize
 
@@ -63,7 +63,7 @@ contains
       class (type_ersem_methane), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_
 
-      real(rk) :: CH4c,ETW,X1X,chltot
+      real(rk) :: CH4c,ETW,X1X
       real(rk) :: CH4sat,pCH4a
 
        _LOOP_BEGIN_
@@ -109,7 +109,7 @@ contains
          ch4flux=0._rk
         endif
 
-         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_airsea,ch4flux)
+         _SET_HORIZONTAL_DIAGNOSTIC_(self%id_fair,ch4flux)
 
          _SET_SURFACE_EXCHANGE_(self%id_c,ch4flux)
 
