@@ -25,7 +25,7 @@ module ersem_methane
       type (type_diagnostic_variable_id)            :: id_satp
 
       integer :: iswCH4
-
+      real(rk)    :: mox
    contains
 !     Model procedures
       procedure :: initialize
@@ -57,6 +57,8 @@ contains
       call self%register_diagnostic_variable(self%id_satp,'satp','%','methane % saturation')
       call self%register_diagnostic_variable(self%id_fair,'fair','mmol CH4/m^2/d','air-sea flux of CH4',source=source_do_surface)
       call self%get_parameter(self%iswCH4,'iswCH4','','air-sea flux switch (0: off, 1: on)',default=1)
+      call self%get_parameter(self%mox,'mox','d-1','rate of aerobic methane oxidation',default = 0._rk)
+
    end subroutine initialize
 
    subroutine do(self,_ARGUMENTS_DO_)
@@ -72,6 +74,8 @@ contains
           _GET_(self%id_X1X,X1X)
           _GET_HORIZONTAL_(self%id_pCH4a,pCH4a)
    
+        _SET_ODE_(self%id_c,-self%mox * CH4c)
+
          CH4sat = ch4_saturation_concentration(self,ETW,X1X,pCH4a)
 
        _SET_DIAGNOSTIC_(self%id_satp,(100._rk*CH4c/CH4sat))
