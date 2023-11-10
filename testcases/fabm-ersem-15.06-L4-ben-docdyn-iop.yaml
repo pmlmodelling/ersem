@@ -59,6 +59,7 @@ instances:
       iswbioalk: 1                                         # use bioalkalinity (0: off, 1: on), default = 1
     initialization:
       c: 2130.0                                            # total dissolved inorganic carbon (mmol C/m^3)
+      bioalk: 0                                            # bioalkalinity (mmol/m^3)
   R1:
     long_name: labile dissolved organic matter
     model: ersem/pelagic_base
@@ -787,6 +788,7 @@ instances:
       minD: 0.0001                                         # minimum depth of zero-concentration isocline (m)
     initialization:
       o: 0.0225                                            # oxygen (mmol/m^2)
+      o_deep: 0                                            # oxygen below zero isocline (mmol/m^2)
     coupling:
       o_pel: O2/o                                          # pelagic oxygen (mmol/m^3)
   G3:
@@ -847,6 +849,8 @@ instances:
       K4n2: K4/per_layer/n2                                # benthic ammonium in 2nd layer (mmol N/m^2)
       G2o2: G2/per_layer/o2                                # oxygen in 2nd layer (mmol O_2/m^2)
       layer2_thickness: ben_col/layer2_thickness           # thickness of 2nd layer (m)
+    initialization:
+      G4n: 0                                               # dinitrogen gas (mmol N/m^2)
   H1:
     long_name: benthic aerobic bacteria
     model: ersem/benthic_bacteria

@@ -57,6 +57,7 @@ instances:
       iswbioalk: 1                                    # use bioalkalinity (0: off, 1: on), default = 1
     initialization:
       c: 2130.0                                       # total dissolved inorganic carbon (mmol C/m^3)
+      bioalk: 0                                            # bioalkalinity (mmol/m^3)
   R1:
     long_name: labile dissolved organic matter
     model: ersem/pelagic_base

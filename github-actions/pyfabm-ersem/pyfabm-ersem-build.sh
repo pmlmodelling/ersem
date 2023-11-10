@@ -10,7 +10,9 @@ git clone https://github.com/fabm-model/fabm.git
 echo "Checking out branch: $BRANCH"
 cd ersem && git checkout $BRANCH && cd ..
 
+echo "Moving ERSEM config files for pyFABM"
+cp github-actions/pyfabm-ersem/setup.cfg fabm
+
 echo "Building PyFABM-ERSEM"
-mkdir build && cd build
-cmake ../fabm/src/drivers/python -DFABM_ERSEM_BASE=../ersem
-make install
+cd fabm
+python -m pip install .
