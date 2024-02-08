@@ -30,6 +30,9 @@ module ersem_model_library
    use ersem_benthic_erosion
    use ersem_fluff
    use ersem_zenith_angle
+   use ecosmo_migration_vertical_distribution
+   use ecosmo_migration_move
+   use ecosmo_migration_weight_distribution
 
    implicit none
 
