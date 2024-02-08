@@ -36,7 +36,10 @@ add_library(fabm_models_ersem OBJECT
             benthic_erosion.F90
             fluff.F90
             zenith_angle.F90
-           )
+            migration_move.F90
+	    migration_vertical_distribution.F90
+	    migration_weight_distribution.F90	    
+	    )
 
 target_link_libraries(fabm_models_ersem PRIVATE fabm_base)
 
