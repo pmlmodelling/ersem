@@ -63,10 +63,11 @@ subroutine move_do(self, _ARGUMENTS_DO_)
        _SET_DIAGNOSTIC_(self%id_distributed,distributed)
        mortality_switch   = max(sign(-1.0_rk,par-1.0_rk),0.0_rk)
        !mortality_switch = max(0.0_rk, min(1.0_rk, par-1.0_rk) )
-       local_loss   = max(sign(-1.0_rk,local-0.05_rk),0.0_rk) ! ECOSMO specific term, remove for other models
+       !local_loss   = max(sign(-1.0_rk,local-0.05_rk),0.0_rk) ! ECOSMO specific term, remove for other models
+       local_loss = 1.0_rk ! Setting to 1 for ERSEM
        !write(*,*)par,mortality_switch,local_loss,local
-       _ADD_SOURCE_(self%id_target, (distributed * integral/thickness - local )/self%tstep + local * (1.0_rk - mortality_switch) * local_loss * self%m)
-       !_ADD_SOURCE_(self%id_target, (distributed * integral/thickness - local )/self%tstep)
+       !_ADD_SOURCE_(self%id_target, (distributed * integral/thickness - local )/self%tstep + local * (1.0_rk - mortality_switch) * local_loss * self%m)
+       _ADD_SOURCE_(self%id_target, (distributed * integral/thickness - local )/self%tstep)
        !write(*,*)self%dt
 
     _LOOP_END_

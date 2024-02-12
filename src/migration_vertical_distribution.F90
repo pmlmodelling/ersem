@@ -1,6 +1,6 @@
 #include "fabm_driver.h"
 
-module ecosmo_migration_vertical_distribution
+module ersem_migration_vertical_distribution
 
 use fabm_types
 use fabm_expressions
