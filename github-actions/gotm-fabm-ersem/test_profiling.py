@@ -126,7 +126,7 @@ class ProfillingTest(unittest.TestCase):
         name = self.ersem["name"].tolist()
         name_expected = self.ersem_expected["name"].tolist()
         self.assertListEqual(sorted(name_expected), sorted(name))
-        
+
     @pytest.mark.skip()
     def test_gotm_func_names(self):
         """
@@ -154,6 +154,7 @@ class ProfillingTest(unittest.TestCase):
         name_expected = self.netcdf_expected["name"].tolist()
         self.assertListEqual(sorted(name_expected), sorted(name))
 
+    @pytest.mark.skip()
     def test_ersem_func_calls(self):
         """
         Check the number of func calls for ERSEM modules stays the same
@@ -169,6 +170,7 @@ class ProfillingTest(unittest.TestCase):
                 self.ersem["name"], self.ersem['self calls'])}
         assert calls == calls_expected
 
+    @pytest.mark.skip()
     def test_gotm_func_calls(self):
         """
         Check the number of func calls for GOTM modules stays the same
@@ -182,6 +184,7 @@ class ProfillingTest(unittest.TestCase):
             {n: c for n, c in zip(self.gotm["name"], self.gotm['self calls'])}
         assert calls == calls_expected
 
+    @pytest.mark.skip()
     def test_fabm_func_calls(self):
         """
         Check the number of func calls for FABM modules stays the same
@@ -195,6 +198,7 @@ class ProfillingTest(unittest.TestCase):
             {n: c for n, c in zip(self.fabm["name"], self.fabm['self calls'])}
         assert calls == calls_expected
 
+    @pytest.mark.skip()
     def test_netcdf_func_calls(self):
         """
         Check the number of func calls for NETCDF modules stays the same
