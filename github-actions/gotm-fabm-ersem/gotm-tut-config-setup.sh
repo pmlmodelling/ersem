@@ -7,4 +7,4 @@ cp ersem/testcases/fabm-ersem-15.06-L4-ben-docdyn-iop.yaml ersem-setups/L4/fabm.
 cd ersem-setups/L4
 
 echo "Running GOTM with repo configuration"
-~/local/gotm/bin/gotm
+~/local/gotm/bin/gotm --ignore_unknown_config
