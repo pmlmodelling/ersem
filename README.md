@@ -1,4 +1,4 @@
-![Tests](https://github.com/pmlmodelling/ersem/workflows/build-ersem/badge.svg) 
+![Tests](https://img.shields.io/github/actions/workflow/status/pmlmodelling/ersem/ersem.yml?label=tests&style=flat-square) 
 [![Documentation Status](https://readthedocs.org/projects/ersem/badge/?version=latest)](https://ersem.readthedocs.io/en/latest/?badge=latest)
 
 # ERSEM
