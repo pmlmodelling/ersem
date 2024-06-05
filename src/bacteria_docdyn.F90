@@ -191,8 +191,8 @@ contains
       call self%register_diagnostic_variable(self%id_fR2B1c,'fR2B1c','mg C/m^3/d','uptake of semi-labile DOC ')
       call self%register_diagnostic_variable(self%id_fR3B1c,'fR3B1c','mg C/m^3/d','uptake of semi-refractory DOC ')
       call self%register_diagnostic_variable(self%id_fRPB1c,'fRPB1c','mg C/m^3/d','total uptake of POC')
-      call self%register_diagnostic_variable(self%id_fRPB1n,'fRPB1n','mg N/m^3/d','total uptake of PON')
-      call self%register_diagnostic_variable(self%id_fRPB1p,'fRPB1p','mg P/m^3/d','total uptake of POP')
+      call self%register_diagnostic_variable(self%id_fRPB1n,'fRPB1n','mmol N/m^3/d','total uptake of PON')
+      call self%register_diagnostic_variable(self%id_fRPB1p,'fRPB1p','mmol P/m^3/d','total uptake of POP')
       call self%register_diagnostic_variable(self%id_fR1B1n,'fR1B1n','mmol N/m^3/d','uptake of DON')
       call self%register_diagnostic_variable(self%id_fR1B1p,'fR1B1p','mmol P/m^3/d','uptake of DOP')
 
