@@ -331,7 +331,7 @@ contains
 
          ! Retrieve sinking rate (at centre of cell closest to the bottom)
          ! NB by ERSEM convention, this rate is returned in m/d, positive for sinking, negative for floating!
-         w = self%get_sinking_rate(_ARGUMENTS_LOCAL_)
+         w = max(0._rk,self%get_sinking_rate(_ARGUMENTS_LOCAL_))
 
          ! Store near-bed vertical velocity. Use FABM convention (m/s, negative for downward) to
          ! allow this custom fuctionality to be ultimately be replaced by a FABM API.
