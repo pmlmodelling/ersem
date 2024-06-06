@@ -41,11 +41,11 @@ jobs:
           with:
               python-version: '3.x'
         - name: Installing GOTM-FABM-ERSEM dependences
-          run: ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-dep-debian.sh 
+          run: ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-dep-debian.sh
         - name: Building and installing GOTM-FABM-ERSEM
           run: |
               BRANCH=${{ github.head_ref }}
-              ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-build.sh -b $BRANCH
+              ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-build.sh -b $BRANCH -f '-DCMAKE_Fortran_FLAGS="-fcheck=all"'
         - name: Running tutorial
           run: |
               ./github-actions/gotm-fabm-ersem/gotm-tut-config-setup.sh
@@ -70,7 +70,7 @@ jobs:
         - name: Building and installing FABM0d-GOTM-ERSEM
           run: |
               BRANCH=${{ github.head_ref }}
-              ./github-actions/fabm0d-gotm-ersem/fabm0d-gotm-ersem-build.sh -b $BRANCH
+              ./github-actions/fabm0d-gotm-ersem/fabm0d-gotm-ersem-build.sh -b $BRANCH -f '-DCMAKE_Fortran_FLAGS="-fcheck=all"'
         - name: Running tutorial
           run: |
               ./github-actions/fabm0d-gotm-ersem/aquarium-tut-config-setup.sh
@@ -90,11 +90,11 @@ jobs:
           with:
               python-version: '3.x'
         - name: Installing GOTM-FABM-ERSEM dependences
-          run: ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-dep-debian.sh 
+          run: ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-dep-debian.sh
         - name: Building and installing GOTM-FABM-ERSEM
           run: |
               BRANCH=${{ github.head_ref }}
-              ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-build.sh -f "-DCMAKE_Fortran_FLAGS="-pg"" -b $BRANCH
+              ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-build.sh -f "-DCMAKE_Fortran_FLAGS="-pg -fcheck=all"" -b $BRANCH
         - name: Running config
           run: |
               ./github-actions/gotm-fabm-ersem/gotm-profiling.sh
