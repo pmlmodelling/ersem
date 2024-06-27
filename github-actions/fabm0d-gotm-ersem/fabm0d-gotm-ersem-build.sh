@@ -19,6 +19,7 @@ git clone https://github.com/fabm-model/fabm.git
 
 echo "Cloning GOTM"
 git clone https://github.com/gotm-model/code.git gotm
+# Od driver needs a stable version of GOTM, currently that is v6
 cd gotm && git checkout v6.0 && git submodule update --init --recursive && cd ..
 
 echo "Checking out branch: $BRANCH"
