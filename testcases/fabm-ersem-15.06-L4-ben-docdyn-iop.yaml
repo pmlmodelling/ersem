@@ -54,12 +54,11 @@ instances:
     parameters:
       iswCO2: 1                                            # carbonate system diagnostics (0: off, 1: on), default = 1
       iswASFLUX: 1                                         # air-sea CO2 exchange (0: none, 1: Nightingale et al. 2000, 2: Wanninkhof 1992 without chemical enhancement, 3: Wanninkhof 1992 with chemical enhancement, 4: Wanninkhof and McGillis 1999, 5: Wanninkhof 1992 switching to Wanninkhof and McGillis 1999, 6: Wan, default = 6
-      iswtalk: 2                                           # alkalinity formulation (1-4: from salinity and temperature, 5: dynamic alkalinity), default = 5
+      iswtalk: 5                                           # alkalinity formulation (1-4: from salinity and temperature, 5: dynamic alkalinity), default = 5
       pHscale: 1                                           # pH scale (1: total, 0: SWS, -1: SWS backward compatible), default = 1
-      iswbioalk: 1                                         # use bioalkalinity (0: off, 1: on), default = 1
     initialization:
       c: 2130.0                                            # total dissolved inorganic carbon (mmol C/m^3)
-      bioalk: 0                                            # bioalkalinity (mmol/m^3)
+      TA: 2300.0                                           # total alkalinity (mmol/m^3)
   R1:
     long_name: labile dissolved organic matter
     model: ersem/pelagic_base
