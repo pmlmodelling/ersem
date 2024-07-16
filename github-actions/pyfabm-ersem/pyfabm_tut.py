@@ -1,4 +1,3 @@
-from matplotlib import cm
 import matplotlib.pylab as plt
 import numpy as np
 import os
@@ -70,7 +69,7 @@ def main():
     axes = plt.gca()
 
     # Set color map
-    cmap = cm.get_cmap('YlOrRd')
+    cmap = plt.colormaps.get_cmap('YlOrRd')
 
     # Plot
     plot = axes.pcolormesh(salinity_array,
