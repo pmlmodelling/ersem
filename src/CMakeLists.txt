@@ -38,7 +38,7 @@ add_library(fabm_models_ersem OBJECT
             zenith_angle.F90
            )
 
-add_dependencies(fabm_models_ersem fabm_base)
+target_link_libraries(fabm_models_ersem PRIVATE fabm_base)
 
 if(FABM_EMBED_VERSION)
   # Dynamically generate "ersem_version" module with git commit/branch information at every build.
