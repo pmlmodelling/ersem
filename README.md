@@ -1,13 +1,13 @@
-![Tests](https://github.com/pmlmodelling/ersem/workflows/build-ersem/badge.svg) 
+![Tests](https://img.shields.io/github/actions/workflow/status/pmlmodelling/ersem/ersem.yml?label=tests&style=flat-square) 
 [![Documentation Status](https://readthedocs.org/projects/ersem/badge/?version=latest)](https://ersem.readthedocs.io/en/latest/?badge=latest)
 
 # ERSEM
 
 ![ERSEM diagram](docs/images/ERSEM.png)
 
-[ERSEM](http://ersem.com) is a marine ecosystem model. It describes the
-biogeochemical cycling of carbon, nitrogen, phosphorus, silicon, oxygen and
-iron through pelagic and benthic ecosystems. 
+[ERSEM](http://ersem.com) is a marine biogeochemical and ecosystem model. It describes the
+cycling of carbon, nitrogen, phosphorus, silicon, oxygen and iron through 
+the lower trophic level pelagic and benthic ecosystems. 
 
 - **Installation Instructions:** conda: https://ersem.readthedocs.io/en/latest/tutorials/index.html#conda-installation, source: https://ersem.readthedocs.io/en/latest/developers/index.html
 - **User Documentation & Example Usage:** https://ersem.readthedocs.io/en/latest/
@@ -15,9 +15,17 @@ iron through pelagic and benthic ecosystems.
 - **Acknowledgements:** https://ersem.readthedocs.io/en/latest/acknowledgements.html
 - **License:** https://ersem.readthedocs.io/en/latest/license.html
 
+# Support
+
+We strongly encourage everyone using the ERSEM code to register as a user by filling a
+[short registration form](https://forms.office.com/r/X0iXv8AvTC). 
+We’d love to get a better understanding of who is using the ERSEM code and for what 
+applications, as it will help us to provide the best support to the user community. 
+It will also allow you to receive information and news on the latest model developments.
+
 # How to cite
 
-If you would like to refer to ERSEM in publications, please cite:
+To refer to ERSEM in publications, please cite:
 
 Butenschön, M., Clark, J., Aldridge, J.N., Allen, J.I., Artioli, Y.,
 Blackford, J., Bruggeman, J., Cazenave, P., Ciavatta, S., Kay, S., Lessin, G.,
@@ -27,9 +35,7 @@ biogeochemistry and the ecosystem dynamics of the lower trophic levels.
 Geoscientific Model Development, 9(4), 1293–1339.
 doi: [10.5194/gmd-9-1293-2016](https://doi.org/10.5194/gmd-9-1293-2016).
 
-If you would like to refer to the ERSEM source code, you can do so by its Zenodo DOI:
+To refer specifically to the ERSEM source code, you may use its Zenodo DOI:
 
 [![DOI](https://zenodo.org/badge/302390544.svg)](https://zenodo.org/badge/latestdoi/302390544)
-
-To refer to the ERSEM website, please use <http://ersem.com>.
 

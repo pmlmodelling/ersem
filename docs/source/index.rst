@@ -23,9 +23,9 @@ Welcome to ERSEM's documentation!
    ERSEM tutorials <tutorials/index>
    troubleshooting
    developers/index
+   workflow
    module_index
    license
    acknowledgements
-   support
    references
 
