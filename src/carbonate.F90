@@ -54,18 +54,21 @@ contains
 
       if (self%iswtalk==5) then
          ! Total alkalinity is a state variable.
-         call self%register_state_variable(self%id_TA,'TA','umol/kg','total alkalinity',2300._rk,minimum=1.e-4_rk, &
+         ! since ERSEM22.11 Total alkalinity is expressed in mmol/m3 instead of umol/kg
+         call self%register_state_variable(self%id_TA,'TA','mmol/m^3','total alkalinity',2300._rk,minimum=1.e-4_rk, &
             standard_variable=standard_variables%alkalinity_expressed_as_mole_equivalent)
       else
          ! Total alkalinity is a diagnostic variable, parameterized as function of salinity and temperature.
-         call self%register_diagnostic_variable(self%id_TA_diag,'TA','umol/kg','total alkalinity', act_as_state_variable=.true., &
+         ! since ERSEM22.11 Total alkalinity is expressed in mmol/m3 instead of umol/kg
+         call self%register_diagnostic_variable(self%id_TA_diag,'TA','mmol/m^3','total alkalinity', act_as_state_variable=.true., &
             standard_variable=standard_variables%alkalinity_expressed_as_mole_equivalent)
 
          call self%get_parameter(iswbioalk,'iswbioalk','','use bioalkalinity (0: off, 1: on)',default=1)
          if (iswbioalk==1) then
             ! Register state variable to track "bioalkalinity", i.e., the difference between parameterized
             ! and actual alkalinity that is created by biogeochemical processes modifying alkalinity.
-            call self%register_state_variable(self%id_bioalk,'bioalk','umol/kg','bioalkalinity')
+            ! since ERSEM22.11 bioalkalinity is expressed in mmol/m3 instead of umol/kg
+            call self%register_state_variable(self%id_bioalk,'bioalk','mmol/m^3','bioalkalinity')
 
             ! Redirect all source terms and boundary fluxes imposed on total alkalinity [a diagnostic]
             ! to bioalkalinity [a state variable]
@@ -170,6 +173,9 @@ contains
          if (self%iswtalk/=5) then
             ! Alkalinity is parameterized as function of salinity and temperature.
             TA = approximate_alkalinity(self%iswtalk,ETW,X1X)
+            ! Approximate alkalinity is still in umol kg-1 due to empirical regression
+            ! therefore now need to be converted  in mmol m-3
+            TA = TA * density / 1.e3_rk
             if (_VARIABLE_REGISTERED_(self%id_bioalk)) then
                ! We separately track bioalkalinity - include this in total alkalinity.
                _GET_(self%id_bioalk,bioalk)
@@ -181,7 +187,7 @@ contains
             _GET_(self%id_TA,TA)
          end if
 
-         TA = TA/1.0e6_rk                ! from umol kg-1 to mol kg-1
+         TA = TA / 1.0e3_rk / density    ! from mmol m-3 to mol kg-1
          Ctot  = O3C / 1.e3_rk / density ! from mmol m-3 to mol kg-1
 
          CALL CO2DYN (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success,self%phscale)   ! NB pressure from dbar to bar
@@ -241,6 +247,9 @@ contains
          if (self%iswtalk/=5) then
             ! Alkalinity is parameterized as function of salinity and temperature.
             TA = approximate_alkalinity(self%iswtalk,T,S)
+            ! Approximate alkalinity is still in umol kg-1 due to empirical regression
+            ! therefore now need to be converted  in mmol m-3
+            TA = TA * density / 1.e3_rk
             if (_VARIABLE_REGISTERED_(self%id_bioalk)) then
                ! We separately track bioalkalinity - include this in total alkalinity.
                _GET_(self%id_bioalk,bioalk)
@@ -251,7 +260,7 @@ contains
             _GET_(self%id_TA,TA)
          end if
 
-         TA = TA/1.0e6_rk                ! from umol kg-1 to mol kg-1
+         TA = TA/1.0e3_rk / density      ! from mmol m-3 to mol kg-1
          Ctot  = O3C / 1.e3_rk / density ! from mmol m-3 to mol kg-1
 
 !  for surface box only calculate air-sea flux

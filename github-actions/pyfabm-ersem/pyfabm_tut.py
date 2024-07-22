@@ -1,4 +1,3 @@
-from matplotlib import cm
 import matplotlib.pylab as plt
 import numpy as np
 import os
@@ -70,17 +69,19 @@ def main():
     axes = plt.gca()
 
     # Set color map
-    cmap = cm.get_cmap('YlOrRd')
+    cmap = plt.colormaps.get_cmap('YlOrRd')
 
     # Plot
-    plot = axes.pcolormesh(temperature_array,
-                           salinity_array,
+    plot = axes.pcolormesh(salinity_array,
+                           temperature_array,
                            oxygen_saturation_concentration,
                            shading='auto',
                            cmap=cmap)
 
-    axes.set_xlabel('Temperature (deg. C)')
-    axes.set_ylabel('Salinity (psu)')
+    axes.set_xlabel('Salinity (psu)')
+    axes.set_ylabel('Temperature (deg. C)')
+
+
 
     # Add colour bar
     cbar = figure.colorbar(plot)

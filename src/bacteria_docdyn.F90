@@ -191,8 +191,8 @@ contains
       call self%register_diagnostic_variable(self%id_fR2B1c,'fR2B1c','mg C/m^3/d','uptake of semi-labile DOC ')
       call self%register_diagnostic_variable(self%id_fR3B1c,'fR3B1c','mg C/m^3/d','uptake of semi-refractory DOC ')
       call self%register_diagnostic_variable(self%id_fRPB1c,'fRPB1c','mg C/m^3/d','total uptake of POC')
-      call self%register_diagnostic_variable(self%id_fRPB1n,'fRPB1n','mg N/m^3/d','total uptake of PON')
-      call self%register_diagnostic_variable(self%id_fRPB1p,'fRPB1p','mg P/m^3/d','total uptake of POP')
+      call self%register_diagnostic_variable(self%id_fRPB1n,'fRPB1n','mmol N/m^3/d','total uptake of PON')
+      call self%register_diagnostic_variable(self%id_fRPB1p,'fRPB1p','mmol P/m^3/d','total uptake of POP')
       call self%register_diagnostic_variable(self%id_fR1B1n,'fR1B1n','mmol N/m^3/d','uptake of DON')
       call self%register_diagnostic_variable(self%id_fR1B1p,'fR1B1p','mmol P/m^3/d','uptake of DOP')
 
@@ -334,7 +334,7 @@ contains
         _SET_ODE_(self%id_N3n, -fdenit)
 
 ! Reduced sulfur formation corresponds to eq.9 in Sankar et al. (2008)
-        fanox = self%omrox * (self%urB1_O2X * (1._rk-o2state) * fB1O3c - self%omonX * fdenit)
+        fanox = self%omroX * (self%urB1_O2X * (1._rk-o2state) * fB1O3c - self%omonX * fdenit)
         freox = self%reoX * etB1 * o2state * N6
 
         _SET_DIAGNOSTIC_(self%id_fanox,freox)
@@ -375,7 +375,14 @@ contains
          end do
 
          _SET_ODE_(self%id_O3c,+ fB1O3c/CMass)
-         _SET_ODE_(self%id_O2o,- fB1O3c*self%urB1_O2X)
+
+!..oxygen consumption.....................................................
+ 
+         if (self%denit == 1) then
+         _SET_ODE_(self%id_O2o, -o2state*fB1O3c*self%urB1_O2X - freox/self%omroX) 
+         else 
+         _SET_ODE_(self%id_O2o, -fB1O3c*self%urB1_O2X)
+         end if
 
 !..Phosphorus dynamics in bacteria........................................
 
