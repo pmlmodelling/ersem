@@ -44,31 +44,34 @@ for key, items in data_dict.items():
     data = nc.Dataset(data_path, 'r')
     expected_results = {}
     for v in items:
-        if key == "expected":
-            if v == "dates":
-                times = data.variables['time']
-                dates = nc.num2date(times[:],
-                                    units=times.units,
-                                    calendar=times.calendar)
-                dates = [str(d).split(" ")[0] for d in dates]
-                expected_results[v] = dates
-            else:
-                depth = 0.0
-                var = data.variables[v]
-                zi = data.variables['zi'][:].squeeze()
-                z = data.variables['z'][:].squeeze()
-                var_time_series = []
-                for i in range(var.shape[0]):
-                    depth_offset = depth + zi[i, -1]
-                    var_time_series.append(interp(depth_offset, z[i, :], var[i, :].squeeze()))
-                expected_results[v] = var_time_series
+        try:
+            if key == "expected":
+                if v == "dates":
+                    times = data.variables['time']
+                    dates = nc.num2date(times[:],
+                                        units=times.units,
+                                        calendar=times.calendar)
+                    dates = [str(d).split(" ")[0] for d in dates]
+                    expected_results[v] = dates
+                else:
+                    depth = 0.0
+                    var = data.variables[v]
+                    zi = data.variables['zi'][:].squeeze()
+                    z = data.variables['z'][:].squeeze()
+                    var_time_series = []
+                    for i in range(var.shape[0]):
+                        depth_offset = depth + zi[i, -1]
+                        var_time_series.append(interp(depth_offset, z[i, :], var[i, :].squeeze()))
+                    expected_results[v] = var_time_series
 
-        elif data.variables[v].ndim == 4:
-            expected_results[v] = data.variables[v][:].squeeze()[-1, :]
-        elif data.variables[v].ndim == 3:
-            expected_results[v] = float(data.variables[v][:].squeeze()[-1])
-        else:
-            raise RuntimeError
+            elif data.variables[v].ndim == 4:
+                expected_results[v] = data.variables[v][:].squeeze()[-1, :]
+            elif data.variables[v].ndim == 3:
+                expected_results[v] = float(data.variables[v][:].squeeze()[-1])
+            else:
+                raise RuntimeError
+        except Exception as e:
+            print(f"Did not update {v} since it was not in the output file")
 
     with open(f'{key}.json', 'w') as f:
         json.dump(expected_results, f, cls=NumpyEncoder)
