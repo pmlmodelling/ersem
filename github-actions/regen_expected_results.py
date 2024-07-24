@@ -51,31 +51,31 @@ for key, items in data_dict.items():
     expected_results = {}
     for v in items:
         try:
-            if key == "expected":
-                if v == "dates":
-                    times = data.variables['time']
-                    dates = nc.num2date(times[:],
-                                        units=times.units,
-                                        calendar=times.calendar)
-                    dates = [str(d).split(" ")[0] for d in dates]
-                    expected_results[v] = dates
-                elif v == "time":
-                    print(data.variables[v])
-                else:
-                    depth = 0.0
-                    var = data.variables[v]
-                    zi = data.variables['zi'][:].squeeze()
-                    z = data.variables['z'][:].squeeze()
-                    var_time_series = []
-                    for i in range(var.shape[0]):
-                        depth_offset = depth + zi[i, -1]
-                        var_time_series.append(interp(depth_offset, z[i, :], var[i, :].squeeze()))
-                    expected_results[v] = var_time_series
+            if v == "dates":
+                times = data.variables['time']
+                dates = nc.num2date(times[:],
+                                    units=times.units,
+                                    calendar=times.calendar)
+                dates = [str(d).split(" ")[0] for d in dates]
+                expected_results[v] = dates
+            elif key == "expected" and model_run == "gotm":
+                depth = 0.0
+                var = data.variables[v]
+                zi = data.variables['zi'][:].squeeze()
+                z = data.variables['z'][:].squeeze()
+                var_time_series = []
+                for i in range(var.shape[0]):
+                    depth_offset = depth + zi[i, -1]
+                    var_time_series.append(interp(depth_offset, z[i, :], var[i, :].squeeze()))
+                expected_results[v] = var_time_series
 
             elif data.variables[v].ndim == 4:
-                expected_results[v] = data.variables[v][:].squeeze()[-1, :]
+                expected_results[v] = data.variables[v][:].squeeze() \
+                        if model_run == "fabm0d" else expected_results[v][-1, :]
             elif data.variables[v].ndim == 3:
-                expected_results[v] = float(data.variables[v][:].squeeze()[-1])
+                expected_results[v] = data.variables[v][:].squeeze() \
+                        if model_run == "fabm0d" else \
+                        float(data.variables[v][:].squeeze()[-1])
             else:
                 raise RuntimeError
         except Exception as e:
