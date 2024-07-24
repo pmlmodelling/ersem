@@ -62,12 +62,13 @@ def main(model_path):
 
     # Plotting output data
     output_data = ["N1_p", "N3_n", "B1_c", "P2_c"]
-    fig, ax_arr = plt.subplots(len(input_data), 1)
+    fig, ax_arr = plt.subplots(len(output_data), 1)
     DPI = fig.get_dpi()
     fig.set_size_inches(1200.0/float(DPI),800.0/float(DPI))
     for ax, label in zip(ax_arr, output_data):
         plot_var(ax, dates, data, label)
     fig.suptitle("Output data")
+    print(test_vars.keys())
     plt.show()
 
     return test_vars
