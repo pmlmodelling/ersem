@@ -17,7 +17,7 @@ module ersem_nitrification
       type (type_state_variable_id) :: id_O2o,id_TA
       type (type_state_variable_id) :: id_N3n,id_N4n,id_O5n
       type (type_dependency_id)     :: id_ETW,id_phx
-      type (type_diagnostic_variable_id)     :: id_nitrification, id_fN4O5n
+      type (type_diagnostic_variable_id)     :: id_fN4N3n, id_fN4O5n
 
       ! Parameters
       real(rk) :: q10
@@ -56,7 +56,7 @@ contains
       call self%get_parameter(self%chN4nX,'chN4n','(mmol N/m^3)^3','Michaelis-Menten constant for cubic ammonium dependence of nitrification', default=0.0_rk)
 
       ! Register diagnostic variables
-      call self%register_diagnostic_variable(self%id_nitrification,"rate","mmol/m3/d","rate")
+      call self%register_diagnostic_variable(self%id_fN4N3n,"fN4N3n","mmol N/m^3/d","nitrification rate")
       if (self%ISWn2o) call self%register_diagnostic_variable(self%id_fN4O5n,'fN4O5n','mmol N/m^3/d','N2O production',output=output_time_step_averaged)
 
       ! Register links to nutrient and oxygen pools.
@@ -126,7 +126,7 @@ contains
          ! Legacy ERSEM did not account for oxygen removal by nitrification
          if (.not.legacy_ersem_compatibility) _SET_ODE_(self%id_O2o,-2*fN4N3n)
 
-         _SET_DIAGNOSTIC_(self%id_nitrification,fN4N3n)
+         _SET_DIAGNOSTIC_(self%id_fN4N3n,fN4N3n)
 
       ! Leave spatial loops (if any)
       _LOOP_END_
