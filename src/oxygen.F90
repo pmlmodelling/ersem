@@ -161,10 +161,7 @@ contains
       ! calc absolute temperature
       ABT = ETW + T
 
-      if (self%ISWO2X==1) then
-         ! old ERSEM saturation Formulation
-         OSAT = 31.25_rk * (475._rk-2.65_rk*X1X) / (33.5_rk+ETW)
-      else
+      if (self%ISWO2X==2) then
          ! calc theoretical oxygen saturation for temp + salinity
          ! From WEISS 1970 DEEP SEA RES 17, 721-735.
          ! units of ln(ml(STP)/l)
@@ -175,6 +172,9 @@ contains
          ! convert units to ml(STP)/l then to mMol/m3
          OSAT = exp( OSAT )
          OSAT = OSAT * 1000._rk / VIDEAL
+      else
+         ! old ERSEM saturation Formulation
+         OSAT = 31.25_rk * (475._rk-2.65_rk*X1X) / (33.5_rk+ETW)
       end if
    end function
 
