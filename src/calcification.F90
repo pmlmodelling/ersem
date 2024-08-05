@@ -36,7 +36,7 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%iswcal,'iswcal','','calcification/dissolution dependence on calcite saturation (1: power law, 2: hyperbolic)')
+      call self%get_parameter(self%iswcal,'iswcal','','calcification/dissolution dependence on calcite saturation (1: power law, 2: hyperbolic)',minimum=1,maximum=2)
       if (self%iswcal<0.or.self%iswcal>2) then
          call self%log_message('ISWcal set to 1')
          self%iswcal = 1
