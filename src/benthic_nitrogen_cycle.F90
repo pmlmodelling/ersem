@@ -41,7 +41,7 @@ contains
 
       call self%get_parameter(self%q10nit,'q10nit','-',            'Q_10 temperature coefficient')
       call self%get_parameter(self%hM4M3, 'hM4M3', 'mmol/m^3',     'Michaelis-Menten constant for nitrate limitation')
-      call self%get_parameter(self%ISWph, 'ISWph', '',             'pH impact on nitrification (0: off, 1: on)',default=0)
+      call self%get_parameter(self%ISWph, 'ISWph', '',             'pH impact on nitrification (0: off, 1: on)',default=0,minimum=0,maximum=1)
       call self%get_parameter(self%sM4M3, 'sM4M3', '1/d',          'maximum nitrification rate at 10 degrees Celsius')
       call self%get_parameter(self%xno3,  'xno3',  'mol O_2/mol N','oxygen consumed per nitrate produced')
 
