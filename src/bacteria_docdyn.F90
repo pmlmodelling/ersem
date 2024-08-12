@@ -88,7 +88,7 @@ contains
       call self%get_parameter(self%qpB1cX,  'qpc',     'mmol P/mg C','maximum phosphorus to carbon ratio')
       call self%get_parameter(self%qnB1cX,  'qnc',     'mmol N/mg C','maximum nitrogen to carbon ratio')
       call self%get_parameter(self%urB1_O2X,'ur_O2',   'mmol O_2/mg C','oxygen consumed per carbon respired')
-      call self%get_parameter(self%denit,   'denit',   '-',           'denitrification switch (0: off, 1: on)',default=0)
+      call self%get_parameter(self%denit,   'denit',   '-',           'denitrification switch (0: off, 1: on)',default=0,minimum=0,maximum=1)
 
       if (self%denit == 1) then
       call self%get_parameter(self%DeniX,   'DeniX',   '1/d',         'specific denitrification rate')

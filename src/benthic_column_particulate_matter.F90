@@ -614,7 +614,7 @@ contains
          q10=1.0_rk
       endif
 
-      call self%get_parameter(source_depth_distribution,'source_depth_distribution', '','vertical distribution of changes (1: constant absolute rate, 2: constant relative rate, 3: constant carbon-based relative rate)',default=1)
+      call self%get_parameter(source_depth_distribution,'source_depth_distribution', '','vertical distribution of changes (1: constant absolute rate, 2: constant relative rate, 3: constant carbon-based relative rate)',default=1,minimum=1,maximum=3)
 
       call self%register_dependency(self%id_d_tot,depth_of_sediment_column)
 
