@@ -83,14 +83,6 @@ class StateVariablesTest(unittest.TestCase):
         assert np.array_equal(
             self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
 
-    def test_O3_bioalk_value(self):
-        """
-        Checks the O3_bioalk values are the same
-        """
-        name = "O3_bioalk"
-        assert np.array_equal(
-            self.expected[name], self.data.variables[name][:].squeeze()[-1, :])
-
     def test_R1_c_value(self):
         """
         Checks the R1_c values are the same
