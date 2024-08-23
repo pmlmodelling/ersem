@@ -59,7 +59,7 @@ contains
       call self%register_dependency(self%id_pN2Oa,partial_pressure_of_n2o)
       call self%register_diagnostic_variable(self%id_satp,'satp','%','nitrous oxide % saturation')
       call self%register_diagnostic_variable(self%id_airsea,'airsea','mmol N2O/m^2/d','airsea flux of N2O',source=source_do_surface)
-      call self%get_parameter(self%iswN2O,'iswN2O','','air-sea flux switch (0: off, 1: on)',default=1)
+      call self%get_parameter(self%iswN2O,'iswN2O','','air-sea flux switch (0: off, 1: on)',default=1,minimum=0,maximum=1)
 
    end subroutine initialize
 
