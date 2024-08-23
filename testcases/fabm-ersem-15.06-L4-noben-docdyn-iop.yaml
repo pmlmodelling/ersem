@@ -45,7 +45,7 @@ instances:
     long_name: oxygen
     model: ersem/oxygen
     parameters:
-      iswO2: 2                                            # saturation formulation (1: legacy ERSEM, 2: Weiss 1970, 3: Nightingale et al. 2000, 4: Wanninkhof 2014)
+      iswO2: 2                                            # saturation formulation (1: legacy ERSEM, 2: Weiss 1970)
     initialization:
       o: 300.0                                            # oxygen (mmol O_2/m^3)
   O3:
