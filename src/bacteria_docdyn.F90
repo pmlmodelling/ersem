@@ -74,7 +74,7 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%iswBlimX,'iswBlim', '',           'nutrient limitation (1: minimum of inorganic and organic availability, 2: additive availability)')
+      call self%get_parameter(self%iswBlimX,'iswBlim', '',           'nutrient limitation (1: minimum of inorganic and organic availability, 2: additive availability)', minimum=1, maximum=2)
       call self%get_parameter(self%q10B1X,  'q10',     '-',          'Q_10 temperature coefficient')
       call self%get_parameter(self%chdB1oX, 'chdo',    '-',          'Michaelis-Menten constant for oxygen limitation')
       call self%get_parameter(self%chB1nX,  'chn',     'mmol N/m^3', 'Michaelis-Menten constant for nitrate limitation')
@@ -88,7 +88,7 @@ contains
       call self%get_parameter(self%qpB1cX,  'qpc',     'mmol P/mg C','maximum phosphorus to carbon ratio')
       call self%get_parameter(self%qnB1cX,  'qnc',     'mmol N/mg C','maximum nitrogen to carbon ratio')
       call self%get_parameter(self%urB1_O2X,'ur_O2',   'mmol O_2/mg C','oxygen consumed per carbon respired')
-      call self%get_parameter(self%denit,   'denit',   '-',           'denitrification switch (0: off, 1: on)',default=0)
+      call self%get_parameter(self%denit,   'denit',   '-',           'denitrification switch (0: off, 1: on)',default=0,minimum=0,maximum=1)
 
       if (self%denit == 1) then
       call self%get_parameter(self%DeniX,   'DeniX',   '1/d',         'specific denitrification rate')
