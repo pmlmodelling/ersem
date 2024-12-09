@@ -30,6 +30,9 @@ module ersem_model_library
    use ersem_benthic_erosion
    use ersem_fluff
    use ersem_zenith_angle
+   use ersem_migration_vertical_distribution
+   use ersem_migration_move
+   use ersem_migration_weight_distribution
 
    implicit none
 
@@ -83,6 +86,9 @@ contains
          case ('benthic_erosion');                         allocate(type_ersem_benthic_erosion::model)
          case ('fluff');                                   allocate(type_ersem_fluff::model)
          case ('zenith_angle');                            allocate(type_ersem_zenith_angle::model)
+         case ('migration_vertical_distribution');         allocate(type_vertical_distribution::model)
+         case ('migration_move');                          allocate(type_migrator_move::model)
+         case ('migration_weight_distribution');           allocate(type_weights::model)
          ! Add new models here
          case default
             call self%type_base_model_factory%create(name,model)
