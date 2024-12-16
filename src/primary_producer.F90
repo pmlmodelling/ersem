@@ -61,8 +61,8 @@ module ersem_primary_producer
 
       ! Parameters (described in subroutine initialize, below)
       real(rk) :: sum
-      real(rk) :: q10,srs,pu_ea,pu_ra,chs,qnlc,qplc,xqcp, exulim
-      real(rk) :: xqcn,xqn,xqp,qun3,qun4,qurp,qsc,esni,snplux
+      real(rk) :: q10,srs,pu_ea,pu_ra,chs,qnlc,qplc,xqcp,exulim
+      real(rk) :: xqcn,xqn,xqp,qun3,qun4,qurp,qsc,esni,snplux,xqcnx,xqcpx
       real(rk) :: resm,sdo
       real(rk) :: alpha,beta,phim
       real(rk) :: R1R2,uB1c_O2,urB1_O2
@@ -113,6 +113,8 @@ contains
       call self%get_parameter(self%qplc,  'qplc', 'mmol P/mg C','minimum phosphorus to carbon ratio')
       call self%get_parameter(self%xqcp,  'xqcp', '-',          'threshold for phosphorus limitation (relative to Redfield ratio)')
       call self%get_parameter(self%xqcn,  'xqcn', '-',          'threshold for nitrogen limitation (relative to Redfield ratio)')
+      call self%get_parameter(self%xqcpx,  'xqcpx', '-','threshold for phosphorus limitation, relative to minimum ratio',default=2.0_rk )
+      call self%get_parameter(self%xqcnx,  'xqcnx', '-','threshold for nitrogen limitation, relative to minimum ratio', default=2.0_rk )
       call self%get_parameter(self%xqp,   'xqp',  '-',          'maximum phosphorus to carbon ratio (relative to Redfield ratio)')
       call self%get_parameter(self%xqn,   'xqn',  '-',          'maximum nitrogen to carbon ratio (relative to Redfield ratio)')
       call self%get_parameter(self%qun3,  'qun3', 'm^3/mg C/d', 'nitrate affinity')
@@ -253,7 +255,7 @@ contains
       real(rk) :: c, p, n, Chl
       real(rk) :: cP,pP,nP,sP,ChlP
       real(rk) :: N5s,N1pP,N3nP,N4nP
-      real(rk) :: iNn,iNp,iNs,iNf,iNI
+      real(rk) :: iNn,iNp,iNs,iNf,iNI, iNnx, iNpx, iNIx
       real(rk) :: qpc,qnc
 
       real(rk) :: srs
@@ -357,7 +359,16 @@ contains
          end if
          
 
-         _SET_DIAGNOSTIC_(self%id_iNI,iNI)         
+         _SET_DIAGNOSTIC_(self%id_iNI,iNI)
+
+
+! Limitation factor for C uptake - as approach minimum C:P/C:N
+         iNpx = MIN(1._rk,  &
+                 MAX(0._rk, (qpc-self%qplc) / (self%xqcpx*self%qplc-self%qplc) ))
+         iNnx = MIN(1._rk,  &
+                 MAX(0._rk, (qnc-self%qnlc) / (self%xqcnx*self%qnlc-self%qnlc) ))
+
+         iNIx= min(iNpx, iNnx)
 
          ! Temperature response
          et = max(0.0_rk,self%q10**((ETW-10._rk)/10._rk) - self%q10**((ETW-32._rk)/3._rk))
@@ -369,7 +380,7 @@ contains
          sum = self%sum*et*iNs*iNf
 
          if (parEIR>zeroX) then
-            sum = sum * (1._rk-exp(-self%alpha*parEIR*ChlCpp/sum)) * exp(-self%beta*parEIR*ChlCpp/sum)
+            sum = iNIx * sum * (1._rk-exp(-self%alpha*parEIR*ChlCpp/sum)) * exp(-self%beta*parEIR*ChlCpp/sum)
             rho = (self%phim - ChlCmin) * (sum/(self%alpha*parEIR*ChlCpp)) + ChlCmin
          else
             sum = 0._rk
