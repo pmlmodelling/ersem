@@ -39,6 +39,14 @@ add_library(fabm_models_ersem OBJECT
             migration_move.F90
 	    migration_vertical_distribution.F90
 	    migration_weight_distribution.F90	    
+	    apply_move.F90
+	    conservative_migrator.F90
+	    get_dependencies.F90
+	    move.F90
+	    upper_lower_boundaries.F90
+	    upper_lower_boundaries_complex.F90
+	    upper_lower_boundaries_simple.F90
+	    weight_distribution.F90
 	    )
 
 add_dependencies(fabm_models_ersem fabm_base)
