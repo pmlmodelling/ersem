@@ -122,7 +122,7 @@ contains
             if (par0 <= 1.0_rk) then
                 search_food = food
             else
-                search_food = food !1.0_rk ! food has no effect
+                search_food = 1.0_rk ! food has no effect
             end if
 
             thickness = max(thickness, 1.0E-20_rk)
