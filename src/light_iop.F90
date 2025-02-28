@@ -73,16 +73,17 @@ contains
       class (type_ersem_light_iop),intent(in) :: self
       _DECLARE_ARGUMENTS_VERTICAL_
 
-      real(rk) :: buffer,dz,xEPS,iopABS,iopBBS,xtnc,EIR,abESS,zenithA,depthb
+      real(rk) :: buffer,dz,xEPS,iopABS,iopBBS,xtnc,EIR,abESS,zenithA
       real(rk),parameter :: bpk=.00022_rk
 
-      ! Variables so can get diagnosic at surface - copies format in FABM_MEDUSA_ccd module
-      depthb = 0._rk
 
       _GET_HORIZONTAL_(self%id_I_0,buffer)
       _GET_HORIZONTAL_(self%id_zenithA,zenithA)   ! Zenith angle
 
       buffer = max(buffer, 0.0_rk)
+      
+      ! PAR at surface
+      _SET_SURFACE_DIAGNOSTIC_(self%id_par0,buffer*self%pEIR_eowX)
 
       _VERTICAL_LOOP_BEGIN_
          _GET_(self%id_dz,dz)          ! Layer height (m)
@@ -95,12 +96,6 @@ contains
          xtnc = xEPS*dz
          EIR = buffer/xtnc*(1.0_rk-exp(-xtnc))  ! Note: this computes the vertical average, not the value at the layer centre.
          buffer = buffer*exp(-xtnc)
-         
-         if (depthb == 0._rk) then
-            _SET_SURFACE_DIAGNOSTIC_(self%id_par0,EIR*self%pEIR_eowX)
-         end if
-         
-         depthb = depthb + dz
 
          _SET_DIAGNOSTIC_(self%id_EIR,EIR)                     ! Local shortwave radiation
          _SET_DIAGNOSTIC_(self%id_parEIR,EIR*self%pEIR_eowX)   ! Local photosynthetically active radiation
