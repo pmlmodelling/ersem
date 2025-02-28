@@ -15,6 +15,7 @@ module ersem_light_iop_ady
       type (type_diagnostic_variable_id)   :: id_EIR, id_parEIR, id_xEPS, id_secchi, id_iopABS, id_iopBBS
       type (type_dependency_id)            :: id_dz, id_iopABSp, id_iopBBSp
       type (type_horizontal_dependency_id) :: id_I_0, id_zenithA, id_ADY_0
+      type (type_surface_diagnostic_variable_id) :: id_par0 ! Surface photosynthetically active radiation
 
       ! Parameters
       real(rk) :: abESSX,a0w,b0w,pEIR_eowX,relax
@@ -66,6 +67,8 @@ contains
               source=source_do_column)
       call self%register_diagnostic_variable(self%id_iopBBS,'iopBBS','1/m','backscatter coefficient of shortwave flux', &
               source=source_do_column)
+      call self%register_diagnostic_variable(self%id_par0, 'par0', 'W m-2', 'surface photosynthetically active radiation', &
+         standard_variable=standard_variables%surface_downwelling_photosynthetic_radiative_flux, source=source_do_column)
 
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_I_0,standard_variables%surface_downwelling_shortwave_flux)
@@ -102,6 +105,9 @@ contains
       _GET_HORIZONTAL_(self%id_zenithA,zenithA)   ! Zenith angle
 
       buffer = max(buffer, 0.0_rk)
+      
+      ! PAR at surface
+      _SET_SURFACE_DIAGNOSTIC_(self%id_par0,buffer*self%pEIR_eowX)
 
       _VERTICAL_LOOP_BEGIN_
          _GET_(self%id_dz,dz)          ! Layer height (m)
