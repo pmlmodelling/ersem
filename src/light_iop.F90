@@ -14,6 +14,7 @@ module ersem_light_iop
       type (type_diagnostic_variable_id)   :: id_EIR, id_parEIR, id_xEPS, id_secchi, id_iopABS, id_iopBBS
       type (type_dependency_id)            :: id_dz, id_abESS ,id_iopABSp, id_iopBBSp
       type (type_horizontal_dependency_id) :: id_I_0, id_zenithA
+      type (type_surface_diagnostic_variable_id) :: id_par0 ! Surface photosynthetically active radiation
 
       ! Parameters
       real(rk) :: abESSX,a0w,b0w,pEIR_eowX
@@ -56,6 +57,8 @@ contains
               source=source_do_column)
       call self%register_diagnostic_variable(self%id_iopBBS,'iopBBS','1/m','backscatter coefficient of shortwave flux', &
               source=source_do_column)
+      call self%register_diagnostic_variable(self%id_par0, 'par0', 'W m-2', 'surface photosynthetically active radiation', &
+         standard_variable=standard_variables%surface_downwelling_photosynthetic_radiative_flux, source=source_do_column)
 
       ! Register environmental dependencies (temperature, shortwave radiation)
       call self%register_dependency(self%id_I_0,standard_variables%surface_downwelling_shortwave_flux)
@@ -70,8 +73,11 @@ contains
       class (type_ersem_light_iop),intent(in) :: self
       _DECLARE_ARGUMENTS_VERTICAL_
 
-      real(rk) :: buffer,dz,xEPS,iopABS,iopBBS,xtnc,EIR,abESS,zenithA
+      real(rk) :: buffer,dz,xEPS,iopABS,iopBBS,xtnc,EIR,abESS,zenithA,depthb
       real(rk),parameter :: bpk=.00022_rk
+
+      ! Variables so can get diagnosic at surface - copies format in FABM_MEDUSA_ccd module
+      depthb = 0._rk
 
       _GET_HORIZONTAL_(self%id_I_0,buffer)
       _GET_HORIZONTAL_(self%id_zenithA,zenithA)   ! Zenith angle
@@ -89,6 +95,13 @@ contains
          xtnc = xEPS*dz
          EIR = buffer/xtnc*(1.0_rk-exp(-xtnc))  ! Note: this computes the vertical average, not the value at the layer centre.
          buffer = buffer*exp(-xtnc)
+         
+         if (depthb == 0._rk) then
+            _SET_SURFACE_DIAGNOSTIC_(self%id_par0,EIR*self%pEIR_eowX)
+         end if
+         
+         depthb = depthb + dz
+
          _SET_DIAGNOSTIC_(self%id_EIR,EIR)                     ! Local shortwave radiation
          _SET_DIAGNOSTIC_(self%id_parEIR,EIR*self%pEIR_eowX)   ! Local photosynthetically active radiation
          _SET_DIAGNOSTIC_(self%id_xEPS,xEPS)                   ! Vertical attenuation of shortwave radiation
