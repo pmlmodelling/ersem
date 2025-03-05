@@ -14,18 +14,13 @@ type, extends(type_base_model), public :: type_upper_lower_boundaries_simple
     type (type_dependency_id)                       :: id_par, id_parmean, id_migrator_food, id_depth 
     type (type_horizontal_dependency_id)            :: id_parmean0 
     type (type_horizontal_dependency_id)            :: id_migrator_food0 
-!    type (type_horizontal_dependency_id)            :: id_light_present0
-!    type (type_horizontal_dependency_id)            :: id_nhours
     type (type_surface_dependency_id)               :: id_par0
-!    type (type_horizontal_diagnostic_variable_id)   :: id_nhours_out
     type (type_diagnostic_variable_id)              :: id_present
     type (type_bottom_dependency_id)                :: id_topo
     type (type_horizontal_dependency_id)            :: id_daylength
-
-!type (type_dependency_id)                       :: id_temp
+    real(rk) :: day_light, upper_light, lower_light
     contains
         procedure :: initialize
-!        procedure :: do_surface
         procedure :: do
 
 end type
@@ -35,40 +30,23 @@ contains
     subroutine initialize(self, configunit)
         class (type_upper_lower_boundaries_simple), intent(inout), target :: self
         integer, intent(in)                                  :: configunit
-        !real(rk) :: par, par0, parmean, parmean0
-!call self%register_dependency(self%id_temp,standard_variables%temperature)
+        
         call self%register_diagnostic_variable(self%id_present,'migrator_presence','-','migrators are present here')
-
         call self%register_dependency(self%id_par, standard_variables%downwelling_photosynthetic_radiative_flux)
         call self%register_dependency(self%id_par0, standard_variables%surface_downwelling_photosynthetic_radiative_flux)
         call self%register_dependency(self%id_parmean0,temporal_mean(self%id_par0,period=86400._rk,resolution=3600._rk,missing_value=50.0_rk))
         call self%register_dependency(self%id_parmean,temporal_mean(self%id_par,period=86400._rk,resolution=3600._rk,missing_value=1.0_rk))
-!        call self%register_dependency(self%id_light_present0,'light_presence','-','light is available at the surface')
-!        call self%register_dependency(self%id_nhours,temporal_mean(self%id_light_present0,period=86400._rk,resolution=3600._rk,missing_value=12.0_rk/86400.0_rk))
         call self%register_dependency(self%id_migrator_food,'migrator_food','mgC/m3','food availability for the migrators')
         call self%register_dependency(self%id_migrator_food0,vertical_integral(self%id_migrator_food))
         call self%register_dependency(self%id_depth,standard_variables%pressure)
         call self%register_dependency(self%id_topo,standard_variables%bottom_depth )
         call self%register_dependency(self%id_daylength,'daylength','hours','number of hours light is available at the surface')
+        call self%get_parameter( self%day_light,'day_light','log Wm-2','minimum light level for day', default=0._rk)
+        call self%get_parameter( self%upper_light,'upper_light','log Wm-2','light level for upper isolume', default=-6.5_rk)
+        call self%get_parameter( self%lower_light,'lower_light','log Wm-2','light level for lower isolume',default=-15._rk)
 
-!        call self%register_diagnostic_variable(self%id_nhours_out,'nhours','-','number of daylight hours',source=source_do_surface)
     end subroutine initialize
 
-!     subroutine do_surface(self,_ARGUMENTS_DO_SURFACE_)
-
-!         class (type_upper_lower_boundaries),intent(in) :: self
-!         _DECLARE_ARGUMENTS_DO_SURFACE_
-
-!         real(rk) :: nhours!, lpres,T,par0
-!         _HORIZONTAL_LOOP_BEGIN_
-!             !_GET_(self%id_temp,T)
-!             !_GET_SURFACE_(self%id_par0,par0)
-! !            _GET_SURFACE_(self%id_nhours,nhours)
-!             !_GET_SURFACE_(self%id_light_present0,lpres)
-! !            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_nhours_out, min(24.0_rk, max(0.0_rk,nhours * 86400.0_rk)))
-!         _HORIZONTAL_LOOP_END_
-
-!     end subroutine do_surface
 
     subroutine do(self, _ARGUMENTS_DO_)
 
@@ -116,14 +94,6 @@ contains
                 upper_presence = 0.0_rk
                 lower_presence = 0.0_rk
                 
-                ! Calculate possibilities above the lower boundary
-                ! if (food <= 17.12_rk) then
-                !     if (depth < 184.04_rk) then
-                !         upper_presence = 1.0_rk
-                !     else
-                !         upper_presence = 0.0_rk
-                !     end if
-                ! else
                     if (depth < 240.0_rk) then
                         upper_presence = 1.0_rk
                     else
@@ -150,65 +120,25 @@ contains
                     lower_presence = 0.0_rk
                     
                     ! Lowerlight Rules
-                    ! if (food <= 44.51_rk) then
-                    !     if (food <= 24.07_rk) then
                             if (parmeanlog > -15.0_rk) then
                                 upper_presence = 1.0_rk
                             else
                                 upper_presence = 0.0_rk
                             end if
-                    !     else
-                    !         if (parmeanlog > -17.77_rk) then
-                    !             upper_presence = 1.0_rk
-                    !         else
-                    !             upper_presence = 0.0_rk
-                    !         end if
-                    !     end if
-                    ! else
-                    !     if (parmean0log <= 1.19_rk) then
-                    !         if (parmeanlog > -13.07_rk) then
-                    !             upper_presence = 1.0_rk
-                    !         else
-                    !             upper_presence = 0.0_rk
-                    !         end if
-                    !     else
-                    !         if (parmeanlog > -7.52_rk) then
-                    !             upper_presence = 1.0_rk
-                    !         else
-                    !             upper_presence = 0.0_rk
-                    !         end if
-                    !     end if
-                    ! end if
                     
                     ! Upperlight Rules
                     if (parmean0log <= 0.65_rk) then
-                        !if (parmean0log <= 0.55_rk) then
                             if (parlog < -8.0_rk) then
                                 lower_presence = 1.0_rk
                             else
                                 lower_presence = 0.0_rk
                             end if
-                        !else
-                        !    if (parlog < -9.08_rk) then
-                        !        lower_presence = 1.0_rk
-                        !    else
-                        !        lower_presence = 0.0_rk
-                        !    end if
-                        !end if
                     else
-                        !if (parmean0log <= 1.19_rk) then
                             if (parlog < -4.0_rk) then
                                 lower_presence = 1.0_rk
                             else
                                 lower_presence = 0.0_rk
                             end if
-                        !else
-                        !    if (parlog < -1.41_rk) then
-                        !        lower_presence = 1.0_rk
-                        !    else
-                        !        lower_presence = 0.0_rk
-                        !    end if
-                        !end if
                     end if
                                         
                     ! Set diagnostic based on presence
@@ -224,7 +154,7 @@ contains
                 else
 
                     ! CASE 3
-                    if (par0log > 0.0_rk) then
+                    if (par0log > self%day_light) then
                         ! there is an upper and a lower light boundary
                         ! first calculate possibilities above the lower boundary
                         
@@ -233,14 +163,14 @@ contains
                         lower_presence = 0.0_rk
                         
                         ! Lowerlight Rules
-                        if (parmeanlog > -15.0_rk) then
+                        if (parmeanlog >  self%lower_light) then
                             upper_presence = 1.0_rk
                         else
                             upper_presence = 0.0_rk
                         end if
                         
                         ! Upperlight Rules
-                        if (parlog < -7.0_rk) then
+                        if (parlog < self%upper_light) then
                             lower_presence = 1.0_rk
                         else
                             lower_presence = 0.0_rk
@@ -265,7 +195,7 @@ contains
                         lower_presence = 0.0_rk
                         
                         ! Calculate possibilities above the lower boundary
-                        if (parmeanlog > -15.0_rk) then
+                        if (parmeanlog > self%lower_light) then
                             upper_presence = 1.0_rk
                         else
                             upper_presence = 0.0_rk
