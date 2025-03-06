@@ -12,8 +12,6 @@ private
 
 type, extends(type_base_model), public :: type_get_dependencies
 
-!    type (type_horizontal_diagnostic_variable_id) :: id_light_present0
-!    type (type_horizontal_diagnostic_variable_id) :: id_integrated_food
     type (type_diagnostic_variable_id) :: id_migrator_food
     type (type_horizontal_dependency_id) :: id_par0
     type (type_horizontal_dependency_id) :: id_lat
@@ -39,7 +37,6 @@ contains
         integer                                              :: iprey
         character(len=16)                                    :: index
 
-!        call self%register_diagnostic_variable(self%id_light_present0,'light_presence','-','light is available at the surface',source=source_do_surface)
         call self%register_dependency(self%id_par0, standard_variables%surface_downwelling_photosynthetic_radiative_flux)
 
         call self%get_parameter(self%nprey,'nprey','','number of prey types',default=0)
@@ -67,13 +64,6 @@ contains
         real(rk) :: inside_acos
 
         _HORIZONTAL_LOOP_BEGIN_
-
-            ! _GET_SURFACE_(self%id_par0,par0)
-            ! if (par0 < 5.0_rk) then
-            !     _SET_HORIZONTAL_DIAGNOSTIC_(self%id_light_present0, 0.0_rk)
-            ! else
-            !     _SET_HORIZONTAL_DIAGNOSTIC_(self%id_light_present0, 24.0_rk/86400_rk) 
-            ! end if
 
         _GET_SURFACE_(self%id_lat,latitude) ! degN
         _GET_GLOBAL_(self%id_yearday,yearday) !decimal day of the year
