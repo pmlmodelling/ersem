@@ -48,7 +48,7 @@ contains
         call self%register_dependency(self%id_thickness, standard_variables%cell_thickness)
         call self%register_dependency(self%id_par0, standard_variables%surface_downwelling_photosynthetic_radiative_flux)
         call self%register_dependency(self%id_depth,standard_variables%depth)
-        call self%register_dependency(self%id_topo,standard_variables%bottom_depth )
+        call self%register_dependency(self%id_topo,standard_variables%bottom_depth_below_geoid )
 
         call random_seed()
     end subroutine initialize
