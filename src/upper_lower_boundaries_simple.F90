@@ -35,7 +35,7 @@ contains
         call self%register_dependency(self%id_parmean0,temporal_mean(self%id_par0,period=86400._rk,resolution=3600._rk,missing_value=50.0_rk))
         call self%register_dependency(self%id_parmean,temporal_mean(self%id_par,period=86400._rk,resolution=3600._rk,missing_value=1.0_rk))
         call self%register_dependency(self%id_depth,standard_variables%pressure)
-        call self%register_dependency(self%id_topo,standard_variables%bottom_depth )
+        call self%register_dependency(self%id_topo,standard_variables%bottom_depth_below_geoid )
         call self%get_parameter( self%day_light,'day_light','log Wm-2','minimum light level for day', default=0._rk)
         call self%get_parameter( self%upper_light,'upper_light','log Wm-2','light level for upper isolume', default=-6.5_rk)
         call self%get_parameter( self%lower_light,'lower_light','log Wm-2','light level for lower isolume',default=-15._rk)
