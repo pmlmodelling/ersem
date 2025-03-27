@@ -47,7 +47,7 @@ contains
         !    source=source_do_column)
         call self%register_dependency(self%id_thickness, standard_variables%cell_thickness)
         call self%register_dependency(self%id_par0, standard_variables%surface_downwelling_photosynthetic_radiative_flux)
-        call self%register_dependency(self%id_depth,standard_variables%pressure)
+        call self%register_dependency(self%id_depth,standard_variables%depth)
         call self%register_dependency(self%id_topo,standard_variables%bottom_depth )
 
         call random_seed()
@@ -90,9 +90,11 @@ contains
             minimum_value = 0.002 + (0.01 - 0.002) * minimum_random
 
             if (par0 <= 1.0_rk) then
+                ! night
                 search_food = food
             else
-                search_food = 1.0_rk ! food has no effect
+                ! day    
+                search_food = food !1.0_rk ! food has no effect
             end if
 
             thickness = max(thickness, 1.0E-20_rk)
@@ -100,10 +102,11 @@ contains
                  local_random = thickness * (minimum_value + (1.0_rk - minimum_value) * local_random * search_food ) 
             else
                 if (depth <= min(depth_threshold,topo)) then
-                     local_random = thickness * (minimum_value + (0.2_rk - minimum_value) * local_random * search_food )  
+                     ! what does this condtion do?   
+                     local_random = thickness * 0.002 !(minimum_value) ! + (0.01_rk - minimum_value) * local_random * search_food )  
                 else
-                     local_random = thickness * (minimum_value + (0.2_rk - minimum_value) &
-                         * exp(-0.025_rk * (depth - min(depth_threshold, topo))) * local_random * search_food ) 
+                     local_random = thickness * 0.002 ! (minimum_value) ! + (0.01_rk - minimum_value) &
+                         !* exp(-0.025_rk * (depth - min(depth_threshold, topo))) * local_random * search_food ) 
                 end if 
             end if
 
