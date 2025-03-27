@@ -97,12 +97,9 @@ contains
          case ('migration_vertical_distribution');         allocate(type_vertical_distribution::model)
          case ('migration_move');                          allocate(type_migrator_move::model)
          case ('migration_weight_distribution');           allocate(type_weights::model)
-         case ('dvm_apply_move');                          allocate(type_apply_move::model)
          case ('dvm_conservative_migrator');               allocate(type_conservative_migrator::model)
          case ('dvm_get_dependencies');                    allocate(type_get_dependencies::model)
          case ('dvm_move');                                allocate(type_move::model)
-         case ('dvm_upper_lower_boundaries');              allocate(type_upper_lower_boundaries::model)
-         case ('dvm_upper_lower_boundaries_complex');      allocate(type_upper_lower_boundaries_complex::model)
          case ('dvm_upper_lower_boundaries_simple');       allocate(type_upper_lower_boundaries_simple::model)
          case ('dvm_weight_distribution');                 allocate(type_weight_distribution::model)
          ! Add new models here
