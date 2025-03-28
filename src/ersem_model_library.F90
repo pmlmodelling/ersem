@@ -33,12 +33,9 @@ module ersem_model_library
    use ersem_migration_vertical_distribution
    use ecosmo_migration_move
    use ecosmo_migration_weight_distribution
-   use dvm_apply_move
    use dvm_conservative_migrator
    use dvm_get_dependencies
    use dvm_move
-   use dvm_upper_lower_boundaries
-   use dvm_upper_lower_boundaries_complex
    use dvm_upper_lower_boundaries_simple
    use dvm_weight_distribution
 

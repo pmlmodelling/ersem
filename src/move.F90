@@ -22,7 +22,7 @@ type, extends(type_base_model) :: type_move
     real(rk) :: m, ratioMig
     contains
         procedure :: initialize
-        procedure :: check_state
+        procedure :: do
     end type
 
 contains
@@ -42,9 +42,9 @@ contains
 
     end subroutine initialize
 
-   subroutine check_state(self,_ARGUMENTS_CHECK_STATE_)
+    subroutine do(self,_ARGUMENTS_DO_)
        class (type_move), intent(in) :: self
-       _DECLARE_ARGUMENTS_CHECK_STATE_
+       _DECLARE_ARGUMENTS_DO_
 
         real(rk) :: integral_random_weights, random_weights !integral
         real(rk) :: local, distributed, thickness, target0
@@ -58,9 +58,11 @@ contains
            _GET_(self%id_thickness,thickness)
     
            distributed = random_weights / integral_random_weights ! this ensures that total weight distribution is 1, so mass conserved
-           _SET_(self%id_target, max(0.0_rk,local * (1.0_rk - self%ratioMig) + (distributed * target0/max(thickness,1.0E-20_rk)) * self%ratioMig ) )
+           !_SET_(self%id_target, max(0.0_rk,local * (1.0_rk - self%ratioMig) + (distributed * target0/max(thickness,1.0E-20_rk)) * self%ratioMig ) )
+           _ADD_SOURCE_(self%id_target, (-local +  (distributed * target0/max(thickness,1.0E-20_rk))) * self%ratioMig/900) 
+           ! hard coded time step = 900
     
         _LOOP_END_
-     end subroutine check_state
+    end subroutine do
 
 end module
