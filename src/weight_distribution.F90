@@ -103,10 +103,12 @@ contains
             else
                 if (depth <= min(depth_threshold,topo)) then
                      ! what does this condtion do?   
-                     local_random = thickness * 0.002 !(minimum_value) ! + (0.01_rk - minimum_value) * local_random * search_food )  
+                     !local_random = thickness * 0.002   
+                     local_random = thickness * (minimum_value  + (0.01_rk - minimum_value) * local_random * search_food )  
                 else
-                     local_random = thickness * 0.002 ! (minimum_value) ! + (0.01_rk - minimum_value) &
-                         !* exp(-0.025_rk * (depth - min(depth_threshold, topo))) * local_random * search_food ) 
+                     !local_random = thickness * 0.002  
+                     local_random = thickness * (minimum_value + (0.01_rk - minimum_value) &
+                         * exp(-0.025_rk * (depth - min(depth_threshold, topo))) * local_random * search_food ) 
                 end if 
             end if
 

@@ -59,7 +59,9 @@ contains
     
            distributed = random_weights / integral_random_weights ! this ensures that total weight distribution is 1, so mass conserved
            !_SET_(self%id_target, max(0.0_rk,local * (1.0_rk - self%ratioMig) + (distributed * target0/max(thickness,1.0E-20_rk)) * self%ratioMig ) )
-           _ADD_SOURCE_(self%id_target, (-local +  (distributed * target0/max(thickness,1.0E-20_rk))) * self%ratioMig/900) 
+           !_ADD_SOURCE_(self%id_target, (-local +  (distributed * target0/max(thickness,1.0E-20_rk))) * self%ratioMig/900)
+           _ADD_SOURCE_(self%id_target,  max(-max(local,0.0_rk),(distributed * target0 /max(thickness,1.0E-20_rk)-
+           max(local,0.0_rk)) * self%ratioMig) / 1800)
            ! hard coded time step = 900
     
         _LOOP_END_
