@@ -19,7 +19,7 @@ type, extends(type_base_model) :: type_move
     !type (type_bottom_dependency_id)   :: id_integral
     type (type_bottom_dependency_id)   :: id_integral_random_weights
     type (type_diagnostic_variable_id) :: id_distributed
-    real(rk) :: m, ratioMig
+    real(rk) :: tstep, m, ratioMig
     contains
         procedure :: initialize
         procedure :: do
@@ -39,6 +39,7 @@ contains
         call self%register_dependency(self%id_integral_random_weights,'migrator_integral_random_weights','','migrators distribution integral random weights')
         call self%register_dependency(self%id_thickness, standard_variables%cell_thickness)
         call self%get_parameter( self%ratioMig,  'ratioMig',    '-',      'ratio of moving biomass', default=0.5_rk)
+        call self%get_parameter( self%tstep,  'tstep',    'sec',      'time-step in seconds', default=900.0_rk)
 
     end subroutine initialize
 
@@ -61,7 +62,7 @@ contains
            !_SET_(self%id_target, max(0.0_rk,local * (1.0_rk - self%ratioMig) + (distributed * target0/max(thickness,1.0E-20_rk)) * self%ratioMig ) )
            !_ADD_SOURCE_(self%id_target, (-local +  (distributed * target0/max(thickness,1.0E-20_rk))) * self%ratioMig/900)
            _ADD_SOURCE_(self%id_target,  max(-max(local,0.0_rk),(distributed * target0 /max(thickness,1.0E-20_rk)-
-           max(local,0.0_rk)) * self%ratioMig) / 1800)
+           max(local,0.0_rk)) * self%ratioMig) / self%tstep)
            ! hard coded time step = 900
     
         _LOOP_END_
