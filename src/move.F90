@@ -49,11 +49,11 @@ contains
 
         real(rk) :: integral_random_weights, random_weights !integral
         real(rk) :: local, distributed, thickness, target0
-        !_GET_BOTTOM_(self%id_integral,integral)
-        _GET_BOTTOM_(self%id_integral_random_weights,integral_random_weights)
-        _GET_HORIZONTAL_(self%id_target0,target0)
         
         _LOOP_BEGIN_
+           !_GET_BOTTOM_(self%id_integral,integral)
+           _GET_BOTTOM_(self%id_integral_random_weights,integral_random_weights)
+           _GET_HORIZONTAL_(self%id_target0,target0)
            _GET_(self%id_target,local)
            _GET_(self%id_random_weights,random_weights)
            _GET_(self%id_thickness,thickness)

@@ -34,7 +34,7 @@ contains
         call self%register_dependency(self%id_par0, standard_variables%surface_downwelling_photosynthetic_radiative_flux)
         call self%register_dependency(self%id_parmean0,temporal_mean(self%id_par0,period=86400._rk,resolution=3600._rk,missing_value=50.0_rk))
         call self%register_dependency(self%id_parmean,temporal_mean(self%id_par,period=86400._rk,resolution=3600._rk,missing_value=1.0_rk))
-        call self%register_dependency(self%id_depth,standard_variables%pressure)
+        call self%register_dependency(self%id_depth,standard_variables%depth)
         call self%register_dependency(self%id_topo,standard_variables%bottom_depth_below_geoid )
         call self%get_parameter( self%day_light,'day_light','log Wm-2','minimum light level for day', default=0._rk)
         call self%get_parameter( self%upper_light,'upper_light','log Wm-2','light level for upper isolume', default=-6.5_rk)
@@ -54,14 +54,14 @@ contains
         real(rk) :: upper_presence, lower_presence
         real(rk) :: topo
 
-        _GET_SURFACE_(self%id_parmean0,parmean0)
-        _GET_SURFACE_(self%id_par0,par0)
-        _GET_BOTTOM_(self%id_topo,topo)
-
-        par0log = max(-20.0_rk, log10(par0))
-        parmean0log = max(-20.0_rk, log10(parmean0))
 
         _LOOP_BEGIN_
+            _GET_SURFACE_(self%id_parmean0,parmean0)
+            _GET_SURFACE_(self%id_par0,par0)
+            _GET_BOTTOM_(self%id_topo,topo)
+
+            par0log = max(-20.0_rk, log10(par0))
+            parmean0log = max(-20.0_rk, log10(parmean0))
 
             _GET_(self%id_par,par)
             _GET_(self%id_parmean,parmean)
