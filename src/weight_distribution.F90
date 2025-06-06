@@ -10,7 +10,7 @@ implicit none
 private 
 
 type, extends(type_base_model), public :: type_weight_distribution
-    !type (type_bottom_diagnostic_variable_id) :: id_integral
+    type (type_bottom_diagnostic_variable_id) :: id_integral
     !type (type_bottom_diagnostic_variable_id) :: id_totalthk
     type (type_bottom_diagnostic_variable_id) :: id_integral_random_weights
     type (type_diagnostic_variable_id)        :: id_random_weights
@@ -41,8 +41,8 @@ contains
         call self%register_dependency(self%id_present,'present', '-', 'migrators are present here')
         call self%register_dependency(self%id_migrator_food,'migrator_food', 'mgC/m3', 'food availability for the migrators')
         !call self%register_dependency(self%id_migrator_food0,vertical_integral(self%id_migrator_food))
-        !call self%register_diagnostic_variable(self%id_integral, 'integral', '','integral', missing_value=0.0_rk, &
-        !    act_as_state_variable=.true., source=source_do_column)
+        call self%register_diagnostic_variable(self%id_integral, 'integral', '','integral', missing_value=0.0_rk, &
+            act_as_state_variable=.true., source=source_do_column)
         !call self%register_diagnostic_variable(self%id_totalthk, 'totalthk', '','totalthk', missing_value=0.0_rk, &
         !    source=source_do_column)
         call self%register_dependency(self%id_thickness, standard_variables%cell_thickness)
@@ -59,35 +59,35 @@ contains
 
         real(rk) :: thickness, integral_random, present, local_random, minimum_random, minimum_value !local
         real(rk) :: depth,topo, depth_threshold
-        real(rk) :: par0
+        real(rk) :: par0, local
         real(rk) :: food !, food0
-        !real(rk) :: totalthk, integral
+        real(rk) :: integral !totalthk, 
         real(rk) :: search_food
 
-        !integral = 0.0_rk
+        integral = 0.0_rk
         integral_random = 0.0_rk
         !totalthk = 0.0_rk
         depth_threshold = 600.0_rk
 
-        _GET_SURFACE_(self%id_par0,par0)
-        _GET_BOTTOM_(self%id_topo,topo)
-        !_GET_SURFACE_(self%id_migrator_food0,food0)
-        
+
         _VERTICAL_LOOP_BEGIN_
 
-            !_GET_(self%id_target,local)
+            _GET_(self%id_target,local)
             _GET_(self%id_present,present)
             _GET_(self%id_thickness,thickness)
             _GET_(self%id_migrator_food,food)
             _GET_(self%id_depth,depth)
+            !_GET_SURFACE_(self%id_migrator_food0,food0)
+            _GET_SURFACE_(self%id_par0,par0)
+            _GET_BOTTOM_(self%id_topo,topo)
 
-            !integral = integral + local*thickness
+            integral = integral + local*thickness
             !totalthk = totalthk + thickness
 
             call random_number(local_random)
             call random_number(minimum_random)
 
-            minimum_value = 0.002 + (0.01 - 0.002) * minimum_random
+            minimum_value = 0.002  + (0.01 - 0.002) * minimum_random
 
             if (par0 <= 1.0_rk) then
                 ! night
@@ -99,26 +99,25 @@ contains
 
             thickness = max(thickness, 1.0E-20_rk)
             if (present > 0.5_rk) then
-                 local_random = thickness * (minimum_value + (1.0_rk - minimum_value) * local_random * search_food ) 
+                 local_random = (minimum_value + (1.0_rk - minimum_value) * local_random * search_food ) 
             else
                 if (depth <= min(depth_threshold,topo)) then
                      ! what does this condtion do?   
                      !local_random = thickness * 0.002   
-                     local_random = thickness * (minimum_value  + (0.01_rk - minimum_value) * local_random * search_food )  
+                     local_random = (minimum_value  + (0.01_rk - minimum_value) * local_random * search_food )  
                 else
                      !local_random = thickness * 0.002  
-                     local_random = thickness * (minimum_value + (0.01_rk - minimum_value) &
+                     local_random = (minimum_value + (0.01_rk - minimum_value) &
                          * exp(-0.025_rk * (depth - min(depth_threshold, topo))) * local_random * search_food ) 
                 end if 
             end if
 
-
-            integral_random = integral_random + local_random
+            integral_random = integral_random + local_random*thickness
             
             _SET_DIAGNOSTIC_(self%id_random_weights,local_random)
 
         _VERTICAL_LOOP_END_
-        !_SET_BOTTOM_DIAGNOSTIC_(self%id_integral,integral)
+        _SET_BOTTOM_DIAGNOSTIC_(self%id_integral,integral)
         !_SET_BOTTOM_DIAGNOSTIC_(self%id_totalthk,totalthk)
         _SET_BOTTOM_DIAGNOSTIC_(self%id_integral_random_weights,integral_random)
     end subroutine do_column
