@@ -50,7 +50,6 @@ contains
         call self%register_dependency(self%id_depth,standard_variables%depth)
         call self%register_dependency(self%id_topo,standard_variables%bottom_depth_below_geoid )
 
-        call random_seed()
     end subroutine initialize
 
     subroutine do_column(self, _ARGUMENTS_DO_COLUMN_)
@@ -84,8 +83,6 @@ contains
             integral = integral + local*thickness
             !totalthk = totalthk + thickness
 
-            call random_number(local_random)
-            call random_number(minimum_random)
 
             minimum_value = 0.002  + (0.01 - 0.002) * minimum_random
 
@@ -99,16 +96,16 @@ contains
 
             thickness = max(thickness, 1.0E-20_rk)
             if (present > 0.5_rk) then
-                 local_random = (minimum_value + (1.0_rk - minimum_value) * local_random * search_food ) 
+                 local_random = (minimum_value + (1.0_rk - minimum_value) * search_food ) 
             else
                 if (depth <= min(depth_threshold,topo)) then
                      ! what does this condtion do?   
                      !local_random = thickness * 0.002   
-                     local_random = (minimum_value  + (0.01_rk - minimum_value) * local_random * search_food )  
+                     local_random = (minimum_value  + (0.01_rk - minimum_value) * search_food )  
                 else
                      !local_random = thickness * 0.002  
                      local_random = (minimum_value + (0.01_rk - minimum_value) &
-                         * exp(-0.025_rk * (depth - min(depth_threshold, topo))) * local_random * search_food ) 
+                         * exp(-0.025_rk * (depth - min(depth_threshold, topo))) * search_food ) 
                 end if 
             end if
 
