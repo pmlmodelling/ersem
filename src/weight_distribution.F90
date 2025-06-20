@@ -56,7 +56,7 @@ contains
         class (type_weight_distribution), intent(in) :: self
         _DECLARE_ARGUMENTS_DO_COLUMN_
 
-        real(rk) :: thickness, integral_random, present, local_random, minimum_random, minimum_value !local
+        real(rk) :: thickness, integral_random, present, local_random, minimum_value !local
         real(rk) :: depth,topo, depth_threshold
         real(rk) :: par0, local
         real(rk) :: food !, food0
@@ -84,7 +84,7 @@ contains
             !totalthk = totalthk + thickness
 
 
-            minimum_value = 0.002  + (0.01 - 0.002) * minimum_random
+            minimum_value = 0.002 
 
             if (par0 <= 1.0_rk) then
                 ! night
