@@ -68,16 +68,11 @@ contains
 
             ! SPECIFY THE POSSIBLE LOCATIONS OF HIGH MIGRATOR CONCENTRATION !
 
-            ! There are 4 cases
-            ! 1. Winter Arctic night (surface parmean < 1E-10) (removed for speed)
-            ! 2. Summer Arctic night (number of daylight hours > 23.9) (removed for speed)
-            ! 3. Normal day cycle day time
-            ! 4. Normal day cycle night time
-
             ! Initialize presence variables
             upper_presence = 0.0_rk
             lower_presence = 0.0_rk
 
+            ! First calculate possibilities above the lower boundary
             ! Lowerlight Rules
             if (parmeanlog >  self%lower_light) then
                 upper_presence = 1.0_rk
@@ -85,21 +80,17 @@ contains
                 upper_presence = 0.0_rk
             end if
 
-
-            ! CASE 3
             if (par0log > self%day_light) then
+                ! Day time
                 ! there is an upper and a lower light boundary
-                ! first calculate possibilities above the lower boundary
-                
-                
+                                
                 ! Upperlight Rules
                 if (parlog < self%upper_light) then
                     lower_presence = 1.0_rk
                 else
                     lower_presence = 0.0_rk
                 end if
-                
-                
+                                
                 ! Set diagnostic based on presence
                 if (upper_presence + lower_presence > 1.0_rk) then
                     _SET_DIAGNOSTIC_(self%id_present, 1.0_rk)
@@ -114,7 +105,8 @@ contains
                 end if
                 
             else
-                ! CASE 4
+                ! Night time
+                ! Lower light boundary only
                 
                 ! Set diagnostic based on presence
                 if (upper_presence + lower_presence > 0.9_rk) then
@@ -124,17 +116,6 @@ contains
                 end if
                         
             end if
-
-            ! This should ensure that each point at least receives the 0.0_rk value
-            ! Try removing this later?
-            if (upper_presence + lower_presence < 0.9_rk) then
-                _SET_DIAGNOSTIC_(self%id_present,0.0_rk)     
-            end if 
-            ! 
-
-
-            ! ------------------------------------------------------------- !
-
 
         _LOOP_END_
 
