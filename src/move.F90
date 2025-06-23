@@ -12,13 +12,13 @@ private
 public type_move
 
 type, extends(type_base_model) :: type_move
-    type (type_dependency_id)          :: id_random_weights
+    type (type_dependency_id)          :: id_weights
     type (type_dependency_id)          :: id_thickness
     type (type_state_variable_id)      :: id_target
     type (type_bottom_dependency_id)   :: id_integral
-    type (type_bottom_dependency_id)   :: id_integral_random_weights
+    type (type_bottom_dependency_id)   :: id_integral_weights
     type (type_bottom_dependency_id)   :: id_overwintering
-    real(rk) :: tstep, m, ratioMig
+    real(rk) :: tstep, ratioMig
     contains
         procedure :: initialize
         procedure :: do
@@ -32,13 +32,13 @@ contains
         integer,         intent(in)            :: configunit
 
         call self%register_state_dependency(self%id_target, 'target', '', 'variable to apply sources and sinks to')
-        call self%register_dependency(self%id_random_weights,'migrator_random_weights','-','migrators distribution random weights')
+        call self%register_dependency(self%id_weights,'migrator_weights','-','migrators distribution weights')
         call self%register_dependency(self%id_integral,'integral','','depth-integrated target variable')
-        call self%register_dependency(self%id_integral_random_weights,'migrator_integral_random_weights','','migrators distribution integral random weights')
+        call self%register_dependency(self%id_integral_weights,'migrator_integral_weights','','migrators distribution integral weights')
         call self%register_dependency(self%id_thickness, standard_variables%cell_thickness)
         call self%register_dependency(self%id_overwintering, 'overwintering','','Is mesozooplankton in diapause?')
-        call self%get_parameter( self%ratioMig,  'ratioMig',    '-',      'ratio of moving biomass', default=0.5_rk)
-        call self%get_parameter( self%tstep,  'tstep',    'sec',      'time-step in seconds', default=900.0_rk)
+        call self%get_parameter(self%ratioMig, 'ratioMig', '-', 'ratio of moving biomass', default=0.5_rk)
+        call self%get_parameter(self%tstep, 'tstep', 'sec', 'time-step in seconds', default=900.0_rk)
 
     end subroutine initialize
 
@@ -46,22 +46,22 @@ contains
        class (type_move), intent(in) :: self
        _DECLARE_ARGUMENTS_DO_
 
-        real(rk) :: integral_random_weights, random_weights, integral
+        real(rk) :: integral_weights, weights, integral
         real(rk) :: local, distributed, thickness, overwintering
         
         _LOOP_BEGIN_
            _GET_BOTTOM_(self%id_integral,integral)
-           _GET_BOTTOM_(self%id_integral_random_weights,integral_random_weights)         
+           _GET_BOTTOM_(self%id_integral_weights,integral_weights)         
            _GET_BOTTOM_(self%id_overwintering,overwintering)
            _GET_(self%id_target,local)
-           _GET_(self%id_random_weights,random_weights)
+           _GET_(self%id_weights,weights)
            _GET_(self%id_thickness,thickness)
 
            if (overwintering < 1.0_rk) then
-           distributed = random_weights / integral_random_weights ! this ensures that total weight distribution is 1, so mass conserved
-           !_SET_(self%id_target, max(0.0_rk,local * (1.0_rk - self%ratioMig) + (distributed * target0/max(thickness,1.0E-20_rk)) * self%ratioMig ) )
-           _ADD_SOURCE_(self%id_target, (distributed * integral - local) * self%ratioMig / self%tstep)
-           !_ADD_SOURCE_(self%id_target,  max(-max(local,0.0_rk),(distributed * integral /max(thickness,1.0E-20_rk) - max(local,0.0_rk)) * self%ratioMig) / self%tstep)
+              distributed = weights / integral_weights ! this ensures that total weight distribution is 1, so mass conserved
+              !_SET_(self%id_target, max(0.0_rk,local * (1.0_rk - self%ratioMig) + (distributed * target0/max(thickness,1.0E-20_rk)) * self%ratioMig ) )
+              _ADD_SOURCE_(self%id_target, (distributed * integral - local) * self%ratioMig / self%tstep)
+              !_ADD_SOURCE_(self%id_target,  max(-max(local,0.0_rk),(distributed * integral /max(thickness,1.0E-20_rk) - max(local,0.0_rk)) * self%ratioMig) / self%tstep)
            end if
         _LOOP_END_
         
