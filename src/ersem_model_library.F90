@@ -30,7 +30,6 @@ module ersem_model_library
    use ersem_benthic_erosion
    use ersem_fluff
    use ersem_zenith_angle
-   use ersem_migration_vertical_distribution
    use dvm_conservative_migrator
    use dvm_get_dependencies
    use dvm_move
