@@ -13,9 +13,14 @@ type, extends(type_base_model), public :: type_upper_lower_boundaries_simple
 
     type (type_dependency_id)                       :: id_par, id_parmean, id_depth 
     type (type_surface_dependency_id)               :: id_par0
-    type (type_diagnostic_variable_id)              :: id_present
     type (type_bottom_dependency_id)                :: id_topo
+    type (type_state_variable_id),  allocatable,dimension(:) :: id_prey !state variable here - dependency in ersem mesozoo
+    type (type_diagnostic_variable_id)              :: id_present
+    type (type_diagnostic_variable_id)              :: id_migrator_food
+
+    integer  :: nprey
     real(rk) :: day_light, upper_light, lower_light
+    real(rk) :: divide_food_by
     contains
         procedure :: initialize
         procedure :: do
@@ -26,8 +31,10 @@ contains
 
     subroutine initialize(self, configunit)
         class (type_upper_lower_boundaries_simple), intent(inout), target :: self
-        integer, intent(in)                                  :: configunit
-        
+        integer, intent(in)                                               :: configunit
+        integer                                                           :: iprey
+        character(len=16)                                                 :: index
+        ! need to multiply by CMass if we want prey in mg rather than mmol
         call self%register_diagnostic_variable(self%id_present,'migrator_presence','-','migrators are present here')
         call self%register_dependency(self%id_par, standard_variables%downwelling_photosynthetic_radiative_flux)
         call self%register_dependency(self%id_par0, standard_variables%surface_downwelling_photosynthetic_radiative_flux)
@@ -37,6 +44,16 @@ contains
         call self%get_parameter( self%day_light,'day_light','log Wm-2','minimum light level for day', default=0._rk)
         call self%get_parameter( self%upper_light,'upper_light','log Wm-2','light level for upper isolume', default=-6.5_rk)
         call self%get_parameter( self%lower_light,'lower_light','log Wm-2','light level for lower isolume',default=-15._rk)
+
+        call self%get_parameter(self%nprey,'nprey','','number of prey types',default=0)
+        call self%get_parameter(self%divide_food_by,'divide_food_by','','a likely concentration (e.g. half saturation constant) to normalize food',default=40.0_rk)
+        call self%register_diagnostic_variable(self%id_migrator_food,'migrator_food','mmol C/m^3','food availability for the migrators', act_as_state_variable=.true., missing_value=0.0_rk, source=source_do)
+        ! Get prey-specific coupling links.
+        allocate(self%id_prey(self%nprey))
+        do iprey=1,self%nprey
+            write (index,'(i0)') iprey
+            call self%register_state_dependency(self%id_prey(iprey),'prey'//trim(index)//'c','mmol C/m^3', 'prey '//trim(index)//' carbon')
+        end do
 
     end subroutine initialize
 
@@ -51,6 +68,8 @@ contains
         real(rk) :: depth
         real(rk) :: upper_presence, lower_presence
         real(rk) :: topo
+        integer  :: iprey
+        real(rk),dimension(self%nprey) :: prey
 
 
         _LOOP_BEGIN_
@@ -117,8 +136,14 @@ contains
                         
             end if
 
-        _LOOP_END_
+            ! Get prey concentrations
+            do iprey=1,self%nprey
+                _GET_(self%id_prey(iprey), prey(iprey))
+            end do
+            _SET_DIAGNOSTIC_(self%id_migrator_food, sum(prey)/self%divide_food_by)
 
+        _LOOP_END_
+    
     end subroutine do
 
 end module
