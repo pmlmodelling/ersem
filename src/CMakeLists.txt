@@ -37,7 +37,6 @@ add_library(fabm_models_ersem OBJECT
             fluff.F90
             zenith_angle.F90
 	    conservative_migrator.F90
-	    get_dependencies.F90
 	    move.F90
 	    upper_lower_boundaries_simple.F90
 	    weight_distribution.F90
