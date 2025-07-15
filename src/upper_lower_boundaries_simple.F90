@@ -52,7 +52,7 @@ contains
         allocate(self%id_prey(self%nprey))
         do iprey=1,self%nprey
             write (index,'(i0)') iprey
-            call self%register_state_dependency(self%id_prey(iprey),'prey'//trim(index)//'c','mmol C/m^3', 'prey '//trim(index)//' carbon')
+            call self%register_state_dependency(self%id_prey(iprey),'prey'//trim(index)//'','mmol C/m^3', 'prey '//trim(index)//' carbon')
         end do
 
     end subroutine initialize
