@@ -1,17 +1,83 @@
 check_conservation: false
 require_initialization: true
 instances:
-  zenithAngle:
-    model: ersem/zenith_angle
   light:
-    model: ersem/light_iop_ady
+    model: spectral/spectral
     parameters:
-      a0w: 0.03                                            # absorption coefficient of clear water (1/m), default = 0.036
-      b0w: 0.0015                                          # backscatter coefficient of clear water (1/m), default = 0.0016
-      pEIR_eow: 0.5                                        # photosynthetically active fraction of shortwave radiation (-), default = 0.5
-      relax: 0.143                                         # relaxation towards satellite gelbstoff absorption (1/d), default=0.033
-    initialization:
-      ADY: 0.05
+      lambda_method: 1
+      compute_mean_wind: false
+      n_iop: 6
+      iop1_type: 1
+      iop2_type: 2
+      iop3_type: 3
+      iop4_type: 5
+      iop5_type: 11
+      iop6_type: 11
+      a_star_iop5: 1.
+      lambda_a_iop5: 443.
+      S_iop5: 0.014
+      b_star_iop6: 56.95
+      lambda_b_iop6: 555.0
+      eta_iop6: 0.5
+      b_b_iop6: 0.01756
+      spectral_output: 2
+      nlambda_out: 6
+      lambda1_out: 412
+      lambda2_out: 443
+      lambda3_out: 490
+      lambda4_out: 510
+      lambda5_out: 555
+      lambda6_out: 665
+      save_Kd: true
+    coupling:
+      iop1: P1
+      iop2: P2
+      iop3: P3
+      iop4: P4
+      iop5: ADY443
+      iop6: BB555
+  ADY443:
+    model: ersem/pelagic_base
+    parameters:
+      composition: c
+    initialization: 
+      c: 0.2 
+  ADY443_obs_3D:
+    model: column_projection
+  ADY_relax:
+    model: interior_relaxation
+    parameters:
+      rate: 3.8e-5   # s-1, this is approximately 1/month
+    coupling:
+      original: ADY443/c
+      target: ADY443_obs_3D/result
+  BB555:
+    model: ersem/pelagic_base
+    parameters:
+      composition: c                                       # elemental composition
+    initialization: 
+      c: 0.02
+  BB555_obs_3D:
+    model: column_projection 
+  BB_relax:
+    model: interior_relaxation
+    parameters:
+      rate: 3.8e-07                                        # relaxation rate (s-1)
+    coupling:
+      original: BB555/c                                    # variable that is to be relaxed
+      target: BB555_obs_3D/result                          # target to relax towards
+  relhum:
+    model: spectral/relhum
+#  viz:
+#    model: horizontal_constant
+#    parameters:
+#      standard_name: visibility_in_air
+#      value: 25000
+  aero:
+    model: horizontal_constant
+    parameters:
+      standard_name: aerosol_air_mass_type
+      value: 10
   N1:
     long_name: phosphate
     model: ersem/pelagic_base
