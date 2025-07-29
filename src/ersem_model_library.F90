@@ -30,7 +30,6 @@ module ersem_model_library
    use ersem_benthic_erosion
    use ersem_fluff
    use ersem_zenith_angle
-   use dvm_conservative_migrator
    use dvm_move
    use dvm_upper_lower_boundaries_simple
    use dvm_weight_distribution
@@ -87,7 +86,6 @@ contains
          case ('benthic_erosion');                         allocate(type_ersem_benthic_erosion::model)
          case ('fluff');                                   allocate(type_ersem_fluff::model)
          case ('zenith_angle');                            allocate(type_ersem_zenith_angle::model)
-         case ('dvm_conservative_migrator');               allocate(type_conservative_migrator::model)
          case ('dvm_move');                                allocate(type_move::model)
          case ('dvm_upper_lower_boundaries_simple');       allocate(type_upper_lower_boundaries_simple::model)
          case ('dvm_weight_distribution');                 allocate(type_weight_distribution::model)
