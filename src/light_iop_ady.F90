@@ -104,6 +104,7 @@ contains
       _GET_HORIZONTAL_(self%id_I_0,buffer)
       _GET_HORIZONTAL_(self%id_zenithA,zenithA)   ! Zenith angle
 
+      ! Shortwave light at surface 
       buffer = max(buffer, 0.0_rk)
       
       ! PAR at surface
@@ -119,7 +120,7 @@ contains
          xEPS = (1._rk+.005_rk*zenithA)*iopABS+4.18_rk*(1._rk-.52_rk*exp(-10.8_rk*iopABS))*iopBBS
          xtnc = xEPS*dz
          EIR = buffer/xtnc*(1.0_rk-exp(-xtnc))  ! Note: this computes the vertical average, not the value at the layer centre.
-         buffer = buffer*exp(-xtnc)
+         buffer = buffer*exp(-xtnc)                            ! Shortwave light at bottom of layer (top of next layer)
          _SET_DIAGNOSTIC_(self%id_EIR,EIR)                     ! Local shortwave radiation
          _SET_DIAGNOSTIC_(self%id_parEIR,EIR*self%pEIR_eowX)   ! Local photosynthetically active radiation
          _SET_DIAGNOSTIC_(self%id_xEPS,xEPS)                   ! Vertical attenuation of shortwave radiation
