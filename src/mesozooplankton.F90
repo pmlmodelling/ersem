@@ -272,7 +272,7 @@ contains
       _LOOP_BEGIN_
 
          ! Get depth-integrated prey in mg C/m^2 (pre-multiplied with CMass, so it comes in mg C rather than mmol C)
-         if (self%Minprey > 0) then
+         if (self%Minprey > 0.0_rk) then
             _GET_HORIZONTAL_(self%id_inttotprey,intprey)
          end if
 
@@ -535,7 +535,7 @@ contains
       _HORIZONTAL_LOOP_BEGIN_
 
          ! Get depth-integrated prey in mg C/m^2 (pre-multiplied with CMass, so it comes in mg C rather than mmol C)
-         if (self%Minprey > 0) then
+         if (self%Minprey > 0.0_rk) then
             _GET_HORIZONTAL_(self%id_inttotprey,intprey)
          end if
          
