@@ -56,6 +56,7 @@ contains
       if (self%iswcal == 0) then
          call self%get_parameter(self%fdissmin, 'fdiss', '1/d','specific dissolution rate', default=0.0_rk)
          self%fdissmax = 0.0_rk
+         self%fdissmin = 0.01_rk
       else
          call self%get_parameter(self%fdissmax, 'fdissmax', '1/d','maximum specific dissolution rate', minimum=0._rk, default=0.0_rk)
          call self%get_parameter(self%fdissmin, 'fdissmin', '1/d','minimum specific dissolution rate', minimum=0._rk, default=0.001_rk * self%fdissmax)
