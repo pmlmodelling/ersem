@@ -75,6 +75,8 @@ contains
          end if
          _GET_(self%id_om_cal,om_cal)
 
+         om_cal=max(om_cal,0._rk)
+
          if (self%iswcal==0) then  ! NB select case would be cleaner but makes vectorization impossible for ifort 14
             fcalc = 0._rk
             fdiss = 0._rk
