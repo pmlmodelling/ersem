@@ -67,7 +67,11 @@ html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
 module_index_generator.create('module_index.rst')
-ersem_webpage.generator_web_doc('model_info/ERSEM_model.rst')
+
+on_rtd = os.environ.get('READTHEDOCS') == 'True'
+if not on_rtd:
+    import ersem_webpage
+    ersem_webpage.generator_web_doc('model_info/ERSEM_model.rst')
 
 autosectionlabel_prefix_document = True
 
