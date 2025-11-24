@@ -1,18 +1,14 @@
 check_conservation: false
 require_initialization: true
 instances:
-
   zenithAngle:
     model: ersem/zenith_angle
   light:
-    model: ersem/light_iop_ady
+    model: ersem/light_iop
     parameters:
       a0w: 0.03                                            # absorption coefficient of clear water (1/m), default = 0.036
       b0w: 0.0015                                          # backscatter coefficient of clear water (1/m), default = 0.0016
       pEIR_eow: 0.5                                        # photosynthetically active fraction of shortwave radiation (-), default = 0.5
-      relax: 0.143                                         # relaxation towards satellite gelbstoff absorption (1/d), default=0.033
-    initialization:
-      ADY: 0.05
   N1:
     long_name: phosphate
     model: ersem/pelagic_base
@@ -49,7 +45,7 @@ instances:
     long_name: oxygen
     model: ersem/oxygen
     parameters:
-      ISWO2: 2                                             # saturation formulation (1: legacy ERSEM, 2: Weiss 1970)
+      iswO2: 2                                             # saturation formulation (1: legacy ERSEM, 2: Weiss 1970)
     initialization:
       o: 300.0                                             # oxygen (mmol O_2/m^3)
   O3:
@@ -57,9 +53,9 @@ instances:
     model: ersem/carbonate
     parameters:
       iswCO2: 1                                            # carbonate system diagnostics (0: off, 1: on), default = 1
-      iswASFLUX: 1                                         # air-sea CO2 exchange (0: none, 1: Nightingale and Liss, 2: Wanninkhof 1992 without chemical enhancement, 3: Wanninkhof 1992 with chemical enhancement, 4: Wanninkhof 1999), default = 1
-      iswtalk: 2                                           # alkalinity formulation (1-4: from salinity and temperature, 5: dynamic alkalinity), default = 5
-      iswbioalk: 1
+      iswASFLUX: 1                                         # air-sea CO2 exchange (0: none, 1: Nightingale et al. 2000, 2: Wanninkhof 1992 without chemical enhancement, 3: Wanninkhof 1992 with chemical enhancement, 4: Wanninkhof and McGillis 1999, 5: Wanninkhof 1992 switching to Wanninkhof and McGillis 1999, 6: Wan, default = 6
+      iswtalk: 5                                           # alkalinity formulation (1-4: from salinity and temperature, 5: dynamic alkalinity), default = 5
+      pHscale: 1                                           # pH scale (1: total, 0: SWS, -1: SWS backward compatible), default = 1
     initialization:
       c: 2130.0                                            # total dissolved inorganic carbon (mmol C/m^3)
       TA: 2300.0                                           # total alkalinity (mmol/m^3)
