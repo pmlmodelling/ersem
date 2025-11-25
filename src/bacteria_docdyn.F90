@@ -229,7 +229,8 @@ contains
       call self%register_diagnostic_variable(self%id_fRPB1p,'fRPB1p','mmol P/m^3/d','total uptake of POP')
       call self%register_diagnostic_variable(self%id_fR1B1n,'fR1B1n','mmol N/m^3/d','uptake of DON')
       call self%register_diagnostic_variable(self%id_fR1B1p,'fR1B1p','mmol P/m^3/d','uptake of DOP')
-      
+
+      call self%register_diagnostic_variable(self%id_minn,'minn','mmol N/m^3/d','mineralisation of DON to DIN')
       call self%register_diagnostic_variable(self%id_minp,'minp','mmol P/m^3/d','mineralisation of DOP to DIP')
 
 ! RJT 2019 - Bacteria metabolic status diagnostics
