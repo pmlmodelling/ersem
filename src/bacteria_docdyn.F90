@@ -15,7 +15,7 @@ module ersem_bacteria_docdyn
    type,extends(type_ersem_pelagic_base),public :: type_ersem_bacteria_docdyn
       ! Variables
       type (type_state_variable_id) :: id_O3c, id_O2o, id_TA, id_N3n
-      type (type_state_variable_id) :: id_R1c, id_R2c, id_R3c
+      type (type_state_variable_id) :: id_R1c, id_R2c, id_R3c,id_T1c,id_T2c
       type (type_state_variable_id) :: id_R1p
       type (type_state_variable_id) :: id_R1n
       type (type_state_variable_id) :: id_N1p,id_N4n,id_N7f,id_N6
@@ -24,12 +24,19 @@ module ersem_bacteria_docdyn
       type (type_model_id),         allocatable,dimension(:) :: id_RP
 
       type (type_diagnostic_variable_id) :: id_fB1O3c, id_fB1NIn, id_fB1N1p,id_bgeff,id_fdenit,id_fanox,id_freox
-
+      type (type_state_variable_id),allocatable,dimension(:) :: id_TDc,id_TDp,id_TDn
+      type (type_model_id),         allocatable,dimension(:) :: id_TD
+      type (type_model_id) :: id_T1,id_T2
       type (type_diagnostic_variable_id) :: id_fR1B1c, id_fR2B1c, id_fR3B1c,id_fRPB1c,id_fB1R1c, id_fB1R2c, id_fB1R3c
       type (type_diagnostic_variable_id) :: id_fR1B1n,id_fB1R1n,id_fR1B1p,id_fB1R1p,id_fRPB1n,id_fRPB1p
+      type (type_diagnostic_variable_id), allocatable,dimension(:) :: id_fTDB1c
       type (type_diagnostic_variable_id) :: id_minn,id_minp
+      ! add diagnostics variables for bacteria production and respiration budgets and metabolic status
+      ! RJT 2019
+      type (type_diagnostic_variable_id) :: id_net_B1,id_uptake_B1
+      ! RJT 2019
       ! Parameters
-      integer  :: nRP
+      integer  :: nRP,nTD
       integer  :: iswBlimX
       real(rk) :: q10B1X,chdB1oX
       real(rk) :: chB1nX,chB1pX
@@ -39,7 +46,7 @@ module ersem_bacteria_docdyn
       real(rk) :: qpB1cX,qnB1cX
       real(rk) :: urB1_O2X
       real(rk) :: rR2B1X,rR3B1X
-      real(rk),allocatable :: sRPR1(:)
+      real(rk),allocatable :: sRPR1(:), rTDB1X(:)
       real(rk) :: frB1R3
       real(rk) :: DeniX,reoX,omroX,omonX,chN3oX
       integer  :: denit
@@ -68,7 +75,7 @@ contains
 ! !REVISION HISTORY:
 !
 ! !LOCAL VARIABLES:
-      integer           :: iRP
+      integer           :: iRP,iTD
       character(len=16) :: index
       real(rk)          :: c0
 !EOP
@@ -153,6 +160,27 @@ contains
          end if
       end do
 
+      
+      ! Register links to terrestrial Dissolved Organic Matter.
+      call self%get_parameter(self%nTD,'nTD','','number of substrates',default=0)
+      allocate(self%id_TD(self%nTD))
+      allocate(self%id_TDc(self%nTD))
+      allocate(self%id_TDn(self%nTD))
+      allocate(self%id_TDp(self%nTD))
+      allocate(self%id_fTDB1c(self%nTD))
+      do iTD=1,self%nTD
+         write (index,'(i0)') iTD
+         call self%register_state_dependency(self%id_TDc(iTD),'TD'//trim(index)//'c','mg C/m^3',   'carbon in substrate '//trim(index))
+         call self%register_state_dependency(self%id_TDn(iTD),'TD'//trim(index)//'n','mmol N/m^3', 'nitrogen in substrate '//trim(index))
+         call self%register_state_dependency(self%id_TDp(iTD),'TD'//trim(index)//'p','mmol P/m^3', 'phosphorus in substrate '//trim(index))
+         call self%register_model_dependency(self%id_TD(iTD),'TD'//trim(index))
+         call self%request_coupling_to_model(self%id_TDc(iTD),self%id_TD(iTD),'c')  ! For now link to hardcoded "c" to get a direct link to state mg C/m3 (and not a diagnostic for mmol C/m3)
+         call self%request_coupling_to_model(self%id_TDn(iTD),self%id_TD(iTD),standard_variables%total_nitrogen)
+         call self%request_coupling_to_model(self%id_TDp(iTD),self%id_TD(iTD),standard_variables%total_phosphorus)
+         call self%register_diagnostic_variable(self%id_fTDB1c(iTD),'fT'//trim(index)//'B1c','mg C/m^3/d','uptake of terrigenous DOC'//trim(index))
+      end do
+      
+      
       ! Register links to semi-refractory dissolved organic matter pool.
       call self%register_state_dependency(self%id_R3c,'R3c','mg C/m^3','semi-refractory DOC')
 
@@ -160,6 +188,12 @@ contains
       do iRP=1,self%nRP
          write (index,'(i0)') iRP
          call self%get_parameter(self%sRPR1(iRP),'sRP'//trim(index)//'R1','1/d','remineralisation of substrate '//trim(index)//' to DOM')
+      end do
+
+      allocate(self%rTDB1X(self%nTD))
+      do iTD=1,self%nTD
+         write (index,'(i0)') iTD
+         call self%get_parameter(self%rTDB1X(iTD),'rTD'//trim(index),'-','fraction of  substrate T'//trim(index)//'available to bacteria')
       end do
 
       call self%get_parameter(self%rR2B1X,'rR2','-','fraction of semi-labile DOC available to bacteria')
@@ -181,11 +215,11 @@ contains
       call self%register_diagnostic_variable(self%id_fB1N1p,'fB1N1p','mmol P/m^3/d','release of DIP')
       call self%register_diagnostic_variable(self%id_bgeff,'bgeff','','bacterial growth efficiency')
 
-      call self%register_diagnostic_variable(self%id_fB1R1c,'fB1R1c','mg C/m^3/d','release of labile DOC ')
-      call self%register_diagnostic_variable(self%id_fB1R2c,'fB1R2c','mg C/m^3/d','release of semi-labile DOC ')
-      call self%register_diagnostic_variable(self%id_fB1R3c,'fB1R3c','mg C/m^3/d','release of semi-refractory DOC ')
-      call self%register_diagnostic_variable(self%id_fB1R1n,'fB1R1n','mmol N/m^3/d','release of DON')
-      call self%register_diagnostic_variable(self%id_fB1R1p,'fB1R1p','mmol P/m^3/d','release of DOP')
+      call self%register_diagnostic_variable(self%id_fB1R1c,'fB1R1c','mg C/m^3/d','bacterial release of labile DOC ')
+      call self%register_diagnostic_variable(self%id_fB1R2c,'fB1R2c','mg C/m^3/d','bacterial release of semi-labile DOC ')
+      call self%register_diagnostic_variable(self%id_fB1R3c,'fB1R3c','mg C/m^3/d','bacterial release of semi-refractory DOC ')
+      call self%register_diagnostic_variable(self%id_fB1R1n,'fB1R1n','mmol N/m^3/d','bacterial DON release')
+      call self%register_diagnostic_variable(self%id_fB1R1p,'fB1R1p','mmol P/m^3/d','bacterial DOP release')
 
       call self%register_diagnostic_variable(self%id_fR1B1c,'fR1B1c','mg C/m^3/d','uptake of labile DOC ')
       call self%register_diagnostic_variable(self%id_fR2B1c,'fR2B1c','mg C/m^3/d','uptake of semi-labile DOC ')
@@ -198,6 +232,11 @@ contains
 
       call self%register_diagnostic_variable(self%id_minn,'minn','mmol N/m^3/d','mineralisation of DON to DIN')
       call self%register_diagnostic_variable(self%id_minp,'minp','mmol P/m^3/d','mineralisation of DOP to DIP')
+
+! RJT 2019 - Bacteria metabolic status diagnostics
+      call self%register_diagnostic_variable(self%id_net_B1,'netB1','mmol C/m^3/d','net bacterial production')
+      call self%register_diagnostic_variable(self%id_uptake_B1,'rugB1','mmol C/m^3/d','actual uptake from substrates')
+! RJT 2019
    end subroutine
 
    subroutine do(self,_ARGUMENTS_DO_)
@@ -222,10 +261,12 @@ contains
       real(rk) :: totsubst
       real(rk) :: CORROX
       real(rk) :: fdenit,denitpot,deniteff,o2state,freox,fanox
-      integer  :: iRP
+      integer  :: iRP, iTD
       real(rk),dimension(self%nRP) :: RPc,RPcP,RPnP,RPpP
       real(rk),dimension(self%nRP) :: fRPB1c,fRPB1p,fRPB1n
-
+      real(rk),dimension(self%nTD) :: TDcP,TDc,TDnP,TDpP
+      real(rk),dimension(self%nTD) :: fTDB1c,fTDB1p,fTDB1n
+      
       ! Enter spatial loops (if any)
       _LOOP_BEGIN_
 
@@ -244,6 +285,7 @@ contains
          _GET_(self%id_N4n,N4nP)
          _GET_WITH_BACKGROUND_(self%id_R1c,R1c)
          _GET_WITH_BACKGROUND_(self%id_R2c,R2c)
+
          _GET_(self%id_R1c,R1cP)
          _GET_(self%id_R1p,R1pP)
          _GET_(self%id_R1n,R1nP)
@@ -251,6 +293,8 @@ contains
          _GET_WITH_BACKGROUND_(self%id_R3c,R3c)
          _GET_(self%id_R2c,R2cP)
          _GET_(self%id_R3c,R3cP)
+
+
          do iRP=1,self%nRP
             _GET_WITH_BACKGROUND_(self%id_RPc(iRP),RPc(iRP))
             _GET_(self%id_RPc(iRP),RPcP(iRP))
@@ -258,6 +302,13 @@ contains
             _GET_(self%id_RPp(iRP),RPpP(iRP))
          end do
 
+         do iTD=1,self%nTD
+            _GET_WITH_BACKGROUND_(self%id_TDc(iTD),TDc(iTD))
+            _GET_(self%id_TDc(iTD),TDcP(iTD))
+            _GET_(self%id_TDn(iTD),TDnP(iTD))
+            _GET_(self%id_TDp(iTD),TDpP(iTD))         
+         end do
+         
          qpB1c = B1p/B1c
          qnB1c = B1n/B1c
 
@@ -296,7 +347,7 @@ contains
       ! rugB1 = MIN(rumB1,rutB1)
       ! specific in substrate concentration:
 
-      totsubst = R1cP+R2cP*self%rR2B1X+R3cP*self%rR3B1X+sum(RPcP*self%sRPR1/sutB1)
+      totsubst = R1cP+R2cP*self%rR2B1X+R3cP*self%rR3B1X+sum(TDcP*self%rTDB1X)+sum(RPcP*self%sRPR1/sutB1)
       ! Jorn: check whether total substrate>0 to prevent NaNs
       if (totsubst>0.0_rk) then
          sugB1 = rumB1/max(rumB1/sutB1,totsubst)
@@ -305,7 +356,7 @@ contains
       end if
             ! = MIN(rumB1,rutB1)=MIN(rumB1/(R1cP+R2cP*rR2B1X,sutB1) avoid pot. div. by 0
       fRPB1c = sugB1*RPcP*self%sRPR1/sutB1
-      rugB1 = sugB1*(R1cP+R2cP*self%rR2B1X+R3cP*self%rR3B1X)+sum(fRPB1c)
+      rugB1 = sugB1*(R1cP+R2cP*self%rR2B1X+R3cP*self%rR3B1X+sum(TDcP*self%rTDB1X))+sum(fRPB1c)
 
 !..Respiration :
 
@@ -362,6 +413,10 @@ contains
          _SET_ODE_(self%id_R2c,+ fB1R2c - sugB1*R2cP*self%rR2B1X)
          _SET_ODE_(self%id_R3c,+ fB1R3c - sugB1*R3cP*self%rR3B1X)
 
+! RJT 2019 Bacteria production diagnostics
+         _SET_DIAGNOSTIC_(self%id_net_B1, netB1)
+         _SET_DIAGNOSTIC_(self%id_uptake_B1, rugB1)
+! RJT 2019         
          _SET_DIAGNOSTIC_(self%id_fB1R1c, fB1R1c)
          _SET_DIAGNOSTIC_(self%id_fB1R2c, fB1R2c)
          _SET_DIAGNOSTIC_(self%id_fB1R3c, fB1R3c)
@@ -374,6 +429,12 @@ contains
             _SET_ODE_(self%id_RPc(iRP), -fRPB1c(iRP))
          end do
 
+         do iTD=1,self%nTD
+            _SET_ODE_(self%id_TDc(iTD), -sugB1*TDcP(iTD)*self%rTDB1X(iTD))
+            _SET_DIAGNOSTIC_(self%id_fTDB1c(iTD), sugB1*TDcP(iTD)*self%rTDB1X(iTD))
+         end do
+
+         
          _SET_ODE_(self%id_O3c,+ fB1O3c/CMass)
 
 !..oxygen consumption.....................................................
@@ -396,6 +457,7 @@ contains
 !..uptake of DOP
 
          fR1B1p = sugB1*R1pP
+         fTDB1p= sugB1*TDpP*self%rTDB1X
 
 !..flux of DOP from B1
 
@@ -410,7 +472,7 @@ contains
             _SET_ODE_(self%id_RPp(iRP), - fRPB1p(iRP))
          end do
 
-         _SET_ODE_(self%id_p, + fR1B1p - fB1N1p - fB1RDp)
+         _SET_ODE_(self%id_p, + fR1B1p + sum(fTDB1p) - fB1N1p - fB1RDp)
          _SET_ODE_(self%id_N1p, + fB1N1p)
          _SET_ODE_(self%id_R1p, + fB1RDp - fR1B1p)
          _SET_ODE_(self%id_TA,  - fB1N1p)   ! Contribution to alkalinity: -1 for phosphate
@@ -433,6 +495,7 @@ contains
 !..uptake of DON
 
          fR1B1n = sugB1*R1nP
+         fTDB1n= sugB1*TDnP*self%rTDB1X
 
 !..flux of DON from B1
 
@@ -447,7 +510,7 @@ contains
          end do
 
          _SET_ODE_(self%id_N4n, + fB1NIn)
-         _SET_ODE_(self%id_n,   + fR1B1n - fB1NIn - fB1RDn)
+         _SET_ODE_(self%id_n,   + fR1B1n + sum(fTDB1n) - fB1NIn - fB1RDn)
          _SET_ODE_(self%id_R1n, + fB1RDn   - fR1B1n)
          _SET_ODE_(self%id_TA,  + fB1NIn)   ! Contribution to alkalinity: +1 for ammonium
 
