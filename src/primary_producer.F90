@@ -519,22 +519,22 @@ contains
 
          ! Net nitrogen uptake
 
-         ! maximum acheivable uptake of nitrate  (mmol NO3 m-3 d-1)
+         ! maximum acheivable uptake of nitrate  (mmol N m-3 d-1)
          rumn3 = self%qun3 * N3nP * c
 
-         ! Maximum achievable uptake of ammonium (mmol NH4 m-3 d-1)
+         ! Maximum achievable uptake of ammonium (mmol N m-3 d-1)
          rumn4 = self%qun4 * N4nP * c
 
-         !Total maximum achievable uptake of nitrogen (mmol NH4 m-3 d-1)
+         !Total maximum achievable uptake of nitrogen (mmol N m-3 d-1)
          rumn = rumn3 + rumn4
 
-         !Regulation term relaxing internal quota towards maximum quota (using nutrient luxury uptake) (mmol NO3 m-3 d-1)
+         !Regulation term relaxing internal quota towards maximum quota (using nutrient luxury uptake) (mmol N m-3 d-1)
          misn = self%snplux * (self%xqn * qnRPIcX*cP - nP)
 
-         !Assimilation demand at maximum quota and compensating for rest respiration (mmol NO3 m-3 d-1)
+         !Assimilation demand at maximum quota and compensating for rest respiration (mmol N m-3 d-1)
          runn = sun*c * qnRPIcX*self%xqn - srs*nP
 
-         ! Uptake capped at maximum achievable uptake of nitrogen (mmol NO3 m-3 d-1)
+         ! Uptake capped at maximum achievable uptake of nitrogen (mmol N m-3 d-1)
          fNIPIn = MIN(rumn, runn + misn)
 
          ! Partitioning over NH4 and NO3 uptake
