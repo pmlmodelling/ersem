@@ -74,7 +74,7 @@ contains
 !EOP
 !-----------------------------------------------------------------------
 !BOC
-      call self%get_parameter(self%iswBlimX,'iswBlim', '',           'nutrient limitation (1: minimum of inorganic and organic availability, 2: additive availability)')
+      call self%get_parameter(self%iswBlimX,'iswBlim', '',           'nutrient limitation (1: minimum of inorganic and organic availability, 2: additive availability)', minimum=1, maximum=2)
       call self%get_parameter(self%q10B1X,  'q10',     '-',          'Q_10 temperature coefficient')
       call self%get_parameter(self%chdB1oX, 'chdo',    '-',          'Michaelis-Menten constant for oxygen limitation')
       call self%get_parameter(self%chB1nX,  'chn',     'mmol N/m^3', 'Michaelis-Menten constant for nitrate limitation')
@@ -88,7 +88,7 @@ contains
       call self%get_parameter(self%qpB1cX,  'qpc',     'mmol P/mg C','maximum phosphorus to carbon ratio')
       call self%get_parameter(self%qnB1cX,  'qnc',     'mmol N/mg C','maximum nitrogen to carbon ratio')
       call self%get_parameter(self%urB1_O2X,'ur_O2',   'mmol O_2/mg C','oxygen consumed per carbon respired')
-      call self%get_parameter(self%denit,   'denit',   '-',           'denitrification switch (0: off, 1: on)',default=0)
+      call self%get_parameter(self%denit,   'denit',   '-',           'denitrification switch (0: off, 1: on)',default=0,minimum=0,maximum=1)
 
       if (self%denit == 1) then
       call self%get_parameter(self%DeniX,   'DeniX',   '1/d',         'specific denitrification rate')
@@ -191,8 +191,8 @@ contains
       call self%register_diagnostic_variable(self%id_fR2B1c,'fR2B1c','mg C/m^3/d','uptake of semi-labile DOC ')
       call self%register_diagnostic_variable(self%id_fR3B1c,'fR3B1c','mg C/m^3/d','uptake of semi-refractory DOC ')
       call self%register_diagnostic_variable(self%id_fRPB1c,'fRPB1c','mg C/m^3/d','total uptake of POC')
-      call self%register_diagnostic_variable(self%id_fRPB1n,'fRPB1n','mg N/m^3/d','total uptake of PON')
-      call self%register_diagnostic_variable(self%id_fRPB1p,'fRPB1p','mg P/m^3/d','total uptake of POP')
+      call self%register_diagnostic_variable(self%id_fRPB1n,'fRPB1n','mmol N/m^3/d','total uptake of PON')
+      call self%register_diagnostic_variable(self%id_fRPB1p,'fRPB1p','mmol P/m^3/d','total uptake of POP')
       call self%register_diagnostic_variable(self%id_fR1B1n,'fR1B1n','mmol N/m^3/d','uptake of DON')
       call self%register_diagnostic_variable(self%id_fR1B1p,'fR1B1p','mmol P/m^3/d','uptake of DOP')
 
@@ -334,7 +334,7 @@ contains
         _SET_ODE_(self%id_N3n, -fdenit)
 
 ! Reduced sulfur formation corresponds to eq.9 in Sankar et al. (2008)
-        fanox = self%omrox * (self%urB1_O2X * (1._rk-o2state) * fB1O3c - self%omonX * fdenit)
+        fanox = self%omroX * (self%urB1_O2X * (1._rk-o2state) * fB1O3c - self%omonX * fdenit)
         freox = self%reoX * etB1 * o2state * N6
 
         _SET_DIAGNOSTIC_(self%id_fanox,freox)
@@ -375,7 +375,14 @@ contains
          end do
 
          _SET_ODE_(self%id_O3c,+ fB1O3c/CMass)
-         _SET_ODE_(self%id_O2o,- fB1O3c*self%urB1_O2X)
+
+!..oxygen consumption.....................................................
+ 
+         if (self%denit == 1) then
+         _SET_ODE_(self%id_O2o, -o2state*fB1O3c*self%urB1_O2X - freox/self%omroX) 
+         else 
+         _SET_ODE_(self%id_O2o, -fB1O3c*self%urB1_O2X)
+         end if
 
 !..Phosphorus dynamics in bacteria........................................
 

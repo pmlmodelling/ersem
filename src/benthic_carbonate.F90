@@ -15,7 +15,7 @@ module ersem_benthic_carbonate
       type (type_dependency_id)         :: id_ETW, id_X1X, id_dens, id_pres
       type (type_horizontal_dependency_id)         :: id_Carb_in,id_pco2_in
 
-      type (type_horizontal_diagnostic_variable_id) :: id_ph,id_pco2,id_CarbA, id_BiCarb, id_Carb
+      type (type_horizontal_diagnostic_variable_id) :: id_ph,id_pco2,id_CarbA, id_BiCarb, id_Carb, id_Hplus
       type (type_horizontal_diagnostic_variable_id) :: id_Om_cal,id_Om_arg
       integer :: phscale
 
@@ -45,6 +45,7 @@ contains
       call self%register_diagnostic_variable(self%id_CarbA, 'CarbA', 'mmol/m^3','carbonic acid concentration',source=source_do_bottom)
       call self%register_diagnostic_variable(self%id_BiCarb,'BiCarb','mmol/m^3','bicarbonate concentration',source=source_do_bottom)
       call self%register_diagnostic_variable(self%id_Carb,  'Carb',  'mmol/m^3','carbonate concentration',source=source_do_bottom)
+      call self%register_diagnostic_variable(self%id_Carb,  'Hplus',  'mmol/m^3','hydrogen ions concentration',source=source_do_bottom)
       call self%register_diagnostic_variable(self%id_Om_cal,'Om_cal','-','calcite saturation',source=source_do_bottom)
       call self%register_diagnostic_variable(self%id_Om_arg,'Om_arg','-','aragonite saturation',source=source_do_bottom)
       call self%register_dependency(self%id_ETW, standard_variables%temperature)
@@ -62,7 +63,7 @@ contains
 
       real(rk) :: O3c,ETW,X1X,density,pres
       real(rk) :: TA,Ctot
-      real(rk) :: pH,PCO2,H2CO3,HCO3,CO3,k0co2
+      real(rk) :: pH,PCO2,H2CO3,HCO3,CO3,hplus,k0co2
       real(rk) :: Om_cal,Om_arg
       logical  :: success
 
@@ -77,7 +78,7 @@ contains
 
          TA = TA/1.0e6_rk                ! from umol kg-1 to mol kg-1
          Ctot  = O3C / 1.e3_rk / density ! from mmol m-3 to mol kg-1
-         call co2dyn (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success,self%phscale)   ! NB pressure from dbar to bar
+         call co2dyn (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,Hplus,k0co2,success,self%phscale)   ! NB pressure from dbar to bar
          if (success) then
             ! Carbonate system iterative scheme converged -  save associated diagnostics.
             ! Convert outputs from fraction to ppm (pCO2) and from mol kg-1 to mmol m-3 (concentrations).
@@ -86,6 +87,7 @@ contains
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_CarbA, H2CO3*1.e3_rk*density)
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_Bicarb,HCO3*1.e3_rk*density)
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_Carb,  CO3*1.e3_rk*density)
+            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_Hplus,  Hplus) !*1.e3_rk*density)
          else
             ! Carbonate system iterative scheme did not converge.
             ! All diagnostics retain their previous value.

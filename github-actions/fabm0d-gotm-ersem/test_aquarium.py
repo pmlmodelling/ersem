@@ -84,5 +84,5 @@ class AquariumTests(unittest.TestCase):
         """
         Checks the nanophytoplankton carbon (P2_c) values are the same
         """
-        name = "B1_c"
+        name = "P2_c"
         assert np.allclose(self.expected[name], self.value_dict[name])
