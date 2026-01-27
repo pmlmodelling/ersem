@@ -13,10 +13,10 @@ module ersem_carbonate
 !     Variable identifiers
       type (type_state_variable_id)     :: id_O3c,id_TA,id_bioalk
       type (type_dependency_id)         :: id_ETW, id_X1X, id_dens, id_pres
-      type (type_dependency_id)         :: id_Carb_in,id_BiCarb_in,id_CarbA_in,id_pH_in,id_pco2_in
+      type (type_dependency_id)         :: id_Carb_in,id_BiCarb_in,id_CarbA_in,id_pH_in,id_pco2_in, id_Hplus_in
       type (type_horizontal_dependency_id) :: id_wnd,id_PCO2A
 
-      type (type_diagnostic_variable_id) :: id_ph,id_pco2,id_CarbA, id_BiCarb, id_Carb, id_TA_diag
+      type (type_diagnostic_variable_id) :: id_ph,id_pco2,id_CarbA, id_BiCarb, id_Carb, id_TA_diag, id_Hplus
       type (type_diagnostic_variable_id) :: id_Om_cal,id_Om_arg
 
       type (type_horizontal_diagnostic_variable_id) :: id_fair,id_wnd_diag
@@ -87,7 +87,7 @@ contains
          call self%register_diagnostic_variable(self%id_CarbA, 'CarbA', 'mmol/m^3','carbonic acid concentration',missing_value=0._rk)
          call self%register_diagnostic_variable(self%id_BiCarb,'BiCarb','mmol/m^3','bicarbonate concentration',missing_value=0._rk)
          call self%register_diagnostic_variable(self%id_Carb,  'Carb',  'mmol/m^3','carbonate concentration',standard_variable=standard_variables%mole_concentration_of_carbonate_expressed_as_carbon,missing_value=0._rk)
-
+         call self%register_diagnostic_variable(self%id_Hplus, 'Hplus', 'mmol/m^3','hydrogen ions concentration',missing_value=0._rk)
          call self%register_diagnostic_variable(self%id_Om_cal,'Om_cal','-','calcite saturation',missing_value=4._rk)
          call self%register_diagnostic_variable(self%id_Om_arg,'Om_arg','-','aragonite saturation',missing_value=3._rk)
       end if
@@ -108,6 +108,7 @@ contains
          call self%register_dependency(self%id_CarbA_in,'CarbA','mmol/m^3','previous carbonic acid concentration')
          call self%register_dependency(self%id_BiCarb_in,'BiCarb','mmol/m^3','previous bicarbonate concentration')
          call self%register_dependency(self%id_pH_in,'pH','-','previous pH')
+         call self%register_dependency(self%id_Hplus_in,'Hplus','mmol/m^3','previous hydrogen ions concentration')
       end if
 
       if (self%iswASFLUX>=1) then
@@ -155,7 +156,7 @@ contains
 
       real(rk) :: O3c,ETW,X1X,density,pres
       real(rk) :: TA,bioalk,Ctot
-      real(rk) :: pH,PCO2,H2CO3,HCO3,CO3,k0co2
+      real(rk) :: pH,PCO2,H2CO3,HCO3,CO3,k0co2,Hplus
       real(rk) :: Om_cal,Om_arg
       logical  :: success
 
@@ -189,7 +190,7 @@ contains
          TA = TA / 1.0e3_rk / density    ! from mmol m-3 to mol kg-1
          Ctot  = O3C / 1.e3_rk / density ! from mmol m-3 to mol kg-1
 
-         CALL CO2DYN (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success,self%phscale)   ! NB pressure from dbar to bar
+         CALL CO2DYN (ETW,X1X,pres*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,Hplus,k0co2,success,self%phscale)   ! NB pressure from dbar to bar
 
          if (.not.success) then
             ! Carbonate system iterative scheme did not converge.
@@ -200,16 +201,19 @@ contains
             _GET_(self%id_Carb_in,CO3)
             _GET_(self%id_pCO2_in,pCO2)
             _GET_(self%id_pH_in,pH)
+            _GET_(self%id_Hplus_in,Hplus)
             CO3 = CO3/1.e3_rk/density  ! from mmol/m3 to mol/kg
             HCO3 = HCO3/1.e3_rk/density  ! from mmol/m3 to mol/kg
             H2CO3 = H2CO3/1.e3_rk/density  ! from mmol/m3 to mol/kg
             pCO2 = pCO2/1.e6_rk  ! from uatm to atm
+            Hplus= Hplus/1.e3_rk/density ! from mmol/m3 to mol/kg
          endif
          _SET_DIAGNOSTIC_(self%id_ph,pH)
          _SET_DIAGNOSTIC_(self%id_pco2,PCO2*1.e6_rk)
          _SET_DIAGNOSTIC_(self%id_CarbA, H2CO3*1.e3_rk*density)
          _SET_DIAGNOSTIC_(self%id_Bicarb,HCO3*1.e3_rk*density)
          _SET_DIAGNOSTIC_(self%id_Carb,  CO3*1.e3_rk*density)
+         _SET_DIAGNOSTIC_(self%id_Hplus, Hplus*1.e3_rk*density)
 
          ! Call carbonate saturation state subroutine
          CALL CaCO3_Saturation (ETW, X1X, pres*1.e4_rk, CO3, Om_cal, Om_arg)  ! NB pressure from dbar to Pa
@@ -227,7 +231,7 @@ contains
       real(rk) :: wnd,PCO2A
       real(rk) :: sc,fwind,UPTAKE,FAIRCO2
 
-      real(rk) :: ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2
+      real(rk) :: ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,Hplus,k0co2
       logical  :: success
 
       if (self%iswASFLUX<=0) return
@@ -265,7 +269,7 @@ contains
 !  for surface box only calculate air-sea flux
 !..Only call after 2 days, because the derivation of instability in the
 !..
-         CALL CO2dyn(T, S, PRSS*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success,self%phscale)
+         CALL CO2dyn(T, S, PRSS*0.1_rk,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,Hplus,k0co2,success,self%phscale)
          if (.not.success) then
             _GET_(self%id_pco2_in,PCO2)
             PCO2 = PCO2*1.e-6_rk
@@ -324,13 +328,13 @@ contains
 !\\
 !\\
 ! !INTERFACE:
-      SUBROUTINE CO2dyn ( T, S, PRSS,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,k0co2,success,hscale)
+      SUBROUTINE CO2dyn ( T, S, PRSS,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,Hplus,k0co2,success,hscale)
 !
 ! !LOCAL VARIABLES:
 !     ! TODO - SORT THESE!
       real(rk),intent(in) :: T, S, PRSS   ! NB PRSS is pressure in bar
       real(rk),intent(inout) :: ctot,TA
-      real(rk),intent(out) :: pH,PCO2,H2CO3,HCO3,CO3,k0co2
+      real(rk),intent(out) :: pH,PCO2,H2CO3,HCO3,CO3,Hplus,k0co2
       logical, intent(out) :: success
       integer, intent(in)  :: hscale
 
@@ -363,9 +367,10 @@ contains
       H2CO3 = 0._rk
       HCO3 = 0._rk
       CO3 = 0._rk
+      Hplus = 0._rk
 
       CALL CO2SET(PRSS,Tmax,S,k0co2,k1co2,k2co2,kb,hscale)
-      CALL CO2CLC(k0co2,k1co2,k2co2,kb,ICALC,BORON,BTOT,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,success)
+      CALL CO2CLC(k0co2,k1co2,k2co2,kb,ICALC,BORON,BTOT,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,Hplus,success)
 
       END SUBROUTINE CO2DYN
 !
@@ -564,19 +569,19 @@ contains
 !\\
 !\\
 ! !INTERFACE:
-      SUBROUTINE CO2CLC(k0co2,k1co2,k2co2,kb,ICALC,BORON,BTOT,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,success)
+      SUBROUTINE CO2CLC(k0co2,k1co2,k2co2,kb,ICALC,BORON,BTOT,ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,AHplus,success)
 !
 ! !USES:
 !
 ! !LOCAL VARIABLES:
       real(rk),intent(in)    :: k0co2,k1co2,k2co2,kb
-      real(rk),intent(inout) :: ctot,TA,pH,PCO2,H2CO3,HCO3,CO3
+      real(rk),intent(inout) :: ctot,TA,pH,PCO2,H2CO3,HCO3,CO3,AHPLUS
       logical,intent(out)    :: success
       INTEGER ICALC, KARL, LQ
 !put counter in to check duration in convergence loop
       INTEGER                :: COUNTER,C_CHECK,C_SW
       real(rk)              :: ALKC, ALKB,BTOT
-      real(rk)              :: AKR,AHPLUS
+      real(rk)              :: AKR
       real(rk)              :: PROD,tol1,tol2,tol3,tol4,steg,fak
       real(rk)              :: STEGBY,Y,X,W,X1,Y1,X2,Y2,FACTOR,TERM,Z
       LOGICAL               :: BORON,DONE

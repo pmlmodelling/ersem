@@ -482,14 +482,21 @@ contains
          _SET_DIAGNOSTIC_(self%id_fPIRPc,fPIRPc)
          ! Phosphorus flux...........................................
 
-         ! Lysis loss of phosphorus
+         ! Lysis loss of phosphorus (mmol P m-3 d-1)
          fPIRPp = sPIRP * min(self%qplc*cP,pP)
          fPIRDp = sdo * pP - fPIRPp
 
          ! Net phosphorus uptake
+         ! Maximum achievable uptake (mmol P m-3 d-1)
          rump = self%qurp * N1pP * c
+ 
+         !Regulation term relaxing internal quota towards maximum quota (using nutrient luxury uptake)  (mmol P m-3 d-1)
          misp = self%snplux*(self%xqp * qpRPIcX*cP - pP)
+
+         !Assimilation demand at maximum quota and compensating for rest respiration (mmol P m-3 d-1)
          runp = sun*c * qpRPIcX*self%xqp - srs*pP
+
+         ! Uptake capped at maximum achievable uptake (mmol P m-3 d-1)
          fN1PIp = MIN(rump, runp+misp)
 
          ! Source equations
@@ -511,12 +518,23 @@ contains
          fPIRDn = sdo * nP - fPIRPn
 
          ! Net nitrogen uptake
+
+         ! maximum acheivable uptake of nitrate  (mmol N m-3 d-1)
          rumn3 = self%qun3 * N3nP * c
+
+         ! Maximum achievable uptake of ammonium (mmol N m-3 d-1)
          rumn4 = self%qun4 * N4nP * c
+
+         !Total maximum achievable uptake of nitrogen (mmol N m-3 d-1)
          rumn = rumn3 + rumn4
 
+         !Regulation term relaxing internal quota towards maximum quota (using nutrient luxury uptake) (mmol N m-3 d-1)
          misn = self%snplux * (self%xqn * qnRPIcX*cP - nP)
+
+         !Assimilation demand at maximum quota and compensating for rest respiration (mmol N m-3 d-1)
          runn = sun*c * qnRPIcX*self%xqn - srs*nP
+
+         ! Uptake capped at maximum achievable uptake of nitrogen (mmol N m-3 d-1)
          fNIPIn = MIN(rumn, runn + misn)
 
          ! Partitioning over NH4 and NO3 uptake
@@ -546,17 +564,17 @@ contains
             ! Silicate flux.............................................
             _GET_(self%id_s,sP)
 
-            ! Loss of silicate due to lysis
+            ! Loss of silicate due to lysis (mmol Si m-3 d-1)
             fPIRPs = sdo * sP
 
-            ! Loss of excess silicate (qsP1c > qsc)
+            ! Loss of excess silicate (qsP1c > qsc)  (mmol Si m-3 d-1)
             fPIN5s = MAX ( 0._rk, sP-self%qsc * cP) / onedayX
 
-            ! Net silicate uptake
+            ! Net silicate uptake  (mmol Si m-3)
             fN5PIs = MAX ( 0._rk, self%qsc*run) - fPIN5s
             _SET_DIAGNOSTIC_(self%id_fN5PIs, fN5PIs)
 
-            ! Source equations
+            ! Source equations  
             _SET_ODE_(self%id_s,(fN5PIs - fPIRPs))
             _SET_ODE_(self%id_N5s,-fN5PIs)
             _SET_ODE_(self%id_RPs, fPIRPs)

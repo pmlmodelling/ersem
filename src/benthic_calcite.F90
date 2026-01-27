@@ -83,6 +83,8 @@ contains
 
          _GET_HORIZONTAL_(self%id_c, bL2c)
 
+         om_cal=max(om_cal,0._rk)
+
          if (self%iswcal==0) then  ! NB select case would be cleaner but makes vectorization impossible for ifort 14
             fdiss = 0._rk
          elseif (self%iswcal==1) then
