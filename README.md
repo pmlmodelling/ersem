@@ -3,10 +3,6 @@
 
 # ERSEM
 
-## Combined branch
-
-Combined branch merges branches dvm and DOC to combine code changes from these two NECCTON developments. In testcases, fabm-neccton-combined.yaml can be used to run ERSEM with NEMO over AMM7 with the code in the combined branch and updated parameterisation for POC and benthic fauna.
-
 ![ERSEM diagram](docs/images/ERSEM.png)
 
 [ERSEM](http://ersem.com) is a marine biogeochemical and ecosystem model. It describes the
