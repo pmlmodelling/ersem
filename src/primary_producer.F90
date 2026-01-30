@@ -357,7 +357,7 @@ contains
             ! Harmonic mean
             iNI = 2.0_rk / (1._rk/iNp + 1._rk/iNn)
          end if
-         
+
 
          _SET_DIAGNOSTIC_(self%id_iNI,iNI)
 
