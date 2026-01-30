@@ -520,12 +520,12 @@ contains
       _LOOP_END_
 
    end subroutine do
-   
+
    subroutine do_surface(self,_ARGUMENTS_DO_SURFACE_)
 
       class (type_ersem_mesozooplankton),intent(in) :: self
       _DECLARE_ARGUMENTS_DO_SURFACE_
-      
+
       real(rk) :: intprey
 
       ! Initialize intprey to 0 to handle self%minprey == 0 correctly
@@ -538,7 +538,7 @@ contains
          if (self%Minprey > 0.0_rk) then
             _GET_HORIZONTAL_(self%id_inttotprey,intprey)
          end if
-         
+
          if (intprey >= self%Minprey) then
             ! Enough prey available - not overwintering
             _SET_HORIZONTAL_DIAGNOSTIC_(self%id_overwintering, 0.0_rk)
