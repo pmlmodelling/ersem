@@ -104,9 +104,9 @@ contains
       _GET_HORIZONTAL_(self%id_I_0,buffer)
       _GET_HORIZONTAL_(self%id_zenithA,zenithA)   ! Zenith angle
 
-      ! Shortwave light at surface 
+      ! Shortwave light at surface
       buffer = max(buffer, 0.0_rk)
-      
+
       ! PAR at surface
       _SET_SURFACE_DIAGNOSTIC_(self%id_par0,buffer*self%pEIR_eowX)
 
