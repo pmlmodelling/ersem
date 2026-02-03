@@ -248,7 +248,7 @@ instances:
     parameters:
       q10: 2.0                                             # Q_10 temperature coefficient (-)
       ISWph: 1                                             # pH impact on nitrification (0: off, 1: on)
-      sN4N3: 0.05                                           # specific nitrification rate (1/d)
+      sN4N3: 0.05                                          # specific nitrification rate (1/d)
       chN3o: 2700.0                                        # Michaelis-Menten constant for cubic oxygen dependence of nitrification ((mmol O_2/m^3)^3)
       chN4n: 0.5                                           # Michaelis-Menten constant for cubic ammonium dependence of nitrification ((mmol N/m^3)^3), default = 0.0
     coupling:
@@ -840,7 +840,7 @@ instances:
       sM4M3: 4.0                                           # maximum nitrification rate at 10 degrees Celsius (1/d)
       xno3: 2.0                                            # oxygen consumed per nitrate produced (mol O_2/mol N)
       pammon: 0.5                                          # fraction of oxygen demand fulfilled by denitrification under anaerobic conditions (-)
-      pdenit: 0.05                                         # fraction of denitrification producing dinitrogen gas (remainder produces ammonium) (-)
+      pdenit: 0.95 #0.05                                   # fraction of denitrification producing dinitrogen gas (remainder produces ammonium) (-)
       xn2: 1.25                                            # oxygen demand fulfilled by reduction of nitrate to dinitrogen gas (mol O_2/mol N)
       hM3G4: 1.0                                           # Michaelis-Menten constant for nitrate limitation of denitrification (mmol N/m^3)
     initialization:
