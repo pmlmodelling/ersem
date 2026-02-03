@@ -91,7 +91,7 @@ instances:
     parameters:
       composition: cnpf                                    # elemental composition
       c0: 0.0033                                           # background carbon concentration (mg C/m^3), default = 0.0
-      rm: 1.0                                              # sinking velocity (m/d), default = 0.0
+      rm: 1.0                                              # sinking velocity (m/d), default = 0.0  NB: see release notes regarding this parameter value
       ndeposition: 2                                       # number of target pools for sedimentation, default = 1
       qxc2: 0.1                                            # fraction of carbon sinking into deposition target 2 (-)
       qxn2: 0.1                                            # fraction of nitrogen sinking into deposition target 2 (-)
@@ -109,7 +109,7 @@ instances:
     parameters:
       composition: cnpsf                                   # elemental composition
       c0: 0.0033                                           # background carbon concentration (mg C/m^3), default = 0.0
-      rm: 10.0 #5.0                                        # sinking velocity (m/d), default = 0.0
+      rm: 10.0 #5.0                                        # sinking velocity (m/d), default = 0.0  NB: see release notes regarding this parameter value
       ndeposition: 2                                       # number of target pools for sedimentation, default = 1
       qxc2: 0.1                                            # fraction of carbon sinking into deposition target 2 (-)
       qxn2: 0.1                                            # fraction of nitrogen sinking into deposition target 2 (-)
@@ -129,7 +129,7 @@ instances:
     parameters:
       composition: cnps                                    # elemental composition
       c0: 0.0033                                           # background carbon concentration (mg C/m^3), default = 0.0
-      rm: 50.0 #10.0                                       # sinking velocity (m/d), default = 0.0
+      rm: 50.0 #10.0                                       # sinking velocity (m/d), default = 0.0  NB: see release notes regarding this parameter value
       ndeposition: 2                                       # number of target pools for sedimentation, default = 1
       qxc2: 0.1                                            # fraction of carbon sinking into deposition target 2 (-)
       qxn2: 0.1                                            # fraction of nitrogen sinking into deposition target 2 (-)
@@ -840,7 +840,7 @@ instances:
       sM4M3: 4.0                                           # maximum nitrification rate at 10 degrees Celsius (1/d)
       xno3: 2.0                                            # oxygen consumed per nitrate produced (mol O_2/mol N)
       pammon: 0.5                                          # fraction of oxygen demand fulfilled by denitrification under anaerobic conditions (-)
-      pdenit: 0.95 #0.05                                   # fraction of denitrification producing dinitrogen gas (remainder produces ammonium) (-)
+      pdenit: 0.95 #0.05                                   # fraction of denitrification producing dinitrogen gas (remainder produces ammonium) (-)  NB: see release notes regarding this parameter value 
       xn2: 1.25                                            # oxygen demand fulfilled by reduction of nitrate to dinitrogen gas (mol O_2/mol N)
       hM3G4: 1.0                                           # Michaelis-Menten constant for nitrate limitation of denitrification (mmol N/m^3)
     initialization:
