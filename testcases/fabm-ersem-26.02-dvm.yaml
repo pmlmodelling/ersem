@@ -248,7 +248,7 @@ instances:
     parameters:
       q10: 2.0                                             # Q_10 temperature coefficient (-)
       ISWph: 1                                             # pH impact on nitrification (0: off, 1: on)
-      sN4N3: 0.5                                           # specific nitrification rate (1/d)
+      sN4N3: 0.05                                           # specific nitrification rate (1/d)
       chN3o: 2700.0                                        # Michaelis-Menten constant for cubic oxygen dependence of nitrification ((mmol O_2/m^3)^3)
       chN4n: 0.5                                           # Michaelis-Menten constant for cubic ammonium dependence of nitrification ((mmol N/m^3)^3), default = 0.0
     coupling:
