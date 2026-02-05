@@ -82,16 +82,16 @@ contains
       _HORIZONTAL_LOOP_BEGIN_
 
          _GET_HORIZONTAL_(self%id_c, bL2c)
-
-         om_cal=max(om_cal,0._rk)
+         if (self%iswcal>0) then
+            _GET_(self%id_om_cal, om_cal)
+            om_cal=max(om_cal,0._rk)
+         end if
 
          if (self%iswcal==0) then  ! NB select case would be cleaner but makes vectorization impossible for ifort 14
             fdiss = 0._rk
          elseif (self%iswcal==1) then
-            _GET_(self%id_om_cal, om_cal)
             fdiss = (max(1._rk-om_cal,0._rk))**self%ndiss
          else
-            _GET_(self%id_om_cal, om_cal)
             fdiss = max(0._rk,(1._rk-om_cal)/(1._rk-om_cal+self%KcalomX))
          end if
 
