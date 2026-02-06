@@ -41,9 +41,9 @@ contains
         call self%register_dependency(self%id_parmean,temporal_mean(self%id_par,period=86400._rk,resolution=3600._rk,missing_value=1.0_rk))
         call self%register_dependency(self%id_depth,standard_variables%depth)
         call self%register_dependency(self%id_topo,standard_variables%bottom_depth_below_geoid )
-        call self%get_parameter( self%day_light,'day_light','log Wm-2','minimum light level for day', default=0._rk)
-        call self%get_parameter( self%upper_light,'upper_light','log Wm-2','light level for upper isolume', default=-6.5_rk)
-        call self%get_parameter( self%lower_light,'lower_light','log Wm-2','light level for lower isolume',default=-15._rk)
+        call self%get_parameter( self%day_light,'day_light','log W m-2','minimum light level for day', default=0._rk)
+        call self%get_parameter( self%upper_light,'upper_light','log W m-2','light level for upper isolume', default=-6.5_rk)
+        call self%get_parameter( self%lower_light,'lower_light','log W m-2','light level for lower isolume',default=-15._rk)
 
         call self%get_parameter(self%nprey,'nprey','','number of prey types',default=0)
         call self%get_parameter(self%divide_food_by,'divide_food_by','','a likely concentration (e.g. half saturation constant) to normalize food',default=40.0_rk)

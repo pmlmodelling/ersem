@@ -1183,9 +1183,9 @@ instances:
     model: ersem/dvm_upper_lower_boundaries
     parameters:
       nprey: 7                                             # number of prey types
-      day_light: 0                                         # minimum light level for day (log Wm-2)
-      upper_light: -1                                      # light level for upper isolume (log Wm-2)
-      lower_light: -15.0                                   # light level for lower isolume (log Wm-2)
+      day_light: 0                                         # minimum light level for day (log W m-2)
+      upper_light: -1                                      # light level for upper isolume (log W m-2)
+      lower_light: -15.0                                   # light level for lower isolume (log W m-2)
       divide_food_by: 40                                   # a likely concentration (e.g. half saturation constant) to normalize food (-)
     coupling:
       prey1: P1/c
@@ -1205,8 +1205,8 @@ instances:
     model: ersem/dvm_move
     long_name: distribute_migrators
     parameters: 
-      ratioMig: 0.1                                       #ratio of moving biomass (-)
-      tstep: 300                                          #Model time-step in seconds (sec). NB see release notes regarding this parameter value
+      ratioMig: 0.1                                       # ratio of moving biomass (-)
+      tstep: 300                                          # model time-step in seconds (sec). NB see release notes regarding this parameter value
     coupling:
       target: Z4/c
       integral: dw/integral
