@@ -6,7 +6,7 @@ on:
   push:
     branches: [ master ]
   pull_request:
-    branches: [ master ]
+    types: [opened, synchronize, reopened]  
   schedule:
     - cron: '0 9 * * 1'
 jobs:
