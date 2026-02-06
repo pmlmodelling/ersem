@@ -57,11 +57,12 @@ module ersem_primary_producer
       type (type_diagnostic_variable_id) :: id_fPIRPc,id_fPIRPn,id_fPIRPp,id_fPIRPs  ! Total loss to Particulate detritus
       type (type_diagnostic_variable_id) :: id_fPIR1c,id_fPIR1n,id_fPIR1p ! Total loss to labile dissovled detritus
       type (type_diagnostic_variable_id) :: id_fPIR2c  ! Total loss to non-labile dissovled detritus
+      type (type_diagnostic_variable_id) :: id_iNI
 
       ! Parameters (described in subroutine initialize, below)
       real(rk) :: sum
-      real(rk) :: q10,srs,pu_ea,pu_ra,chs,qnlc,qplc,xqcp
-      real(rk) :: xqcn,xqn,xqp,qun3,qun4,qurp,qsc,esni,snplux
+      real(rk) :: q10,srs,pu_ea,pu_ra,chs,qnlc,qplc,xqcp,exulim
+      real(rk) :: xqcn,xqn,xqp,qun3,qun4,qurp,qsc,esni,snplux,xqcnx,xqcpx
       real(rk) :: resm,sdo
       real(rk) :: alpha,beta,phim
       real(rk) :: R1R2,uB1c_O2,urB1_O2
@@ -106,11 +107,14 @@ contains
       call self%get_parameter(self%q10,   'q10',  '-',          'Q_10 temperature coefficient')
       call self%get_parameter(self%srs,   'srs',  '1/d',        'specific rest respiration at reference temperature')
       call self%get_parameter(self%pu_ea, 'pu_ea','-',          'excreted fraction of primary production')
+      call self%get_parameter(self%exulim, 'exulim','-',          'excreted fraction of primary production due to nutrient stress',maximum=1._rk-self%pu_ea)
       call self%get_parameter(self%pu_ra, 'pu_ra','-',          'respired fraction of primary production')
       call self%get_parameter(self%qnlc,  'qnlc', 'mmol N/mg C','minimum nitrogen to carbon ratio')
       call self%get_parameter(self%qplc,  'qplc', 'mmol P/mg C','minimum phosphorus to carbon ratio')
       call self%get_parameter(self%xqcp,  'xqcp', '-',          'threshold for phosphorus limitation (relative to Redfield ratio)')
       call self%get_parameter(self%xqcn,  'xqcn', '-',          'threshold for nitrogen limitation (relative to Redfield ratio)')
+      call self%get_parameter(self%xqcpx,  'xqcpx', '-','threshold for phosphorus limitation, relative to minimum ratio',default=2.0_rk )
+      call self%get_parameter(self%xqcnx,  'xqcnx', '-','threshold for nitrogen limitation, relative to minimum ratio', default=2.0_rk )
       call self%get_parameter(self%xqp,   'xqp',  '-',          'maximum phosphorus to carbon ratio (relative to Redfield ratio)')
       call self%get_parameter(self%xqn,   'xqn',  '-',          'maximum nitrogen to carbon ratio (relative to Redfield ratio)')
       call self%get_parameter(self%qun3,  'qun3', 'm^3/mg C/d', 'nitrate affinity')
@@ -207,6 +211,8 @@ contains
       call self%register_diagnostic_variable(self%id_fPIRPc,'fPIRPc','mg C/m^3/d','loss to POC')
       call self%register_diagnostic_variable(self%id_fPIRPn,'fPIRPn','mmol N/m^3/d','loss to PON')
       call self%register_diagnostic_variable(self%id_fPIRPp,'fPIRPp','mmol P/m^3/d','loss to POP')
+      call self%register_diagnostic_variable(self%id_iNI,'iNI','-','nutrient limitation factor')
+
       if (self%use_Si) call self%register_diagnostic_variable(self%id_fPIRPs,'fPIRPs','mmol Si/m^3/d','loss to POSi')
 
       ! Register environmental dependencies (temperature, shortwave radiation)
@@ -249,7 +255,7 @@ contains
       real(rk) :: c, p, n, Chl
       real(rk) :: cP,pP,nP,sP,ChlP
       real(rk) :: N5s,N1pP,N3nP,N4nP
-      real(rk) :: iNn,iNp,iNs,iNf,iNI
+      real(rk) :: iNn,iNp,iNs,iNf,iNI, iNnx, iNpx, iNIx
       real(rk) :: qpc,qnc
 
       real(rk) :: srs
@@ -352,6 +358,18 @@ contains
             iNI = 2.0_rk / (1._rk/iNp + 1._rk/iNn)
          end if
 
+
+         _SET_DIAGNOSTIC_(self%id_iNI,iNI)
+
+
+! Limitation factor for C uptake - as approach minimum C:P/C:N
+         iNpx = MIN(1._rk,  &
+                 MAX(0._rk, (qpc-self%qplc) / (self%xqcpx*self%qplc-self%qplc) ))
+         iNnx = MIN(1._rk,  &
+                 MAX(0._rk, (qnc-self%qnlc) / (self%xqcnx*self%qnlc-self%qnlc) ))
+
+         iNIx= min(iNpx, iNnx)
+
          ! Temperature response
          et = max(0.0_rk,self%q10**((ETW-10._rk)/10._rk) - self%q10**((ETW-32._rk)/3._rk))
 
@@ -362,7 +380,7 @@ contains
          sum = self%sum*et*iNs*iNf
 
          if (parEIR>zeroX) then
-            sum = sum * (1._rk-exp(-self%alpha*parEIR*ChlCpp/sum)) * exp(-self%beta*parEIR*ChlCpp/sum)
+            sum = iNIx * sum * (1._rk-exp(-self%alpha*parEIR*ChlCpp/sum)) * exp(-self%beta*parEIR*ChlCpp/sum)
             rho = (self%phim - ChlCmin) * (sum/(self%alpha*parEIR*ChlCpp)) + ChlCmin
          else
             sum = 0._rk
@@ -384,7 +402,9 @@ contains
          sdo = (1._rk/(MIN(iNs, iNI)+0.1_rk))*self%sdo
 
          ! Excretion rate, as regulated by nutrient-stress (1/d)
-         seo = sum*(1._rk-iNI)*(1._rk-self%pu_ea)
+     !    seo = sum*(1._rk-iNI)*(1._rk-self%pu_ea) - old ERSEM
+         seo = sum*(1._rk-iNI)*self%exulim
+
 
          ! Activity-dependent excretion (1/d)
          sea = sum*self%pu_ea
