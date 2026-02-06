@@ -1181,6 +1181,12 @@ instances:
     model: ersem/benthic_erosion
   db:
     model: ersem/dvm_upper_lower_boundaries
+    parameters:
+      nprey: 7                                             # number of prey types
+      day_light: 0                                         # minimum light level for day (log Wm-2)
+      upper_light: -1                                      # light level for upper isolume (log Wm-2)
+      lower_light: -15.0                                   # light level for lower isolume (log Wm-2)
+      divide_food_by: 40                                   # a likely concentration (e.g. half saturation constant) to normalize food (-)
     coupling:
       prey1: P1/c
       prey2: P2/c
@@ -1189,11 +1195,6 @@ instances:
       prey5: Z4/c
       prey6: Z5/c
       prey7: R6/c
-    parameters:
-      nprey: 7
-      day_light: 0
-      upper_light: -1
-      lower_light: -15.0
   dw:
     model: ersem/dvm_weight_distribution
     coupling:
@@ -1203,9 +1204,9 @@ instances:
   dm:
     model: ersem/dvm_move
     long_name: distribute_migrators
-    parameters:
-      ratioMig: 0.1
-      tstep: 300
+    parameters: 
+      ratioMig: 0.1                                       #ratio of moving biomass (-)
+      tstep: 300                                          #Model time-step in seconds (sec). NB see release notes regarding this parameter value
     coupling:
       target: Z4/c
       integral: dw/integral
