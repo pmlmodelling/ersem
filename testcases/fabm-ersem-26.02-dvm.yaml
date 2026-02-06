@@ -1180,7 +1180,7 @@ instances:
   erosion:
     model: ersem/benthic_erosion
   db:
-    model: ersem/dvm_upper_lower_boundaries_simple
+    model: ersem/dvm_upper_lower_boundaries
     coupling:
       prey1: P1/c
       prey2: P2/c

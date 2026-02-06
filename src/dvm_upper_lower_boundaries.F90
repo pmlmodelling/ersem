@@ -1,6 +1,6 @@
 #include "fabm_driver.h"
 
-module dvm_upper_lower_boundaries_simple
+module dvm_upper_lower_boundaries
 
 use fabm_types
 use fabm_expressions
@@ -9,7 +9,7 @@ implicit none
 
 private 
 
-type, extends(type_base_model), public :: type_upper_lower_boundaries_simple
+type, extends(type_base_model), public :: type_upper_lower_boundaries
 
     type (type_dependency_id)                       :: id_par, id_parmean, id_depth 
     type (type_surface_dependency_id)               :: id_par0
@@ -30,7 +30,7 @@ end type
 contains
 
     subroutine initialize(self, configunit)
-        class (type_upper_lower_boundaries_simple), intent(inout), target :: self
+        class (type_upper_lower_boundaries), intent(inout), target :: self
         integer, intent(in)                                               :: configunit
         integer                                                           :: iprey
         character(len=16)                                                 :: index
@@ -60,7 +60,7 @@ contains
 
     subroutine do(self, _ARGUMENTS_DO_)
 
-        class (type_upper_lower_boundaries_simple), intent(in) :: self
+        class (type_upper_lower_boundaries), intent(in) :: self
         _DECLARE_ARGUMENTS_DO_
     
         real(rk) :: par, par0, parmean

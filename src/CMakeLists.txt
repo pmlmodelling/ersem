@@ -37,7 +37,7 @@ add_library(fabm_models_ersem OBJECT
             fluff.F90
             zenith_angle.F90
 	    dvm_move.F90
-	    dvm_upper_lower_boundaries_simple.F90
+	    dvm_upper_lower_boundaries.F90
 	    dvm_weight_distribution.F90
 	    )
 
