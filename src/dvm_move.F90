@@ -1,5 +1,16 @@
 #include "fabm_driver.h"
 
+! -----------------------------------------------------------------------------
+! For diel vertical migration of migrating mesozooplankton. Moves migrator 
+! vertically to new location in water column based on distribution calculated 
+! in dvm_weight_distribution 
+!
+! Migration only occurs when mesozooplankton are not overwintering.
+!
+! Adapted from code written by Caglar Yumruktepe (NERSC), available at:
+! https://github.com/nansencenter/nersc
+! -----------------------------------------------------------------------------
+
 module dvm_move
 
 use fabm_types
@@ -58,8 +69,9 @@ contains
            _GET_(self%id_thickness,thickness)
 
            if (overwintering < 1.0_rk) then
-              distributed = weights / integral_weights ! this ensures that total weight distribution is 1, so mass conserved
-              !_SET_(self%id_target, max(0.0_rk,local * (1.0_rk - self%ratioMig) + (distributed * target0/max(thickness,1.0E-20_rk)) * self%ratioMig ) )
+              ! Make sure total weight distribution is 1, so mass conserved
+              distributed = weights / integral_weights               
+              ! Move migrator to new location in watercolumn
               _ADD_SOURCE_(self%id_target, (distributed * integral - local) * self%ratioMig / self%tstep)
               !_ADD_SOURCE_(self%id_target,  max(-max(local,0.0_rk),(distributed * integral /max(thickness,1.0E-20_rk) - max(local,0.0_rk)) * self%ratioMig) / self%tstep)
            end if

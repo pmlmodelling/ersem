@@ -1,5 +1,15 @@
 #include "fabm_driver.h"
 
+! -----------------------------------------------------------------------------
+! For diel vertical migration of migrating plankton. Calculates the 
+! distribution of the migrator in the water column. The distribution depends 
+! on the boundaries calculated in dvm_upper_lower_boundaries and the prey 
+! availability. 
+!
+! Adapted from code written by Caglar Yumruktepe (NERSC), available at: 
+! https://github.com/nansencenter/nersc
+! -----------------------------------------------------------------------------
+
 module dvm_weight_distribution
 
 use fabm_types
@@ -59,7 +69,10 @@ contains
 
         integral = 0.0_rk
         integral_weights = 0.0_rk
-        depth_threshold = 600.0_rk
+        depth_threshold = 600.0_rk 
+        ! A small part of migrator biomass is not distributed according to 
+        ! food availability, units are the same as prey biomass
+        minimum_value = 0.002 
 
 
         _VERTICAL_LOOP_BEGIN_
@@ -72,19 +85,22 @@ contains
             _GET_SURFACE_(self%id_par0,par0)
             _GET_BOTTOM_(self%id_topo,topo)
 
+            ! Total migrator biomass in watercolumn
             integral = integral + local*thickness
-
-            minimum_value = 0.002 
 
             thickness = max(thickness, 1.0E-20_rk)
 
             if (present > 0.5_rk) then
+                 ! Where migrators are present in the watercolumn, 
+                 ! weight according to food availability
                  weight = (minimum_value + (1.0_rk - minimum_value) * search_food ) 
             else
                 if (depth <= min(depth_threshold,topo)) then
-                     ! add comment here   
+                     ! Present in small numbers at depths above the depth threshold
+                     ! and above the maximum depth of the location
                      weight = (minimum_value  + (0.01_rk - minimum_value) * search_food )  
                 else
+                     ! Below the depth threshold, migrator biomass decreases exponentially
                      weight = (minimum_value + (0.01_rk - minimum_value) &
                          * exp(-0.025_rk * (depth - min(depth_threshold, topo))) * search_food ) 
                 end if 
@@ -96,6 +112,8 @@ contains
 
         _VERTICAL_LOOP_END_
 
+        ! Output total migrator biomass and sum of weights, so that the 
+        ! distribution can be normalised
         _SET_BOTTOM_DIAGNOSTIC_(self%id_integral,integral)
         _SET_BOTTOM_DIAGNOSTIC_(self%id_integral_weights,integral_weights)
 

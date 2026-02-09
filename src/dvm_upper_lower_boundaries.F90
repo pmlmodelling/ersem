@@ -1,5 +1,16 @@
 #include "fabm_driver.h"
 
+! -----------------------------------------------------------------------------
+! For diel vertical migration of migrating plankton. Calculates an upper and 
+! lower boundary in the water column, between which the migrator is able to 
+! be present. Boundaries depend on light levels which can be set by the user
+! or defaul to a maximum light level of -6.5 log W m-2 and a minimum light 
+! level of -15 log W m-2
+!
+! Adapted from code written by Caglar Yumruktepe (NERSC), available at: 
+! https://github.com/nansencenter/nersc
+! -----------------------------------------------------------------------------
+
 module dvm_upper_lower_boundaries
 
 use fabm_types
@@ -34,7 +45,6 @@ contains
         integer, intent(in)                                               :: configunit
         integer                                                           :: iprey
         character(len=16)                                                 :: index
-        ! need to multiply by CMass if we want prey in mg rather than mmol
         call self%register_diagnostic_variable(self%id_present,'migrator_presence','-','migrators are present here')
         call self%register_dependency(self%id_par, standard_variables%downwelling_photosynthetic_radiative_flux)
         call self%register_dependency(self%id_par0, standard_variables%surface_downwelling_photosynthetic_radiative_flux)
@@ -45,7 +55,7 @@ contains
         call self%get_parameter( self%upper_light,'upper_light','log W m-2','light level for upper isolume', default=-6.5_rk)
         call self%get_parameter( self%lower_light,'lower_light','log W m-2','light level for lower isolume',default=-15._rk)
 
-        call self%get_parameter(self%nprey,'nprey','','number of prey types',default=0)
+        call self%get_parameter(self%nprey,'nprey','','number of prey types',default=1)
         call self%get_parameter(self%divide_food_by,'divide_food_by','','a likely concentration (e.g. half saturation constant) to normalize food',default=40.0_rk)
         call self%register_diagnostic_variable(self%id_migrator_food,'migrator_food','mmol C/m^3','food availability for the migrators', act_as_state_variable=.true., missing_value=0.0_rk, source=source_do)
         ! Get prey-specific coupling links.
@@ -91,8 +101,9 @@ contains
             upper_presence = 0.0_rk
             lower_presence = 0.0_rk
 
-            ! First calculate possibilities above the lower boundary
-            ! Lowerlight Rules
+            ! Lower boundary exists at all times of the day, so first calculate
+            ! possibilities above the lower boundary, which depends on the 
+            ! minimum light level (lower_light)
             if (parmeanlog >  self%lower_light) then
                 upper_presence = 1.0_rk
             else
@@ -101,9 +112,8 @@ contains
 
             if (par0log > self%day_light) then
                 ! Day time
-                ! there is an upper and a lower light boundary
-                                
-                ! Upperlight Rules
+                ! Migrators are not at the surface and therefore there is an
+                ! upper and a lower light boundary
                 if (parlog < self%upper_light) then
                     lower_presence = 1.0_rk
                 else
@@ -136,7 +146,9 @@ contains
                         
             end if
 
-            ! Get prey concentrations
+            ! Migrators will be distributed in water column according to prey
+            ! availability
+            ! Get prey concentrations to calculate prey availability
             do iprey=1,self%nprey
                 _GET_(self%id_prey(iprey), prey(iprey))
             end do
