@@ -19,7 +19,7 @@ def main():
     # Path to ERSEM yaml file
     ersem_yaml_file = os.path.join(ersem_dir,
                                    'testcases',
-                                   'fabm-ersem-15.06-L4-noben-docdyn-iop.yaml')
+                                   'fabm-ersem-26.02-dvm.yaml')
 
     if not os.path.isfile(ersem_yaml_file):
         raise RuntimeError("Could not find Ersem yaml file with the "
