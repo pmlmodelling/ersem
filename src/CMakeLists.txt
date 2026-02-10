@@ -20,6 +20,7 @@ add_library(fabm_models_ersem OBJECT
             mesozooplankton.F90
             bacteria.F90
             bacteria_docdyn.F90
+            TDOC.F90
             calcification.F90
             carbonate.F90
             oxygen.F90
