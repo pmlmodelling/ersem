@@ -2,6 +2,8 @@ import matplotlib.pylab as plt
 import numpy as np
 import os
 import pyfabm
+import yaml
+import tempfile
 
 def main():
     """
@@ -19,14 +21,28 @@ def main():
     # Path to ERSEM yaml file
     ersem_yaml_file = os.path.join(ersem_dir,
                                    'testcases',
-                                   'fabm-ersem-15.06-L4-noben-docdyn-iop.yaml')
+                                   'fabm-ersem-26.02-dvm.yaml')
 
     if not os.path.isfile(ersem_yaml_file):
         raise RuntimeError("Could not find Ersem yaml file with the "
                            "{}".format(ersem_yaml_file))
 
+
+    # Removing DVM from pyfabm tests
+    with open(ersem_yaml_file) as f:
+        raw = f.read()
+
+    data = yaml.safe_load(raw.replace('\t', '  '))
+    del data["instances"]["dm"]
+    del data["instances"]["dw"]
+    del data["instances"]["db"]
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as tmp:
+        yaml.safe_dump(data, tmp, sort_keys=False)
+        temp_path = tmp.name
+
     # Create model
-    model = pyfabm.Model(ersem_yaml_file)
+    model = pyfabm.Model(temp_path)
 
     # Configure the environment
     model.findDependency('longitude').value = -4.15
