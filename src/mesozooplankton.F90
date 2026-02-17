@@ -33,6 +33,7 @@ module ersem_mesozooplankton
       type (type_diagnostic_variable_id) :: id_fZIRDn,id_fZIRPn,id_fZINIn
       type (type_diagnostic_variable_id) :: id_fZIRDp,id_fZIRPp,id_fZINIp
       type (type_diagnostic_variable_id), allocatable,dimension(:) :: id_fpreyc,id_fpreyn,id_fpreyp,id_fpreys
+      type (type_horizontal_diagnostic_variable_id) :: id_overwintering
 
       ! Parameters
       integer  :: nprey
@@ -54,6 +55,7 @@ module ersem_mesozooplankton
 !     Model procedures
       procedure :: initialize
       procedure :: do
+      procedure :: do_surface
    end type
 
 contains
@@ -169,6 +171,8 @@ contains
          call self%register_diagnostic_variable(self%id_fpreys(iprey),'fprey'//trim(index)//'s','mmol Si/m^3/d','ingestion of prey '//trim(index)//' silicate')
       end do
 
+      call self%register_diagnostic_variable(self%id_overwintering,'overwintering','-','Is mesozooplankton in diapause?',source=source_do_surface)
+
       if (self%Minprey > 0) then
          ! Create a submodel that will compute total prey for us, and create a variable that will contain its depth integral.
          ! This quantity will be depth integrated to determine whether we should be overwintering.
@@ -268,7 +272,7 @@ contains
       _LOOP_BEGIN_
 
          ! Get depth-integrated prey in mg C/m^2 (pre-multiplied with CMass, so it comes in mg C rather than mmol C)
-         if (self%Minprey > 0) then
+         if (self%Minprey > 0.0_rk) then
             _GET_HORIZONTAL_(self%id_inttotprey,intprey)
          end if
 
@@ -463,8 +467,8 @@ contains
             _SET_DIAGNOSTIC_(self%id_fZINIp,excess_p)
 
          else
-
             ! Insufficient prey - overwintering
+
             _GET_(self%id_c,cP)
 
             ! Respiration
@@ -516,5 +520,36 @@ contains
       _LOOP_END_
 
    end subroutine do
+
+   subroutine do_surface(self,_ARGUMENTS_DO_SURFACE_)
+
+      class (type_ersem_mesozooplankton),intent(in) :: self
+      _DECLARE_ARGUMENTS_DO_SURFACE_
+
+      real(rk) :: intprey
+
+      ! Initialize intprey to 0 to handle self%minprey == 0 correctly
+      intprey = 0.0_rk
+
+      ! Enter spatial loops (if any)
+      _HORIZONTAL_LOOP_BEGIN_
+
+         ! Get depth-integrated prey in mg C/m^2 (pre-multiplied with CMass, so it comes in mg C rather than mmol C)
+         if (self%Minprey > 0.0_rk) then
+            _GET_HORIZONTAL_(self%id_inttotprey,intprey)
+         end if
+
+         if (intprey >= self%Minprey) then
+            ! Enough prey available - not overwintering
+            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_overwintering, 0.0_rk)
+         else
+            ! Not enough prey available - overwintering
+            _SET_HORIZONTAL_DIAGNOSTIC_(self%id_overwintering, 1.0_rk)
+         end if
+
+      _HORIZONTAL_LOOP_END_
+
+
+   end subroutine do_surface
 
 end module

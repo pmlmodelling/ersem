@@ -6,7 +6,7 @@ on:
   push:
     branches: [ master ]
   pull_request:
-    branches: [ master ]
+    types: [opened, synchronize, reopened]  
   schedule:
     - cron: '0 9 * * 1'
 jobs:
@@ -26,7 +26,7 @@ jobs:
               ./github-actions/pyfabm-ersem/pyfabm-ersem-build.sh $BRANCH
         - name: Running pyfabm tutorial
           run: |
-              python -m pip install matplotlib
+              python -m pip install matplotlib PyYAML
               python github-actions/pyfabm-ersem/pyfabm_tut.py
         - name: Running pyfabm systests
           run: |
