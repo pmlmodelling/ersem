@@ -41,12 +41,6 @@ instances:
       s0: 0.0003                                           # background silicon concentration (mmol Si/m^3), default = 0.0
     initialization:
       s: 4.5                                               # silicate (mmol Si/m^3)
-  O5:
-    long_name: nitrous oxide
-    model: ersem/nitrous_oxide
-    parameters:
-    initialization:
-      n: 0.02                                              # nitrous oxide (mmol N/m^3)
   O2:
     long_name: oxygen
     model: ersem/oxygen
@@ -65,6 +59,12 @@ instances:
     initialization:
       c: 2130.0                                            # total dissolved inorganic carbon (mmol C/m^3)
       TA: 2300.0                                           # total alkalinity (mmol/m^3)
+  O5:
+    long_name: nitrous oxide
+    model: ersem/nitrous_oxide
+    parameters:
+    initialization:
+      n: 0.02                                              # nitrous oxide (mmol N/m^3)
   R1:
     long_name: labile dissolved organic matter
     model: ersem/pelagic_base
