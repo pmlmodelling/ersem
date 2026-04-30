@@ -63,6 +63,7 @@ instances:
     long_name: nitrous oxide
     model: ersem/nitrous_oxide
     parameters:
+      iswASFLUX: 2                                         # air-sea N2O exchange (1: Wanninkhof, 1992; 2: Wanninkhof, 2014)', default = 1
     initialization:
       n: 0.02                                              # nitrous oxide (mmol N/m^3)
   R1:
