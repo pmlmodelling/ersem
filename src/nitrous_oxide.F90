@@ -98,11 +98,11 @@ contains
 
       if (self%iswASFLUX .eq. 1) then
       ! Schmidt number for N2O (Wanninkhof, 1992)
-        sc=2301._rk-151._rk*ETW+4.74_rk*ETW**2._rk-0.06_rk*ETW**3
+        sc=2301._rk-151._rk*ETW+4.74_rk*ETW**2._rk-0.06_rk*ETW**3._rk
         fwind =  0.39_rk * wnd**2 *(sc/660._rk)**(-0.5_rk)
       elseif (self%iswASFLUX .eq. 2) then
       ! Schmidt number for N2O (Wanninkhof, 2014)
-        sc=2356.2_rk-166.38_rk*ETW+6.3952_rk*ETW**2._rk-0.13422_rk*ETW**3
+        sc=2356.2_rk-166.38_rk*ETW+6.3952_rk*ETW**2._rk-0.13422_rk*ETW**3._rk + 0.0011506_rk*ETW**4._rk
         fwind =  0.251_rk * wnd**2 *(sc/660._rk)**(-0.5_rk)
       endif
       
