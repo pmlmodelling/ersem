@@ -1,5 +1,5 @@
 
-git clone https://github.com/fabm-model/fabm.git
+git clone --depth 1 --recurse-submodules --branch v3.0.0 https://github.com/fabm-model/fabm.git fabm
 git clone --recursive https://github.com/gotm-model/code.git -b v6.0 gotm
 
 mkdir build_pyfabm && cd build_pyfabm
