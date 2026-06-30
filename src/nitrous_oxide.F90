@@ -27,7 +27,7 @@ module ersem_nitrous_oxide
       type (type_horizontal_diagnostic_variable_id) :: id_airsea
       type (type_diagnostic_variable_id)            :: id_satp
 
-      integer :: iswN2O
+      integer :: iswN2O, iswASFLUX
 
    contains
 !     Model procedures
@@ -60,7 +60,7 @@ contains
       call self%register_diagnostic_variable(self%id_satp,'satp','%','nitrous oxide % saturation')
       call self%register_diagnostic_variable(self%id_airsea,'airsea','mmol N2O/m^2/d','airsea flux of N2O',source=source_do_surface)
       call self%get_parameter(self%iswN2O,'iswN2O','','air-sea flux switch (0: off, 1: on)',default=1,minimum=0,maximum=1)
-
+      call self%get_parameter(self%iswASFLUX, 'iswASFLUX','','air-sea N2O exchange (1: Wanninkhof, 1992; 2: Wanninkhof, 2014)', default = 1, minimum = 1, maximum = 2)
    end subroutine initialize
 
    subroutine do(self,_ARGUMENTS_DO_)
@@ -96,10 +96,16 @@ contains
          _GET_HORIZONTAL_(self%id_wnd,wnd)
          _GET_HORIZONTAL_(self%id_pN2Oa,pN2Oa)
 
-! Schmidt number for N2O (Wanninkhof, 1992)
- 
-        sc=2301._rk-151._rk*ETW+4.74_rk*ETW**2._rk-0.06_rk*ETW**3
+      if (self%iswASFLUX .eq. 1) then
+      ! Schmidt number for N2O (Wanninkhof, 1992 - should not be used outside 0 to 30 degC temperature range)
+        sc=2301._rk-151._rk*ETW+4.74_rk*ETW**2._rk-0.06_rk*ETW**3._rk
         fwind =  0.39_rk * wnd**2 *(sc/660._rk)**(-0.5_rk)
+      elseif (self%iswASFLUX .eq. 2) then
+      ! Schmidt number for N2O (Wanninkhof, 2014 - for temperatures within the range of -2 to 40 degC)
+        sc=2356.2_rk-166.38_rk*ETW+6.3952_rk*ETW**2._rk-0.13422_rk*ETW**3._rk + 0.0011506_rk*ETW**4._rk
+        fwind =  0.251_rk * wnd**2 *(sc/660._rk)**(-0.5_rk)
+      endif
+      
         fwind=fwind*24._rk/100._rk   ! convert to m/day
 
         koN2O = n2o_transfer_coefficient(self,ETW,X1X)

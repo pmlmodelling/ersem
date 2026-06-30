@@ -11,7 +11,7 @@
 ! https://github.com/nansencenter/nersc
 ! -----------------------------------------------------------------------------
 
-module dvm_move
+module ersem_dvm_move
 
 use fabm_types
 use fabm_expressions
@@ -20,9 +20,9 @@ implicit none
 
 private 
 
-public type_move
+public type_ersem_dvm_move
 
-type, extends(type_base_model) :: type_move
+type, extends(type_base_model) :: type_ersem_dvm_move
     type (type_dependency_id)          :: id_weights
     type (type_dependency_id)          :: id_thickness
     type (type_state_variable_id)      :: id_target
@@ -39,7 +39,7 @@ contains
 
     subroutine initialize(self, configunit)
 
-        class (type_move), intent(inout), target :: self
+        class (type_ersem_dvm_move), intent(inout), target :: self
         integer,         intent(in)            :: configunit
 
         call self%register_state_dependency(self%id_target, 'target', '', 'variable to apply sources and sinks to')
@@ -54,7 +54,7 @@ contains
     end subroutine initialize
 
     subroutine do(self,_ARGUMENTS_DO_)
-       class (type_move), intent(in) :: self
+       class (type_ersem_dvm_move), intent(in) :: self
        _DECLARE_ARGUMENTS_DO_
 
         real(rk) :: integral_weights, weights, integral

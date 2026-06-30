@@ -10,7 +10,7 @@
 ! https://github.com/nansencenter/nersc
 ! -----------------------------------------------------------------------------
 
-module dvm_weight_distribution
+module ersem_dvm_weight_distribution
 
 use fabm_types
 use fabm_expressions
@@ -19,7 +19,7 @@ implicit none
 
 private 
 
-type, extends(type_base_model), public :: type_weight_distribution
+type, extends(type_base_model), public :: type_ersem_dvm_weight_distribution
     type (type_bottom_diagnostic_variable_id) :: id_integral
     type (type_bottom_diagnostic_variable_id) :: id_integral_weights
     type (type_diagnostic_variable_id)        :: id_weights
@@ -39,7 +39,7 @@ end type
 contains
 
     subroutine initialize(self, configunit)
-        class (type_weight_distribution), intent(inout), target :: self
+        class (type_ersem_dvm_weight_distribution), intent(inout), target :: self
         integer,                     intent(in)            :: configunit
         call self%register_diagnostic_variable(self%id_integral_weights,'migrator_integral_weights','-','migrators distribution integral weights', missing_value=0.0_rk, &
             act_as_state_variable=.true., source=source_do_column)
@@ -58,7 +58,7 @@ contains
     end subroutine initialize
 
     subroutine do_column(self, _ARGUMENTS_DO_COLUMN_)
-        class (type_weight_distribution), intent(in) :: self
+        class (type_ersem_dvm_weight_distribution), intent(in) :: self
         _DECLARE_ARGUMENTS_DO_COLUMN_
 
         real(rk) :: thickness, integral_weights, present, weight, minimum_value
