@@ -273,7 +273,7 @@ instances:
       q10: 2.0                                             # Q_10 temperature coefficient (-)
       srs: 0.04                                            # specific rest respiration at reference temperature (1/d)
       pu_ea: 0.05                                          # excreted fraction of primary production (-)
-      exulim: 0.3                     			   # excreted fraction of primary production due to nutrient stress,maximum=1._rk-self%pu_ea
+      exulim: 0.3                                      # excreted fraction of primary production due to nutrient stress,maximum=1._rk-self%pu_ea
       xqcpx: 1.3                                           # threshold for phosphorus limitation, relative to minimum ratio,default=2.0_rk
       xqcnx: 1.3                                           # threshold for nitrogen limitation, relative to minimum ratio, default=2.0_rk
       pu_ra: 0.2                                           # respired fraction of primary production (-)
