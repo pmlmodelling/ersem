@@ -67,7 +67,7 @@ jobs:
         - name: Running gotm tests
           run: |
               python -m pip install pytest
-              pytest github-actions/gotm-fabm-ersem/test_state_variables.py github-actions/gotm-fabm-ersem/test_gotm.py
+              pytest github-actions/gotm-fabm-ersem/test_state_variables.py github-actions/gotm-fabm-ersem/test_gotm.py github-actions/gotm-fabm-ersem/test_testcase_yamls.py
 
   build-fabm0d-gotm-ersem-debian:
     runs-on: ubuntu-latest
