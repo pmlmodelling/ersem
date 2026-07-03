@@ -67,7 +67,26 @@ jobs:
         - name: Running gotm tests
           run: |
               python -m pip install pytest
-              pytest github-actions/gotm-fabm-ersem/test_state_variables.py github-actions/gotm-fabm-ersem/test_gotm.py github-actions/gotm-fabm-ersem/test_testcase_yamls.py
+              pytest github-actions/gotm-fabm-ersem/test_state_variables.py github-actions/gotm-fabm-ersem/test_gotm.py
+
+  test-gotm-testcase-yamls-debian:
+    runs-on: ubuntu-latest
+    steps:
+        - uses: actions/checkout@v2
+        - name: Setup python
+          uses: actions/setup-python@v2
+          with:
+              python-version: '3.x'
+        - name: Installing GOTM-FABM-ERSEM dependences
+          run: ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-dep-debian.sh
+        - name: Building and installing GOTM-FABM-ERSEM
+          run: |
+              BRANCH=${{ github.head_ref }}
+              ./github-actions/gotm-fabm-ersem/gotm-fabm-ersem-build.sh -b $BRANCH -f '-DCMAKE_Fortran_FLAGS="-fcheck=all"'
+        - name: Running GOTM testcase YAML tests
+          run: |
+              python -m pip install pytest
+              pytest github-actions/gotm-fabm-ersem/test_testcase_yamls.py
 
   build-fabm0d-gotm-ersem-debian:
     runs-on: ubuntu-latest
