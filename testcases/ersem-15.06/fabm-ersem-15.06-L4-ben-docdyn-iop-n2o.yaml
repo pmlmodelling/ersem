@@ -279,6 +279,7 @@ instances:
       q10: 2.0                                             # Q_10 temperature coefficient (-)
       srs: 0.04                                            # specific rest respiration at reference temperature (1/d)
       pu_ea: 0.2                                           # excreted fraction of primary production (-)
+      exulim: 0.8                                    # excreted fraction of primary production due to nutrient stress,maximum=1._rk-self%pu_ea
       pu_ra: 0.2                                           # respired fraction of primary production (-)
       qnlc: 0.0042                                         # minimum nitrogen to carbon ratio (mmol N/mg C)
       qplc: 0.0001                                         # minimum phosphorus to carbon ratio (mmol P/mg C)
@@ -345,6 +346,7 @@ instances:
       q10: 2.0                                             # Q_10 temperature coefficient (-)
       srs: 0.04                                            # specific rest respiration at reference temperature (1/d)
       pu_ea: 0.2                                           # excreted fraction of primary production (-)
+      exulim: 0.8                                    # excreted fraction of primary production due to nutrient stress,maximum=1._rk-self%pu_ea
       pu_ra: 0.2                                           # respired fraction of primary production (-)
       qnlc: 0.005                                          # minimum nitrogen to carbon ratio (mmol N/mg C)
       qplc: 0.000225                                       # minimum phosphorus to carbon ratio (mmol P/mg C)
@@ -408,6 +410,7 @@ instances:
       q10: 2.0                                             # Q_10 temperature coefficient (-)
       srs: 0.045                                           # specific rest respiration at reference temperature (1/d)
       pu_ea: 0.2                                           # excreted fraction of primary production (-)
+      exulim: 0.8                                    # excreted fraction of primary production due to nutrient stress,maximum=1._rk-self%pu_ea
       pu_ra: 0.2                                           # respired fraction of primary production (-)
       qnlc: 0.006                                          # minimum nitrogen to carbon ratio (mmol N/mg C)
       qplc: 0.00035                                        # minimum phosphorus to carbon ratio (mmol P/mg C)
@@ -468,6 +471,7 @@ instances:
       q10: 2.0                                             # Q_10 temperature coefficient (-)
       srs: 0.035                                           # specific rest respiration at reference temperature (1/d)
       pu_ea: 0.2                                           # excreted fraction of primary production (-)
+      exulim: 0.8                                    # excreted fraction of primary production due to nutrient stress,maximum=1._rk-self%pu_ea
       pu_ra: 0.2                                           # respired fraction of primary production (-)
       qnlc: 0.0042                                         # minimum nitrogen to carbon ratio (mmol N/mg C)
       qplc: 0.0001                                         # minimum phosphorus to carbon ratio (mmol P/mg C)
