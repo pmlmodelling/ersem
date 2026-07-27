@@ -99,8 +99,8 @@ contains
       call self%register_state_dependency(self%id_N6,'N6','mmol HS-/m^3','reduction equivalent')
 
       call self%register_diagnostic_variable(self%id_fdenit,'fdenit','mmol N/m^3/d','denitrification', missing_value=0._rk)
-      call self%register_diagnostic_variable(self%id_fanox,'fanox',  '-',           'fanox',           missing_value=0._rk)
-      call self%register_diagnostic_variable(self%id_freox,'freox',  '-',           'freox',           missing_value=0._rk)
+      call self%register_diagnostic_variable(self%id_fanox,'fanox',  'mmol HS-/m^3/d',           'fanox',           missing_value=0._rk)
+      call self%register_diagnostic_variable(self%id_freox,'freox',  'mmol HS-/m^3/d',           'freox',           missing_value=0._rk)
       end if
 
       ! Remineralization parameters
@@ -322,7 +322,7 @@ contains
          fB1R3c=self%frB1R3*rraB1
          fB1RDc = fB1R1c + fB1R2c + fB1R3c
 
-! Denitrification implemented as in Sankar et al. (2008), doi.org/10.1016/j.ecolmodel.2018.01.016
+! Denitrification implemented as in Sankar et al. (2018), doi.org/10.1016/j.ecolmodel.2018.01.016
      if (self%denit == 1) then      
         denitpot = self%DeniX * N3n !eq.6
         deniteff = max(0._rk, self%urB1_O2X * (1._rk-o2state) * fB1O3c / self%omonX) !eq.7
@@ -331,12 +331,12 @@ contains
         _SET_DIAGNOSTIC_(self%id_fdenit,fdenit)
         _SET_ODE_(self%id_N3n, -fdenit)
 
-! Reduced sulfur formation corresponds to eq.9 in Sankar et al. (2008)
+! Reduced sulfur formation corresponds to eq.9 in Sankar et al. (2018)
         fanox = self%omroX * (self%urB1_O2X * (1._rk-o2state) * fB1O3c - self%omonX * fdenit)
         freox = self%reoX * etB1 * o2state * N6
 
-        _SET_DIAGNOSTIC_(self%id_fanox,freox)
-        _SET_DIAGNOSTIC_(self%id_freox,fanox)
+        _SET_DIAGNOSTIC_(self%id_fanox,fanox)
+        _SET_DIAGNOSTIC_(self%id_freox,freox)
 
         _SET_ODE_(self%id_N6, fanox - freox)
      end if 
