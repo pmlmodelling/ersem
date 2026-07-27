@@ -1,10 +1,11 @@
 
 package:
   name: ersem
-  version: 20.10
+  version: "26.02"
 
 source:
   git_url: https://github.com/pmlmodelling/ersem.git
+  git_rev: "26.02"
 
 requirements:
   build:
