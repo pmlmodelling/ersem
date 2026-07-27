@@ -43,7 +43,7 @@ module ersem_bacteria_docdyn
       real(rk) :: DeniX,reoX,omroX,omonX,chN3oX
       integer  :: denit
 
-      ! Remineralization
+      ! Remineralisation
       real(rk) :: sR1N1X,sR1N4X
       real(rk) :: fsinkX
    contains
@@ -98,12 +98,12 @@ contains
       call self%register_state_dependency(self%id_N3n,'N3n','mmol N/m^3','nitrate')
       call self%register_state_dependency(self%id_N6,'N6','mmol HS-/m^3','reduction equivalent')
 
-      call self%register_diagnostic_variable(self%id_fdenit,'fdenit','mmol N/m^3/d','denitrification', missing_value=0._rk)
-      call self%register_diagnostic_variable(self%id_fanox,'fanox',  'mmol HS-/m^3/d',           'fanox',           missing_value=0._rk)
-      call self%register_diagnostic_variable(self%id_freox,'freox',  'mmol HS-/m^3/d',           'freox',           missing_value=0._rk)
+      call self%register_diagnostic_variable(self%id_fdenit, 'fdenit', 'mmol N/m^3/d', 'denitrification', missing_value=0._rk)
+      call self%register_diagnostic_variable(self%id_fanox, 'fanox', 'mmol HS-/m^3/d', 'formation of reduction equivalents', missing_value=0._rk)
+      call self%register_diagnostic_variable(self%id_freox, 'freox','mmol HS-/m^3/d', 'reoxidation of reduction equivalents', missing_value=0._rk)
       end if
 
-      ! Remineralization parameters
+      ! Remineralisation parameters
       call self%get_parameter(self%sR1N1X,   'sR1N1',   '1/d',    'mineralisation rate of labile dissolved organic phosphorus')
       call self%get_parameter(self%sR1N4X,   'sR1N4',   '1/d',    'mineralisation rate of labile dissolved organic nitrogen')
       call self%get_parameter(self%fsinkX,   'fsink',   '1/d',    'scavenging rate for iron')
@@ -497,7 +497,7 @@ contains
          _SET_DIAGNOSTIC_(self%id_minp,fR1N1p)
 
          if (use_iron) then
-            ! remineralization of particulate iron to Fe
+            ! remineralisation of particulate iron to Fe
             do iRP=1,self%nRP
                _GET_(self%id_RPf(iRP),RPfP(iRP))
             end do
