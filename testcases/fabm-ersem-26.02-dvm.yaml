@@ -200,7 +200,6 @@ instances:
     long_name: bacteria
     model: ersem/bacteria_docdyn
     parameters:
-      iswBlim: 2                                           # nutrient limitation (1: minimum of inorganic and organic availability, 2: additive availability)
       q10: 2.0                                             # Q_10 temperature coefficient (-)
       chdo: 0.31                                           # Michaelis-Menten constant for oxygen limitation (-)
       chn: 0.5                                             # Michaelis-Menten constant for nitrate limitation (mmol N/m^3)
