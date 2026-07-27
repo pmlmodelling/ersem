@@ -243,7 +243,6 @@ instances:
     long_name: bacteria
     model: ersem/bacteria
     parameters:
-      iswBlim: $iswBlimX
       q10: $q10B1X
       chdo: $chdB1oX
       chn: $chB1nX
