@@ -152,7 +152,7 @@ module ersem_benthic_column_particulate_matter
 !                              = D C0/z_mean
 !
 ! However, we KNOW that diffusion witin the column should not affect the mass integral. Why is this then non-zero?
-! The reason for this is that we have not accounted for the no-flux boundary conditions. As a result, we are implicity
+! The reason for this is that we have not accounted for the no-flux boundary conditions. As a result, we are implicitly
 ! using a non-zero inward flux at the surface that is determined by the gradient:
 !
 !   -D d/dz C(0) = D C0/z_mean exp(-z/z_mean) = D C0/z_mean
@@ -650,7 +650,7 @@ contains
 
       ! Register the only diagnostic for this constituent: mass integrated over desired depth interval.
       ! This diagnostic acts like a state variable, so that other models can provides sinks and sources.
-      ! These are converted by the "change_processor" submodel into appropriate changes in colmn-integrated mass and penetration depth.
+      ! These are converted by the "change_processor" submodel into appropriate changes in column-integrated mass and penetration depth.
       call self%register_diagnostic_variable(info%id_local,name,units//'/m^2',long_name, &
          act_as_state_variable=.true.,domain=domain_bottom,output=output_none,source=source_do_bottom)
       call self%add_to_aggregate_variable(aggregate_target,info%id_local,aggregate_scale_factor)
@@ -958,11 +958,11 @@ contains
       if ( d_pen>0._rk ) then
          ! Penetration depth > 0: integrate idealized [exponential] distribution over desired depth interval.
 
-         ! Compute normalization factor: integral of exponential distribution from surface to bottom of column.
+         ! Compute normalisation factor: integral of exponential distribution from surface to bottom of column.
          ! This interval must by definition contain 100 % of the modelled mass.
          norm = 1._rk - exp(-d_max/d_pen)
 
-         ! Compute integral of exponential over desired depth interval and normalize to obtain fraction between 0 and 1.
+         ! Compute integral of exponential over desired depth interval and normalise to obtain fraction between 0 and 1.
          partQ = (exp(-d_top1/d_pen) - exp(-d_bot1/d_pen)) / norm
       else
          ! Penetration depth = 0 (or < 0, but that's an artefact): all mass in surface layer of zero thickness.

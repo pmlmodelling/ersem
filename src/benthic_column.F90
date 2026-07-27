@@ -65,12 +65,12 @@ contains
       ! Create bioturbation submodel and provide it with parameters
       ! Currently the bioturbation logic must be separate from type_ersem_benthic_column to avoid circular dependencies.
       ! This is because type_ersem_benthic_column provides the max column depth, which is used to compute food for
-      ! benthic fauna, which in turn results in the aggrege biturbation/bioirrigation activity.
+      ! benthic fauna, which in turn results in the aggrege bioturbation/bioirrigation activity.
       allocate(bioturbation)
 
       ! Bioturbation
       call self%get_parameter(bioturbation%Etur,'Etur','m^2/d','basal bioturbation rate')
-      call self%get_parameter(bioturbation%mtur,'mtur','-','maximum relative turbation enhancement')
+      call self%get_parameter(bioturbation%mtur,'mtur','-','maximum relative bioturbation enhancement')
       call self%get_parameter(bioturbation%htur,'htur','mg C/m^2/d','Michaelis-Menten constant for bioturbation')
       call self%get_parameter(bioturbation%dtur,'dtur','m','bioturbation depth')
 

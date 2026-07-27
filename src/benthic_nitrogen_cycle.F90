@@ -65,7 +65,7 @@ contains
       call self%get_parameter(self%xn2,   'xn2','mol O_2/mol N','oxygen demand fulfilled by reduction of nitrate to dinitrogen gas')
       call self%get_parameter(self%hM3G4,'hM3G4','mmol N/m^3','Michaelis-Menten constant for nitrate limitation of denitrification')
 
-      ! Create our own state avriable for dinitrogen gas
+      ! Create our own state variable for dinitrogen gas
       ! (only to track its total production, which can then be considered in nitrogen mass balance)
       call self%register_state_variable(self%id_G4n,'G4n','mmol N/m^2','dinitrogen gas')
       call self%add_to_aggregate_variable(standard_variables%total_nitrogen,self%id_G4n)
@@ -80,7 +80,7 @@ contains
       call self%register_diagnostic_variable(self%id_jM3G4n,'jM3G4n','mmol N/m^2/d','layer 2 de-nitrification flux',source=source_do_bottom)
 
       ! Create a child model that provides a K6 diagnostic. Other models (e.g., anaerobic bacteria) can attach to that to provide it with sink/source terms.
-      ! In turn, these are then picked up by this model (type_ersem_benthic_nitrogen_cycle) and translated into chnages in NO3 and O2.
+      ! In turn, these are then picked up by this model (type_ersem_benthic_nitrogen_cycle) and translated into changes in NO3 and O2.
       allocate(child)
       call self%add_child(child,'K6_calculator',configunit=configunit)
       call child%register_diagnostic_variable(child%id_K6,'K6','mmol O_2/m^2','oxygen debt due to anaerobic respiration',act_as_state_variable=.true.,output=output_none,domain=domain_bottom,source=source_none)
