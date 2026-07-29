@@ -406,13 +406,13 @@ contains
          ! Constraints: diffusion of the residual across bottom of benthic column must be zero (i.e., zero gradient), and at the surface of the benthic
          ! column the concentration of the residual must equal zero (i.e., equilibrium holds at the very surface of the column).
          ! Since we do not know anything about the processes responsible for the residual, let's assume their contribution
-         ! in the past was a constant production or destruction per unit sediment volume thoughout the entire column.
+         ! in the past was a constant production or destruction per unit sediment volume throughout the entire column.
          ! That is, production (#/m^2/d) in the three layers was P_int*d1/d3, P_int(d2-d1)/d3, P_int(d3-d2)/d3.
          ! If we would know P_int, we could supply those rates along with zero surface concentration to "compute_equilibrium_profile"
          ! to derive the residual profile. By checking the equations in compute_equilibrium_profile, we can verify that the resulting bottom concentration
          ! and layer integral are both proportional to P_int. Thus, can can simply supply d1, d2-d1, d3-d2 to
          ! "compute_equilibrium_profile", and find the additional scale factor P_int/d3 by demanding that the sum of layer integrals is
-         ! equal to the known residual mass. That is, P_int/d3 equals the ratio of residual mass to the sum of normalized layer integrals
+         ! equal to the known residual mass. That is, P_int/d3 equals the ratio of residual mass to the sum of normalised layer integrals
          ! computed for layer production terms d1, d2-d1, d3-d2. As we are assuming the residual profile was previously an equilibrium
          ! profile, the necessary depth-integrated production rate P_int must equal the exchange across the surface, i.e., diffusivity*gradient.
          ! Thus, we can now simply add the P_int as a additional surface exchange term, accounting for the move towards equilibrium.

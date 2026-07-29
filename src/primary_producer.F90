@@ -55,7 +55,7 @@ module ersem_primary_producer
       type (type_diagnostic_variable_id) :: id_lD      ! Cell-bound calcite - used by calcifiers only
       type (type_diagnostic_variable_id) :: id_O3L2c   ! Calcification
       type (type_diagnostic_variable_id) :: id_fPIRPc,id_fPIRPn,id_fPIRPp,id_fPIRPs  ! Total loss to Particulate detritus
-      type (type_diagnostic_variable_id) :: id_fPIR1c,id_fPIR1n,id_fPIR1p ! Total loss to labile dissovled detritus
+      type (type_diagnostic_variable_id) :: id_fPIR1c,id_fPIR1n,id_fPIR1p ! Total loss to labile dissolved detritus
       type (type_diagnostic_variable_id) :: id_fPIR2c  ! Total loss to non-labile dissovled detritus
       type (type_diagnostic_variable_id) :: id_iNI
 
@@ -437,7 +437,7 @@ contains
 
             ! Calculate nutrient limitation impact on rain ratio:
             t=max(0._rk,ETW)  ! this is to avoid funny values of rain ratio when ETW ~ -2 degrees
-            RainR = RainR * min((1._rk-iNp),iNn) * (t/(2._rk+t)) !* max(1.,P2c(I)/2.) removd as P2 is a broad class not just calicifiers
+            RainR = RainR * min((1._rk-iNp),iNn) * (t/(2._rk+t)) !* max(1.,P2c(I)/2.) removed as P2 is a broad class not just calicifiers
             RainR = max(RainR,0.005_rk)
 
             ! Compute virtual calcite attached to live cells. It is virtual in the sense that it has not been subtracted
@@ -539,7 +539,7 @@ contains
 
          ! Net nitrogen uptake
 
-         ! maximum acheivable uptake of nitrate  (mmol N m-3 d-1)
+         ! maximum achievable uptake of nitrate  (mmol N m-3 d-1)
          rumn3 = self%qun3 * N3nP * c
 
          ! Maximum achievable uptake of ammonium (mmol N m-3 d-1)

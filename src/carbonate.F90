@@ -57,14 +57,14 @@ contains
          call self%register_state_variable(self%id_TA,'TA','mmol/m^3','total alkalinity',2300._rk,minimum=1.e-4_rk, &
             standard_variable=standard_variables%alkalinity_expressed_as_mole_equivalent)
       else
-         ! Total alkalinity is a diagnostic variable, parameterized as function of salinity and temperature.
+         ! Total alkalinity is a diagnostic variable, parameterised as function of salinity and temperature.
          ! since ERSEM22.11 Total alkalinity is expressed in mmol/m3 instead of umol/kg
          call self%register_diagnostic_variable(self%id_TA_diag,'TA','mmol/m^3','total alkalinity', act_as_state_variable=.true., &
             standard_variable=standard_variables%alkalinity_expressed_as_mole_equivalent)
 
          call self%get_parameter(iswbioalk,'iswbioalk','','use bioalkalinity (0: off, 1: on)',default=1,minimum=0,maximum=1)
          if (iswbioalk==1) then
-            ! Register state variable to track "bioalkalinity", i.e., the difference between parameterized
+            ! Register state variable to track "bioalkalinity", i.e., the difference between parameterised
             ! and actual alkalinity that is created by biogeochemical processes modifying alkalinity.
             ! since ERSEM22.11 bioalkalinity is expressed in mmol/m3 instead of umol/kg
             call self%register_state_variable(self%id_bioalk,'bioalk','mmol/m^3','bioalkalinity')
@@ -171,7 +171,7 @@ contains
 
          ! Calculate total alkalinity
          if (self%iswtalk/=5) then
-            ! Alkalinity is parameterized as function of salinity and temperature.
+            ! Alkalinity is parameterised as function of salinity and temperature.
             TA = approximate_alkalinity(self%iswtalk,ETW,X1X)
             ! Approximate alkalinity is still in umol kg-1 due to empirical regression
             ! therefore now need to be converted  in mmol m-3
@@ -248,7 +248,7 @@ contains
          wnd = max(wnd, 0.0_rk)
 
          if (self%iswtalk/=5) then
-            ! Alkalinity is parameterized as function of salinity and temperature.
+            ! Alkalinity is parameterised as function of salinity and temperature.
             TA = approximate_alkalinity(self%iswtalk,T,S)
             ! Approximate alkalinity is still in umol kg-1 due to empirical regression
             ! therefore now need to be converted  in mmol m-3
@@ -563,7 +563,7 @@ contains
 ! !DESCRIPTION:
 !  TODO - check this.
 !
-! ROUTINE TO CARRY OUT CO2 CALCULATIONS WITH 2 FIXED PARAMETERS ACCORDI
+! ROUTINE TO CARRY OUT CO2 CALCULATIONS WITH 2 FIXED PARAMETERS ACCORDING TO
 ! THE EQUATIONS GIVEN BY PARKS(1969) AND SKIRROW (1975)
 ! WITH ADDITIONS FOR INCLUDING BORON IF BORON=.TRUE.
 !\\
@@ -600,7 +600,7 @@ contains
 !  CONDITIONS DO NOT ALLOW FOR CONVERGENCE (IN 3D MODEL THIS IS
 !  LIKELY TO OCCUR NEAR LOW SALINITY REGIONS) THE MODEL WILL
 !  BE STUCK IN THE LOOP.  TO AVOID THIS A CONVERGENCE CONDITION
-!  IS PUT IN PLACE TO SET A FLAGG OF -99 IN THE PH VAR FOR NON CONVEGENCE.
+!  IS PUT IN PLACE TO SET A FLAG OF -99 IN THE PH VAR FOR NON CONVERGENCE.
 !  THE MODEL IS THEN ALLOWED TO CONTINUE. 'COUNTER, C_SW,C_CHECK' ARE
 !  THE LOCAL VARS USED.
 ! C_SW = condition of convergence 0=yes, 1= no
@@ -654,8 +654,8 @@ contains
 ! SET COUNTER UPDATE.
             COUNTER=COUNTER+1
 
-! CHECK IF CONVERGENCE HAS OCCURED IN THE NUMBER OF
-! ACCEPTABLE ITTERATIONS.
+! CHECK IF CONVERGENCE HAS OCCURRED IN THE NUMBER OF
+! ACCEPTABLE ITERATIONS.
             if(counter.ge.c_check)then
 !!        IF(MASTER)THEN
 !!! LOG FILE TO SHOW WHEN AND WHERE NON CONVERGENCE OCCURS.

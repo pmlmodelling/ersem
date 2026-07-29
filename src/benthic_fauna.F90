@@ -174,7 +174,7 @@ contains
       end do
 
       ! Set food-source-specific assimilation inefficiency.
-      ! (fraction of ingested frood going to faeces)
+      ! (fraction of ingested food going to faeces)
       do ifood=1,self%nfood
          write (index,'(i0)') ifood
          call self%get_parameter(foodispom,'food'//trim(index)//'ispom','','food source '//trim(index)//' is detritus',default=.false.)
