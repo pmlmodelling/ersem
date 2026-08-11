@@ -34,8 +34,10 @@ module ersem_benthic_column_dissolved_matter
       type (type_bottom_state_variable_id) :: id_layer          ! depth of bottom interface of own layer (where own concentration drops to zero)
       type (type_horizontal_diagnostic_variable_id) :: id_conc_eq(nlayers)  ! mean equilibrium pore water concentration in individual layers
       type (type_horizontal_diagnostic_variable_id) :: id_conc_tot(nlayers) ! mean pore water concentration in individual layers
+      type (type_state_variable_id)      :: id_TA
+      
       real(rk) :: ads(nlayers)
-      real(rk) :: relax, minD
+      real(rk) :: relax, minD, TA_factor
       integer :: last_layer
       logical :: correction
       type (type_single_constituent),allocatable :: constituents(:)
@@ -102,7 +104,11 @@ contains
          write (index,'(i0)') ilayer
          call self%get_parameter(self%ads(ilayer),'ads'//trim(index),'-','adsorption in layer '//trim(index)//' (total:dissolved)',default=1.0_rk)
       end do
+      
       call self%get_parameter(self%correction,'correction','','move losses in oxygenic layer to deeper layers if pelagic concentration is limiting',default=.false.)
+      
+      call self%get_parameter(self%TA_factor,'TA_factor','','contribution to TA',default=0._rk)
+
 
       ! Create model that computes concentrations per benthic layer.
       allocate(profile)
@@ -146,6 +152,7 @@ contains
       end do
       call self%request_coupling   (self%id_Dm(nlayers),   depth_of_sediment_column)
       call profile%request_coupling(profile%id_Dm(nlayers),depth_of_sediment_column)
+      call self%register_state_dependency(self%id_TA,standard_variables%alkalinity_expressed_as_mole_equivalent)
 
    end subroutine benthic_dissolved_matter_initialize
 
@@ -367,6 +374,9 @@ contains
          ! Net change in column-integrated mass must equal column-integrated production - surface exchange.
          ! Thus, surface exchange = column-integrated production - net change (net change = relaxation)
          _SET_BOTTOM_EXCHANGE_(info%id_pel,sms-(c_int_eq-(c_int+c_int_deep))/self%relax)
+         
+         _SET_BOTTOM_EXCHANGE_(self%id_TA,(sms-(c_int_eq-(c_int+c_int_deep))/self%relax)*self%TA_factor)
+         
          _SET_HORIZONTAL_DIAGNOSTIC_(info%id_pbf,sms-(c_int_eq-(c_int+c_int_deep))/self%relax)
       else
          ! Apply a "technical correction" in case flux from the oxygenated
@@ -426,6 +436,8 @@ contains
          norm_res_int = poro*sum(self%ads*residual_per_layer)
          P_res_int = (c_int-c_int_eq)/norm_res_int*Dm(nlayers)
          _SET_BOTTOM_EXCHANGE_(info%id_pel,sms+P_res_int) ! Equilibrium flux = depth-integrated production sms + residual flux P_res_int
+         _SET_BOTTOM_EXCHANGE_(self%id_TA,(sms+P_res_int)*self%TA_factor)
+         
          _SET_HORIZONTAL_DIAGNOSTIC_(info%id_pbf,sms+P_res_int)
          _SET_BOTTOM_ODE_(info%id_int,-P_res_int-sms)
 
