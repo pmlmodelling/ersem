@@ -200,7 +200,6 @@ instances:
     long_name: bacteria
     model: ersem/bacteria_docdyn
     parameters:
-      iswBlim: 2                                           # nutrient limitation (1: minimum of inorganic and organic availability, 2: additive availability)
       q10: 2.0                                             # Q_10 temperature coefficient (-)
       chdo: 0.31                                           # Michaelis-Menten constant for oxygen limitation (-)
       chn: 0.5                                             # Michaelis-Menten constant for nitrate limitation (mmol N/m^3)
@@ -263,7 +262,7 @@ instances:
       q10: 2.0                                             # Q_10 temperature coefficient (-)
       srs: 0.04                                            # specific rest respiration at reference temperature (1/d)
       pu_ea: 0.05                                          # excreted fraction of primary production (-)
-      exulim: 0.3                     			   # excreted fraction of primary production due to nutrient stress,maximum=1._rk-self%pu_ea
+      exulim: 0.3                                      # excreted fraction of primary production due to nutrient stress,maximum=1._rk-self%pu_ea
       xqcpx: 1.3                                           # threshold for phosphorus limitation, relative to minimum ratio,default=2.0_rk
       xqcnx: 1.3                                           # threshold for nitrogen limitation, relative to minimum ratio, default=2.0_rk
       pu_ra: 0.2                                           # respired fraction of primary production (-)
@@ -742,6 +741,7 @@ instances:
       ads1: 100.0                                          # adsorption in layer 1 (total:dissolved) (-), default = 1.0
       ads2: 100.0                                          # adsorption in layer 2 (total:dissolved) (-), default = 1.0
       ads3: 2.0                                            # adsorption in layer 3 (total:dissolved) (-), default = 1.0
+      TA_factor: -1.                                       # scaling factor (sign) of the effect of benthic-pelagic fluxes on TA
     initialization:
       p: 6.8                                               # phosphorus (mmol/m^2)
     coupling:
@@ -755,6 +755,7 @@ instances:
       last_layer: 2                                        # sediment layer where concentration drops to zero, default = 3
       relax: 5.0                                           # rate of relaxation towards equilibrium concentration profile (1/d)
       minD: 0.0001                                         # minimum depth of zero-concentration isocline (m)
+      TA_factor: -1.                                       # scaling factor (sign) of the effect of benthic-pelagic fluxes on TA
     initialization:
       n: 0.584                                             # nitrogen (mmol/m^2)
     coupling:
@@ -769,6 +770,7 @@ instances:
       ads2: 3.0                                            # adsorption in layer 2 (total:dissolved) (-), default = 1.0
       ads3: 3.0                                            # adsorption in layer 3 (total:dissolved) (-), default = 1.0
       correction: true                                     # move losses in oxygenic layer to deeper layers if pelagic concentration is limiting, default = false
+      TA_factor: 1.                                        # scaling factor (sign) of the effect of benthic-pelagic fluxes on TA
     initialization:
       n: 25.0                                              # nitrogen (mmol/m^2)
     coupling:

@@ -4,7 +4,7 @@
 ! For diel vertical migration of migrating plankton. Calculates an upper and 
 ! lower boundary in the water column, between which the migrator is able to 
 ! be present. Boundaries depend on light levels which can be set by the user
-! or defaul to a maximum light level of -6.5 log W m-2 and a minimum light 
+! or default to a maximum light level of -6.5 log W m-2 and a minimum light 
 ! level of -15 log W m-2
 !
 ! Adapted from code written by Caglar Yumruktepe (NERSC), available at: 
@@ -56,7 +56,7 @@ contains
         call self%get_parameter( self%lower_light,'lower_light','log W m-2','light level for lower isolume',default=-15._rk)
 
         call self%get_parameter(self%nprey,'nprey','','number of prey types',default=1)
-        call self%get_parameter(self%divide_food_by,'divide_food_by','','a likely concentration (e.g. half saturation constant) to normalize food',default=40.0_rk)
+        call self%get_parameter(self%divide_food_by,'divide_food_by','','a likely concentration (e.g. half saturation constant) to normalise food',default=40.0_rk)
         call self%register_diagnostic_variable(self%id_migrator_food,'migrator_food','mmol C/m^3','food availability for the migrators', act_as_state_variable=.true., missing_value=0.0_rk, source=source_do)
         ! Get prey-specific coupling links.
         allocate(self%id_prey(self%nprey))

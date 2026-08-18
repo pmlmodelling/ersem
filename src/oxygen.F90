@@ -5,7 +5,7 @@ module ersem_oxygen
 ! exchange of oxygen across the water surface.
 
 ! Note: negative oxygen concentrations are permitted.
-! These reflect an oygen debt (e.g., presence of H2S)
+! These reflect an oxygen debt (e.g., presence of H2S)
 ! In this case, oxygen saturation will be zero (not negative!),
 ! while apparent oxygen utilization will still be the difference
 ! between saturation concentration and [negative] oxygen concentration.

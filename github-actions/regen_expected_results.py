@@ -1,7 +1,8 @@
 import argparse
 import json
 import netCDF4 as nc
-from numpy import ndarray, interp
+from numpy import asarray, ndarray, interp
+
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -9,6 +10,38 @@ class NumpyEncoder(json.JSONEncoder):
             temp = [float(v) for v in obj.tolist()]
             return temp
         return json.JSONEncoder.default(self, obj)
+
+
+def extract_gotm_time_series(data, variable_name, depth=0.0):
+    var = data.variables[variable_name]
+    values = var[:].squeeze()
+
+    if values.ndim == 1:
+        return [float(v) for v in values]
+
+    zi = data.variables['zi'][:].squeeze()
+    z = data.variables['z'][:].squeeze()
+    var_time_series = []
+    for i in range(var.shape[0]):
+        depth_offset = depth + zi[i].reshape(-1)[-1]
+        z_row = z[i].reshape(-1)
+        var_row = values[i].reshape(-1)
+        var_time_series.append(float(interp(depth_offset, z_row, var_row)))
+    return var_time_series
+
+
+def extract_final_state(data, variable_name):
+    values = data.variables[variable_name][:].squeeze()
+
+    if values.ndim == 1:
+        return float(values[-1])
+
+    if values.ndim == 2:
+        return asarray(values[-1, :])
+
+    raise RuntimeError(
+        f"Unsupported squeezed shape for {variable_name}: {values.shape}"
+    )
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-p', '--data-path', type=str, required=True,
@@ -51,6 +84,9 @@ for key, items in data_dict.items():
     expected_results = {}
     for v in items:
         try:
+            if v != "dates" and v not in data.variables:
+                print(f"Skipping missing variable: {v}")
+                continue
             if v == "dates":
                 times = data.variables['time']
                 dates = nc.num2date(times[:],
@@ -59,23 +95,14 @@ for key, items in data_dict.items():
                 dates = [str(d).split(" ")[0] for d in dates]
                 expected_results[v] = dates
             elif key == "expected" and model_run == "gotm":
-                depth = 0.0
-                var = data.variables[v]
-                zi = data.variables['zi'][:].squeeze()
-                z = data.variables['z'][:].squeeze()
-                var_time_series = []
-                for i in range(var.shape[0]):
-                    depth_offset = depth + zi[i, -1]
-                    var_time_series.append(interp(depth_offset, z[i, :], var[i, :].squeeze()))
-                expected_results[v] = var_time_series
+                expected_results[v] = extract_gotm_time_series(data, v)
 
+            elif model_run == "gotm":
+                expected_results[v] = extract_final_state(data, v)
             elif data.variables[v].ndim == 4:
-                expected_results[v] = data.variables[v][:].squeeze() \
-                        if model_run == "fabm0d" else expected_results[v][-1, :]
+                expected_results[v] = data.variables[v][:].squeeze()
             elif data.variables[v].ndim == 3:
-                expected_results[v] = data.variables[v][:].squeeze() \
-                        if model_run == "fabm0d" else \
-                        float(data.variables[v][:].squeeze()[-1])
+                expected_results[v] = data.variables[v][:].squeeze()
             else:
                 raise RuntimeError
         except Exception as e:
