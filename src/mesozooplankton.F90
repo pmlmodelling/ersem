@@ -340,7 +340,7 @@ contains
             ! Specific mortality (1/d): background mortality + mortality due to oxygen limitation.
             sd = self%sd + (1._rk - eO2)*self%sdo
 
-            ! Compute abolute mortality (mg C/m3/d) from specific mortality and biomass.
+            ! Compute absolute mortality (mg C/m3/d) from specific mortality and biomass.
             rd = sd*cP
 
             ! Assimilation inefficiency (dimensionless):

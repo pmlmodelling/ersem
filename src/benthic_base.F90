@@ -174,7 +174,7 @@ contains
          if (self%resuspension) then
             ! The resuspension rate (1/d) is a linear function of shear stress (Pa)
             ! Prefactor "er" (1/d) can be interpreted as c*M/rho_sed*v_crit^2, with:
-            ! - c (1/m) = ratio between tracer concentration at the sediment surface and sediemnt-column-integrated tracer
+            ! - c (1/m) = ratio between tracer concentration at the sediment surface and sediment-column-integrated tracer
             !   (e.g., c=100 for an exponential profile with penetration depth of 1 cm)
             ! - M = the erosion rate in g*s/m4 (Puls & Suendermann 1990: M=100)
             ! - rho_sed = dry mass of sediment per total volume at the sediment surface. This is grain density (2650 kg/m3 for quartz) multiplied by (1-porosity)
