@@ -19,6 +19,11 @@ SETUPS_DIR="${GOTM_ERSEM_SETUPS_DIR:-${REPO_DIR}/ersem-setups}"
 L4_DIR="${SETUPS_DIR}/L4"
 GOTM_BIN="${GOTM_BIN:-${HOME}/local/gotm/bin/gotm}"
 GOTM_TEST_STOP="${GOTM_TEST_STOP:-2007-02-01 00:00:00}"
+GOTM_CONFIG_FILENAME="gotm.yaml"
+
+if [[ "${TESTCASE_YAML,,}" == *n2o* ]] || grep -Eiq 'n2o|nitrous[_ -]oxide' "${TESTCASE_YAML}"; then
+    GOTM_CONFIG_FILENAME="gotm_n2o.yaml"
+fi
 
 if [ ! -x "${GOTM_BIN}" ]; then
     echo "GOTM executable not found or not executable: ${GOTM_BIN}" >&2
@@ -32,6 +37,13 @@ fi
 
 ORIGINAL_GOTM_YAML="$(mktemp "${L4_DIR}/gotm.yaml.original.XXXXXX")"
 TEST_GOTM_YAML="$(mktemp "${L4_DIR}/gotm.yaml.testcase.XXXXXX")"
+GOTM_CONFIG="${L4_DIR}/${GOTM_CONFIG_FILENAME}"
+
+if [ ! -f "${GOTM_CONFIG}" ]; then
+    echo "GOTM config not found for testcase ${TESTCASE_YAML}: ${GOTM_CONFIG}" >&2
+    exit 2
+fi
+
 cp "${L4_DIR}/gotm.yaml" "${ORIGINAL_GOTM_YAML}"
 
 cleanup() {
@@ -49,9 +61,10 @@ awk -v stop="${GOTM_TEST_STOP}" '
     }
     { print }
     END { if (!updated) exit 1 }
-' "${L4_DIR}/gotm.yaml" > "${TEST_GOTM_YAML}"
+' "${GOTM_CONFIG}" > "${TEST_GOTM_YAML}"
 
 echo "Running GOTM with testcase YAML: ${TESTCASE_YAML}"
+echo "Using GOTM config: ${GOTM_CONFIG_FILENAME}"
 echo "Using temporary gotm.yaml stop date: ${GOTM_TEST_STOP}"
 cp "${TEST_GOTM_YAML}" "${L4_DIR}/gotm.yaml"
 cp "${TESTCASE_YAML}" "${L4_DIR}/fabm.yaml"
